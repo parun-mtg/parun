@@ -2,6 +2,7 @@ module Parun.Web.LobbySpec where
 
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Identity as Identity
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -177,7 +178,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
     Spec.it s "CR 800.2 sets the game's options, CR 806.2's at three seats or more only" $ do
       let set event value = Lobby.update event (Text.pack value)
           three = Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty (Lobby.update (Lobby.MkAdd Lobby.MkBot) Text.empty lobby)
-          chosen l = set Lobby.MkRangeOfInfluence "1" (set Lobby.MkAttackOption "left" (set Lobby.MkSinglePlanarDeck "" (set Lobby.MkAnte "" l)))
+          chosen l = set Lobby.MkRangeOfInfluence "1" (set Lobby.MkAttackOption "left" (set Lobby.MkSinglePlanarDeck "" (set Lobby.MkPlanechase "" (set Lobby.MkAnte "" l))))
           page = Lobby.view (chosen three)
           handled prefix l = Html.search (Text.isPrefixOf (Text.pack prefix) . Html.toText) (Lobby.view l) >>= \path -> Html.handler (Text.pack "change") path (Lobby.view l)
           everyOne n = RangeOfInfluence.MkRangeOfInfluence (Map.fromList [(PlayerId.MkPlayerId k, n) | k <- [0 .. 2]])
@@ -189,9 +190,11 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
         GameSettings.plain {GameSettings.ante = True, GameSettings.singlePlanarDeck = True, GameSettings.attackOption = Just AttackOption.Leftward, GameSettings.rangeOfInfluence = everyOne 1}
       Spec.assertEqWith s "CR 800.1: two seats choose no multiplayer option" (Lobby.settings (chosen lobby)) GameSettings.plain {GameSettings.ante = True, GameSettings.singlePlanarDeck = True}
       Spec.assertEqWith s "a switch toggles off" (Lobby.settings (set Lobby.MkAnte "" (chosen three))) (Lobby.settings (chosen three)) {GameSettings.ante = False}
+      Spec.assertEqWith s "CR 901.15: no single planar deck without Planechase" (Lobby.settings (set Lobby.MkPlanechase "" (chosen three))) (Lobby.settings (chosen three)) {GameSettings.singlePlanarDeck = False}
+      Spec.assertEqWith s "the single planar deck offered only with Planechase on" (handled "<input id=\"option-single-planar-deck\"" three) Nothing
       Spec.assertEqWith s "unknown" (set Lobby.MkAttackOption "sideways" (chosen three)) (chosen three)
       Spec.assertEqWith s "unlimited again" (GameSettings.rangeOfInfluence (Lobby.settings (set Lobby.MkRangeOfInfluence "unlimited" (chosen three)))) RangeOfInfluence.unlimited
-      Spec.assertEqWith s "each switch and menu" (fmap (`handled` three) ["<input id=\"option-ante\"", "<input id=\"option-single-planar-deck\"", "<select class=\"deck-menu\" id=\"option-attack\"", "<select class=\"deck-menu\" id=\"option-range\""]) [Just Lobby.MkAnte, Just Lobby.MkSinglePlanarDeck, Just Lobby.MkAttackOption, Just Lobby.MkRangeOfInfluence]
+      Spec.assertEqWith s "each switch and menu" (fmap (`handled` chosen three) ["<input id=\"option-ante\"", "<input id=\"option-planechase\"", "<input id=\"option-single-planar-deck\"", "<select class=\"deck-menu\" id=\"option-attack\"", "<select class=\"deck-menu\" id=\"option-range\""]) [Just Lobby.MkAnte, Just Lobby.MkPlanechase, Just Lobby.MkSinglePlanarDeck, Just Lobby.MkAttackOption, Just Lobby.MkRangeOfInfluence]
       Spec.assertEqWith s "no attack option at two seats" (handled "<select class=\"deck-menu\" id=\"option-attack\"" lobby) Nothing
       Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"left\" selected=\"\">Attack left</option>") (Html.toText page)) "the attack option chosen in its menu"
       Spec.assertBool s (Text.isInfixOf (Text.pack "id=\"option-ante\" type=\"checkbox\" aria-describedby=\"option-ante-note\" checked=\"\"") (Html.toText page)) "ante checked"
@@ -203,9 +206,10 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
           chosen l = set Lobby.MkClock "10" (set Lobby.MkRangeOfInfluence "1" (set Lobby.MkAttackOption "left" (set Lobby.MkAnte "" l)))
           pairs :: [(Text.Text, Text.Text)] -> [(String, String)]
           pairs = fmap (Bifunctor.bimap Text.unpack Text.unpack)
-      Spec.assertEqWith s "none chosen" (pairs (Lobby.told lobby)) [("Play for ante", "No"), ("Single planar deck", "No"), ("Clock", "Off")]
-      Spec.assertEqWith s "two seats" (pairs (Lobby.told (chosen lobby))) [("Play for ante", "Yes"), ("Single planar deck", "No"), ("Clock", "10 minutes")]
-      Spec.assertEqWith s "three seats" (pairs (Lobby.told (chosen three))) [("Play for ante", "Yes"), ("Single planar deck", "No"), ("Clock", "10 minutes"), ("Attacks", "Attack left"), ("Range of influence", "1 seat")]
+      Spec.assertEqWith s "none chosen" (pairs (Lobby.told lobby)) [("Play for ante", "No"), ("Planechase", "No"), ("Clock", "Off")]
+      Spec.assertEqWith s "two seats" (pairs (Lobby.told (chosen lobby))) [("Play for ante", "Yes"), ("Planechase", "No"), ("Clock", "10 minutes")]
+      Spec.assertEqWith s "three seats" (pairs (Lobby.told (chosen three))) [("Play for ante", "Yes"), ("Planechase", "No"), ("Clock", "10 minutes"), ("Attacks", "Attack left"), ("Range of influence", "1 seat")]
+      Spec.assertEqWith s "Planechase" (pairs (Lobby.told (set Lobby.MkPlanechase "" lobby))) [("Play for ante", "No"), ("Planechase", "Yes"), ("Single planar deck", "No"), ("Clock", "Off")]
 
     Spec.it s "sets each seat's clock from its menu, untimed unless told otherwise, at any count of seats" $ do
       let set value = Lobby.update Lobby.MkClock (Text.pack value)
@@ -266,6 +270,47 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
   Spec.describe s "sectioned" $ do
     Spec.it s "keeps each line's section" $ do
       Spec.assertEq s ([(section, n) | (section, n, _) <- Lobby.sectioned (Text.pack "4 Island\nSideboard\n3 Bolt\nDeck\n2 Shock\n")]) [(DeckList.Main, 4), (DeckList.Side, 3), (DeckList.Main, 2)]
+
+  Spec.describe s "planarDealt" $ do
+    let planar, phenomenon :: Int -> CardName.CardName
+        planar n = CardName.MkCardName (Text.pack ("Plane " <> show n))
+        phenomenon n = CardName.MkCardName (Text.pack ("Phenomenon " <> show n))
+        -- Three phenomena first, so the third is passed over (CR 901.3).
+        pool planes = [(phenomenon n, True) | n <- [1 .. 3]] <> [(planar n, False) | n <- [1 .. planes]]
+        list = Text.pack "Deck\n20 Forest\n"
+        bringing = Text.pack "20 Forest\nPlanar Deck\n1 Plane 1\n"
+        options planechase single = Lobby.noOptions {Lobby.planechase = planechase, Lobby.singlePlanarDeck = single}
+        seats n lists = NonEmpty.fromList [(Text.pack ("seat " <> show i), contents) | (i, contents) <- zip [1 .. n :: Int] lists]
+        deal chosen' planes = Identity.runIdentity . Lobby.planarDealt pure chosen' (pool planes)
+        decksOf :: Either Text.Text (NonEmpty.NonEmpty (Text.Text, Text.Text)) -> Either Text.Text [[CardName.CardName]]
+        decksOf = fmap (fmap (Lobby.planarNames . snd) . NonEmpty.toList)
+        hand = [phenomenon 1, phenomenon 2] <> fmap planar [1 .. 8]
+    Spec.it s "leaves the lists alone with Planechase off" $ do
+      Spec.assertEq s (deal (options False False) 30 (seats 2 (repeat list))) (Right (seats 2 (repeat list)))
+
+    Spec.it s "refuses a list bringing a planar deck with Planechase off" $ do
+      Spec.assertBool s (either (Text.isInfixOf (Text.pack "turn Planechase on")) (const False) (deal (options False False) 30 (seats 2 [list, bringing]))) "refused, saying why"
+
+    Spec.it s "CR 901.3 deals each list bringing none ten names, no more than two phenomena, its main deck kept" $ do
+      let dealt = deal (options True False) 12 (seats 4 [list, bringing, list, list])
+      Spec.assertEq s (decksOf dealt) (Right [hand, [planar 1], hand, hand])
+      Spec.assertEq s (fmap (fmap (Lobby.mainEntries . snd) . NonEmpty.toList) dealt) (Right (replicate 4 [(20, CardName.MkCardName (Text.pack "Forest"))]))
+
+    Spec.it s "CR 901.15a deals a single planar deck no name twice, nor one a list brings" $ do
+      let dealt = decksOf (deal (options True True) 30 (seats 3 [list, bringing, list]))
+      Spec.assertEq s dealt (Right ([phenomenon 1, phenomenon 2] <> fmap planar [2 .. 9] : [planar 1] : [[phenomenon 3] <> fmap planar [10 .. 18]]))
+      Spec.assertBool s (either (const False) (\decks -> let names = concat decks in length names == Set.size (Set.fromList names)) dealt) "no name twice"
+
+    Spec.it s "refuses what the pool can't deal" $ do
+      let refused = either (Text.isInfixOf (Text.pack "can't deal")) (const False)
+      Spec.assertBool s (refused (deal (options True True) 32 (seats 4 (repeat list)))) "a single planar deck for four seats"
+      Spec.assertBool s (refused (deal (options True False) 7 (seats 2 (repeat list)))) "a planar deck of ten from nine"
+
+    Spec.it s "says why Start refused until the match-up changes" $ do
+      let refused = lobby {Lobby.refusal = Just (Text.pack "Too few planes.")}
+      Spec.assertBool s (Text.isInfixOf (Text.pack "Too few planes.") (Html.toText (Lobby.view refused))) "shown"
+      Spec.assertEq s (Lobby.refusal (Lobby.update (Lobby.MkBrowse DeckBrowser.MkSearch) Text.empty refused)) (Just (Text.pack "Too few planes."))
+      Spec.assertEq s (Lobby.refusal (Lobby.update Lobby.MkPlanechase Text.empty refused)) Nothing
 
   Spec.describe s "dealt" $ do
     Spec.it s "never deals a bot a deck smaller than its fewest" $ do

@@ -385,7 +385,11 @@ lobby shell initial said pending = do
                     files <- Maybe.fromMaybe Map.empty <$> decksRead shell
                     -- A bot with no deck to play keeps the lobby up.
                     case sequence others >>= traverse (\name -> (,) name <$> Map.lookup name files) . (mine NonEmpty.:|) of
-                      Just seats -> listsOf seats >>= \lists -> play shell lists (Lobby.settings current) (Lobby.clock (Lobby.options current)) Map.empty (Lobby.locals current) Nothing
+                      Just seats -> do
+                        dealt <- listsOf seats >>= planarDealtFor shell current
+                        case dealt of
+                          Right lists -> play shell lists (Lobby.settings current) (Lobby.clock (Lobby.options current)) Map.empty (Lobby.locals current) Nothing
+                          Left why -> go current {Lobby.refusal = Just why}
                       Nothing -> go current
               Lobby.MkAdd Lobby.MkInvited | not (Lobby.paused current), length (Lobby.theirs current) < Lobby.mostOthers -> Browser.linkHost (Lobby.nextLink current) Route.MkGathering >> go (Lobby.update event value current)
               Lobby.MkConnect i | Just invite <- Map.lookup i (Lobby.invites current) -> do
@@ -425,7 +429,8 @@ lobby shell initial said pending = do
         Monad.when (Map.lookup n told /= Just news) $ Link.send (Browser.channel (page shell) (build shell) n) news
         pure (n, news)
     -- Every player is ready: the game starts, each player invited told
-    -- their seat, each bot without a deck given one at random.
+    -- their seat, each bot without a deck given one at random, and each
+    -- seat its planar deck (planarDealtFor); or the lobby says why not.
     startWith current told = do
       others <- dealtFor shell current
       files <- Maybe.fromMaybe Map.empty <$> decksRead shell
@@ -435,8 +440,10 @@ lobby shell initial said pending = do
             Nothing -> traverse (\(held, path) -> (,) held . Encoding.decodeUtf8Lenient <$> ByteString.readFile path) (name >>= \held -> (,) held <$> Map.lookup held files)
       mineFile <- traverse (\name -> traverse (fmap Encoding.decodeUtf8Lenient . ByteString.readFile) (Map.lookup name files)) (Lobby.mine current)
       seated <- traverse slot (zip [0 ..] others)
-      case (,) <$> Lobby.mine current <*> Monad.join mineFile of
-        Just mine | Just rest <- sequence seated -> do
+      dealt <- traverse (planarDealtFor shell current) ((NonEmpty.:|) <$> ((,) <$> Lobby.mine current <*> Monad.join mineFile) <*> sequence seated)
+      case dealt of
+        Just (Left why) -> go' current {Lobby.ready = False, Lobby.refusal = Just why} told
+        Just (Right seats) -> do
           -- Each player told the match-up again with every bot's deck drawn,
           -- which the history of their game names (Join.places), then their seat.
           (named, listed) <- deckColouring shell
@@ -444,9 +451,9 @@ lobby shell initial said pending = do
             let channel = Browser.channel (page shell) (build shell) (Lobby.linkNumber invite)
             Link.send channel (Link.MkMatchup (Lobby.placesFor named listed i current {Lobby.theirs = others}) (Lobby.told current))
             Link.send channel (Link.MkStart (seatOf i) Ending.unseen)
-          play shell (mine NonEmpty.:| rest) (Lobby.settings current) (Lobby.clock (Lobby.options current)) (fmap Lobby.linkNumber invited) (Lobby.locals current) Nothing
+          play shell seats (Lobby.settings current) (Lobby.clock (Lobby.options current)) (fmap Lobby.linkNumber invited) (Lobby.locals current) Nothing
         -- A bot with no deck to play keeps the lobby up.
-        _ -> go' current {Lobby.ready = False} told
+        Nothing -> go' current {Lobby.ready = False} told
 
 -- | The lobby with invited slot `i` made afresh, a new link made for it
 -- under its number, saying why.
@@ -811,10 +818,21 @@ tableOf shell = do
 
 -- | One of these decks at random.
 randomOf :: Seq.Seq Text.Text -> IO (Maybe Text.Text)
-randomOf among = do
+randomOf among = (`Seq.lookup` among) <$> randomBelow (Seq.length among)
+
+-- | A number from zero to one less than this, at random; zero for none.
+randomBelow :: Int -> IO Int
+randomBelow n = do
   key <- Key.fresh
   let roll = foldr (\w acc -> acc * 4294967296 + toInteger w) 0 (Key.unwrap key)
-  pure (Integer.toInt (mod roll (toInteger (max 1 (Seq.length among)))) >>= (`Seq.lookup` among))
+  pure (Maybe.fromMaybe 0 (Integer.toInt (mod roll (toInteger (max 1 n)))))
+
+-- | The seats' lists as Start deals them (Lobby.planarDealt), each planar
+-- deck shuffled at random from the pool's planes and phenomena.
+planarDealtFor :: Shell -> Lobby.Lobby -> NonEmpty.NonEmpty (Text.Text, Text.Text) -> IO (Either Text.Text (NonEmpty.NonEmpty (Text.Text, Text.Text)))
+planarDealtFor shell current seats = do
+  parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
+  Lobby.planarDealt (Lobby.shuffledBy randomBelow) (Lobby.options current) (Maybe.mapMaybe (either (const Nothing) Lobby.planarCardOf) parsed) seats
 
 -- | Each bot's deck, a bot left to a random one dealt from its
 -- 'Lobby.opponents' holding at least 'Lobby.fewestDealt' cards against
