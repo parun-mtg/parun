@@ -129,6 +129,34 @@
       "turn": 3
     },
     {
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseModes",
+            "offer": {
+              "source": "trigger of $thrasher",
+              "names": [
+                "Destroy target artifact that opponent controls.",
+                "This creature deals 4 damage to each other opponent.",
+                "Exile the top card of your library. You may play it this turn."
+              ],
+              "least": 1,
+              "most": 1,
+              "among": [
+                0,
+                1,
+                2
+              ]
+            }
+          }
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 3
+    },
+    {
       "do": {
         "Answer": {
           "prompt": "ChooseModes",

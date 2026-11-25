@@ -261,7 +261,7 @@
               "source": "trigger of $henrika",
               "names": [
                 "You draw a card and you lose 1 life.",
-                null
+                "Transform Henrika."
               ],
               "least": 1,
               "most": 1,
