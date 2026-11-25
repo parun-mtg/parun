@@ -413,9 +413,9 @@ lobby shell initial said pending = do
     -- they changed since, by link number.
     tellPlaces current told = do
       (named, listed) <- deckColouring shell
-      fmap Map.fromList . Monad.forM [(Lobby.linkNumber invite, Link.MkMatchup (Lobby.placesFor named listed i current) (Lobby.told current)) | (i, invite) <- Map.toList (Lobby.invites current), Lobby.connected invite] $ \(n, matchup) -> do
-        Monad.when (Map.lookup n told /= Just matchup) $ Link.send (Browser.channel (page shell) (build shell) n) matchup
-        pure (n, matchup)
+      fmap Map.fromList . Monad.forM [(Lobby.linkNumber invite, Link.MkMatchup (Lobby.placesFor named listed i current) (Lobby.told current)) | (i, invite) <- Map.toList (Lobby.invites current), Lobby.connected invite] $ \(n, news) -> do
+        Monad.when (Map.lookup n told /= Just news) $ Link.send (Browser.channel (page shell) (build shell) n) news
+        pure (n, news)
     -- Every player is ready: the game starts, each player invited told
     -- their seat, each bot without a deck given one at random.
     startWith current told = do
