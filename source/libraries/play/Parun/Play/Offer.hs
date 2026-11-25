@@ -118,10 +118,12 @@ tagName t
   | t == Text.pack "Declines" = Text.pack "No"
   | Text.all (\c -> Char.isAsciiUpper c || Char.isAsciiLower c) t,
     Text.any Char.isAsciiUpper (Text.drop 1 t) =
-      case Text.uncons (Wording.spaced t) of
-        Just (c, rest) -> Text.cons (Char.toUpper c) rest
-        Nothing -> t
+      capitalised (Wording.spaced t)
   | otherwise = t
+
+-- | A phrase with its first letter upper-case, to open a label.
+capitalised :: Text.Text -> Text.Text
+capitalised t = maybe t (\(c, rest) -> Text.cons (Char.toUpper c) rest) (Text.uncons t)
 
 -- | An option of a listed offer: an object as listedName names it, a
 -- recipient or attack target as recipientName does, declining as None, an
@@ -222,7 +224,7 @@ actionName view action =
         "Ignore" -> Text.pack "Ignore " <> subject <> foldMap (Text.pack "'s " <>) (Protocol.field "abilityName" action >>= textOf)
         -- CR 702.170a: which plot cost is paid.
         "Plot" -> Text.pack "Plot " <> subject <> foldMap (\c -> Text.pack " for " <> candidateName subject c) (Protocol.field "cost" action)
-        kind -> Wording.spaced (Text.pack kind) <> maybe Text.empty (Text.pack " " <>) object
+        kind -> capitalised (Wording.spaced (Text.pack kind)) <> maybe Text.empty (Text.pack " " <>) object
 
 -- | An action as a verb phrase within a sentence: the label's own case bar
 -- its first letter, and an activation by its source alone.
@@ -534,9 +536,7 @@ told view self offer = case offer of
     ]
   _ -> []
   where
-    label key = case Text.uncons (Wording.spaced key) of
-      Just (c, rest) -> Text.cons (Char.toUpper c) rest
-      Nothing -> key
+    label key = capitalised (Wording.spaced key)
     value key reply
       | key == Text.pack "cost" = candidateName self reply
       | key == Text.pack "symbol", Just symbol <- decoded Codec.ManaSymbol.codec reply = Wording.manaCost (ManaCost.MkManaCost [symbol])

@@ -612,6 +612,12 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertBool s (Text.pack "Gone once you pass or end the turn</h3><div class=\"actions\"><button type=\"button\">Play Mountain</button></div><h3 class=\"subhead\">Still yours after you pass</h3><div class=\"actions\"><button type=\"button\">Cast Shock</button>" `Text.isInfixOf` reminder [cast, Action.Play land Nothing]) "CR 305.1: the land play lapses, the instant under the other heading"
     Spec.assertBool s (not (Text.pack "you can still" `Text.isInfixOf` reminder [cast, Action.Play land Nothing])) "the buttons are the reminder: no banner repeats them"
 
+  Spec.it s "an action without a label of its own opens upper-case, like Cast" $ do
+    shock <- S.printingOf s registry "Shock"
+    let (card, gs) = S.addObjectIn Zone.Hand shock S.alice (inMain (Setup.emptyGame S.bothPlayers))
+        page = Html.toText (Question.Web.view (requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass, Action.Suspend card])) Question.Web.blank)
+    Spec.assertBool s (Text.pack "<button type=\"button\">Suspend Shock</button>" `Text.isInfixOf` page) (Text.unpack page)
+
   -- CR 601.3: The Holodeck's and Wish's permissions both reach a card outside
   -- the game, and each option says where its permission opens.
   Spec.it s "CR 400.11 a permission to play from outside the game is labelled by where it opens" $ do
