@@ -380,7 +380,6 @@ lobby shell initial said pending = do
               Lobby.MkStart
                 | not (Lobby.paused current),
                   Map.null (Lobby.invites current),
-                  Lobby.pressable current,
                   Right chosen <- Lobby.settings current,
                   Right mine <- Lobby.startable current -> do
                     others <- dealtFor shell current

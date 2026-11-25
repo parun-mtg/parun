@@ -164,7 +164,7 @@ variants =
   ]
 
 -- | The variant the game is played as: the one chosen at three seats or
--- more, Free-for-All's no team at two (CR 800.1).
+-- more, and Free-for-All at two, a game that is not multiplayer (CR 800.1).
 variantOf :: Lobby -> Variant
 variantOf lobby = if multiplayer (seatCount lobby) then variant (options lobby) else MkFreeForAll
 
@@ -772,7 +772,8 @@ guestsReady :: Lobby -> Bool
 guestsReady = all (\invite -> connected invite && Maybe.isJust (guestDeck invite) && guestReady invite) . invites
 
 -- | The match-up as the player invited to this slot is shown it, each seat
--- with its team where the game has teams (CR 808.1), each deck coloured by its name (`named`) or, a guest's, by its list (`listed`).
+-- with its team where the game has teams (CR 808.1), each deck coloured by
+-- its name (`named`) or, a guest's, by its list (`listed`).
 placesFor :: (Text.Text -> Set.Set Color.Color) -> (Text.Text -> Set.Set Color.Color) -> Int -> Lobby -> [Link.Place]
 placesFor named listed i lobby =
   Link.MkPlace (onTeam 0 (Text.pack "Player 1")) (maybe Link.unchosen (DeckBrowser.label (DeckBrowser.titles (browser lobby))) (mine lobby)) (Just (ready lobby)) False (foldMap named (mine lobby))
