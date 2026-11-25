@@ -115,7 +115,6 @@ import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Facing as Facing
-import qualified Parun.Types.Format as Format
 import qualified Parun.Types.Game as Game.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
@@ -319,7 +318,7 @@ replay :: (Monad m) => Registry.Registry m -> Kept -> Maybe Natural -> Scenario.
 replay registry kept stop scenario = do
   staging <- case Scenario.start scenario of
     Start.FromBoard board -> fmap (fmap (\placed' -> (placed', pure (Staged.state placed')))) (stage registry board)
-    Start.FromDecks format entrants starter -> fmap (fmap (\(seated, matchup) -> (seated, dealt matchup (Staged.state seated)))) (enter registry format entrants starter)
+    Start.FromDecks settings entrants starter -> fmap (fmap (\(seated, matchup) -> (seated, dealt matchup (Staged.state seated)))) (enter registry settings entrants starter)
   let fromDecks = case Scenario.start scenario of
         Start.FromBoard _ -> False
         Start.FromDecks {} -> True
@@ -378,7 +377,7 @@ branch :: (Monad m) => Registry.Registry m -> Natural -> Answerer.Answerer (Aske
 branch registry at onward scenario = do
   staging <- case Scenario.start scenario of
     Start.FromBoard board -> fmap (fmap (\placed' -> (placed', Nothing))) (stage registry board)
-    Start.FromDecks format entrants starter -> fmap (fmap (fmap Just)) (enter registry format entrants starter)
+    Start.FromDecks settings entrants starter -> fmap (fmap (fmap Just)) (enter registry settings entrants starter)
   case staging of
     Left failure -> pure (Left failure)
     Right (board, matchup) ->
@@ -416,12 +415,12 @@ answerBranch registry onward asked = do
     again = answerBranch registry onward asked
 
 -- | CR 103: each entrant seated in seating order, numbered by its place, its
--- deck list read and its graveyard order set (CR 404.3), under `format` (CR
--- 100.2), nothing yet created, the matchup in turn order from the starting
--- player `starter` names, else the first (CR 103.1); Setup.newGame builds
--- the libraries.
-enter :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> NonEmpty.NonEmpty Entrant.Entrant -> Maybe Label.Label -> m (Either Failure.ScenarioFailure (Staged.Staged, NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck)))
-enter registry format entrants starter = do
+-- deck list read and its graveyard order set (CR 404.3), under `settings`'
+-- options and format (CR 800.2, 100.2), nothing yet created, the matchup in
+-- turn order from the starting player `starter` names, else the first (CR
+-- 103.1); Setup.newGame builds the libraries.
+enter :: (Monad m) => Registry.Registry m -> GameSettings.GameSettings -> NonEmpty.NonEmpty Entrant.Entrant -> Maybe Label.Label -> m (Either Failure.ScenarioFailure (Staged.Staged, NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck)))
+enter registry settings entrants starter = do
   let seated = NonEmpty.zip entrants (fmap PlayerId.MkPlayerId (0 NonEmpty.:| [1 ..]))
       ids = Map.fromList (fmap (Bifunctor.first Entrant.name) (NonEmpty.toList seated))
   decks <- traverse (\(entrant, pid) -> fmap (either (Left . Failure.MkInvalidCorpus) (Bifunctor.bimap (Failure.MkUnreadableDeck (Entrant.name entrant) . Text.intercalate (Text.pack "; ") . fmap (DeckList.explain (const Nothing))) ((,) pid) . DeckList.sound)) (DeckList.parse registry (Text.unlines (Entrant.deck entrant)))) seated
@@ -433,7 +432,7 @@ enter registry format entrants starter = do
       matchup <- sequence decks
       let (before, from) = NonEmpty.break ((== first) . fst) matchup
           turnOrder = Maybe.fromMaybe matchup (NonEmpty.nonEmpty (from <> before))
-          base = Setup.gameWith GameSettings.plain {GameSettings.format = format} (fmap fst turnOrder)
+          base = Setup.gameWith settings (fmap fst turnOrder)
           ordered = foldr (\(entrant, pid) -> Game.setGraveyardOrder pid (Entrant.graveyardOrder entrant)) base seated
       pure (Staged.MkStaged ordered ids Map.empty, turnOrder)
 

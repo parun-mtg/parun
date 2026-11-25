@@ -25,7 +25,6 @@ import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Deck as Deck
-import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Generator as Generator
@@ -74,15 +73,16 @@ remembered stored kept live = Answerer.MkAnswerer $ \asked -> case Protocol.requ
         underneath (kept (Protocol.encodeAnswer (Asked.prompt asked) answer))
         pure answer
 
--- | A plain two-player game over the card reference `registry`
--- ('consulting'), under `format` (CR 100.2), from setup to its result; the
--- head of the matchup plays first, and each seat starts at its graveyard order
--- in `orders`, under the host's `limits` (Driver.match). Left is why play
--- stopped before the end.
--- RecordSpec's Yorion, Sky Nomad case proves the format reaches the game.
-run :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Limits.Limits -> [Observer.Observer (Play m)] -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)) -> Generator.Generator -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState))
-run registry format limits observers seats generator orders matchup =
-  playing generator (Driver.match observers (consulting registry seats) GameSettings.plain {GameSettings.format = format} limits orders matchup)
+-- | A game over the card reference `registry` ('consulting'), under
+-- `settings`' options and format (CR 800.2, 100.2), from setup to its result;
+-- the head of the matchup plays first, and each seat starts at its graveyard
+-- order in `orders`, under the host's `limits` (Driver.match). Left is why
+-- play stopped before the end.
+-- RecordSpec's Yorion, Sky Nomad case proves the format reaches the game,
+-- and its ante case the options.
+run :: (Monad m) => Registry.Registry m -> GameSettings.GameSettings -> Limits.Limits -> [Observer.Observer (Play m)] -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)) -> Generator.Generator -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState))
+run registry settings limits observers seats generator orders matchup =
+  playing generator (Driver.match observers (consulting registry seats) settings limits orders matchup)
 
 -- | Play from the generator, in the base monad: Left is why it stopped first.
 playing :: (Monad m) => Generator.Generator -> Play m a -> m (Either Text.Text a)

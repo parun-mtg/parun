@@ -11,11 +11,15 @@ import Numeric.Natural (Natural)
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.AttackOption as AttackOption
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Difficulty as Difficulty
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayOptions as PlayOptions
+import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Diff as Diff
@@ -162,6 +166,29 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertBool s (offers lobby) "a bot seated"
       Spec.assertBool s (not (offers invited)) "every seat invited"
       Spec.assertBool s (not (offers alone)) "no seat but yours"
+
+    Spec.it s "CR 800.2 sets the game's options, CR 806.2's at three seats or more only" $ do
+      let set event value = Lobby.update event (Text.pack value)
+          three = Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty (Lobby.update (Lobby.MkAdd Lobby.MkBot) Text.empty lobby)
+          chosen l = set Lobby.MkRangeOfInfluence "1" (set Lobby.MkAttackOption "left" (set Lobby.MkSinglePlanarDeck "" (set Lobby.MkAnte "" l)))
+          page = Lobby.view (chosen three)
+          handled prefix l = Html.search (Text.isPrefixOf (Text.pack prefix) . Html.toText) (Lobby.view l) >>= \path -> Html.handler (Text.pack "change") path (Lobby.view l)
+          everyOne n = RangeOfInfluence.MkRangeOfInfluence (Map.fromList [(PlayerId.MkPlayerId k, n) | k <- [0 .. 2]])
+      Spec.assertEqWith s "none unless told otherwise" (Lobby.settings three) GameSettings.plain
+      Spec.assertEqWith
+        s
+        "CR 407.1, 901.15, 806.2b, 806.2a: three seats"
+        (Lobby.settings (chosen three))
+        GameSettings.plain {GameSettings.ante = True, GameSettings.singlePlanarDeck = True, GameSettings.attackOption = Just AttackOption.Leftward, GameSettings.rangeOfInfluence = everyOne 1}
+      Spec.assertEqWith s "CR 800.1: two seats choose no multiplayer option" (Lobby.settings (chosen lobby)) GameSettings.plain {GameSettings.ante = True, GameSettings.singlePlanarDeck = True}
+      Spec.assertEqWith s "a switch toggles off" (Lobby.settings (set Lobby.MkAnte "" (chosen three))) (Lobby.settings (chosen three)) {GameSettings.ante = False}
+      Spec.assertEqWith s "unknown" (set Lobby.MkAttackOption "sideways" (chosen three)) (chosen three)
+      Spec.assertEqWith s "unlimited again" (GameSettings.rangeOfInfluence (Lobby.settings (set Lobby.MkRangeOfInfluence "unlimited" (chosen three)))) RangeOfInfluence.unlimited
+      Spec.assertEqWith s "each switch and menu" (fmap (`handled` three) ["<input id=\"option-ante\"", "<input id=\"option-single-planar-deck\"", "<select class=\"deck-menu\" id=\"option-attack\"", "<select class=\"deck-menu\" id=\"option-range\""]) [Just Lobby.MkAnte, Just Lobby.MkSinglePlanarDeck, Just Lobby.MkAttackOption, Just Lobby.MkRangeOfInfluence]
+      Spec.assertEqWith s "no attack option at two seats" (handled "<select class=\"deck-menu\" id=\"option-attack\"" lobby) Nothing
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"left\" selected=\"\">Attack left</option>") (Html.toText page)) "the attack option chosen in its menu"
+      Spec.assertBool s (Text.isInfixOf (Text.pack "id=\"option-ante\" type=\"checkbox\" aria-describedby=\"option-ante-note\" checked=\"\"") (Html.toText page)) "ante checked"
+      Spec.assertEqWith s "a change clears ready" (Lobby.ready (set Lobby.MkAnte "" (Lobby.update Lobby.MkReady Text.empty lobby))) False
 
     Spec.it s "shows the saved decks apart from the shipped" $ do
       let holding = Lobby.withDecks (Seq.fromList [a, saved]) Map.empty Map.empty Lobby.new

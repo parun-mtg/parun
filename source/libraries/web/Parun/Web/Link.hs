@@ -14,6 +14,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.Color as Codec.Color
+import qualified Parun.Codec.GameSettings as Codec.GameSettings
 import qualified Parun.Codec.PlayerId as Codec.PlayerId
 import qualified Parun.Codec.PlayerView as Codec.PlayerView
 import qualified Parun.Codec.Reply as Codec.Reply
@@ -31,6 +32,7 @@ import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Difficulty as Difficulty
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Observer as Observer
@@ -305,13 +307,16 @@ guest local message = case message of
 -- reload (Protocol.resumed): its seed, each seat's deck as a label and its
 -- list's text (the host's first), the bots' slots players were invited to,
 -- those played on the host's screen and how, how each bot plays by its slot
--- (Parun.Play.Opponent; Lobby.botAt), and every reply so far.
+-- (Parun.Play.Opponent; Lobby.botAt), the options the game is played with
+-- (CR 800.2) but its format, which its lists' headers name, and every reply
+-- so far.
 data Saved = MkSaved
   { seed :: Key.Type.Key,
     seats :: NonEmpty.NonEmpty (Text.Text, Text.Text),
     invited :: [Int],
     locals :: Map.Map Int Sitting,
     bots :: Map.Map Int (Difficulty.Difficulty, Persona.Persona),
+    settings :: GameSettings.GameSettings,
     replies :: [R.Reply]
   }
   deriving (Eq, Show)
@@ -341,7 +346,8 @@ saved build game =
             Value.pair "invited" (Value.array (fmap (Value.integer . toInteger) (invited game))),
             Value.pair "locals" (slots MkHandedOver),
             Value.pair "yours" (slots MkYours),
-            Value.pair "bots" (Value.array [Value.object [Value.pair "slot" (Value.integer (toInteger i)), Value.pair "difficulty" (Value.string (fst (Opponent.difficultyName level))), Value.pair "persona" (Value.string (fst (Opponent.personaName style)))] | (i, (level, style)) <- Map.toList (bots game)])
+            Value.pair "bots" (Value.array [Value.object [Value.pair "slot" (Value.integer (toInteger i)), Value.pair "difficulty" (Value.string (fst (Opponent.difficultyName level))), Value.pair "persona" (Value.string (fst (Opponent.personaName style)))] | (i, (level, style)) <- Map.toList (bots game)]),
+            Value.pair "settings" (Codec.encode Codec.GameSettings.codec (settings game))
           ]
    in Text.intercalate (Text.pack "\n") (Common.render header : fmap savedReply (replies game))
 
@@ -367,8 +373,9 @@ unsaved build kept = case Text.lines kept of
     yours <- slotsAt "yours"
     let here = Map.fromList (fmap (\i -> (i, MkHandedOver)) handed <> fmap (\i -> (i, MkYours)) yours)
     styles <- Common.field "bots" pairs >>= Common.asArray >>= traverse styleOf
+    options <- Common.field "settings" pairs >>= Codec.decode Codec.GameSettings.codec
     answers <- traverse (Common.parse Monad.>=> Codec.Reply.fromValue) (filter (not . Text.null) rest)
-    pure (MkSaved key decks slots here (Map.fromList styles) answers)
+    pure (MkSaved key decks slots here (Map.fromList styles) options answers)
   where
     named :: (Bounded a, Enum a) => String -> (a -> (String, String)) -> Text.Text -> Either Text.Text a
     named what nameOf name = maybe (Left (Text.pack ("not " <> what <> ": ") <> name)) Right (Opponent.named nameOf (Text.unpack name))

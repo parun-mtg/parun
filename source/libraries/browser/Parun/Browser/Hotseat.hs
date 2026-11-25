@@ -31,6 +31,7 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Difficulty as Difficulty
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.LegalityTable as LegalityTable
@@ -76,7 +77,8 @@ instance Exception.Exception Abandoned
 -- in `locals` on the page as the player's is, handed the screen first
 -- (Web.Question.handOff) unless the player plays it too (Link.MkYours),
 -- and every other by the search bot at the difficulty and persona its slot
--- has in `bots` (Lobby.botAt), the page live while a remote seat decides
+-- has in `bots` (Lobby.botAt), with `settings`' options (CR 800.2) under the
+-- format the lists' headers name, the page live while a remote seat decides
 -- (awaiting) or a search bot does (breathing); leaving for the home
 -- screen through `leave`. The game picks up after the replies in
 -- `stored`, each made again (Protocol.resumed) and each bot's given back
@@ -90,15 +92,15 @@ instance Exception.Exception Abandoned
 -- loses to a reload: how it came out, or why it could not start, taking
 -- no seat's side where another person plays at this screen
 -- (Link.MkHandedOver).
-game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (IO Ending.Seen -> Protocol.Exchange IO) -> Map.Map PlayerId.PlayerId Link.Sitting -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> (PlayerId.PlayerId -> GameState.GameState -> Natural -> IO ()) -> ((PlayerId.PlayerId -> Ending.Ending) -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
-game page registry cards table levelRef bots seats remotes locals seed stored kept decides tell leave = do
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> GameSettings.GameSettings -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (IO Ending.Seen -> Protocol.Exchange IO) -> Map.Map PlayerId.PlayerId Link.Sitting -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> (PlayerId.PlayerId -> GameState.GameState -> Natural -> IO ()) -> ((PlayerId.PlayerId -> Ending.Ending) -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
+game page registry cards table levelRef bots settings seats remotes locals seed stored kept decides tell leave = do
   seatRef <- IORef.newIORef . (\s -> s {yours = Set.insert player (Map.keysSet (Map.filter (== Link.MkYours) locals)), handed = Link.MkHandedOver `elem` locals}) . newSeat player Ending.unseen =<< IORef.readIORef levelRef
   keepingLevel levelRef seatRef . Exception.handle (\MkAbandonedGame -> pure (Right Ending.MkAbandoned)) $ do
     let listed = fmap (uncurry (Command.loadText registry)) seats
     case sequenceA listed of
       Left _ -> pure (Left (foldMap (Either.fromLeft []) listed))
       Right lists -> do
-        settled <- Command.settle Nothing (zip (fmap fst (NonEmpty.toList seats)) (NonEmpty.toList lists))
+        settled <- Command.settle settings Nothing (zip (fmap fst (NonEmpty.toList seats)) (NonEmpty.toList lists))
         prior <- either (pure . Left) (\format -> Command.pooled table format cards) settled
         case (,) <$> settled <*> prior of
           Left problems -> pure (Left problems)
@@ -133,7 +135,7 @@ game page registry cards table levelRef bots seats remotes locals seed stored ke
                   IORef.writeIORef breathRef (if bot then Just (MkBreath seat asked False) else Nothing)
                   Monad.unless bot (IORef.writeIORef botReading Nothing)
                   decides seat gs depth
-            (outcome, recorded) <- Command.game (Text.pack "the web client") (Protocol.resumed next replayed kept (Protocol.bySeat elsewhere here)) next kept [Link.deciding movedOn] (breathing lookUp page seatRef leave botReading breathRef) (Lobby.playOptions bots (Natural.length seats) (Map.keysSet remotes <> Map.keysSet locals)) pooled registry format (fmap DeckList.deck lists) seed
+            (outcome, recorded) <- Command.game (Text.pack "the web client") (Protocol.resumed next replayed kept (Protocol.bySeat elsewhere here)) next kept [Link.deciding movedOn] (breathing lookUp page seatRef leave botReading breathRef) (Lobby.playOptions bots (Natural.length seats) (Map.keysSet remotes <> Map.keysSet locals)) pooled registry settings {GameSettings.format = format} (fmap DeckList.deck lists) seed
             finished <- IORef.readIORef seatRef
             sent <- IORef.readIORef guestsRef
             let said reader = either (\reason -> [Text.pack "The game stopped: " <> stopped reason <> Text.pack "."]) (\(result, gs) -> Wording.result reader result : Wording.departures reader gs) outcome

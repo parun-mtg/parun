@@ -52,6 +52,7 @@ import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Features as Features
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.KickerDecision as KickerDecision
 import qualified Parun.Types.Label as Label
@@ -517,7 +518,7 @@ capturingAmong s decks seeds what found = go seeds
     go remaining = case remaining of
       [] -> Spec.assertFailure s ("no " <> what <> " from turn 3 on")
       seed : rest -> do
-        (_, taken) <- State.runStateT (Game.run lifted Nothing Limits.standard [] (Map.fromList [(Command.idOf 1, capture), (Command.idOf 2, capture)]) (S.seeded seed) Map.empty (Command.seated 1 decks)) Nothing
+        (_, taken) <- State.runStateT (Game.run lifted GameSettings.plain Limits.standard [] (Map.fromList [(Command.idOf 1, capture), (Command.idOf 2, capture)]) (S.seeded seed) Map.empty (Command.seated 1 decks)) Nothing
         maybe (go rest) pure taken
     lifted :: Registry.Registry (State.StateT (Maybe (GameState.GameState, x)) m)
     lifted = Registry.hoist Trans.lift (S.fixtureRegistry [])
@@ -568,7 +569,7 @@ fewerBears s registry seed taken kept = do
 afterPlay :: forall m n. (Monad m) => Spec.Spec m n -> Registry.Registry m -> Word.Word32 -> (GameState.GameState -> Action.Action -> Bool) -> m (GameState.GameState, [Search.Watched])
 afterPlay s registry seed taken = do
   decks <- fmap snd <$> BotSpec.bears s registry
-  (_, (_, found)) <- State.runStateT (Game.run lifted Nothing Limits.standard [Search.watching (\f -> State.modify' (\(plays, found) -> let kept = f plays in kept `seq` (kept, found)))] (Map.fromList [(Command.idOf 1, capture), (Command.idOf 2, capture)]) (S.seeded seed) Map.empty (Command.seated 1 decks)) ([], Nothing)
+  (_, (_, found)) <- State.runStateT (Game.run lifted GameSettings.plain Limits.standard [Search.watching (\f -> State.modify' (\(plays, found) -> let kept = f plays in kept `seq` (kept, found)))] (Map.fromList [(Command.idOf 1, capture), (Command.idOf 2, capture)]) (S.seeded seed) Map.empty (Command.seated 1 decks)) ([], Nothing)
   maybe (Spec.assertFailure s "no decision after an informative play") pure found
   where
     lifted :: Registry.Registry (State.StateT ([Search.Watched], Maybe (GameState.GameState, [Search.Watched])) m)
@@ -600,7 +601,7 @@ afterPlay s registry seed taken = do
 recalling :: forall m n. (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (GameState.GameState, Map.Map PlayerId.PlayerId Search.Memory)
 recalling s registry = do
   decks <- fmap snd <$> BotSpec.bears s registry
-  (_, (_, taken)) <- State.runStateT (Game.run lifted Nothing Limits.standard [Search.remembering (\f -> State.modify' (\(memories, taken) -> let kept = f memories in kept `seq` (kept, taken)))] (Map.fromList [(Command.idOf 1, capture), (Command.idOf 2, capture)]) (S.seeded 5) Map.empty (Command.seated 1 decks)) (Map.empty, Nothing)
+  (_, (_, taken)) <- State.runStateT (Game.run lifted GameSettings.plain Limits.standard [Search.remembering (\f -> State.modify' (\(memories, taken) -> let kept = f memories in kept `seq` (kept, taken)))] (Map.fromList [(Command.idOf 1, capture), (Command.idOf 2, capture)]) (S.seeded 5) Map.empty (Command.seated 1 decks)) (Map.empty, Nothing)
   maybe (Spec.assertFailure s "no decision from turn 3 on") pure taken
   where
     lifted :: Registry.Registry (State.StateT (Map.Map PlayerId.PlayerId Search.Memory, Maybe (GameState.GameState, Map.Map PlayerId.PlayerId Search.Memory)) m)

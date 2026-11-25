@@ -28,6 +28,7 @@ import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Difficulty as Difficulty
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.Persona as Persona
@@ -231,7 +232,7 @@ onOneScreen s registry = do
   matchup <- BotSpec.bears s registry
   let options = Lobby.playOptions (Map.singleton 0 (Difficulty.MkEasy, Persona.MkBalanced)) 2 (Set.singleton S.bob)
       onScreen request = State.modify' (request :) >> pure (Just (Right (answer request)))
-  (outcome, requests) <- State.runStateT (Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) onScreen (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept (pure ()) options Search.known n) | n <- [1, 2]]) (S.seeded 1) Map.empty matchup) []
+  (outcome, requests) <- State.runStateT (Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) onScreen (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept (pure ()) options Search.known n) | n <- [1, 2]]) (S.seeded 1) Map.empty matchup) []
   pure (outcome, reverse requests, options)
 
 -- The requests of these, in order, before which the screen is handed
@@ -274,7 +275,7 @@ build = Text.pack "test"
 -- guest told whose decision the game waits on. A guest whose channel drops
 -- rejoins the first time, and not again.
 hosted :: (Monad m) => [PlayerId.PlayerId] -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Wire m (Either Text.Text (Result.Result, GameState.GameState))
-hosted guests matchup = Game.run (S.fixtureRegistry []) Nothing Limits.standard [Link.deciding decides] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.seeing (\shown -> State.modify' (\w -> w {hostSeen = seenBy shown (hostSeen w)})) (Link.remote (rejoined g) played (Map.findWithDefault Ending.unseen g . hostSeen <$> State.get) (channel g))) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+hosted guests matchup = Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [Link.deciding decides] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.seeing (\shown -> State.modify' (\w -> w {hostSeen = seenBy shown (hostSeen w)})) (Link.remote (rejoined g) played (Map.findWithDefault Ending.unseen g . hostSeen <$> State.get) (channel g))) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
   where
     decides seat gs depth = do
       let owing g = if g == seat then Nothing else Just (seat, (PlayerView.Engine.viewFor g gs) {PlayerView.priority = Nothing}, depth)
@@ -311,14 +312,14 @@ data Resumed = MkResumed
   }
 
 resumedGame :: (Monad m) => NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Resumed m (Either Text.Text (Result.Result, GameState.GameState))
-resumedGame matchup = Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) resuming) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+resumedGame matchup = Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) resuming) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
 
 -- resumedGame with Bob's seat the search bot ('searching'), its answers
 -- stored and kept alongside the page's (Game.remembered).
 againstSearch :: (Monad m) => NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Resumed m (Either Text.Text (Result.Result, GameState.GameState))
 againstSearch matchup =
   let seat pid = if pid == S.bob then Game.remembered nextStored (\reply -> State.modify' (\r -> r {kept = reply : kept r})) searching else Game.wired (S.fixtureRegistry []) resuming
-   in Game.run (S.fixtureRegistry []) Nothing Limits.standard [] (Map.fromList [(pid, seat pid) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+   in Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [] (Map.fromList [(pid, seat pid) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
 
 -- The search bot, at 2 samples cut off after 40 prompts, noting each search.
 searching :: (Monad m) => Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play (State.StateT Resumed m))
