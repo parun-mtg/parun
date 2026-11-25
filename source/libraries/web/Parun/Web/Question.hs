@@ -589,8 +589,9 @@ cues request chosen focused =
               (_, _, Just gi, _) -> toggled gi
               (_, _, _, Just source) -> Card.MkCue (["choosable"] <> ["auto-next" | auto request == Just source]) (MkAnswer source) Nothing
               _ -> Card.MkCue ["playable" | Set.member oid acting] (MkRead oid) Nothing
-      -- Every tile previews its sheet under a resting pointer.
-      previewing o = (objectCue o) {Card.peek = Just (MkPeek (ObjectView.object o), MkUnpeek)}
+      -- Every tile previews its sheet under a resting pointer, and opens it
+      -- on a long press, which leaves a pick it toggles unmade.
+      previewing o = (objectCue o) {Card.peek = Just (MkPeek (ObjectView.object o), MkUnpeek, MkRead (ObjectView.object o))}
    in Board.MkMarks previewing (\pid -> fmap toggled (Map.lookup pid players))
 
 withMark :: Card.Cue msg -> [String] -> Card.Cue msg
@@ -1368,7 +1369,7 @@ looking shown oids answer =
     "div"
     ["seen", "among"]
     []
-    [ Card.tile shown (Card.MkCue (["choosable" | Maybe.isJust (answer oid)]) (maybe (MkRead oid) MkAnswer (answer oid)) (Just (MkPeek oid, MkUnpeek))) o
+    [ Card.tile shown (Card.MkCue (["choosable" | Maybe.isJust (answer oid)]) (maybe (MkRead oid) MkAnswer (answer oid)) (Just (MkPeek oid, MkUnpeek, MkRead oid))) o
     | oid <- oids,
       Just o <- [Wording.recalled shown oid]
     ]

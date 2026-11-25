@@ -62,9 +62,11 @@ data Cue msg = MkCue
   { -- | Extra classes: "playable", "choosable", "chosen".
     marks :: [String],
     tap :: msg,
-    -- | What a pointer resting on the tile sends, and what leaving it does
-    -- (page.js's "peek" and "unpeek"), where the tile previews its sheet.
-    peek :: Maybe (msg, msg)
+    -- | What a pointer resting on the tile sends, what leaving it does, and
+    -- what a long press or a right click does (page.js's "peek", "unpeek"
+    -- and "read"), where the tile previews its sheet and opens it without
+    -- what a tap does.
+    peek :: Maybe (msg, msg, msg)
   }
   deriving (Eq, Show)
 
@@ -184,9 +186,10 @@ keywords o = case ObjectView.characteristics o of
 tileKeywords :: ObjectView.ObjectView -> [Text.Text]
 tileKeywords = filter (\t -> Text.length t <= 18 && not (Text.any (== '{') t)) . keywords
 
--- | The handlers a previewing tile has.
+-- | The handlers a previewing tile has, and the mark (data-read) telling
+-- page.js its long press reads it.
 peeking :: Cue msg -> [Attribute.Attribute msg]
-peeking cue = foldMap (\(on, off) -> [Element.on "peek" on, Element.on "unpeek" off]) (peek cue)
+peeking cue = foldMap (\(on, off, open) -> [Element.on "peek" on, Element.on "unpeek" off, Element.on "read" open, Element.attr "data-read" Text.empty]) (peek cue)
 
 -- | The tile read aloud: its name, type and keywords, power and toughness,
 -- status, and what tapping it does.

@@ -3097,6 +3097,14 @@ details.pile[open] {
 .c-land { --c: var(--band-land); --cbg: var(--card-land); --cline: var(--card-land-line); }
 .c-none { --c: var(--band-none); --cbg: var(--card-none); --cline: var(--card-none-line); }
 
+/* A long press reads a tile (page.js's "read"), so it neither selects the
+   tile's text nor opens the browser's callout. */
+#app [data-read] {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 #app button.card {
   appearance: none;
   position: relative;
