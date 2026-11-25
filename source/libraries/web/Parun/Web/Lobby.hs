@@ -7,9 +7,9 @@
 -- WHAT IS NOT IMPLEMENTED:
 --
 --   * Deploying creatures (CR 804) (#9794).
---   * The Emperor and Grand Melee variants (CR 807, 809) (#9788).
 module Parun.Web.Lobby where
 
+import qualified Control.Applicative as Applicative
 import qualified Control.Monad as Monad
 import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
@@ -27,6 +27,8 @@ import Numeric.Natural (Natural)
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.AlternatingTeams as AlternatingTeams
 import qualified Parun.Engine.Card as EngineCard
+import qualified Parun.Engine.Emperor as Emperor
+import qualified Parun.Engine.GrandMelee as GrandMelee
 import qualified Parun.Engine.RuleFamily as RuleFamily.Engine
 import qualified Parun.Engine.Seating as Seating
 import qualified Parun.Engine.Setup as Setup
@@ -42,6 +44,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Difficulty as Difficulty
+import qualified Parun.Types.Emperors as Emperors
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
@@ -108,6 +111,9 @@ data Lobby = MkLobby
     -- | The team each seat chose (CR 808.1), by its place at the table,
     -- yours first; 'defaultTeam' in a place absent ('teamAt').
     teams :: Map.Map Int Natural,
+    -- | The place at the table each team chose for its emperor (CR 809.2),
+    -- yours first, by team; 'emperorOf' where absent.
+    emperors :: Map.Map Natural Int,
     -- | Why Start last refused the seats' lists ('planarDealt',
     -- 'schemeDealt'), until the match-up changes.
     refusal :: Maybe Text.Text
@@ -155,6 +161,10 @@ data Variant
     MkTwoHeadedGiant
   | -- | CR 811.
     MkAlternatingTeams
+  | -- | CR 809.
+    MkEmperor
+  | -- | CR 807.
+    MkGrandMelee
   deriving (Eq, Show)
 
 -- | The variants a game may choose, each with its value and its label.
@@ -163,7 +173,9 @@ variants =
   [ (MkFreeForAll, ("free-for-all", "Free-for-All")),
     (MkTeamVsTeam, ("team-vs-team", "Team vs. Team")),
     (MkTwoHeadedGiant, ("two-headed-giant", "Two-Headed Giant")),
-    (MkAlternatingTeams, ("alternating-teams", "Alternating Teams"))
+    (MkAlternatingTeams, ("alternating-teams", "Alternating Teams")),
+    (MkEmperor, ("emperor", "Emperor")),
+    (MkGrandMelee, ("grand-melee", "Grand Melee"))
   ]
 
 -- | The variant the game is played as: the one chosen at three seats or
@@ -178,9 +190,9 @@ archenemyGame :: Lobby -> Bool
 archenemyGame = Maybe.isJust . archenemy . options
 
 -- | Whether the game is played between teams (CR 808.1), so each seat
--- chooses one.
+-- chooses one: every variant but Free-for-All and Grand Melee (CR 807.1).
 teamed :: Lobby -> Bool
-teamed lobby = variantOf lobby /= MkFreeForAll
+teamed lobby = variantOf lobby `notElem` [MkFreeForAll, MkGrandMelee]
 
 -- | How many teams a seat may choose among: CR 810.1's two, else as many
 -- as there are seats.
@@ -189,17 +201,41 @@ teamChoices lobby = if variantOf lobby == MkTwoHeadedGiant then 2 else seatCount
 
 -- | The team a seat at this place at the table is on until it chooses, of
 -- so many: the table halved, yours and the seats after it first, a team
--- sitting together (CR 808.2, 810.3); or, in Alternating Teams, the teams
--- taking turns round the table (CR 811.3), two where the table splits
--- evenly and one seat each otherwise.
+-- sitting together (CR 808.2, 810.3), or in Emperor split into teams of
+-- three where it seats two or more (CR 809.1); or, in Alternating Teams,
+-- the teams taking turns round the table (CR 811.3), two where the table
+-- splits evenly and one seat each otherwise.
 defaultTeam :: Variant -> Natural -> Int -> Natural
 defaultTeam variant' count place = case variant' of
   MkAlternatingTeams -> Int.toNaturalSaturating place `mod` (if even count then 2 else count)
+  MkEmperor -> Int.toNaturalSaturating place * max 2 (count `div` 3) `div` max 1 count
   _ -> Int.toNaturalSaturating place * 2 `div` max 1 count
 
 -- | The team the seat at this place at the table is on, yours first.
 teamAt :: Lobby -> Int -> Natural
 teamAt lobby place = Map.findWithDefault (defaultTeam (variantOf lobby) (seatCount lobby) place) place (teams lobby)
+
+-- | The places at the table on this team, yours first.
+membersOf :: Lobby -> Natural -> [Int]
+membersOf lobby team = filter ((== team) . teamAt lobby) [0 .. Natural.toIntSaturating (seatCount lobby) - 1]
+
+-- | The place at the table of this team's emperor (CR 809.2): the one it
+-- chose while that seat is still on it, else its middle seat, the later of
+-- the two for a team of even size; none for a team nobody is on.
+emperorOf :: Lobby -> Natural -> Maybe Int
+emperorOf lobby team =
+  let members = membersOf lobby team
+   in Monad.mfilter (`elem` members) (Map.lookup team (emperors lobby)) Applicative.<|> Maybe.listToMaybe (drop (length members `div` 2) members)
+
+-- | The teams some seat is on, in order.
+teamsSeated :: Lobby -> [Natural]
+teamsSeated lobby = ListUtils.nubOrd (List.sort (fmap (teamAt lobby) [0 .. Natural.toIntSaturating (seatCount lobby) - 1]))
+
+-- | Each team's emperor (CR 809.2), none outside the Emperor variant.
+seatEmperors :: Lobby -> Emperors.Emperors
+seatEmperors lobby
+  | variantOf lobby == MkEmperor = Emperors.MkEmperors (Map.fromList [(TeamId.MkTeamId team, Command.idOf (Int.toNaturalSaturating place + 1)) | team <- teamsSeated lobby, Just place <- [emperorOf lobby team]])
+  | otherwise = Emperors.none
 
 -- | Each seat's team (CR 808.1), none where the game has no teams.
 seatTeams :: Lobby -> Teams.Teams
@@ -228,10 +264,11 @@ multiplayer count = count >= 3
 
 -- | Whether the game chooses CR 806.2's attack option and range of
 -- influence: at three seats or more, but in Two-Headed Giant, whose teams
--- attack as CR 805.10 has it, and in an Archenemy game, which uses no
--- option but CR 904.2's.
+-- attack as CR 805.10 has it, in Emperor and Grand Melee, which use their
+-- own (CR 809.3, 807.2), and in an Archenemy game, which uses no option but
+-- CR 904.2's.
 chosesAttacks :: Lobby -> Bool
-chosesAttacks lobby = multiplayer (seatCount lobby) && variantOf lobby /= MkTwoHeadedGiant && not (archenemyGame lobby)
+chosesAttacks lobby = multiplayer (seatCount lobby) && variantOf lobby `notElem` [MkTwoHeadedGiant, MkEmperor, MkGrandMelee] && not (archenemyGame lobby)
 
 -- | How many seats the game has: yours and each other.
 seatCount :: Lobby -> Natural
@@ -243,7 +280,9 @@ seatCount lobby = 1 + Natural.length (theirs lobby)
 -- variant's over each seat's team. Or why the table can't play the variant:
 -- a seating Parun.Engine.Seating.misseated refuses (CR 808.2, 810.3), fewer
 -- than two teams (CR 808.1), Two-Headed Giant's two teams of two (CR 810.1),
--- or what Parun.Engine.AlternatingTeams.setUp refuses (CR 811.1, 811.3). An
+-- what Parun.Engine.AlternatingTeams.setUp refuses (CR 811.1, 811.3), or
+-- what Parun.Engine.Emperor.setUp refuses (CR 809.2, 809.6, 809.6a). Grand
+-- Melee's options are Parun.Engine.GrandMelee.setUp's (CR 807.2). An
 -- Archenemy game's teams and options are Parun.Engine.Archenemy.setUp's,
 -- which the archenemy's scheme deck turns on; it needs a seat against the
 -- archenemy (CR 904.2).
@@ -278,6 +317,10 @@ settings lobby =
             | sizes /= [2, 2] -> Left "Two-Headed Giant is two teams of two: four seats, two on each team."
             | otherwise -> together' plain {GameSettings.teams = teams', GameSettings.twoHeadedGiant = True, GameSettings.sharedTeamTurns = True, GameSettings.sharedTeamLife = True}
           MkAlternatingTeams -> maybe (Left "Alternating Teams is teams of equal size, no one beside a teammate.") (Right . MatchScope.settings . GameState.match) (AlternatingTeams.setUp teams' (Setup.gameWith free seats))
+          MkEmperor
+            | length sizes < 2 -> Left "Put the seats on two teams or more."
+            | otherwise -> maybe (Left "Emperor is teams of equal size, each sitting together with its emperor in the middle, no emperor within another's reach.") (Right . MatchScope.settings . GameState.match) (Emperor.setUp teams' (seatEmperors lobby) (Setup.gameWith plain seats))
+          MkGrandMelee -> Right (MatchScope.settings (GameState.match (GrandMelee.setUp (Setup.gameWith plain seats))))
 
 -- | A slot a player from another browser takes.
 data Invite = MkInvite
@@ -396,6 +439,9 @@ data Event
   | -- | Puts the seat at this place at the table, yours first, on the team
     -- whose number is chosen, from zero.
     MkTeam Int
+  | -- | Makes the seat at the place at the table whose number is chosen,
+    -- yours first, from zero, this team's emperor (CR 809.2).
+    MkEmperorSeat Natural
   deriving (Eq, Show)
 
 -- | A lobby whose decks are still to read, nothing chosen yet, your seat
@@ -417,6 +463,7 @@ new =
       abandoning = Nothing,
       options = noOptions,
       teams = Map.empty,
+      emperors = Map.empty,
       refusal = Nothing
     }
 
@@ -461,9 +508,11 @@ deleted name lobby =
 withDecks :: Seq.Seq Text.Text -> Map.Map Text.Text Text.Text -> Map.Map Text.Text Text.Text -> Lobby -> Lobby
 withDecks names named titled = browsed (DeckBrowser.withDecks names named titled)
 
--- | The most seats a game has besides yours: a table of four.
+-- | The most seats a game has besides yours: a table of twelve, room for
+-- Grand Melee's ten or more (CR 807.1) and four Emperor teams of three
+-- (CR 809.1).
 mostOthers :: Int
-mostOthers = 3
+mostOthers = 11
 
 -- | Of so many seats, the player's (`you`) and each in `people` speak the
 -- line protocol; the search bot plays every other, at the difficulty and
@@ -746,6 +795,7 @@ updated event typed lobby = case event of
                 bots = Map.mapKeys moved (Map.delete i (bots lobby)),
                 -- Yours is the table's first place, before each in 'theirs'.
                 teams = Map.mapKeys placed (Map.delete (i + 1) (teams lobby)),
+                emperors = placed <$> Map.filter (/= i + 1) (emperors lobby),
                 -- The archenemy unseated, yours is the archenemy's seat.
                 options = (options lobby) {archenemy = (\place -> if place == i + 1 then 0 else placed place) <$> archenemy (options lobby)}
               }
@@ -771,9 +821,12 @@ updated event typed lobby = case event of
   MkAttackOption -> maybe lobby (\a -> optioned (\o -> o {attackOption = a})) (valued attackOptions)
   MkRangeOfInfluence -> maybe lobby (\r -> optioned (\o -> o {rangeOfInfluence = r})) (valued ranges)
   MkClock -> maybe lobby (\c -> optioned (\o -> o {clock = c})) (valued Clock.choices)
-  MkVariant -> maybe lobby (\v -> (optioned (\o -> o {variant = v})) {teams = Map.empty}) (valued variants)
+  MkVariant -> maybe lobby (\v -> (optioned (\o -> o {variant = v})) {teams = Map.empty, emperors = Map.empty}) (valued variants)
   MkTeam place
     | place >= 0 && Int.toNaturalSaturating place < seatCount lobby, Just n <- Read.readMaybe (Text.unpack typed), Just team <- Integer.toNatural n, team < teamChoices lobby -> lobby {teams = Map.insert place team (teams lobby)}
+    | otherwise -> lobby
+  MkEmperorSeat team
+    | variantOf lobby == MkEmperor, Just place <- Read.readMaybe (Text.unpack typed), place `elem` membersOf lobby team -> lobby {emperors = Map.insert team place (emperors lobby)}
     | otherwise -> lobby
   where
     optioned f = lobby {options = f (options lobby)}
@@ -809,7 +862,7 @@ settled before after
   | matchupOf before == matchupOf after = after
   | otherwise = (unready after) {refusal = Nothing}
   where
-    matchupOf l = (mine l, theirs l, locals l, options l, teams l, fmap (\invite -> (connected invite, fmap fst (guestDeck invite), fmap snd (guestDeck invite))) (invites l))
+    matchupOf l = (mine l, theirs l, locals l, options l, teams l, emperors l, fmap (\invite -> (connected invite, fmap fst (guestDeck invite), fmap snd (guestDeck invite))) (invites l))
 
 -- | The lobby with every ready flag cleared.
 unready :: Lobby -> Lobby
@@ -860,7 +913,10 @@ placesFor named listed i lobby =
       | (j, held) <- zip [0 ..] (theirs lobby)
       ]
   where
-    onTeam place name = if teamed lobby then name <> Text.pack ", " <> Wording.team (TeamId.MkTeamId (teamAt lobby place)) else name
+    onTeam place name
+      | teamed lobby = name <> Text.pack ", " <> Wording.team (TeamId.MkTeamId (teamAt lobby place)) <> Text.pack (if crowned place then ", emperor" else "")
+      | otherwise = name
+    crowned place = Emperors.isEmperor (seatEmperors lobby) (Command.idOf (Int.toNaturalSaturating place + 1))
 
 -- | The game's options as an invited player is told them, each a label and
 -- its value as 'optionsView' shows them.
@@ -1033,15 +1089,19 @@ seatsView lobby =
                 <> [Element.el "div" ["seat-actions"] [] extra | not (null extra)]
 
 -- | The game's options: at three seats or more the variant, but in an
--- Archenemy game; ante, Planechase and, while it is on, the single planar
--- deck, Archenemy and, while it is on, the archenemy's seat, each seat's
--- clock, and where the game chooses them ('chosesAttacks') CR 806.2's
--- attack option and range of influence.
+-- Archenemy game, and in Emperor each team's emperor; ante, Planechase
+-- and, while it is on, the single planar deck, Archenemy and, while it is
+-- on, the archenemy's seat, each seat's clock, and where the game chooses
+-- them ('chosesAttacks') CR 806.2's attack option and range of influence.
 optionsView :: Lobby -> Html.Html Event
 optionsView lobby =
   Element.el "fieldset" ["game-options"] [] $
     [Element.el "legend" ["eyebrow"] [] [Element.string "Game options"]]
       <> [menu "option-variant" MkVariant "Variant" [(value, label, option == variant chosen') | (option, (value, label)) <- variants] | multiplayer (seatCount lobby), not (archenemyGame lobby)]
+      <> [ menu ("emperor-" <> show team) (MkEmperorSeat team) (Text.unpack (Wording.team (TeamId.MkTeamId team)) <> "'s emperor") [(show place, seatName (if place == 0 then MkMine else MkTheirs (place - 1)), Just place == emperorOf lobby team) | place <- membersOf lobby team]
+         | variantOf lobby == MkEmperor,
+           team <- teamsSeated lobby
+         ]
       <> [ toggle "option-ante" MkAnte (ante chosen') "Play for ante" "Each player antes a random card from their library; the winner owns them all.",
            toggle "option-planechase" MkPlanechase (planechase chosen') "Planechase" "Each seat plays its list's planar deck, or one dealt from the planes and phenomena."
          ]
