@@ -855,6 +855,8 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "the turn over" (passes toEnd (on S.alice 3 upkeep gs0)) (Nothing, Nothing)
     Spec.assertEqWith s "something on the stack" (passes toEnd (withStack theirs)) (Nothing, Nothing)
     Spec.assertEqWith s "a question but priority" (Question.Web.passesFor toEnd (requestFor theirs (Prompt.DeclareBlockers (Decider.MkDecider S.alice) S.alice [] []))) (Nothing, Nothing)
+    Spec.assertEqWith s "the concession before each priority" (Question.Web.passesFor toEnd (requestFor theirs (Prompt.Concede S.alice))) (Nothing, Just toEnd)
+    Spec.assertEqWith s "the stack's stop past a concession" (Question.Web.passesFor Question.Web.MkStacked (requestFor theirs (Prompt.Concede S.alice))) (Nothing, Just Question.Web.MkStacked)
     Spec.assertEqWith s "the stack's stop crosses turns" (passes Question.Web.MkStacked (on S.alice 3 Phase.PrecombatMain gs0)) (Just (R.Number 0), Just Question.Web.MkStacked)
     Spec.assertEqWith s "and ends at the stack" (passes Question.Web.MkStacked (withStack theirs)) (Nothing, Nothing)
     Spec.assertEqWith s "the turn's end keeps through a response" (passes (Question.Web.MkTurnEnds 2) (withStack theirs)) (Nothing, Just (Question.Web.MkTurnEnds 2))

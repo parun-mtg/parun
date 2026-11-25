@@ -166,6 +166,8 @@ data Until
 -- through a response and ends with its turn; any other ends where it is
 -- reached, at something on the stack, or at any question but priority (an
 -- attack's blockers, say), so the seat is never answered for a real decision.
+-- The concession asked before each priority (CR 104.3a), which `automatic`
+-- answers, keeps every stop.
 passesFor :: Until -> Request.Request -> (Maybe R.Reply, Maybe Until)
 passesFor stop request = case (stop, Request.view request) of
   (_, Nothing) -> (Nothing, Nothing)
@@ -176,6 +178,7 @@ passesFor stop request = case (stop, Request.view request) of
     | kind == "DeclareAttackers" -> (Just (R.Array []), Just stop)
     | otherwise -> (Nothing, Just stop)
   (_, Just shown)
+    | kind == "Concede" -> (Nothing, Just stop)
     | reached shown || not (null (PlayerView.stack shown)) || kind /= "ChooseAction" -> (Nothing, Nothing)
     | otherwise -> (pass, Just stop)
   where
