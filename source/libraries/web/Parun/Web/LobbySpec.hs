@@ -18,6 +18,7 @@ import qualified Parun.Types.AttackOption as AttackOption
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Difficulty as Difficulty
+import qualified Parun.Types.Emperors as Emperors
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayOptions as PlayOptions
@@ -78,12 +79,14 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
     Spec.it s "refuses the bot a deck under another format than yours" $ do
       Spec.assertEq s (Lobby.theirs (botPicks a (Lobby.update (Lobby.MkPick c) Text.empty lobby))) [Nothing]
 
-    Spec.it s "seats up to three bots, each with its own deck, and unseats the last" $ do
+    Spec.it s "seats up to eleven bots, each with its own deck, and unseats the last" $ do
       let added = Lobby.update (Lobby.MkAdd Lobby.MkBot) Text.empty
           three = added (added lobby)
           picked = Lobby.update (Lobby.MkPick a) Text.empty . Lobby.update (Lobby.MkChoose (Lobby.MkTheirs 2)) Text.empty . botPicks b $ Lobby.update (Lobby.MkPick a) Text.empty three
+          eleven = withBots 11
       Spec.assertEqWith s "three bots" (Lobby.theirs picked) [Just b, Nothing, Just a]
-      Spec.assertEqWith s "no fourth" (Lobby.theirs (added three)) (Lobby.theirs three)
+      Spec.assertEqWith s "eleven bots" (length (Lobby.theirs eleven)) 11
+      Spec.assertEqWith s "no twelfth" (Lobby.theirs (added eleven)) (Lobby.theirs eleven)
       let dropped = Lobby.update (Lobby.MkDrop 2) Text.empty picked
       Spec.assertEqWith s "the last unseated, and its slot no longer chosen" (Lobby.theirs dropped, Lobby.choosing dropped) ([Just b, Nothing], Lobby.MkMine)
       Spec.assertEqWith s "the last bot unseated too, your seat alone" (Lobby.theirs (Lobby.update (Lobby.MkDrop 0) Text.empty lobby)) []
@@ -135,15 +138,19 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "the sets offered, undated, by code" (DeckBrowser.setsOf (Lobby.browser lobby)) (fmap Text.pack ["FDC", "M12", "POR"])
       Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"M12\" selected=\"\">M12</option>") (Html.toText (Lobby.view m12))) "chosen in the menu"
 
-    Spec.it s "starts with your seat alone, and adds a seat past the last, filled as chosen, up to three" $ do
+    Spec.it s "starts with your seat alone, and adds a seat past the last, filled as chosen, up to eleven" $ do
       let page = Lobby.view alone
           tapped label = Html.labelled (Text.pack "button") (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
           add occupant = Lobby.update (Lobby.MkAdd occupant) Text.empty
-          full = add (Lobby.MkHere Link.MkYours) . add (Lobby.MkHere Link.MkHandedOver) . add Lobby.MkInvited $ add Lobby.MkBot alone
+          four = add (Lobby.MkHere Link.MkYours) . add (Lobby.MkHere Link.MkHandedOver) . add Lobby.MkInvited $ add Lobby.MkBot alone
+          full = add Lobby.MkInvited (add (Lobby.MkHere Link.MkHandedOver) (iterate (add Lobby.MkBot) four !! 5))
       Spec.assertEqWith s "alone" (Lobby.theirs alone) []
       Spec.assertEqWith s "offered" (fmap tapped ["Bot", "Player here", "Invite a player", "Yourself"]) (fmap (Just . Lobby.MkAdd) [Lobby.MkBot, Lobby.MkHere Link.MkHandedOver, Lobby.MkInvited, Lobby.MkHere Link.MkYours])
-      Spec.assertEqWith s "seated in order" (Lobby.theirs full, Map.keys (Lobby.invites full), Lobby.locals full) ([Nothing, Nothing, Nothing], [1], Map.singleton 2 Link.MkHandedOver)
-      Spec.assertEqWith s "no fourth" (add Lobby.MkBot full) full
+      Spec.assertEqWith s "seated in order" (Lobby.theirs four, Map.keys (Lobby.invites four), Lobby.locals four) ([Nothing, Nothing, Nothing, Nothing], [1], Map.fromList [(2, Link.MkHandedOver), (3, Link.MkYours)])
+      Spec.assertBool s (Text.isInfixOf (Text.pack "seat-tools") (Html.toText (Lobby.view four))) "a sixth seat to add"
+      Spec.assertEqWith s "the last seats, a player here and an invite" (length (Lobby.theirs full), Map.keys (Lobby.invites full), Map.lookup 9 (Lobby.locals full)) (11, [1, 10], Just Link.MkHandedOver)
+      Spec.assertEqWith s "no twelfth" (add Lobby.MkBot full) full
+      Spec.assertBool s (not (Lobby.abandons (Lobby.MkAdd Lobby.MkInvited) full {Lobby.paused = True})) "no invite past the last abandons a game"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "seat-tools") (Html.toText (Lobby.view full)))) "nothing to add once full"
       Spec.assertBool s (not (any (Text.isInfixOf (Text.pack "instead") . Html.toText . Lobby.view) [lobby, full])) "no seat switched in place"
 
@@ -236,6 +243,54 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "a seat past the table" (set (Lobby.MkTeam 4) "1" giant) giant
       Spec.assertEqWith s "the seats after one unseated move up" (Lobby.teams (Lobby.update (Lobby.MkDrop 0) Text.empty (set (Lobby.MkTeam 3) "0" (set (Lobby.MkTeam 0) "1" giant)))) (Map.fromList [(0, 1), (2, 0)])
       Spec.assertEqWith s "a team change clears ready" (Lobby.ready (set (Lobby.MkTeam 1) "1" (Lobby.update Lobby.MkReady Text.empty giant))) False
+
+    Spec.it s "CR 809 plays Emperor over each team and the emperor it chose" $ do
+      let set event value = Lobby.update event (Text.pack value)
+          six = set Lobby.MkVariant "emperor" (withBots 5)
+          teamsOf ns = Teams.MkTeams (Map.fromList [(PlayerId.MkPlayerId k, TeamId.MkTeamId n) | (k, n) <- zip [0 ..] ns])
+          handled prefix l = Html.search (Text.isPrefixOf (Text.pack prefix) . Html.toText) (Lobby.view l) >>= \path -> Html.handler (Text.pack "change") path (Lobby.view l)
+          refused = either (const True) (const False) . Lobby.settings
+          pairs :: [(Text.Text, Text.Text)] -> [(String, String)]
+          pairs = fmap (Bifunctor.bimap Text.unpack Text.unpack)
+      Spec.assertEqWith
+        s
+        "CR 809.1, 809.2, 809.3: two teams of three, each emperor in its middle"
+        (Lobby.settings six)
+        ( Right
+            GameSettings.plain
+              { GameSettings.teams = teamsOf [0, 0, 0, 1, 1, 1],
+                GameSettings.emperors = Emperors.MkEmperors (Map.fromList [(TeamId.MkTeamId 0, PlayerId.MkPlayerId 1), (TeamId.MkTeamId 1, PlayerId.MkPlayerId 4)]),
+                GameSettings.rangeOfInfluence = RangeOfInfluence.MkRangeOfInfluence (Map.fromList (zip (fmap PlayerId.MkPlayerId [0 ..]) [1, 2, 1, 1, 2, 1])),
+                GameSettings.deployCreatures = True,
+                GameSettings.attackOption = Just AttackOption.Adjacent
+              }
+        )
+      Spec.assertBool s (refused (set (Lobby.MkEmperorSeat 0) "0" six)) "CR 809.2: an emperor at the end of its team"
+      Spec.assertEqWith s "a seat on another team" (set (Lobby.MkEmperorSeat 0) "4" six) six
+      Spec.assertEqWith s "a seat past the table" (set (Lobby.MkEmperorSeat 1) "6" six) six
+      Spec.assertBool s (refused (set Lobby.MkVariant "emperor" (withBots 4))) "CR 809.6: teams of unequal size"
+      Spec.assertEqWith s "CR 809.1: three teams of three at nine seats" (fmap GameSettings.teams (Lobby.settings (set Lobby.MkVariant "emperor" (withBots 8)))) (Right (teamsOf [0, 0, 0, 1, 1, 1, 2, 2, 2]))
+      Spec.assertEqWith s "each team's emperor menu" (fmap (\team -> handled ("<select class=\"deck-menu\" id=\"emperor-" <> show team <> "\"") six) [0, 1 :: Natural]) [Just (Lobby.MkEmperorSeat 0), Just (Lobby.MkEmperorSeat 1)]
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"4\" selected=\"\">Player 5</option>") (Html.toText (Lobby.view six))) "the emperor in its menu"
+      Spec.assertEqWith s "no emperor menu in another variant" (handled "<select class=\"deck-menu\" id=\"emperor-0\"" (set Lobby.MkVariant "team-vs-team" six)) Nothing
+      Spec.assertEqWith s "CR 809.3c: no attack option" (handled "<select class=\"deck-menu\" id=\"option-attack\"" six) Nothing
+      Spec.assertEqWith s "told the variant" (take 1 (pairs (Lobby.told six))) [("Variant", "Emperor")]
+      Spec.assertEqWith s "told who is emperor" (fmap Link.who (take 2 (Lobby.placesFor (const Set.empty) (const Set.empty) 0 six))) (fmap Text.pack ["Player 1, Team 1", "Player 2, Team 1, emperor"])
+      Spec.assertEqWith s "the emperor chosen moves up as a seat before it is unseated" (Lobby.emperors (Lobby.update (Lobby.MkDrop 0) Text.empty (set (Lobby.MkEmperorSeat 1) "5" (set (Lobby.MkEmperorSeat 0) "1" six)))) (Map.fromList [(1, 4)])
+      Spec.assertEqWith s "a new variant forgets the emperors" (Lobby.emperors (set Lobby.MkVariant "emperor" (set (Lobby.MkEmperorSeat 1) "5" six))) Map.empty
+      Spec.assertEqWith s "an emperor change clears ready" (Lobby.ready (set (Lobby.MkEmperorSeat 1) "5" (Lobby.update Lobby.MkReady Text.empty six))) False
+
+    Spec.it s "CR 807 plays Grand Melee, on no teams, with its own options" $ do
+      let set event value = Lobby.update event (Text.pack value)
+          ten = set Lobby.MkVariant "grand-melee" (withBots 9)
+          handled prefix l = Html.search (Text.isPrefixOf (Text.pack prefix) . Html.toText) (Lobby.view l) >>= \path -> Html.handler (Text.pack "change") path (Lobby.view l)
+      Spec.assertEqWith
+        s
+        "CR 807.2: range of influence 1, attack left"
+        (Lobby.settings ten)
+        (Right GameSettings.plain {GameSettings.grandMelee = True, GameSettings.rangeOfInfluence = RangeOfInfluence.MkRangeOfInfluence (Map.fromList [(PlayerId.MkPlayerId k, 1) | k <- [0 .. 9]]), GameSettings.attackOption = Just AttackOption.Leftward})
+      Spec.assertEqWith s "CR 807.1: no team" (handled "<select class=\"deck-menu\" id=\"team-0\"" ten) Nothing
+      Spec.assertEqWith s "CR 807.2c: no attack option" (handled "<select class=\"deck-menu\" id=\"option-attack\"" ten) Nothing
 
     Spec.it s "offers the variant at three seats or more, and each seat's team where it has teams" $ do
       let set event value = Lobby.update event (Text.pack value)
@@ -731,6 +786,10 @@ seatPicks html = case html of
 -- | The decks read, your seat alone.
 alone :: Lobby.Lobby
 alone = Lobby.withDecks (Seq.fromList [a, b, c, d]) (Map.fromList [(c, Text.pack "commander"), (d, Text.pack "commander")]) Map.empty Lobby.new
+
+-- | 'alone' with so many bots seated, your seat chosen for.
+withBots :: Int -> Lobby.Lobby
+withBots n = Lobby.update (Lobby.MkChoose Lobby.MkMine) Text.empty (iterate (Lobby.update (Lobby.MkAdd Lobby.MkBot) Text.empty) alone !! n)
 
 -- | 'alone' with a bot seated, your seat chosen for.
 lobby :: Lobby.Lobby
