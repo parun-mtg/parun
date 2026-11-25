@@ -29,7 +29,7 @@
   "timeline": [
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$piker", "mana": ["$mountain-1", "$mountain-2"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$command", "modes": [0, 2], "mana": ["$island-1", "$island-2", "$island-3", "$plains"] } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": { "kind": "ChooseModes", "offer": { "source": "Ojutai's Command", "names": [null, "You gain 4 life.", "Counter target creature spell.", "Draw a card."], "least": 2, "most": 2, "among": [0, 1, 2, 3] } } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": { "kind": "ChooseModes", "offer": { "source": "Ojutai's Command", "names": ["Return target creature card with mana value 2 or less from your graveyard to the battlefield.", "You gain 4 life.", "Counter target creature spell.", "Draw a card."], "least": 2, "most": 2, "among": [0, 1, 2, 3] } } } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Stack", "card": "Goblin Piker", "count": 0 } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Goblin Piker", "count": 1 } } },
