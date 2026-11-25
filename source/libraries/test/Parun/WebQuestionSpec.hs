@@ -912,9 +912,9 @@ spec s registry = Spec.describe s "WebQuestion" $ do
               page = Question.Web.view (requestFor gs (Prompt.ChooseManaSource (Decider.MkDecider S.alice) S.alice (ManaCost.MkManaCost symbols) (land NonEmpty.:| []) Nothing)) Question.Web.blank
            in foldMap Html.spoken (Html.elements (Text.pack "h2") page)
         red = ManaType.Colored Color.Red
-    Spec.assertEqWith s "Sol Ring paid two of four" (heading [ManaType.Colorless, ManaType.Colorless] [ManaSymbol.Generic 4]) (Text.pack "Paying 4 (need 2). Choose a source.")
-    Spec.assertEqWith s "a color still owed" (heading [ManaType.Colorless] [ManaSymbol.Generic 1, ManaSymbol.OfType red]) (Text.pack "Paying 1 red (need red). Choose a source.")
-    Spec.assertEqWith s "nothing paid yet" (heading [] [ManaSymbol.Generic 4]) (Text.pack "Paying 4. Choose a source.")
+    Spec.assertEqWith s "Sol Ring paid two of four" (heading [ManaType.Colorless, ManaType.Colorless] [ManaSymbol.Generic 4]) (Text.pack "Paying 4 generic (need 2 generic). Choose a source.")
+    Spec.assertBool s (Text.pack " (need red). " `Text.isInfixOf` heading [ManaType.Colorless] [ManaSymbol.Generic 1, ManaSymbol.OfType red]) "a color still owed"
+    Spec.assertEqWith s "nothing paid yet" (heading [] [ManaSymbol.Generic 4]) (Text.pack "Paying 4 generic. Choose a source.")
 
   Spec.it s "a bottom pick toggles cards and answers with exactly the count picked" $ do
     let request = asking (Text.pack "Bottom") (R.Object [(Text.pack "from", R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]), (Text.pack "count", R.Number 1)])

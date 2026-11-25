@@ -1028,7 +1028,8 @@ form request texts picked focused = case Text.unpack (Question.kind question) of
       Just shown <- Request.view request,
       Just sources <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= traverse Offer.manaSource ->
         -- What the pool leaves owed, beside the whole cost once some is paid
-        -- (Offer.owing, which reads the pool the seat bar shows).
+        -- (Offer.owing, which reads the pool the seat bar shows); none for a
+        -- cost holding a symbol Offer.owing does not read, a hybrid one say.
         let cost = Protocol.field "cost" offer >>= Offer.decoded Codec.ManaCost.codec
             owed = do
               (colored, generic) <- Offer.owing shown offer
