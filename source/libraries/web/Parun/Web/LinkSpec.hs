@@ -70,17 +70,17 @@ spec s = Spec.describe s "Parun.Web.Link" $ do
       Spec.assertEq s (Link.decode (Text.pack "b") (Text.pack "{\"type\":\"shout\",\"build\":\"b\"}")) (Left (Text.pack "not a message: shout"))
 
   Spec.describe s "saved" $ do
-    Spec.it s "reads back a kept game, each bot's level and style by its slot, its options, its clock, a reply added as a line" $ do
-      let game = Link.MkSaved key (Link.MkLobby (Link.MkDealt (NonEmpty.fromList [(Text.pack "sets/a/one", Text.pack "Format: constructed\n24 Forest\n"), (Text.pack "Bot", Text.pack "20 Island\n"), (Text.pack "Here", Text.pack "20 Swamp\n"), (Text.pack "Yours", Text.pack "20 Plains\n")]) [0] (Map.fromList [(1, Link.MkHandedOver), (2, Link.MkYours)]) GameSettings.plain {GameSettings.ante = True, GameSettings.attackOption = Just AttackOption.Leftward} (Just 20))) (Map.fromList [(0, (Difficulty.MkEasy, Persona.MkAggro)), (3, (Difficulty.MkHard, Persona.MkControl))]) [R.Text (Text.pack "Keep")]
-          more = R.Object [(Text.pack "action", R.Text (Text.pack "Pass"))]
+    Spec.it s "reads back a kept game, each bot's level and style by its slot, its options, its clock, a reply added as a line with the time banks then" $ do
+      let game = Link.MkSaved key (Link.MkLobby (Link.MkDealt (NonEmpty.fromList [(Text.pack "sets/a/one", Text.pack "Format: constructed\n24 Forest\n"), (Text.pack "Bot", Text.pack "20 Island\n"), (Text.pack "Here", Text.pack "20 Swamp\n"), (Text.pack "Yours", Text.pack "20 Plains\n")]) [0] (Map.fromList [(1, Link.MkHandedOver), (2, Link.MkYours)]) GameSettings.plain {GameSettings.ante = True, GameSettings.attackOption = Just AttackOption.Leftward} (Just 20))) (Map.fromList [(0, (Difficulty.MkEasy, Persona.MkAggro)), (3, (Difficulty.MkHard, Persona.MkControl))]) [(R.Text (Text.pack "Keep"), Map.fromList [(PlayerId.MkPlayerId 0, 1195.5), (PlayerId.MkPlayerId 2, 1200)])]
+          more = (R.Object [(Text.pack "action", R.Text (Text.pack "Pass"))], Map.fromList [(PlayerId.MkPlayerId 0, 1195.5), (PlayerId.MkPlayerId 2, 1187.25)])
           build = Text.pack "b"
       Spec.assertEq s (Link.unsaved build (Link.saved build game <> Text.pack "\n" <> Link.savedReply more)) (Right game {Link.replies = Link.replies game <> [more]})
 
     Spec.it s "reads back a replay played on, by its source, position and seats' fillings, a reply added as a line" $ do
       let build = Text.pack "b"
-          more = R.Text (Text.pack "Pass")
+          more = (R.Text (Text.pack "Pass"), Map.empty)
       Monad.forM_ [Link.MkReplayed (Replay.MkScenario (Text.pack "rules/601 cast")) 7 (Map.fromList [(PlayerId.MkPlayerId 0, Replay.MkBot Difficulty.MkEasy Persona.MkControl), (PlayerId.MkPlayerId 1, Replay.MkHere)]), Link.MkReplayed (Replay.MkPlayed (Text.pack "abc")) 0 (Map.fromList [(PlayerId.MkPlayerId 0, Replay.MkHere), (PlayerId.MkPlayerId 1, Replay.MkGoldfish)])] $ \begun -> do
-        let game = Link.MkSaved key begun (Map.fromList [(0, (Difficulty.MkHard, Persona.MkAggro))]) [R.Text (Text.pack "Keep")]
+        let game = Link.MkSaved key begun (Map.fromList [(0, (Difficulty.MkHard, Persona.MkAggro))]) [(R.Text (Text.pack "Keep"), Map.empty)]
         Spec.assertEq s (Link.unsaved build (Link.saved build game <> Text.pack "\n" <> Link.savedReply more)) (Right game {Link.replies = Link.replies game <> [more]})
 
     Spec.it s "refuses a game another build played" $ do

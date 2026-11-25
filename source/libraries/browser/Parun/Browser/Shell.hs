@@ -919,7 +919,7 @@ play shell seats settings clock invited here resuming = do
       told <- IORef.newIORef Map.empty
       let decides seat gs depth clocks = IORef.readIORef told >>= Link.telling (Map.fromList [(seatOf i, channelOf i) | i <- Map.keys invited]) seat gs depth clocks >>= IORef.writeIORef told
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots settings clock (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) (Browser.keepReply . Link.savedReply) decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
+      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots settings clock (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) (\reply clocks -> Browser.keepReply (Link.savedReply (reply, clocks))) decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
       Browser.forgetGame
       case ended of
         Left problems -> stopped problems >> notice shell problems
@@ -1223,7 +1223,7 @@ playOnFrom shell source at filled resuming = opened shell source $ \reg _ played
   key <- maybe Key.fresh (pure . Link.seed) resuming
   Monad.when (Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved key (Link.MkReplayed source at filled) Map.empty [])
   parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-  ended <- Replay.playOn (page shell) reg parsed (tableOf shell) (level shell) filled scenario at key (foldMap Link.replies resuming) (Browser.keepReply . Link.savedReply) (leaveFor shell chosen (foldMap (fmap History.deck . History.seats) played))
+  ended <- Replay.playOn (page shell) reg parsed (tableOf shell) (level shell) filled scenario at key (foldMap (fmap fst . Link.replies) resuming) (\reply -> Browser.keepReply (Link.savedReply (reply, Map.empty))) (leaveFor shell chosen (foldMap (fmap History.deck . History.seats) played))
   Browser.forgetGame
   case ended of
     Nothing -> IORef.readIORef chosen

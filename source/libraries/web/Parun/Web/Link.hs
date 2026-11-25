@@ -329,12 +329,13 @@ guest local message = case message of
 -- | A game as the page playing it keeps it (the host's, for a game with
 -- guests), to pick it up after a reload (Protocol.resumed): its seed, where
 -- it began, how each bot plays by its slot (Parun.Play.Opponent;
--- Lobby.botAt), and every reply so far.
+-- Lobby.botAt), and every reply so far, each with every timed seat's time
+-- left once it was made (Parun.Web.Clock.resumed).
 data Saved = MkSaved
   { seed :: Key.Type.Key,
     origin :: Origin,
     bots :: Map.Map Int (Difficulty.Difficulty, Persona.Persona),
-    replies :: [R.Reply]
+    replies :: [(R.Reply, Banks)]
   }
   deriving (Eq, Show)
 
@@ -400,9 +401,9 @@ saved build game =
           )
    in Text.intercalate (Text.pack "\n") (Common.render header : fmap savedReply (replies game))
 
--- | A reply's line in a saved game.
-savedReply :: R.Reply -> Text.Text
-savedReply = Common.render . Codec.Reply.toValue
+-- | A reply's line in a saved game, with the time banks then.
+savedReply :: (R.Reply, Banks) -> Text.Text
+savedReply (reply, clocks) = Common.render (Value.object [Value.pair "reply" (Codec.Reply.toValue reply), Value.pair "clocks" (Codec.encode banksCodec clocks)])
 
 -- | The game a page kept, or why it does not read: one another build played
 -- is refused, since its replies may not replay the same game.
@@ -416,11 +417,12 @@ unsaved build kept = case Text.lines kept of
     key <- Common.field "seed" pairs >>= Common.asText >>= maybe (Left (Text.pack "not a seed")) Right . Key.fromHex
     begun <- maybe (dealt pairs) replayed (Common.optionalField "replay" pairs)
     styles <- Common.field "bots" pairs >>= Common.asArray >>= traverse styleOf
-    answers <- traverse (Common.parse Monad.>=> Codec.Reply.fromValue) (filter (not . Text.null) rest)
+    answers <- traverse (Common.parse Monad.>=> Common.asObject Monad.>=> replyOf) (filter (not . Text.null) rest)
     pure (MkSaved key begun (Map.fromList styles) answers)
   where
     named :: (Bounded a, Enum a) => String -> (a -> (String, String)) -> Text.Text -> Either Text.Text a
     named what nameOf name = maybe (Left (Text.pack ("not " <> what <> ": ") <> name)) Right (Opponent.named nameOf (Text.unpack name))
+    replyOf fields = (,) <$> (Common.field "reply" fields >>= Codec.Reply.fromValue) <*> (Common.field "clocks" fields >>= Codec.decode banksCodec)
     seat value = do
       fields <- Common.asObject value
       (,) <$> (Common.field "deck" fields >>= Common.asText) <*> (Common.field "list" fields >>= Common.asText)
