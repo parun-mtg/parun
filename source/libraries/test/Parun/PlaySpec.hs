@@ -49,6 +49,7 @@ import qualified Parun.Types.CoinFlipped as CoinFlipped
 import qualified Parun.Types.Convoking as Convoking
 import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterName as CounterName
 import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
@@ -93,6 +94,12 @@ import qualified Parun.Web.Log as Log
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Play" $ do
+  Spec.it s "CR 122.1 a counter is told by the name the card prints" $
+    Spec.assertEq
+      s
+      (fmap (Wording.counters 2) [CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack "charge")), CounterKind.powerToughness 1 0, CounterKind.powerToughness (-1) (-2), CounterKind.PlusOnePlusOne])
+      (fmap Text.pack ["2 charge counters", "2 +1/+0 counters", "2 -1/-2 counters", "2 +1/+1 counters"])
+
   Spec.it s "a run of one player's draws is told as one" $ do
     gs <- started s registry
     let drew pid n = LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup n) (GameEvent.Drew (Drew.MkDrew pid n))
