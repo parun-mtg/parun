@@ -72,6 +72,7 @@ spec s = Spec.describe s "Parun.Web.Link" $ do
   Spec.describe s "saved" $ do
     Spec.it s "reads back a kept game, each bot's level and style by its slot, its options, its clock, a reply added as a line with the time banks then" $ do
       let game = Link.MkSaved key (Link.MkLobby (Link.MkDealt (NonEmpty.fromList [(Text.pack "sets/a/one", Text.pack "Format: constructed\n24 Forest\n"), (Text.pack "Bot", Text.pack "20 Island\n"), (Text.pack "Here", Text.pack "20 Swamp\n"), (Text.pack "Yours", Text.pack "20 Plains\n")]) [0] (Map.fromList [(1, Link.MkHandedOver), (2, Link.MkYours)]) GameSettings.plain {GameSettings.ante = True, GameSettings.attackOption = Just AttackOption.Leftward} (Just 20))) (Map.fromList [(0, (Difficulty.MkEasy, Persona.MkAggro)), (3, (Difficulty.MkHard, Persona.MkControl))]) [(R.Text (Text.pack "Keep"), Map.fromList [(PlayerId.MkPlayerId 0, 1195.5), (PlayerId.MkPlayerId 2, 1200)])]
+          more :: (R.Reply, Link.Banks)
           more = (R.Object [(Text.pack "action", R.Text (Text.pack "Pass"))], Map.fromList [(PlayerId.MkPlayerId 0, 1195.5), (PlayerId.MkPlayerId 2, 1187.25)])
           build = Text.pack "b"
       Spec.assertEq s (Link.unsaved build (Link.saved build game <> Text.pack "\n" <> Link.savedReply more)) (Right game {Link.replies = Link.replies game <> [more]})
