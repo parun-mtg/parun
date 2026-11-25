@@ -1,5 +1,6 @@
 module Parun.Web.HomeSpec where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.PlayerViewSpec as PlayerViewSpec
@@ -85,7 +86,7 @@ spec s = Spec.describe s "Parun.Web.Home" $ do
       Spec.assertEq s (Home.update (Home.MkChoose (Home.MkNewGame Nothing)) Home.new) (Home.MkGo (Home.MkNewGame Nothing))
 
     Spec.it s "asks before abandoning a paused game to play on from a replay" $ do
-      let choice = Home.MkPlayOn (Replay.MkScenario (Text.pack "a-scenario")) 3 (Just (PlayerId.MkPlayerId 1))
+      let choice = Home.MkPlayOn (Replay.MkScenario (Text.pack "a-scenario")) 3 (Map.singleton (PlayerId.MkPlayerId 1) Replay.MkHere)
           asked = paused {Home.confirming = Just choice}
       Spec.assertEqWith s "asks" (Home.update (Home.MkChoose choice) paused) (Home.MkStay asked)
       Spec.assertEqWith s "the question shows" (has "Starting a new game abandons the one in progress, which Replays won't keep." asked) True

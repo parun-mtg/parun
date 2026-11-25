@@ -45,6 +45,8 @@ import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.RuleFamily as RuleFamily
+import qualified Parun.Types.SearchBudget as SearchBudget
+import qualified Parun.Types.Weights as Weights
 import qualified Parun.Web.Clock as Clock
 import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Element as Element
@@ -333,13 +335,17 @@ mostOthers = 3
 -- ('botAt'), the seats but the player's taking the places in seating order.
 playOptions :: Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> Natural -> PlayerId.PlayerId -> Set.Set PlayerId.PlayerId -> PlayOptions.PlayOptions
 playOptions styles count you people =
-  let seatPlay place = case botAt place styles of
-        (level, style) -> (Opponent.budgetAt level PlayOptions.budget, Opponent.weightsOf style)
+  let seatPlay place = botPlay (botAt place styles)
       others = filter ((/= you) . Command.idOf) [1 .. count]
    in PlayOptions.none
         { PlayOptions.json = True,
           PlayOptions.bots = Map.fromList [(n, seatPlay place) | (place, n) <- zip [0 ..] others, Set.notMember (Command.idOf n) people]
         }
+
+-- | How the search bot plays at this difficulty and persona: its budget and
+-- weights (Parun.Play.Opponent).
+botPlay :: (Difficulty.Difficulty, Persona.Persona) -> (SearchBudget.SearchBudget, Weights.Weights)
+botPlay (level, style) = (Opponent.budgetAt level PlayOptions.budget, Opponent.weightsOf style)
 
 -- | Whether two decks are under one format, and so may meet: the game's
 -- format is the one their headers name (Parun.Play.Command.settle).
@@ -695,7 +701,7 @@ seatsView lobby =
               Just invite -> [inviteView i invite (remove i)]
               Nothing -> case Map.lookup i (locals lobby) of
                 Just sitting -> [seat (MkTheirs i) (Element.string (if sitting == Link.MkYours then "Y" else "P")) held [] (remove i)]
-                Nothing -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held [botView i (botAt i (bots lobby))] (remove i)]
+                Nothing -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held [botView (show i) (MkDifficulty i) (MkPersona i) (botAt i (bots lobby))] (remove i)]
         | (i, held) <- zip [0 ..] others
         ]
       <> [ Element.el
@@ -745,23 +751,24 @@ seatsView lobby =
               : below
                 <> [Element.el "div" ["seat-actions"] [] extra | not (null extra)]
 
--- | How the bot at this place in 'theirs' plays: its difficulty and its
--- persona, each a choice of those named (Parun.Play.Opponent).
-botView :: Int -> (Difficulty.Difficulty, Persona.Persona) -> Html.Html Event
-botView i (level, style) =
+-- | How a bot plays: its difficulty and its persona, each a choice of those
+-- named (Parun.Play.Opponent) sending `pickLevel` or `pickStyle`, the
+-- menus' ids ending in `suffix`.
+botView :: String -> e -> e -> (Difficulty.Difficulty, Persona.Persona) -> Html.Html e
+botView suffix pickLevel pickStyle (level, style) =
   Element.el
     "div"
     ["bot-settings"]
     []
     [ Element.el "label" [] [Element.attr "for" (Text.pack levelId)] [Element.string "Level"],
-      choice levelId "bot-difficulty" (MkDifficulty i) Opponent.difficultyName level,
+      choice levelId "bot-difficulty" pickLevel Opponent.difficultyName level,
       Element.el "label" [] [Element.attr "for" (Text.pack styleId)] [Element.string "Style"],
-      choice styleId "bot-persona" (MkPersona i) Opponent.personaName style
+      choice styleId "bot-persona" pickStyle Opponent.personaName style
     ]
   where
-    levelId = "bot-difficulty-" <> show i
-    styleId = "bot-persona-" <> show i
-    choice :: (Bounded a, Enum a, Eq a) => String -> String -> Event -> (a -> (String, String)) -> a -> Html.Html Event
+    levelId = "bot-difficulty-" <> suffix
+    styleId = "bot-persona-" <> suffix
+    choice :: (Bounded a, Enum a, Eq a) => String -> String -> e -> (a -> (String, String)) -> a -> Html.Html e
     choice field kind event nameOf current =
       Element.el
         "select"
