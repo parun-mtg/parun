@@ -207,7 +207,8 @@ downloadPlayed k game = Browser.download (History.fileName game) =<< Browser.pla
 -- from `key`, the page plays at the auto-pass level kept in `levelRef`,
 -- until the game ends; how it ended, told to the seat at this screen
 -- where it is the only one, why the bots could not deal, or nothing when
--- it was given up from the home screen (`leave`). Each bot remembers what
+-- it was given up from the home screen (`leave`), or the seat conceding
+-- where that decides the game (Web.Question.decisive), at once. Each bot remembers what
 -- the game's log shows it, from the start (Search.remembering). The game
 -- picks up after the replies in `stored`, each made again
 -- (Protocol.resumed), a bot's given back to it (Game.remembered), and
@@ -245,8 +246,10 @@ playOn page registry cards table levelRef filled scenario given key stored kept 
             replayed request = do
               Monad.forM_ (Request.view request) $ IORef.modifyIORef' seatRef . Hotseat.witness
               IORef.modifyIORef' seatRef (Hotseat.keepAsked request)
-            here = Protocol.resumed next replayed kept (Hotseat.exchange lookUp page seatRef leave)
-            breathe = Hotseat.breathing lookUp page seatRef leave botReading breathRef
+            -- A seat conceding where that decides the game ends it at once.
+            concede seat = Exception.throwIO (Command.MkConceded seat)
+            here = Protocol.resumed next replayed kept (Hotseat.exchange lookUp page seatRef leave concede)
+            breathe = Hotseat.breathing lookUp page seatRef leave concede botReading breathRef
             answererOf pid = case (fillingOf pid, prior) of
               (Web.Replay.MkGoldfish, _) -> Game.goldfish reference
               (_, Nothing) -> Game.wired reference here
@@ -254,11 +257,12 @@ playOn page registry cards table levelRef filled scenario given key stored kept 
             seats = Game.consulting reference (Map.fromList [(pid, answererOf pid) | (pid, _) <- numbered])
             observers = [Search.remembering (IORef.modifyIORef' memories), Link.deciding (Hotseat.moving seatRef breathRef botReading mine bot)]
             onward = Answerer.MkAnswerer (Driver.ask observers seats)
-        outcome <- Game.playing (Generator.fromKey key) (Scenario.branch (Game.reference reference) at onward scenario)
-        pure . Just $ case outcome of
-          Left reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]
-          Right (Left failure) -> [Text.pack "The scenario failed before the position:", Scenario.render failure]
-          Right (Right gs) -> maybe [Text.pack "The game ran out of steps."] (\result -> Wording.result reader result : Wording.departures reader gs) (GameState.result gs)
+        Exception.handle (\(Command.MkConceded seat) -> pure (Just (snd (Ending.leftEarly (Natural.length numbered) (Text.pack "conceded") seat reader)))) $ do
+          outcome <- Game.playing (Generator.fromKey key) (Scenario.branch (Game.reference reference) at onward scenario)
+          pure . Just $ case outcome of
+            Left reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]
+            Right (Left failure) -> [Text.pack "The scenario failed before the position:", Scenario.render failure]
+            Right (Right gs) -> maybe [Text.pack "The game ran out of steps."] (\result -> Wording.result reader result : Wording.departures reader gs) (GameState.result gs)
 
 -- | Each seat and the name the scenario gives it, in seating order.
 seatsOf :: Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)]

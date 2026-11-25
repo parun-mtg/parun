@@ -914,12 +914,28 @@ play shell seats settings clock invited here resuming = do
             Monad.when back (IORef.modifyIORef' down (Set.delete i))
             pure back
           -- A rejoining guest is told the match-up played, every bot's deck drawn.
-          remotes = Map.fromList [(seatOf i, \seen clocks -> Link.remote (rejoinSlot i) (Lobby.placesFor named listed i (Lobby.rematch seats invited here)) seen clocks (channelOf i)) | i <- Map.keys invited]
+          remotes = Map.fromList [(seatOf i, \seen clocks conceded -> Link.remote (rejoinSlot i) (Lobby.placesFor named listed i (Lobby.rematch seats invited here)) seen clocks conceded (channelOf i)) | i <- Map.keys invited]
+          -- What a guest says while another seat decides is heard at once,
+          -- its concession given to `conceded`, anything else dropped, as
+          -- the guest's exchange would (Link.remote), and the decision
+          -- asked again; not while its connection is down.
+          heedOf i conceded ask request = do
+            closed <- Set.member i <$> IORef.readIORef down
+            if closed
+              then ask request
+              else do
+                answered <- Browser.heeding (page shell) (linkOf i) (ask request)
+                case answered of
+                  Just reply -> pure reply
+                  Nothing -> do
+                    said <- Link.receive (channelOf i)
+                    if said == Just Link.MkConcede then conceded else heedOf i conceded ask request
+          heeds = Map.fromList [(seatOf i, heedOf i) | i <- Map.keys invited]
       -- Each guest is told whose decision the game waits on (Link.telling).
       told <- IORef.newIORef Map.empty
       let decides seat gs depth clocks = IORef.readIORef told >>= Link.telling (Map.fromList [(seatOf i, channelOf i) | i <- Map.keys invited]) seat gs depth clocks >>= IORef.writeIORef told
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots settings clock (fmap (Bifunctor.first Text.unpack) seats) remotes (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) (resuming >>= Link.running) (\reply clocks -> Browser.keepReply (Link.savedReply (reply, clocks))) (Browser.keepRunning . Link.savedRunning) decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
+      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots settings clock (fmap (Bifunctor.first Text.unpack) seats) remotes heeds (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) (resuming >>= Link.running) (\reply clocks -> Browser.keepReply (Link.savedReply (reply, clocks))) (Browser.keepRunning . Link.savedRunning) decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
       Browser.forgetGame
       case ended of
         Left problems -> stopped problems >> notice shell problems

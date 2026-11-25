@@ -24,6 +24,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.CommandLine as CommandLine
 import qualified Parun.DeckList as DeckList
+import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.Game as Engine.Game
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
@@ -242,13 +243,39 @@ game client send stored kept watchers breathe options prior registry settings de
       let matchup = seated first decks
           seats = Map.fromList [(idOf n, answerer reference send stored kept (IORef.readIORef memories) (Search.keptBy (IORef.readIORef aims) (IORef.modifyIORef' aims) (idOf n)) breathe (timed (PlayOptions.thinkLimit options)) options prior n) | n <- NonEmpty.toList numbers]
       entries <- IORef.newIORef Seq.empty
-      let observers = [Record.recording (labels count) (Game.underneath . IORef.modifyIORef' entries . flip (Seq.|>)), Search.remembering (IORef.modifyIORef' memories)] <> watchers
+      -- The game and depth the pending prompt was asked at.
+      pending <- IORef.newIORef Nothing
+      let observers = [Record.recording (labels count) (Game.underneath . IORef.modifyIORef' entries . flip (Seq.|>)), Search.remembering (IORef.modifyIORef' memories), asking (\_ gs depth -> Game.underneath (IORef.writeIORef pending (Just (gs, depth))))] <> watchers
           interrupted e = case e of
             Exception.UserInterrupt -> pure (Left (Text.pack "interrupted"))
             _ -> Exception.throwIO e
-      outcome <- Exception.catch (Game.run reference settings (PlayOptions.limits options) observers seats generator orders matchup) interrupted
+          conceded (MkConceded pid) = do
+            asked <- IORef.readIORef pending
+            Monad.forM_ asked $ \(gs, depth) -> IORef.modifyIORef' entries (Seq.|> Record.conceding (labels count) gs depth pid)
+            pure (Left (Text.pack "conceded"))
+      outcome <- Game.run reference settings (PlayOptions.limits options) observers seats generator orders matchup `Exception.catches` [Exception.Handler interrupted, Exception.Handler conceded]
       timeline <- IORef.readIORef entries
       pure (outcome, record matchup timeline)
+
+-- | CR 104.3a: this seat conceding while a prompt is pending, which ends a
+-- game of two at once (Parun.Web.Question.decisive), thrown from whatever
+-- waits on that prompt: 'game' stops there, the concession its recording's
+-- last entry (Record.conceding). PlaySpec's "a concession while the other
+-- seat decides" is the proof.
+newtype Conceded = MkConceded PlayerId.PlayerId
+  deriving (Show)
+
+instance Exception.Exception Conceded
+
+-- | Each prompt's deciding seat, if it has one (Driver.deciderOf), given to
+-- `asked` before it is answered, whoever answers it, with the game then and
+-- its depth (Protocol.depthOf).
+asking :: (Monad m) => (Maybe PlayerId.PlayerId -> GameState.GameState -> Natural -> m ()) -> Observer.Observer m
+asking asked =
+  Observer.MkObserver
+    { Observer.before = \prompt -> asked (Driver.deciderOf (Asked.prompt prompt)) (Asked.game prompt) (Protocol.depthOf prompt),
+      Observer.after = \_ _ -> pure ()
+    }
 
 -- | Who answers seat `n`: the search bot at its seat's budget and weights,
 -- dealing what it cannot see by `prior`, remembering what its seat's memory

@@ -16,13 +16,11 @@ import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
-import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Reply as R
 import qualified Parun.Web.Element as Element
-import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
 
 -- | Each timed seat's time left, the seat whose clock runs and since when,
@@ -158,16 +156,3 @@ view viewer naming shown =
     let yours = owner face == viewer && not naming
         who = if yours then Text.pack "You" else Wording.player (owner face)
   ]
-
--- | How a game this seat's time ran out in ended for `reader`, of so many
--- seats, or for no seat in particular: lost for the seat out of time, won
--- for the other of two, and stopped for the rest; and what is said of it.
-ending :: Natural -> PlayerId.PlayerId -> Maybe PlayerId.PlayerId -> (Ending.Verdict, [Text.Text])
-ending count late reader =
-  let others = [p | n <- [1 .. count], let p = Command.idOf n, p /= late]
-      ran = Wording.player late <> Text.pack " ran out of time."
-   in case (others, reader) of
-        (_, Just r) | r == late -> (Ending.MkLost, [if count == 2 then ran else Text.pack "The game stopped: " <> ran])
-        ([winner], Nothing) -> (Ending.MkWonBy winner, [ran])
-        ([_], Just _) -> (Ending.MkWon, [ran])
-        _ -> (Ending.MkStopped, [Text.pack "The game stopped: " <> ran])

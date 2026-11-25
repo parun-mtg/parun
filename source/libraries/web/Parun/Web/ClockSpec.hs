@@ -7,7 +7,6 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Web.Clock as Clock
 import qualified Parun.Web.Element as Element
-import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Html as Html
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -73,14 +72,6 @@ spec s = Spec.describe s "Parun.Web.Clock" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack ">You</span><span class=\"clock-time\">0:30<") shown) "You"
       Spec.assertBool s (Text.isInfixOf (Text.pack "class=\"clock\" role=\"timer\" title=\"Player 2's clock\"><span class=\"clock-who\">Player 2</span><span class=\"clock-time\">10:00<") shown) "the other's, stopped"
       Spec.assertBool s (Text.isInfixOf (Text.pack ">Player 1</span>") named) "named"
-
-  Spec.describe s "ending" $ do
-    Spec.it s "loses the game for the seat out of time and wins it for the other of two" $ do
-      Spec.assertEqWith s "the seat out of time" (Clock.ending 2 two (Just two)) (Ending.MkLost, [Text.pack "Player 2 ran out of time."])
-      Spec.assertEqWith s "the other" (fmap fst [Clock.ending 2 two (Just one), Clock.ending 2 two Nothing]) [Ending.MkWon, Ending.MkWonBy one]
-    Spec.it s "stops a game of three for the rest (#9757)" $ do
-      Spec.assertEqWith s "the rest" (Clock.ending 3 two (Just one)) (Ending.MkStopped, [Text.pack "The game stopped: Player 2 ran out of time."])
-      Spec.assertEqWith s "the seat out of time" (fst (Clock.ending 3 two (Just two))) Ending.MkLost
   where
     one = PlayerId.MkPlayerId 0
     two = PlayerId.MkPlayerId 1

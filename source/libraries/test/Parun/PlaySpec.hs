@@ -6,10 +6,12 @@
 -- with, and when a bot's decision clock runs out (Command.timed).
 module Parun.PlaySpec where
 
+import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Except as Except
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Functor.Identity as Identity
+import qualified Data.IORef as IORef
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -36,6 +38,7 @@ import qualified Parun.Play.Search as Search
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
 import qualified Parun.ResolveSpec as ResolveSpec
+import qualified Parun.Scenario as Scenario.Runner
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Acquisition as Acquisition
@@ -56,16 +59,19 @@ import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Drew as Drew
+import qualified Parun.Types.Entry as Entry
 import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Generator as Generator
+import qualified Parun.Types.Label as Label
 import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Looked as Looked
+import qualified Parun.Types.Move as Move
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MulliganOffer as MulliganOffer
@@ -82,12 +88,18 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView.Type
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Reply as R
+import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.Scenario as Scenario
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.Stop as Stop
+import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.When as When
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 import qualified Parun.Web.Log as Log
@@ -462,13 +474,38 @@ pickedIn :: Heard -> [Natural]
 pickedIn heard = [n | n <- [1, 2, 3], Text.pack ("Seat " <> show n <> " was picked at random to choose who plays first.") `elem` said heard]
 
 -- | Command.game, which runs in IO.
-gameSpec :: (Monad n) => Spec.Spec IO n -> n ()
-gameSpec s = Spec.describe s "Play.Command" $ do
+gameSpec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> n ()
+gameSpec s registry = Spec.describe s "Play.Command" $ do
   Spec.it s "a game's saved scenario names what it was played with" $ do
     let seed = Generator.key (S.seeded 7)
         deck = Deck.fromCards Map.empty
     (_, recorded) <- Command.game (Text.pack "the web client") (const (pure Nothing)) (pure Nothing) (const (pure ())) [] (pure ()) PlayOptions.none Search.known (S.fixtureRegistry []) GameSettings.plain (deck NonEmpty.:| [deck]) seed
     Spec.assertEqWith s "description" (Scenario.description recorded) (Text.pack "Played with the web client, seed " <> Key.toHex seed <> Text.pack ".")
+
+  Spec.it s "CR 104.3a / 104.2a a concession while the other seat decides ends a game of two there, its recording replaying to it" $ do
+    matchup <- BotSpec.bears s registry
+    let seed = Generator.key (S.seeded 7)
+        other seat = if seat == S.alice then S.bob else S.alice
+    askedRef <- IORef.newIORef Nothing
+    -- The first seat asked a question of the game is left deciding while
+    -- the other concedes.
+    let exchange request = case Request.view request of
+          Nothing -> pure (Just (Right (R.Text (Text.pack "Play"))))
+          Just _ -> do
+            let seat = Question.seat (Request.question request)
+            IORef.writeIORef askedRef (Just seat)
+            Exception.throwIO (Command.MkConceded (other seat))
+    (outcome, recorded) <- Command.game (Text.pack "the web client") exchange (pure Nothing) (const (pure ())) [] (pure ()) PlayOptions.none Search.known (S.fixtureRegistry []) GameSettings.plain (fmap snd matchup) seed
+    asked <- IORef.readIORef askedRef
+    let timeline = Scenario.timeline recorded
+        final = Seq.lookup (Seq.length timeline - 1) timeline
+    Spec.assertEqWith s "the game stops" (fmap fst outcome) (Left (Text.pack "conceded"))
+    Spec.assertEqWith s "its recording ends on the other seat's concession" (fmap (\t -> (When.player (Timed.when t), Timed.source t, Timed.entry t)) final) (fmap (\seat -> (Map.findWithDefault (Label.MkLabel Text.empty) (other seat) (Command.labels 2), Nothing, Entry.Do Move.Concede)) asked)
+    (_, replayed) <- Scenario.Runner.replay registry Scenario.Runner.unkept Nothing recorded
+    case replayed of
+      Right (Stop.MkEnded _) -> pure ()
+      Right Stop.MkBefore {} -> Spec.assertBool s False "the replay stopped short"
+      Left failure -> Spec.assertBool s False ("the replay takes the concession where it was made: " <> Text.unpack (Scenario.Runner.render failure))
 
   Spec.it s "a bot's decision clock runs out once its think limit has passed, and never at 0" $ do
     let asked limit = do
