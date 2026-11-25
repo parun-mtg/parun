@@ -661,7 +661,7 @@ scenarioList typed' listedScenarios =
                      links (take shown matching)
                    ]
 
--- | How a game played on from a position ended (Parun.Browser.Replay.playOn),
+-- | How a game played on from a position ended (Parun.Browser.Hotseat.MkBranched),
 -- with buttons back to that position and to play on from it again, as
 -- each seat filled as `filled` (MkBranch).
 ended :: Map.Map PlayerId.PlayerId Filling -> [Text.Text] -> Html.Html Event

@@ -5,7 +5,6 @@ module Parun.Scenario.Perturb where
 
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
-import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
@@ -13,16 +12,15 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
 import qualified Parun.Extra.Int as Int
+import qualified Parun.Scenario as Scenario.Runner
 import qualified Parun.Types.AttackersAre as AttackersAre
 import qualified Parun.Types.BlockersAre as BlockersAre
-import qualified Parun.Types.Board as Board
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Check as Check
 import qualified Parun.Types.CountIs as CountIs
 import qualified Parun.Types.CountersAre as CountersAre
 import qualified Parun.Types.DamageIs as DamageIs
 import qualified Parun.Types.DefendersAre as DefendersAre
-import qualified Parun.Types.Entrant as Entrant
 import qualified Parun.Types.Entry as Entry
 import qualified Parun.Types.KeywordsAre as KeywordsAre
 import qualified Parun.Types.Label as Label
@@ -34,8 +32,6 @@ import qualified Parun.Types.PlayerCountersAre as PlayerCountersAre
 import qualified Parun.Types.PowerToughnessIs as PowerToughnessIs
 import qualified Parun.Types.Reply as Reply
 import qualified Parun.Types.Scenario as Scenario
-import qualified Parun.Types.Seat as Seat
-import qualified Parun.Types.Start as Start
 import qualified Parun.Types.SubtypesAre as SubtypesAre
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TappedIs as TappedIs
@@ -70,7 +66,7 @@ data Finding
 -- itself is assumed to pass: a caller runs it unmodified first.
 findings :: (Monad m) => (Scenario.Scenario -> m Bool) -> Scenario.Scenario -> m (Seq.Seq Finding)
 findings passes scenario =
-  let seats = seatsOf scenario
+  let seats = Scenario.Runner.seatsOf scenario
       try (at, check) = case perturb seats check of
         [] -> pure (Seq.singleton (Skipped at check))
         changes -> fmap (Seq.fromList . Maybe.catMaybes) (traverse (survives at check) changes)
@@ -100,12 +96,6 @@ replace at check scenario = case at of
   InFinal n ->
     let swap index old = if Int.toNaturalSaturating index == n then check else old
      in scenario {Scenario.final = Seq.mapWithIndex swap (Scenario.final scenario)}
-
--- | The seats in seating order, which a perturbation naming a player draws on.
-seatsOf :: Scenario.Scenario -> [Label.Label]
-seatsOf scenario = case Scenario.start scenario of
-  Start.FromBoard board -> fmap Seat.name (NonEmpty.toList (Board.seats board))
-  Start.FromDecks _ entrants _ -> fmap Entrant.name (NonEmpty.toList entrants)
 
 -- | Every changed expected value tried for a check: a number off by one each
 -- way (down only from above zero), a tap state flipped, a set or list with an

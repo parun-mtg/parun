@@ -20,6 +20,8 @@ data PlayOptions = MkPlayOptions
     -- hard it looks there and what it values in a position it cuts a
     -- playout off at.
     bots :: Map.Map Natural.Natural (SearchBudget.SearchBudget, Weights.Weights),
+    -- | The seats the goldfish plays (Parun.Play.Game.goldfish).
+    goldfish :: Set.Set Natural.Natural,
     -- | Whether every seat not the bot's speaks the line protocol.
     json :: Bool,
     -- | Where to save the game as a scenario.
@@ -44,12 +46,12 @@ data PlayOptions = MkPlayOptions
   }
   deriving (Eq, Show)
 
--- | A game keyed from the operating system's entropy, no seat the bot's and
--- none over the line protocol, the seat to play first asked for, under the
+-- | A game keyed from the operating system's entropy, no seat the bot's or
+-- the goldfish's and none over the line protocol, the seat to play first asked for, under the
 -- standard limits, the search bot dealing an opponent's unseen cards from
 -- the game's format's pool and thinking 5 seconds at most over a decision.
 none :: PlayOptions
-none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Map.empty, json = False, save = Nothing, arrangesGraveyard = Set.empty, format = Nothing, limits = Limits.standard, meta = Nothing, pool = Nothing, thinkLimit = 5000}
+none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Map.empty, goldfish = Set.empty, json = False, save = Nothing, arrangesGraveyard = Set.empty, format = Nothing, limits = Limits.standard, meta = Nothing, pool = Nothing, thinkLimit = 5000}
 
 -- | A seat the search bot plays unless told otherwise: its 'budget', weighing
 -- the neutral weights.

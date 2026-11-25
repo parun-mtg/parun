@@ -350,7 +350,7 @@ data Origin
   = -- | Dealt from the lobby.
     MkLobby Dealt
   | -- | Played on from this position of this replay, each seat filled so
-    -- (Parun.Browser.Replay.playOn).
+    -- (Parun.Browser.Hotseat.MkBranched).
     MkReplayed Web.Replay.Source Natural (Map.Map PlayerId.PlayerId Web.Replay.Filling)
   deriving (Eq, Show)
 

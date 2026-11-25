@@ -1,15 +1,17 @@
 {-# LANGUAGE GADTs #-}
 
--- Covers Parun.Play.Game, Parun.Play.Wording and Parun.Play.Command.game:
--- who plays first, the card names a seat may choose, how a seat's view and a
--- finished game are worded for people, what a saved game says it was played
--- with, and when a bot's decision clock runs out (Command.timed).
+-- Covers Parun.Play.Game, Parun.Play.Wording and Parun.Play.Command's game
+-- and branch: who plays first, the card names a seat may choose, how a
+-- seat's view and a finished game are worded for people, what a saved game
+-- says it was played with, a game played on from a position of its
+-- recording, and when a bot's decision clock runs out (Command.timed).
 module Parun.PlaySpec where
 
 import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Except as Except
 import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.Either as Either
 import qualified Data.Functor.Identity as Identity
 import qualified Data.IORef as IORef
 import qualified Data.List.NonEmpty as NonEmpty
@@ -510,6 +512,30 @@ gameSpec s registry = Spec.describe s "Play.Command" $ do
       Right (Stop.MkEnded _) -> pure ()
       Right Stop.MkBefore {} -> Spec.assertBool s False "the replay stopped short"
       Left failure -> Spec.assertBool s False ("the replay takes the concession where it was made: " <> Text.unpack (Scenario.Runner.render failure))
+
+  Spec.it s "the goldfish answers each seat the options give it, the exchange asked nothing, and a game played on from its recording's start ends as it did" $ do
+    matchup <- BotSpec.bears s registry
+    reference <- fmap S.fixtureRegistry (traverse (S.cardOf s registry) ["Grizzly Bears", "Forest"])
+    let seed = Generator.key (S.seeded 7)
+        options = PlayOptions.none {PlayOptions.first = Just 1, PlayOptions.goldfish = Set.fromList [1, 2]}
+    askedRef <- IORef.newIORef (0 :: Int)
+    let exchange _ = Nothing <$ IORef.modifyIORef' askedRef (+ 1)
+    (outcome, recorded) <- Command.game (Text.pack "the web client") exchange (pure Nothing) (const (pure ())) [] (pure ()) options Search.known (S.fixtureRegistry []) GameSettings.plain (fmap snd matchup) seed
+    branched <- Command.branch exchange (pure Nothing) (const (pure ())) [] (pure ()) options Search.known reference recorded 0 seed
+    asked <- IORef.readIORef askedRef
+    Spec.assertEqWith s "the exchange asked" asked 0
+    Spec.assertBool s (Either.isRight outcome) ("the game has a result: " <> show (fmap fst outcome))
+    Spec.assertEqWith s "the game played on's result" (fmap fst branched) (fmap fst outcome)
+
+  Spec.it s "CR 104.3a a concession while a game played on from a position is pending ends it there" $ do
+    matchup <- BotSpec.bears s registry
+    reference <- fmap S.fixtureRegistry (traverse (S.cardOf s registry) ["Grizzly Bears", "Forest"])
+    let seed = Generator.key (S.seeded 7)
+        options = PlayOptions.none {PlayOptions.first = Just 1, PlayOptions.goldfish = Set.fromList [1, 2]}
+    (_, recorded) <- Command.game (Text.pack "the web client") (const (pure Nothing)) (pure Nothing) (const (pure ())) [] (pure ()) options Search.known (S.fixtureRegistry []) GameSettings.plain (fmap snd matchup) seed
+    let exchange request = Exception.throwIO (Command.MkConceded (Question.seat (Request.question request)))
+    branched <- Command.branch exchange (pure Nothing) (const (pure ())) [] (pure ()) PlayOptions.none {PlayOptions.goldfish = Set.singleton 1} Search.known reference recorded 0 seed
+    Spec.assertEqWith s "the game stops" (fmap fst branched) (Left (Text.pack "conceded"))
 
   Spec.it s "a bot's decision clock runs out once its think limit has passed, and never at 0" $ do
     let asked limit = do

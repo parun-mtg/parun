@@ -293,6 +293,12 @@ data Kept = MkKept
 -- step's state and the run's.
 type Steps = Map.Map Natural (GameState.GameState, Rehearsal)
 
+-- | Each seat's label, in seating order.
+seatsOf :: Scenario.Scenario -> [Label.Label]
+seatsOf scenario = case Scenario.start scenario of
+  Start.FromBoard board -> fmap Seat.name (NonEmpty.toList (Board.seats board))
+  Start.FromDecks _ entrants _ -> fmap Entrant.name (NonEmpty.toList entrants)
+
 -- | Nothing kept, and nothing to keep: a single run.
 unkept :: Kept
 unkept = MkKept Map.empty Nothing False Map.empty
