@@ -73,6 +73,8 @@ data Event
     MkWatch Text.Text
   | -- | The lobby, on this game's decks.
     MkPlayAgain Text.Text
+  | -- | Saves this game's scenario file to the player's device, by its key.
+    MkDownload Text.Text
   | -- | Asks before deleting.
     MkForget Forgetting
   | MkConfirmForget
@@ -191,7 +193,10 @@ data Frame = MkFrame
     failure :: Maybe Text.Text,
     reading :: Maybe Card.Reading,
     -- | The Oracle text of each object the seat sees (Card.written).
-    written :: Map.Map ObjectId.ObjectId [Text.Text]
+    written :: Map.Map ObjectId.ObjectId [Text.Text],
+    -- | The key of the game finished here replayed (History.key), to
+    -- download; Nothing for a scenario.
+    kept :: Maybe Text.Text
   }
 
 -- | The page for a frame: the table, and beside it the replay's controls.
@@ -244,8 +249,8 @@ capitalised t = maybe t (\(c, rest) -> Text.cons (Char.toUpper c) rest) (Text.un
 
 -- | The scenario; where the run stands, the scrubber and its steps, each an
 -- icon over a word saying how far it goes, its tooltip where to, and the
--- way to let it play itself, or pause it; the ways to play on and to
--- leave; and the seats to view as, each by its name and, where the table
+-- way to let it play itself, or pause it; the ways to play on, to download
+-- a game finished here and to leave; and the seats to view as, each by its name and, where the table
 -- names it otherwise, that name.
 controls :: Frame -> [Html.Html Event]
 controls frame =
@@ -323,10 +328,12 @@ controls frame =
           "div"
           ["replay-actions"]
           []
-          [ Element.button ["branch"] (MkBranch (Just (viewer frame))) [Element.text (Text.pack "Play on as " <> Board.name (viewer frame))],
-            Element.button ["branch"] (MkBranch Nothing) [Element.string "Play on, every seat"],
-            Element.button ["back"] MkBack [Element.string "All replays"]
-          ],
+          ( [ Element.button ["branch"] (MkBranch (Just (viewer frame))) [Element.text (Text.pack "Play on as " <> Board.name (viewer frame))],
+              Element.button ["branch"] (MkBranch Nothing) [Element.string "Play on, every seat"]
+            ]
+              <> [Element.button ["download"] (MkDownload k) [Element.string "Download"] | k <- Maybe.maybeToList (kept frame)]
+              <> [Element.button ["back"] MkBack [Element.string "All replays"]]
+          ),
         Element.el "p" ["subhead"] [] [Element.string "View as"],
         Element.el
           "div"
@@ -490,8 +497,8 @@ picker shown listedScenarios =
         MkYourGames -> yourGames shown
         MkScenarios -> scenarioList (typed shown) listedScenarios
 
--- | The games finished here, newest first, each to watch, play again or
--- delete, and the way to delete them all, each deletion asked about first.
+-- | The games finished here, newest first, each to watch, play again,
+-- download or delete, and the way to delete them all, each deletion asked about first.
 yourGames :: Listing -> [Html.Html Event]
 yourGames shown = case games shown of
   [] -> [Element.el "p" ["muted"] [] [Element.string "The games you finish in this browser show here, to watch again."]]
@@ -517,6 +524,7 @@ yourGames shown = case games shown of
                 game
                 ( [Element.button [] (MkWatch k) [Element.string "Watch"]]
                     <> [Element.button [] (MkPlayAgain k) [Element.string "Play again"] | all (Maybe.isJust . History.deckName) (History.seats game)]
+                    <> [Element.button [] (MkDownload k) [Element.string "Download"]]
                     <> [Element.button ["danger"] (MkForget (MkForgetGame k)) [Element.string "Delete"]]
                 )
     asking asked confirm =

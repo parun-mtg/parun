@@ -88,6 +88,11 @@ spec s = Spec.describe s "Parun.Web.History" $ do
       Spec.assertEqWith s "behind it, across a leap day" (History.date game {History.ended = 1709251140000, History.offset = -300}) "29 Feb 2024, 18:59"
       Spec.assertEqWith s "past midnight" (History.date game {History.ended = 1709251140000, History.offset = 60}) "1 Mar 2024, 00:59"
 
+  Spec.describe s "fileName" $ do
+    Spec.it s "names the file by when the game ended on the page's clock, to the second" $ do
+      Spec.assertEqWith s "ahead of UTC" (History.fileName game {History.ended = 1795266307000}) (Text.pack "parun-game-2026-11-21-140507.json")
+      Spec.assertEqWith s "behind it, across a leap day" (History.fileName game {History.ended = 1709251140000, History.offset = -300}) (Text.pack "parun-game-2024-02-29-185900.json")
+
   Spec.describe s "row" $ do
     Spec.it s "says how it ended, the decks and who played them, its turn and date" $ do
       let page = Html.toText (History.row game [])

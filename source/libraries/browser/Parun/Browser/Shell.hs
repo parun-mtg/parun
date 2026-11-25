@@ -1147,7 +1147,7 @@ leaveFor shell chosen played board = Browser.aside (page shell) (go paused)
 
 -- | The replays screen, the scenarios fetched first, until a replay is
 -- opened and left for a game or the home screen: the games finished here,
--- each to watch, play again or delete, deleting asked about first.
+-- each to watch, play again, download or delete, deleting asked about first.
 replays :: Shell -> IO Next
 replays shell = do
   need shell Loading.MkScenarios
@@ -1181,6 +1181,7 @@ replays shell = do
               MkTapped (Screen.MkReplay (Web.Replay.MkWatch k)) _ -> watching (Web.Replay.MkPlayed k)
               MkTapped (Screen.MkReplay (Web.Replay.MkPlayAgain k)) _
                 | Just decks <- List.find ((== k) . History.key) (Web.Replay.games shown) >>= traverse History.deckName . History.seats >>= NonEmpty.nonEmpty -> pure (MkToMatchup decks)
+              MkTapped (Screen.MkReplay (Web.Replay.MkDownload k)) _ -> mapM_ (Replay.downloadPlayed k) (List.find ((== k) . History.key) (Web.Replay.games shown)) >> go shown
               MkTapped (Screen.MkReplay Web.Replay.MkConfirmForget) _ -> do
                 case Web.Replay.forgetting shown of
                   Just (Web.Replay.MkForgetGame k) -> Browser.forgetPlayed k >> IORef.modifyIORef' (finished shell) (filter ((/= k) . History.key))

@@ -103,6 +103,9 @@ globalThis.parunKeepPlayed = (key, summary, scenario) => {
   played.set(key, { summary, scenario });
   changePlayed((store) => store.put({ summary, scenario }, key));
 };
+// A file to save (Parun.Browser.download) goes to the page, since a worker
+// has no document to save it from.
+globalThis.parunDownload = (name, text) => postMessage({ download: { name, text } });
 globalThis.parunForgetPlayed = (key) => {
   played.delete(key);
   changePlayed((store) => store.delete(key));

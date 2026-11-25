@@ -159,7 +159,7 @@ viewer page moved registry name played scenario given = do
         maybe (fmap (either (const Nothing) (Just . Stop.state)) (run s)) (pure . Just) known
       go playing at stop viewing reading = do
         earlier <- earlierOf at
-        let frame = (frameOf lookUp (lineNames viewing) name scenario seats count playing at stop viewing reading) {Web.Replay.earlier = fmap (PlayerView.Engine.viewFor viewing) earlier, Web.Replay.outcome = outcome}
+        let frame = (frameOf lookUp (lineNames viewing) name scenario seats count playing at stop viewing reading) {Web.Replay.earlier = fmap (PlayerView.Engine.viewFor viewing) earlier, Web.Replay.outcome = outcome, Web.Replay.kept = fmap History.key played}
         Browser.display page . fmap Screen.MkReplay $ Web.Replay.view frame
         (tapped, value) <- awaiting
         let moveTo target = if target == at then go playing at stop viewing Nothing else reach target >>= \next -> go (playing && target < count) target next viewing Nothing
@@ -180,6 +180,7 @@ viewer page moved registry name played scenario given = do
             Web.Replay.MkTable (Web.Question.MkPeek object) | not held -> go playing at stop viewing (readingOf object False <|> reading)
             Web.Replay.MkTable Web.Question.MkUnpeek | not held -> go playing at stop viewing Nothing
             Web.Replay.MkTable Web.Question.MkClose -> go playing at stop viewing Nothing
+            Web.Replay.MkDownload k -> mapM_ (downloadPlayed k) played >> go playing at stop viewing reading
             Web.Replay.MkBranch seat -> pure (MkPlayOn at seat)
             Web.Replay.MkBack -> pure MkToList
             _ -> go playing at stop viewing reading
@@ -187,6 +188,11 @@ viewer page moved registry name played scenario given = do
       first = min count given
   stop <- reach first
   go False first stop (maybe (PlayerId.MkPlayerId 0) fst (Maybe.listToMaybe (filter ((`elem` seen) . snd) labelled <> labelled))) Nothing
+
+-- | Saves the scenario file of the game finished here of this key to the
+-- player's device, named by when it ended (History.fileName).
+downloadPlayed :: Text.Text -> History.Game -> IO ()
+downloadPlayed k game = Browser.download (History.fileName game) =<< Browser.playedScenario k
 
 -- | Plays on from a position of the scenario: the run takes the timeline
 -- to that stop (Scenario.branch), then the seat `chosen` is answered on the
@@ -252,7 +258,7 @@ seatsOf scenario =
 -- `names` names it by its label, stepping on by itself where `playing`.
 frameOf :: (CardName.CardName -> Either e (Maybe Card.Card)) -> Map.Map Text.Text Text.Text -> Text.Text -> Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)] -> Natural -> Bool -> Natural -> Either ScenarioFailure.ScenarioFailure Stop.Stop -> PlayerId.PlayerId -> Maybe Web.Card.Reading -> Web.Replay.Frame
 frameOf lookUp names name scenario seats count playing at stop seen reading =
-  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count (Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))) playing Nothing [] Text.empty 0 Nothing Nothing Nothing reading Map.empty
+  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count (Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))) playing Nothing [] Text.empty 0 Nothing Nothing Nothing reading Map.empty Nothing
       shown board = base {Web.Replay.board = Just board, Web.Replay.written = Web.Card.written lookUp board}
    in case stop of
         Left failure -> base {Web.Replay.failure = Just (Scenario.render failure)}
