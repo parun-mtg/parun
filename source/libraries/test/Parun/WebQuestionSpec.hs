@@ -27,6 +27,7 @@ import qualified Parun.Engine.Departure as Departure
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Resolve.Common as Resolve.Common
@@ -36,6 +37,7 @@ import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
+import Parun.ManaSourceSpec (plainOf)
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
@@ -79,6 +81,7 @@ import qualified Parun.Types.HandActionIndex as HandActionIndex
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Looked as Looked
+import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
@@ -906,6 +909,18 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         offersAuto = Maybe.isJust . Html.labelled (Text.pack "button") (Text.pack "Pay automatically")
     Spec.assertBool s (not (offersAuto (paying (one NonEmpty.:| [])))) "one source"
     Spec.assertBool s (offersAuto (paying (one NonEmpty.:| [two]))) "two sources"
+
+  Spec.it s "CR 601.2g a payment's heading names what the pool leaves owed once some is paid" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    let (land, g0) = S.addPermanent mountain S.alice (Setup.emptyGame S.bothPlayers)
+        heading pool symbols =
+          let gs = Mana.setPool S.alice (Mana.Type.MkMana (fmap plainOf pool)) g0
+              page = Question.Web.view (requestFor gs (Prompt.ChooseManaSource (Decider.MkDecider S.alice) S.alice (ManaCost.MkManaCost symbols) (land NonEmpty.:| []) Nothing)) Question.Web.blank
+           in foldMap Html.spoken (Html.elements (Text.pack "h2") page)
+        red = ManaType.Colored Color.Red
+    Spec.assertEqWith s "Sol Ring paid two of four" (heading [ManaType.Colorless, ManaType.Colorless] [ManaSymbol.Generic 4]) (Text.pack "Paying 4 generic (need 2 generic). Choose a source.")
+    Spec.assertBool s (Text.pack " (need red). " `Text.isInfixOf` heading [ManaType.Colorless] [ManaSymbol.Generic 1, ManaSymbol.OfType red]) "a color still owed"
+    Spec.assertEqWith s "nothing paid yet" (heading [] [ManaSymbol.Generic 4]) (Text.pack "Paying 4 generic. Choose a source.")
 
   Spec.it s "a bottom pick toggles cards and answers with exactly the count picked" $ do
     let request = asking (Text.pack "Bottom") (R.Object [(Text.pack "from", R.Array [R.Text (Text.pack "$1"), R.Text (Text.pack "$2")]), (Text.pack "count", R.Number 1)])

@@ -36,7 +36,9 @@ import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Looked as Looked
 import qualified Parun.Types.Mana as Mana.Type
+import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaRetention as ManaRetention
+import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.ObjectId as ObjectId
@@ -1025,16 +1027,26 @@ form request texts picked focused = case Text.unpack (Question.kind question) of
     | kind `elem` ["ChooseManaSource", "ChooseExtraManaSource"],
       Just shown <- Request.view request,
       Just sources <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= traverse Offer.manaSource ->
-        Html.element (Text.pack "h2") [] (Mana.rich $ foldMap (\cost -> Text.pack "Paying " <> Wording.manaCost cost <> Text.pack ". ") (Protocol.field "cost" offer >>= Offer.decoded Codec.ManaCost.codec) <> Text.pack (if kind == "ChooseManaSource" then "Choose a source." else "The cost is covered. Activate another source, or pay now."))
-          -- With one source, paying automatically is tapping it.
-          : [primary MkAuto (Text.pack "Pay automatically") | Maybe.isJust (auto request), length sources > 1]
-            -- Sources the seat can't tell apart are one button, for the first.
-            <> [button (MkAnswer source) (label <> many count) | (source : _, label, count) <- collapsed (const True) [(source, Offer.listedName shown source <> makes yields) | (source, yields) <- sources]]
-            -- CR 734.1: where stopping takes the cast back, it is its Cancel.
-            <> [ if kind /= "ChooseManaSource"
-                   then primary (MkAnswer R.Null) (Text.pack "Pay now")
-                   else maybe (button (MkAnswer R.Null) (Text.pack "Stop paying")) cancel (Question.withdraw question)
-               ]
+        -- What the pool leaves owed, beside the whole cost once some is paid
+        -- (Offer.owing, which reads the pool the seat bar shows); none for a
+        -- cost holding a symbol Offer.owing does not read, a hybrid one say.
+        let cost = Protocol.field "cost" offer >>= Offer.decoded Codec.ManaCost.codec
+            owed = do
+              (colored, generic) <- Offer.owing shown offer
+              let symbols = [ManaSymbol.Generic generic | generic > 0] <> fmap ManaSymbol.OfType colored
+              Monad.guard (not (null symbols))
+              pure (ManaCost.MkManaCost symbols)
+            need = foldMap (\left -> Text.pack " (need " <> Wording.manaCost left <> Text.pack ")") (Monad.mfilter ((/= cost) . Just) owed)
+         in Html.element (Text.pack "h2") [] (Mana.rich $ foldMap (\whole -> Text.pack "Paying " <> Wording.manaCost whole <> need <> Text.pack ". ") cost <> Text.pack (if kind == "ChooseManaSource" then "Choose a source." else "The cost is covered. Activate another source, or pay now."))
+              -- With one source, paying automatically is tapping it.
+              : [primary MkAuto (Text.pack "Pay automatically") | Maybe.isJust (auto request), length sources > 1]
+                -- Sources the seat can't tell apart are one button, for the first.
+                <> [button (MkAnswer source) (label <> many count) | (source : _, label, count) <- collapsed (const True) [(source, Offer.listedName shown source <> makes yields) | (source, yields) <- sources]]
+                -- CR 734.1: where stopping takes the cast back, it is its Cancel.
+                <> [ if kind /= "ChooseManaSource"
+                       then primary (MkAnswer R.Null) (Text.pack "Pay now")
+                       else maybe (button (MkAnswer R.Null) (Text.pack "Stop paying")) cancel (Question.withdraw question)
+                   ]
   kind
     | kind `elem` ["ChooseOptional", "ReverseManaAbilities"],
       Just shown <- Request.view request ->
