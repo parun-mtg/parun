@@ -10,6 +10,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Game as Game
@@ -142,8 +143,9 @@ seatView pid gs seat = do
 -- card behind a face-down object for a seat that may look at it (CR 406.3,
 -- 708.5), and beside whichever of the two the seat gets its characteristics
 -- under its own static abilities alone; the cards merged under a merged
--- permanent (CR 731.2); the foretell cost it was given with it (CR
--- 702.143e); what an ability came from; what a stack
+-- permanent (CR 731.2); what a permanent a copy effect changed is beneath it,
+-- for a seat that sees it face up (CR 707.2); the foretell cost it was given
+-- with it (CR 702.143e); what an ability came from; what a stack
 -- object targets, which CR 601.2c / 602.2b / 603.3d announce to every seat;
 -- and what the object has chosen (CR 607.2d), for a seat that sees it, less a
 -- secret choice to all but its chooser and whoever controls them (CR 724.4);
@@ -183,6 +185,16 @@ objectView pid gs oid = do
         not (Facing.isFaceDown (ShownComponent.facing component))
           || Visibility.sees pid oid gs {GameState.objects = Map.insert oid object {Object.facing = ShownComponent.facing component} (GameState.objects gs)} == Visibility.Type.Visible
       named component = if mayLookAt component then fmap Just (componentName gs component) else Just Nothing
+      -- CR 707.2 / 613.2a: under a copy effect's stamp (a stored row's laid
+      -- in), the object's own values -- a token's or a copy's as created, a
+      -- merge's, a conjured duplicate's -- or else its card's face.
+      beneathCopy = do
+        layerOne <- Game.lookupLayerOne oid gs
+        _ <- Binding.copyEffectOf (Object.bindings layerOne)
+        let uncopied = layerOne {Object.bindings = Binding.withoutCopyEffect (Object.bindings layerOne)}
+        case Game.copyStampOf uncopied of
+          Just values -> Set.lookupMin (ProjectedCharacteristics.names values)
+          Nothing -> fmap Face.name (Game.faceOfObject gs uncopied)
   pure
     ObjectView.MkObjectView
       { ObjectView.object = oid,
@@ -205,6 +217,7 @@ objectView pid gs oid = do
             then if isMerged || not (null lookedOwn) then Just (Projection.projectFrom lookedOwn oid looked) else Nothing
             else if shown && (isMerged || not (null own)) then Just (Projection.projectFrom own oid gs) else Nothing,
         ObjectView.merged = Seq.fromList (Maybe.mapMaybe named under),
+        ObjectView.beneathCopy = if seen && not faceDown then beneathCopy else Nothing,
         ObjectView.foretellCostReduction =
           if seen
             then Object.foretellCostReduction object

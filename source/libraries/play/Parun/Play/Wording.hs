@@ -321,6 +321,7 @@ recalled view oid = case Map.lookup oid (objects view) of
         ObjectView.foretellCostReduction = Nothing,
         ObjectView.ownEffects = Nothing,
         ObjectView.merged = Seq.empty,
+        ObjectView.beneathCopy = Nothing,
         ObjectView.ability = Nothing,
         ObjectView.targets = [],
         ObjectView.summoningSick = False,
