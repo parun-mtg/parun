@@ -182,6 +182,30 @@ body {
   min-height: 100dvh;
 }
 
+/* iOS 26 blurs the top of a Home Screen app unless WebKit finds a fixed or
+   sticky box at least 90% of the viewport's width, with a solid background
+   and no backdrop filter, under the top edge's midpoint
+   (LocalFrameView::fixedContainerEdges), and tints the status bar with that
+   colour instead. With viewport-fit=cover the edge is under the status bar,
+   so this strip spans it on every screen, whatever the screen's own bars
+   do. A box 10px tall or less gives no colour. */
+.status-edge {
+  display: none;
+}
+
+@media (display-mode: standalone) {
+  .status-edge {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 45;
+    height: env(safe-area-inset-top);
+    background: var(--surface);
+  }
+}
+
 h1,
 h2,
 h3,
@@ -2150,11 +2174,8 @@ main.game {
     "side";
 }
 
-/* Sticky, though nothing scrolls it: iOS 26 blurs the top of a Home Screen
-   app unless a fixed or sticky full-width box with a solid background and no
-   backdrop filter spans the edge (WebKit's
-   LocalFrameView::fixedContainerEdges), and then tints the status bar with
-   that colour instead. */
+/* Sticky, though nothing scrolls it, for the status edge's reason
+   (.status-edge). */
 .turn-bar {
   position: sticky;
   top: 0;
