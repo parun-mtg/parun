@@ -222,6 +222,15 @@ date game =
       twoDigits n = (if n < 10 then "0" else "") <> show n
    in show day <> " " <> Maybe.fromMaybe "" (lookup month (zip [1 ..] months)) <> " " <> show year <> ", " <> twoDigits (div minutes 60) <> ":" <> twoDigits (mod minutes 60)
 
+-- | The name a downloaded game is saved under, by when it ended on the
+-- page's clock then, to the second: "parun-game-2026-11-21-140500.json".
+fileName :: Game -> Text.Text
+fileName game =
+  let (days, seconds) = divMod (div (ended game) 1000 + offset game * 60) 86400
+      (year, month, day) = civil days
+      twoDigits n = (if n < 10 then "0" else "") <> show n
+   in Text.pack ("parun-game-" <> show year <> "-" <> twoDigits month <> "-" <> twoDigits day <> "-" <> twoDigits (div seconds 3600) <> twoDigits (mod (div seconds 60) 60) <> twoDigits (mod seconds 60) <> ".json")
+
 -- | The proleptic Gregorian year, month and day so many days after 1 January
 -- 1970 (Howard Hinnant's civil_from_days).
 civil :: Integer -> (Integer, Integer, Integer)

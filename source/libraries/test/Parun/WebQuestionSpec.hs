@@ -1535,7 +1535,8 @@ frameAt stop =
       Replay.question = Nothing,
       Replay.failure = Nothing,
       Replay.reading = Nothing,
-      Replay.written = Map.empty
+      Replay.written = Map.empty,
+      Replay.kept = Nothing
     }
 
 -- | The turn bar of the replay page at the stop.

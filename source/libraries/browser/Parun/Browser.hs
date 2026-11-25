@@ -173,6 +173,10 @@ playedScenario = fmap (Text.pack . Prim.fromJSString) . playedScenarioJs . Prim.
 keepPlayed :: Text.Text -> Text.Text -> Text.Text -> IO ()
 keepPlayed k summary scenario = keepPlayedJs (Prim.toJSString (Text.unpack k)) (Prim.toJSString (Text.unpack summary)) (Prim.toJSString (Text.unpack scenario))
 
+-- | Saves this text to the player's device as a file of this name (page.js).
+download :: Text.Text -> Text.Text -> IO ()
+download name contents = downloadJs (Prim.toJSString (Text.unpack name)) (Prim.toJSString (Text.unpack contents))
+
 -- | Forgets the finished game of this key.
 forgetPlayed :: Text.Text -> IO ()
 forgetPlayed = forgetPlayedJs . Prim.toJSString . Text.unpack
@@ -441,6 +445,9 @@ foreign import javascript unsafe "globalThis.parunPlayedScenario($1)"
 
 foreign import javascript unsafe "globalThis.parunKeepPlayed($1, $2, $3)"
   keepPlayedJs :: Prim.JSString -> Prim.JSString -> Prim.JSString -> IO ()
+
+foreign import javascript unsafe "globalThis.parunDownload($1, $2)"
+  downloadJs :: Prim.JSString -> Prim.JSString -> IO ()
 
 foreign import javascript unsafe "globalThis.parunForgetPlayed($1)"
   forgetPlayedJs :: Prim.JSString -> IO ()

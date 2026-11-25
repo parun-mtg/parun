@@ -109,6 +109,11 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
       Spec.assertEqWith s "back" (tapped "All replays") (Just Replay.MkBack)
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "&amp;branch") (Html.toText page))) "no branch link"
 
+    Spec.it s "offers a game finished here to download, and no scenario" $ do
+      let tapped f = let page = Replay.view f in Html.labelled (Text.pack "button") (Text.pack "Download") page >>= \path -> Html.handler (Text.pack "click") path page
+      Spec.assertEqWith s "a game" (tapped frame {Replay.kept = Just (Text.pack "3")}) (Just (Replay.MkDownload (Text.pack "3")))
+      Spec.assertEqWith s "a scenario" (tapped frame) Nothing
+
     Spec.it s "says the entry in a line, and nothing as the engine writes it" $ do
       let page = Html.toText . Replay.view $ frame {Replay.entryLine = Just (Text.pack "Turn 1 \x00b7 Untap \x00b7 a library is shuffled")}
       Spec.assertBool s (Text.isInfixOf (Text.pack "<p class=\"entry-line\">Turn 1 \x00b7 Untap \x00b7 a library is shuffled</p>") page) "line"
@@ -193,11 +198,12 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
         shown = Replay.listing games
         page listing = Html.toText (Replay.picker listing Nothing)
         tapping label listing = let view = Replay.picker listing Nothing in Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
-    Spec.it s "shows the games finished here first, newest first" $ do
+    Spec.it s "shows the games finished here first, newest first, each to watch, play again or download" $ do
       Spec.assertEqWith s "the shelf" (Replay.shelf shown, Replay.shelf (Replay.listing [])) (Replay.MkYourGames, Replay.MkScenarios)
       Spec.assertEqWith s "newest first" (fmap History.ended (Replay.games shown)) [3, 2, 1]
       Spec.assertEqWith s "watch" (tapping "Watch" shown) (Just (Replay.MkWatch (Text.pack "3")))
       Spec.assertEqWith s "play again" (tapping "Play again" shown) (Just (Replay.MkPlayAgain (Text.pack "3")))
+      Spec.assertEqWith s "download" (tapping "Download" shown) (Just (Replay.MkDownload (Text.pack "3")))
       Spec.assertEqWith s "to the scenarios" (tapping "Scenarios" shown) (Just (Replay.MkShow Replay.MkScenarios))
 
     Spec.it s "asks before deleting a game, and deletes only it once confirmed" $ do
@@ -260,5 +266,6 @@ frame =
       Replay.question = Nothing,
       Replay.failure = Nothing,
       Replay.reading = Nothing,
-      Replay.written = Map.empty
+      Replay.written = Map.empty,
+      Replay.kept = Nothing
     }

@@ -828,7 +828,18 @@ engine.onmessage = ({ data }) => {
   else if ("link" in data) linkStep(data.link);
   else if ("game" in data) keepGame(data.game);
   else if ("locate" in data) locate(data.locate);
+  else if ("download" in data) download(data.download);
 };
+// A file the engine hands over (Parun.Browser.download), saved to the
+// player's device under its name.
+function download({ name, text }) {
+  const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
 // The engine names each screen it shows by a query (Parun.Web.Route), which
 // the address bar shows; back and forward load the page afresh at the query
 // they reach, since the engine opens a screen only from its start. A move
