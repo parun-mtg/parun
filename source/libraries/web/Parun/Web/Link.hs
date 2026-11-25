@@ -44,6 +44,8 @@ import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Log as Log
+import qualified Parun.Web.Replay as Web.Replay
+import qualified Parun.Web.Route as Route
 
 -- | What one page tells the other.
 data Message
@@ -304,22 +306,38 @@ guest local message = case message of
   _ -> pure MkIgnored
 
 -- | A game as the page playing it keeps it (the host's, for a game with
--- guests), to pick it up after a reload (Protocol.resumed): its seed, each seat's deck as a label and its
--- list's text (the host's first), the bots' slots players were invited to,
--- those played on the host's screen and how, how each bot plays by its slot
--- (Parun.Play.Opponent; Lobby.botAt), the options the game is played with
--- (CR 800.2) but its format, which its lists' headers name, the minutes
--- each seat a person plays has on its clock (Parun.Web.Clock), if timed,
--- and every reply so far.
+-- guests), to pick it up after a reload (Protocol.resumed): its seed, where
+-- it began, how each bot plays by its slot (Parun.Play.Opponent;
+-- Lobby.botAt), and every reply so far.
 data Saved = MkSaved
   { seed :: Key.Type.Key,
-    seats :: NonEmpty.NonEmpty (Text.Text, Text.Text),
+    origin :: Origin,
+    bots :: Map.Map Int (Difficulty.Difficulty, Persona.Persona),
+    replies :: [R.Reply]
+  }
+  deriving (Eq, Show)
+
+-- | Where a kept game began.
+data Origin
+  = -- | Dealt from the lobby.
+    MkLobby Dealt
+  | -- | Played on from this position of this replay, as this seat or every
+    -- seat (Parun.Browser.Replay.playOn).
+    MkReplayed Web.Replay.Source Natural (Maybe PlayerId.PlayerId)
+  deriving (Eq, Show)
+
+-- | A game dealt from the lobby: each seat's deck as a label and its list's
+-- text (the host's first), the bots' slots players were invited to, those
+-- played on the host's screen and how, the options the game is played with
+-- (CR 800.2) but its format, which its lists' headers name, and the
+-- minutes each seat a person plays has on its clock (Parun.Web.Clock), if
+-- timed.
+data Dealt = MkDealt
+  { seats :: NonEmpty.NonEmpty (Text.Text, Text.Text),
     invited :: [Int],
     locals :: Map.Map Int Sitting,
-    bots :: Map.Map Int (Difficulty.Difficulty, Persona.Persona),
     settings :: GameSettings.GameSettings,
-    clock :: Maybe Natural,
-    replies :: [R.Reply]
+    clock :: Maybe Natural
   }
   deriving (Eq, Show)
 
@@ -335,23 +353,30 @@ data Sitting
 
 -- | A saved game as the page keeps it, stamped with the build that played
 -- it: a line for the game, then one per reply (savedReply), so a reply is
--- kept by adding its line.
+-- kept by adding its line. A replay played on is kept as its route
+-- (Parun.Web.Route).
 saved :: Text.Text -> Saved -> Text.Text
 saved build game =
   let seat (name, contents) = Value.object [Value.pair "deck" (Value.text name), Value.pair "list" (Value.text contents)]
-      slots sitting = Value.array [Value.integer (toInteger i) | (i, how) <- Map.toList (locals game), how == sitting]
+      begun = case origin game of
+        MkLobby dealt ->
+          let slots sitting = Value.array [Value.integer (toInteger i) | (i, how) <- Map.toList (locals dealt), how == sitting]
+           in [ Value.pair "seats" (Value.array (fmap seat (NonEmpty.toList (seats dealt)))),
+                Value.pair "invited" (Value.array (fmap (Value.integer . toInteger) (invited dealt))),
+                Value.pair "locals" (slots MkHandedOver),
+                Value.pair "yours" (slots MkYours),
+                Value.pair "settings" (Codec.encode Codec.GameSettings.codec (settings dealt)),
+                Value.pair "clock" (Codec.encode (Common.maybe Common.natural) (clock dealt))
+              ]
+        MkReplayed source at chosen -> [Value.pair "replay" (Value.text (Route.render (Route.MkReplay (Route.MkPlayingOn chosen) source at)))]
       header =
         Value.object
-          [ Value.pair "build" (Value.text build),
-            Value.pair "seed" (Value.text (Key.toHex (seed game))),
-            Value.pair "seats" (Value.array (fmap seat (NonEmpty.toList (seats game)))),
-            Value.pair "invited" (Value.array (fmap (Value.integer . toInteger) (invited game))),
-            Value.pair "locals" (slots MkHandedOver),
-            Value.pair "yours" (slots MkYours),
-            Value.pair "bots" (Value.array [Value.object [Value.pair "slot" (Value.integer (toInteger i)), Value.pair "difficulty" (Value.string (fst (Opponent.difficultyName level))), Value.pair "persona" (Value.string (fst (Opponent.personaName style)))] | (i, (level, style)) <- Map.toList (bots game)]),
-            Value.pair "settings" (Codec.encode Codec.GameSettings.codec (settings game)),
-            Value.pair "clock" (Codec.encode (Common.maybe Common.natural) (clock game))
-          ]
+          ( [ Value.pair "build" (Value.text build),
+              Value.pair "seed" (Value.text (Key.toHex (seed game))),
+              Value.pair "bots" (Value.array [Value.object [Value.pair "slot" (Value.integer (toInteger i)), Value.pair "difficulty" (Value.string (fst (Opponent.difficultyName level))), Value.pair "persona" (Value.string (fst (Opponent.personaName style)))] | (i, (level, style)) <- Map.toList (bots game)])
+            ]
+              <> begun
+          )
    in Text.intercalate (Text.pack "\n") (Common.render header : fmap savedReply (replies game))
 
 -- | A reply's line in a saved game.
@@ -368,18 +393,10 @@ unsaved build kept = case Text.lines kept of
     theirs <- Common.field "build" pairs >>= Common.asText
     Monad.unless (theirs == build) . Left $ Text.pack "the game was played on another build of Parun"
     key <- Common.field "seed" pairs >>= Common.asText >>= maybe (Left (Text.pack "not a seed")) Right . Key.fromHex
-    listed <- Common.field "seats" pairs >>= Common.asArray >>= traverse seat
-    decks <- maybe (Left (Text.pack "no seats")) Right (NonEmpty.nonEmpty listed)
-    let slotsAt name = Common.field name pairs >>= Common.asArray >>= traverse (Common.asInteger Monad.>=> maybe (Left (Text.pack "not a slot")) Right . Integer.toInt)
-    slots <- slotsAt "invited"
-    handed <- slotsAt "locals"
-    yours <- slotsAt "yours"
-    let here = Map.fromList (fmap (\i -> (i, MkHandedOver)) handed <> fmap (\i -> (i, MkYours)) yours)
+    begun <- maybe (dealt pairs) replayed (Common.optionalField "replay" pairs)
     styles <- Common.field "bots" pairs >>= Common.asArray >>= traverse styleOf
-    options <- Common.field "settings" pairs >>= Codec.decode Codec.GameSettings.codec
-    minutes <- Common.field "clock" pairs >>= Codec.decode (Common.maybe Common.natural)
     answers <- traverse (Common.parse Monad.>=> Codec.Reply.fromValue) (filter (not . Text.null) rest)
-    pure (MkSaved key decks slots here (Map.fromList styles) options minutes answers)
+    pure (MkSaved key begun (Map.fromList styles) answers)
   where
     named :: (Bounded a, Enum a) => String -> (a -> (String, String)) -> Text.Text -> Either Text.Text a
     named what nameOf name = maybe (Left (Text.pack ("not " <> what <> ": ") <> name)) Right (Opponent.named nameOf (Text.unpack name))
@@ -392,3 +409,18 @@ unsaved build kept = case Text.lines kept of
       level <- Common.field "difficulty" fields >>= Common.asText >>= named "a difficulty" Opponent.difficultyName
       style <- Common.field "persona" fields >>= Common.asText >>= named "a persona" Opponent.personaName
       pure (i, (level, style))
+    replayed value = do
+      route <- Common.asText value
+      case Route.parse route of
+        Route.MkReplay (Route.MkPlayingOn chosen) source at -> Right (MkReplayed source at chosen)
+        _ -> Left (Text.pack "not a replay played on: " <> route)
+    dealt header = do
+      listed <- Common.field "seats" header >>= Common.asArray >>= traverse seat
+      decks <- maybe (Left (Text.pack "no seats")) Right (NonEmpty.nonEmpty listed)
+      let slotsAt name = Common.field name header >>= Common.asArray >>= traverse (Common.asInteger Monad.>=> maybe (Left (Text.pack "not a slot")) Right . Integer.toInt)
+      slots <- slotsAt "invited"
+      handed <- slotsAt "locals"
+      yours <- slotsAt "yours"
+      options <- Common.field "settings" header >>= Codec.decode Codec.GameSettings.codec
+      minutes <- Common.field "clock" header >>= Codec.decode (Common.maybe Common.natural)
+      pure (MkLobby (MkDealt decks slots (Map.fromList (fmap (\i -> (i, MkHandedOver)) handed <> fmap (\i -> (i, MkYours)) yours)) options minutes))
