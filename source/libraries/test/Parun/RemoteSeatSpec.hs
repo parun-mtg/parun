@@ -129,7 +129,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
 
   Spec.it s "a whole game on the clocks: each seat charged only while it decides, and the game stopping as Player 2's runs out, lost to Player 1" $ do
     matchup <- BotSpec.bears s registry
-    let options = Lobby.playOptions Map.empty 2 (Set.singleton S.bob)
+    let options = Lobby.playOptions Map.empty 2 S.alice (Set.singleton S.bob)
         seatOf = Question.seat . Request.question
         -- Player 2 takes half a minute over each decision, Player 1 none.
         onScreen request = do
