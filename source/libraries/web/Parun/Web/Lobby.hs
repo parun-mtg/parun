@@ -8,7 +8,6 @@
 --
 --   * Deploying creatures, the multiplayer variants but Free-for-All (CR 804,
 --     807 to 811) and Archenemy (CR 904) (#9749).
---   * A planar deck dealt to a seat whose list brings none (#9750).
 module Parun.Web.Lobby where
 
 import qualified Control.Monad as Monad
@@ -22,8 +21,10 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Data.Traversable as Traversable
 import Numeric.Natural (Natural)
 import qualified Parun.DeckList as DeckList
+import qualified Parun.Engine.Card as EngineCard
 import qualified Parun.Engine.RuleFamily as RuleFamily.Engine
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Command as Command
@@ -31,6 +32,7 @@ import qualified Parun.Play.Opponent as Opponent
 import qualified Parun.Types.AttackOption as AttackOption
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Face as Face
@@ -45,6 +47,8 @@ import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.RuleFamily as RuleFamily
+import qualified Parun.Types.SideDeck as SideDeck
+import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Web.BotSettings as BotSettings
 import qualified Parun.Web.Clock as Clock
 import qualified Parun.Web.DeckBrowser as DeckBrowser
@@ -89,7 +93,10 @@ data Lobby = MkLobby
     -- first.
     abandoning :: Maybe Event,
     -- | The options the game is started with.
-    options :: Options
+    options :: Options,
+    -- | Why Start last refused the seats' lists ('planarDealt'), until the
+    -- match-up changes.
+    refusal :: Maybe Text.Text
   }
   deriving (Eq, Show)
 
@@ -98,6 +105,9 @@ data Lobby = MkLobby
 data Options = MkOptions
   { -- | CR 407.1: whether the game is played for ante.
     ante :: Bool,
+    -- | CR 901: whether the game is a Planechase game, each seat whose list
+    -- brings no planar deck dealt one ('planarDealt').
+    planechase :: Bool,
     -- | CR 901.15: whether a Planechase game uses one communal planar deck.
     singlePlanarDeck :: Bool,
     -- | CR 806.2b: the attack option a game of three or more seats uses.
@@ -114,7 +124,7 @@ data Options = MkOptions
 -- | No option in use: CR 802's attack multiple players, which needs no
 -- seating agreed ('GameSettings.plain').
 noOptions :: Options
-noOptions = MkOptions {ante = False, singlePlanarDeck = False, attackOption = AttackOption.MultiplePlayers, rangeOfInfluence = Nothing, clock = Nothing}
+noOptions = MkOptions {ante = False, planechase = False, singlePlanarDeck = False, attackOption = AttackOption.MultiplePlayers, rangeOfInfluence = Nothing, clock = Nothing}
 
 -- | The attack options a game may choose (CR 806.2b), each with its value
 -- and its label; CR 809.3c's is the Emperor variant's.
@@ -149,7 +159,7 @@ settings lobby =
       everyone n = RangeOfInfluence.MkRangeOfInfluence (Map.fromList [(Command.idOf k, n) | k <- [1 .. count]])
    in GameSettings.plain
         { GameSettings.ante = ante chosen',
-          GameSettings.singlePlanarDeck = singlePlanarDeck chosen',
+          GameSettings.singlePlanarDeck = planechase chosen' && singlePlanarDeck chosen',
           GameSettings.attackOption = if multiplayer count then Just (attackOption chosen') else GameSettings.attackOption GameSettings.plain,
           GameSettings.rangeOfInfluence = if multiplayer count then maybe RangeOfInfluence.unlimited everyone (rangeOfInfluence chosen') else RangeOfInfluence.unlimited
         }
@@ -246,6 +256,8 @@ data Event
     MkCancel
   | -- | Toggles whether the game is played for ante (CR 407.1).
     MkAnte
+  | -- | Toggles whether the game is a Planechase game (CR 901).
+    MkPlanechase
   | -- | Toggles whether a Planechase game uses one planar deck (CR 901.15).
     MkSinglePlanarDeck
   | -- | Sets the attack option to the one whose value is chosen
@@ -276,7 +288,8 @@ new =
       bots = Map.empty,
       paused = False,
       abandoning = Nothing,
-      options = noOptions
+      options = noOptions,
+      refusal = Nothing
     }
 
 -- | A new lobby with this deck yours, on the shelf it is on.
@@ -369,6 +382,69 @@ dealt :: (Monad m) => (Seq.Seq Text.Text -> m (Maybe Text.Text)) -> (Text.Text -
 dealt roll keeps among =
   let next name = keeps name >>= \kept -> if kept then pure (Just name) else dealt roll keeps (Seq.filter (/= name) among)
    in roll among >>= maybe (pure Nothing) next
+
+-- | A card a planar deck may hold (CR 901.3): its name and whether it is a
+-- phenomenon card; nothing for any other card, or a synthetic one.
+planarCardOf :: Card.Card -> Maybe (CardName.CardName, Bool)
+planarCardOf c =
+  let face = EngineCard.combined c
+      types = TypeLine.types (Face.typeLine face)
+      phenomenon = Set.member CardType.Phenomenon types
+   in if not (Card.synthetic c) && (phenomenon || Set.member CardType.Plane types) then Just (Face.name face, phenomenon) else Nothing
+
+-- | These, in an order `pick` makes: `pick n` names one of the first `n`
+-- left, from zero.
+shuffledBy :: (Monad m) => (Int -> m Int) -> [a] -> m [a]
+shuffledBy pick among = case among of
+  [] -> pure []
+  _ -> do
+    i <- pick (length among)
+    case splitAt i among of
+      (before, chosen' : after) -> (chosen' :) <$> shuffledBy pick (before <> after)
+      (before, []) -> pure before
+
+-- | CR 901.3: the cards of a planar deck dealt from these, in order: the
+-- first ten, a phenomenon past the second passed over; and the cards left,
+-- in order. Nothing where too few are.
+planarHand :: [(CardName.CardName, Bool)] -> Maybe ([CardName.CardName], [(CardName.CardName, Bool)])
+planarHand = go [] (0 :: Int) []
+  where
+    go hand phenomena passed rest
+      | length hand == 10 = Just (reverse hand, reverse passed <> rest)
+      | otherwise = case rest of
+          [] -> Nothing
+          card@(name, phenomenon) : more
+            | phenomenon && phenomena >= 2 -> go hand phenomena (card : passed) more
+            | otherwise -> go (name : hand) (if phenomenon then phenomena + 1 else phenomena) passed more
+
+-- | The names of the planar deck a deck list brings (CR 901.3).
+planarNames :: Text.Text -> [CardName.CardName]
+planarNames contents = [card | (DeckList.Supplementary SideDeck.Planar, _, card) <- sectioned contents]
+
+-- | The seats' lists, each a deck's name and its list, as Start deals them.
+-- With Planechase off, refused where one brings a planar deck.
+-- With it on, each list bringing none given a planar deck (planarHand) from
+-- `pool` in the order `shuffle` puts it: its own shuffle each, or, under CR
+-- 901.15a's single planar deck, one shuffle shared, of the names no list
+-- brings, so the communal deck repeats none. Refused, saying why, where the
+-- pool runs short.
+planarDealt :: (Monad m) => ([(CardName.CardName, Bool)] -> m [(CardName.CardName, Bool)]) -> Options -> [(CardName.CardName, Bool)] -> NonEmpty.NonEmpty (Text.Text, Text.Text) -> m (Either Text.Text (NonEmpty.NonEmpty (Text.Text, Text.Text)))
+planarDealt shuffle chosen' pool seats
+  | not (planechase chosen') = pure $ case [seat | seat <- NonEmpty.toList seats, brings seat] of
+      seat@(name, _) : _ -> Left (Text.concat [Text.pack "Planechase is off, but ", DeckBrowser.label (DeckBrowser.titleIn seat) name, Text.pack " brings a planar deck: turn Planechase on, or drop its Planar Deck section."])
+      [] -> Right seats
+  | singlePlanarDeck chosen' = do
+      let brought = Set.fromList (foldMap (planarNames . snd) seats)
+          step left seat
+            | brings seat = (left, Right seat)
+            | otherwise = maybe (left, Left short) (\(hand, rest) -> (rest, Right (with hand seat))) (planarHand left)
+      order <- shuffle [card | card@(name, _) <- pool, Set.notMember name brought]
+      pure (sequence (snd (Traversable.mapAccumL step order seats)))
+  | otherwise = sequence <$> traverse (\seat -> if brings seat then pure (Right seat) else maybe (Left short) (\(hand, _) -> Right (with hand seat)) . planarHand <$> shuffle pool) seats
+  where
+    brings = not . null . planarNames . snd
+    with hand (name, contents) = (name, Text.unlines (Text.stripEnd contents : Text.empty : DeckList.heading (DeckList.Supplementary SideDeck.Planar) : [Text.pack "1 " <> CardName.unwrap card | card <- hand]))
+    short = Text.pack ("The pool's " <> show (length pool) <> " planes and phenomena can't deal " <> (if singlePlanarDeck chosen' then "one planar deck for " <> show (length seats) <> " players" else "every seat a planar deck") <> ": turn the single planar deck off, or seat fewer players.")
 
 -- | A card's colours as a deck shows them: those of the mana symbols in
 -- its faces' costs.
@@ -504,6 +580,7 @@ updated event typed lobby = case event of
   MkResume -> lobby
   MkCancel -> lobby {abandoning = Nothing}
   MkAnte -> optioned (\o -> o {ante = not (ante o)})
+  MkPlanechase -> optioned (\o -> o {planechase = not (planechase o)})
   MkSinglePlanarDeck -> optioned (\o -> o {singlePlanarDeck = not (singlePlanarDeck o)})
   MkAttackOption -> maybe lobby (\a -> optioned (\o -> o {attackOption = a})) (valued attackOptions)
   MkRangeOfInfluence -> maybe lobby (\r -> optioned (\o -> o {rangeOfInfluence = r})) (valued ranges)
@@ -535,12 +612,12 @@ heard i message lobby =
 linked :: Int -> (Invite -> Invite) -> Lobby -> Lobby
 linked i f lobby = settled lobby lobby {invites = Map.adjust f i (invites lobby)}
 
--- | The lobby after a change, every ready flag cleared where the match-up
--- changed: a deck, a seat, an invite or an option.
+-- | The lobby after a change, every ready flag and Start's refusal cleared
+-- where the match-up changed: a deck, a seat, an invite or an option.
 settled :: Lobby -> Lobby -> Lobby
 settled before after
   | matchupOf before == matchupOf after = after
-  | otherwise = unready after
+  | otherwise = (unready after) {refusal = Nothing}
   where
     matchupOf l = (mine l, theirs l, locals l, options l, fmap (\invite -> (connected invite, fmap fst (guestDeck invite), fmap snd (guestDeck invite))) (invites l))
 
@@ -594,10 +671,9 @@ placesFor named listed i lobby =
 -- its value as 'optionsView' shows them.
 told :: Lobby -> [(Text.Text, Text.Text)]
 told lobby =
-  [ (Text.pack "Play for ante", yesNo (ante chosen')),
-    (Text.pack "Single planar deck", yesNo (singlePlanarDeck chosen')),
-    (Text.pack "Clock", labelIn Clock.choices (clock chosen'))
-  ]
+  [(Text.pack "Play for ante", yesNo (ante chosen')), (Text.pack "Planechase", yesNo (planechase chosen'))]
+    <> [(Text.pack "Single planar deck", yesNo (singlePlanarDeck chosen')) | planechase chosen']
+    <> [(Text.pack "Clock", labelIn Clock.choices (clock chosen'))]
     <> ( if multiplayer (seatCount lobby)
            then [(Text.pack "Attacks", labelIn attackOptions (attackOption chosen')), (Text.pack "Range of influence", labelIn ranges (rangeOfInfluence chosen'))]
            else []
@@ -741,17 +817,18 @@ seatsView lobby =
               : below
                 <> [Element.el "div" ["seat-actions"] [] extra | not (null extra)]
 
--- | The game's options: ante, the single planar deck, each seat's clock,
--- and at three seats or more CR 806.2's attack option and range of
--- influence.
+-- | The game's options: ante, Planechase and, while it is on, the single
+-- planar deck, each seat's clock, and at three seats or more CR 806.2's
+-- attack option and range of influence.
 optionsView :: Lobby -> Html.Html Event
 optionsView lobby =
   Element.el "fieldset" ["game-options"] [] $
     [ Element.el "legend" ["eyebrow"] [] [Element.string "Game options"],
       toggle "option-ante" MkAnte (ante chosen') "Play for ante" "Each player antes a random card from their library; the winner owns them all.",
-      toggle "option-single-planar-deck" MkSinglePlanarDeck (singlePlanarDeck chosen') "Single planar deck" "In Planechase, every planar deck the lists bring is shuffled into one.",
-      menu "option-clock" MkClock "Clock" [(value, label, option == clock chosen') | (option, (value, label)) <- Clock.choices]
+      toggle "option-planechase" MkPlanechase (planechase chosen') "Planechase" "Each seat plays its list's planar deck, or one dealt from the planes and phenomena."
     ]
+      <> [toggle "option-single-planar-deck" MkSinglePlanarDeck (singlePlanarDeck chosen') "Single planar deck" "Every seat's planar deck is shuffled into one." | planechase chosen']
+      <> [menu "option-clock" MkClock "Clock" [(value, label, option == clock chosen') | (option, (value, label)) <- Clock.choices]]
       <> ( if multiplayer (seatCount lobby)
              then
                [ menu "option-attack" MkAttackOption "Attacks" [(value, label, option == attackOption chosen') | (option, (value, label)) <- attackOptions],
@@ -827,6 +904,7 @@ starting lobby =
       Element.el "p" ["start-note", "muted"] [Element.attr "id" (Text.pack "start-note"), Element.attr "aria-live" (Text.pack "polite")] [Element.string (Maybe.fromMaybe (if null (theirs lobby) then "Just you: a goldfish game. Ready to start." else "Every seat has a deck. Ready to start.") (waiting lobby))]
     ]
       <> [Element.el "ul" ["problems", "refusal"] [] [Element.el "li" [] [] [Element.text p] | p <- problems] | Left problems@(_ : _) <- [startable lobby]]
+      <> [Element.el "p" ["problem", "planar-refusal"] [Element.attr "role" (Text.pack "alert")] [Element.text why] | why <- Maybe.maybeToList (refusal lobby)]
 
 -- | The decks the seat being chosen for may play: the ways to add one, the
 -- shelves, the filters, and the decks shown as tiles.
