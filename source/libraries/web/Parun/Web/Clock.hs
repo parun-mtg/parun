@@ -7,9 +7,6 @@
 --
 --   * A seat out of time in a game of three or more leaving it, the others
 --     playing on: the game stops (#9757).
---   * A game picked up after a reload charging the seat deciding then the
---     time it spent on that decision: its clock reads as at the last reply
---     kept (#9780).
 module Parun.Web.Clock where
 
 import qualified Data.Map.Strict as Map
@@ -17,6 +14,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Protocol as Protocol
@@ -79,11 +77,37 @@ timed now within clocks change seat ask request = do
       change (stop ended)
       maybe (change (\c -> c {out = Just seat}) >> pure Nothing) pure answered
 
+-- | The running clock as the page keeps it for a reload
+-- (Parun.Web.Link.savedRunning): its seat, that seat's time left as it
+-- started, in seconds, and when it started and when the page was left, if
+-- it was, in milliseconds since the Unix epoch.
+data Kept = MkKept
+  { deciding :: PlayerId.PlayerId,
+    bankThen :: Double,
+    startedAt :: Integer,
+    leftAt :: Maybe Integer
+  }
+  deriving (Eq, Show)
+
+-- | The running clock at this time of the monotonic clock, which is this
+-- many milliseconds since the Unix epoch, as the page keeps it.
+keeping :: Double -> Integer -> Clocks -> Maybe Kept
+keeping at epoch clocks = do
+  (seat, since) <- running clocks
+  bank <- Map.lookup seat (left clocks)
+  pure (MkKept seat bank (epoch - round ((at - since) * 1000)) Nothing)
+
 -- | The clocks of a game picked up after a reload (Parun.Web.Link.Saved),
 -- from `fresh`, those it started with, and the time banks kept with each
--- reply made: every seat's time left as the last reply found it.
-resumed :: Clocks -> [Map.Map PlayerId.PlayerId Double] -> Clocks
-resumed fresh kept = maybe fresh (\l -> fresh {left = l}) (Maybe.listToMaybe (reverse kept))
+-- reply made: every seat's time left as the last reply found it, but the
+-- seat whose clock ran as the page was left, if one did, charged from its
+-- time left as it started the time it ran until then, never below none. A
+-- clock kept unstamped (the page crashed, say) charges none of its run.
+resumed :: Clocks -> [Map.Map PlayerId.PlayerId Double] -> Maybe Kept -> Clocks
+resumed fresh kept pending =
+  let replied = maybe fresh (\l -> fresh {left = l}) (Maybe.listToMaybe (reverse kept))
+      charged k = max 0 (bankThen k - maybe 0 (\l -> Natural.toDouble (Integer.toNaturalSaturating (l - startedAt k)) / 1000) (leftAt k))
+   in maybe replied (\k -> replied {left = Map.adjust (const (charged k)) (deciding k) (left replied)}) pending
 
 -- | Each timed seat's time left at this time, in seconds, the running
 -- clock read down to it: what a guest's page is sent (Parun.Web.Link).

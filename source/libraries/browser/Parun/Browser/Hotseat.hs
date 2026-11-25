@@ -86,9 +86,11 @@ instance Exception.Exception Abandoned
 -- (awaiting) or a search bot does (breathing); leaving for the home
 -- screen through `leave`. The game picks up after the replies in
 -- `stored`, each made again (Protocol.resumed) and each bot's given back
--- to it (Game.remembered), its clocks as the last reply left them
--- (Web.Clock.resumed), and every reply made from there, a bot's too, is
--- given to `kept` with the time banks then; the seat each prompt asks, a
+-- to it (Game.remembered), its clocks as the last reply left them, the
+-- clock `running` as the page was left charged (Web.Clock.resumed), and
+-- every reply made from there, a bot's too, is given to `kept` with the
+-- time banks then, and each clock as it starts to `keepRunning`
+-- (Web.Clock.keeping); the seat each prompt asks, a
 -- bot's too, is given to `decides` first, with the game then, its depth
 -- (Link.deciding) and the time banks. Each bot deals what it cannot see from the game's
 -- format's pool among `cards` (Command.pooled), by the legality table `table` gives.
@@ -97,10 +99,10 @@ instance Exception.Exception Abandoned
 -- loses to a reload: how it came out, or why it could not start, taking
 -- no seat's side where another person plays at this screen
 -- (Link.MkHandedOver).
-game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> GameSettings.GameSettings -> Maybe Natural -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (IO Ending.Seen -> IO Link.Banks -> Protocol.Exchange IO) -> Map.Map PlayerId.PlayerId Link.Sitting -> Key.Type.Key -> [(R.Reply, Link.Banks)] -> (R.Reply -> Link.Banks -> IO ()) -> (PlayerId.PlayerId -> GameState.GameState -> Natural -> Link.Banks -> IO ()) -> ((PlayerId.PlayerId -> Ending.Ending) -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
-game page registry cards table levelRef bots settings clock seats remotes locals seed stored kept decides tell leave = do
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> GameSettings.GameSettings -> Maybe Natural -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (IO Ending.Seen -> IO Link.Banks -> Protocol.Exchange IO) -> Map.Map PlayerId.PlayerId Link.Sitting -> Key.Type.Key -> [(R.Reply, Link.Banks)] -> Maybe Web.Clock.Kept -> (R.Reply -> Link.Banks -> IO ()) -> (Web.Clock.Kept -> IO ()) -> (PlayerId.PlayerId -> GameState.GameState -> Natural -> Link.Banks -> IO ()) -> ((PlayerId.PlayerId -> Ending.Ending) -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
+game page registry cards table levelRef bots settings clock seats remotes locals seed stored running kept keepRunning decides tell leave = do
   let people = Set.insert player (Map.keysSet remotes <> Map.keysSet locals)
-  seatRef <- IORef.newIORef . (\s -> s {yours = Set.insert player (Map.keysSet (Map.filter (== Link.MkYours) locals)), handed = Link.MkHandedOver `elem` locals, clocks = Web.Clock.resumed (Web.Clock.starting clock people) (fmap snd stored)}) . newSeat player Ending.unseen =<< IORef.readIORef levelRef
+  seatRef <- IORef.newIORef . (\s -> s {yours = Set.insert player (Map.keysSet (Map.filter (== Link.MkYours) locals)), handed = Link.MkHandedOver `elem` locals, clocks = Web.Clock.resumed (Web.Clock.starting clock people) (fmap snd stored) running}) . newSeat player Ending.unseen =<< IORef.readIORef levelRef
   keepingLevel levelRef seatRef . Exception.handle (\MkAbandonedGame -> pure (Right Ending.MkAbandoned)) $ do
     let listed = fmap (uncurry (Command.loadText registry)) seats
     case sequenceA listed of
@@ -117,8 +119,13 @@ game page registry cards table levelRef bots settings clock seats remotes locals
             breathRef <- IORef.newIORef Nothing
             botReading <- IORef.newIORef Nothing
             let lookUp = Identity.runIdentity . Interpreter.chosenCard registry
-                -- Each seat a person plays on its clock, if timed.
-                timed = Web.Clock.timed Clock.getMonotonicTime (Browser.within page) (clocks <$> IORef.readIORef seatRef) (\f -> IORef.modifyIORef' seatRef (\s -> s {clocks = f (clocks s)}))
+                -- Each seat a person plays on its clock, if timed, kept as
+                -- it starts for a reload to charge.
+                timed seat ask = Web.Clock.timed Clock.getMonotonicTime (Browser.within page) (clocks <$> IORef.readIORef seatRef) (\f -> IORef.modifyIORef' seatRef (\s -> s {clocks = f (clocks s)})) seat $ \request -> do
+                  at <- Clock.getMonotonicTime
+                  (epoch, _) <- Browser.clock
+                  Monad.mapM_ keepRunning . Web.Clock.keeping at epoch . clocks =<< IORef.readIORef seatRef
+                  ask request
                 banks = Web.Clock.banks <$> Clock.getMonotonicTime <*> (clocks <$> IORef.readIORef seatRef)
                 keep reply = banks >>= kept reply
                 here request = timed (Question.seat (Request.question request)) (exchange lookUp page seatRef leave) request

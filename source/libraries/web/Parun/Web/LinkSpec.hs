@@ -19,6 +19,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
+import qualified Parun.Web.Clock as Clock
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Link as Link
 import qualified Parun.Web.Log as Log
@@ -71,7 +72,7 @@ spec s = Spec.describe s "Parun.Web.Link" $ do
 
   Spec.describe s "saved" $ do
     Spec.it s "reads back a kept game, each bot's level and style by its slot, its options, its clock, a reply added as a line with the time banks then" $ do
-      let game = Link.MkSaved key (Link.MkLobby (Link.MkDealt (NonEmpty.fromList [(Text.pack "sets/a/one", Text.pack "Format: constructed\n24 Forest\n"), (Text.pack "Bot", Text.pack "20 Island\n"), (Text.pack "Here", Text.pack "20 Swamp\n"), (Text.pack "Yours", Text.pack "20 Plains\n")]) [0] (Map.fromList [(1, Link.MkHandedOver), (2, Link.MkYours)]) GameSettings.plain {GameSettings.ante = True, GameSettings.attackOption = Just AttackOption.Leftward} (Just 20))) (Map.fromList [(0, (Difficulty.MkEasy, Persona.MkAggro)), (3, (Difficulty.MkHard, Persona.MkControl))]) [(R.Text (Text.pack "Keep"), Map.fromList [(PlayerId.MkPlayerId 0, 1195.5), (PlayerId.MkPlayerId 2, 1200)])]
+      let game = Link.MkSaved key (Link.MkLobby (Link.MkDealt (NonEmpty.fromList [(Text.pack "sets/a/one", Text.pack "Format: constructed\n24 Forest\n"), (Text.pack "Bot", Text.pack "20 Island\n"), (Text.pack "Here", Text.pack "20 Swamp\n"), (Text.pack "Yours", Text.pack "20 Plains\n")]) [0] (Map.fromList [(1, Link.MkHandedOver), (2, Link.MkYours)]) GameSettings.plain {GameSettings.ante = True, GameSettings.attackOption = Just AttackOption.Leftward} (Just 20))) (Map.fromList [(0, (Difficulty.MkEasy, Persona.MkAggro)), (3, (Difficulty.MkHard, Persona.MkControl))]) [(R.Text (Text.pack "Keep"), Map.fromList [(PlayerId.MkPlayerId 0, 1195.5), (PlayerId.MkPlayerId 2, 1200)])] Nothing
           more :: (R.Reply, Link.Banks)
           more = (R.Object [(Text.pack "action", R.Text (Text.pack "Pass"))], Map.fromList [(PlayerId.MkPlayerId 0, 1195.5), (PlayerId.MkPlayerId 2, 1187.25)])
           build = Text.pack "b"
@@ -81,11 +82,20 @@ spec s = Spec.describe s "Parun.Web.Link" $ do
       let build = Text.pack "b"
           more = (R.Text (Text.pack "Pass"), Map.empty)
       Monad.forM_ [Link.MkReplayed (Replay.MkScenario (Text.pack "rules/601 cast")) 7 (Map.fromList [(PlayerId.MkPlayerId 0, Replay.MkBot Difficulty.MkEasy Persona.MkControl), (PlayerId.MkPlayerId 1, Replay.MkHere)]), Link.MkReplayed (Replay.MkPlayed (Text.pack "abc")) 0 (Map.fromList [(PlayerId.MkPlayerId 0, Replay.MkHere), (PlayerId.MkPlayerId 1, Replay.MkGoldfish)])] $ \begun -> do
-        let game = Link.MkSaved key begun (Map.fromList [(0, (Difficulty.MkHard, Persona.MkAggro))]) [(R.Text (Text.pack "Keep"), Map.empty)]
+        let game = Link.MkSaved key begun (Map.fromList [(0, (Difficulty.MkHard, Persona.MkAggro))]) [(R.Text (Text.pack "Keep"), Map.empty)] Nothing
         Spec.assertEq s (Link.unsaved build (Link.saved build game <> Text.pack "\n" <> Link.savedReply more)) (Right game {Link.replies = Link.replies game <> [more]})
 
+    Spec.it s "reads back the clock running as the page was left, stamped or not, as the last line" $ do
+      let game = Link.MkSaved key (Link.MkLobby (Link.MkDealt (NonEmpty.fromList [(Text.pack "one", Text.pack "20 Forest\n")]) [] Map.empty GameSettings.plain (Just 5))) Map.empty [(R.Text (Text.pack "Keep"), Map.fromList [(PlayerId.MkPlayerId 0, 300)])] Nothing
+          build = Text.pack "b"
+          stamped = Clock.MkKept (PlayerId.MkPlayerId 0) 299.5 1000000 (Just 1012500)
+      Monad.forM_ [stamped, stamped {Clock.leftAt = Nothing}] $ \ran ->
+        Spec.assertEq s (Link.unsaved build (Link.saved build game {Link.running = Just ran})) (Right game {Link.running = Just ran})
+      -- page.js drops a running clock's line by this start.
+      Spec.assertBool s (Text.isPrefixOf (Text.pack "{\"running\":") (Link.savedRunning stamped)) "the line's start"
+
     Spec.it s "refuses a game another build played" $ do
-      let game = Link.MkSaved key (Link.MkLobby (Link.MkDealt (NonEmpty.fromList [(Text.pack "one", Text.pack "20 Forest\n")]) [] Map.empty GameSettings.plain Nothing)) Map.empty []
+      let game = Link.MkSaved key (Link.MkLobby (Link.MkDealt (NonEmpty.fromList [(Text.pack "one", Text.pack "20 Forest\n")]) [] Map.empty GameSettings.plain Nothing)) Map.empty [] Nothing
       Spec.assertBool s (either (Text.isInfixOf (Text.pack "another build")) (const False) (Link.unsaved (Text.pack "new") (Link.saved (Text.pack "old") game))) "refused"
   where
     key = Key.Type.UnsafeKey (Seq.fromList [1, 2, 3, 4, 5, 6, 7, 0xdeadbeef])
