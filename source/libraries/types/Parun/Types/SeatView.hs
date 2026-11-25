@@ -12,6 +12,7 @@ import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerDesignation as PlayerDesignation
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Status as Status
+import qualified Parun.Types.TeamId as TeamId
 
 -- | CR 400.2: one player's zones and totals as one seat sees them, a hidden
 -- zone by its size and only the members that seat may see.
@@ -19,6 +20,11 @@ data SeatView = MkSeatView
   { player :: PlayerId.PlayerId,
     -- | CR 800.4a: whether the player is still in the game or has left it.
     status :: Status.Status,
+    -- | CR 808.1: the team the player is on, Nothing in a game not played
+    -- between teams (CR 102.4).
+    team :: Maybe TeamId.TeamId,
+    -- | CR 810.4: the team's shared total where its life is shared
+    -- (Parun.Engine.Game.lifeSharers keeps each member's equal to it).
     life :: Integer,
     counters :: Map.Map PlayerCounterKind.PlayerCounterKind Natural.Natural,
     handSize :: Natural.Natural,

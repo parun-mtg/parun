@@ -42,7 +42,6 @@ import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
-import qualified Parun.Types.Result as Result
 import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.Clock as Web.Clock
 import qualified Parun.Web.DeckBrowser as DeckBrowser
@@ -171,7 +170,7 @@ game page registry cards table levelRef bots settings clock seats remotes heeds 
                 stopped reason = if not (Map.null remotes) && reason == Text.pack "end of input" then Text.pack "a player's connection closed" else reason
                 scenario = Command.rendered recorded
                 -- Told to `reader`, or to no seat in particular.
-                endingAs reader seat = Link.ending (maybe (verdictOf reader outcome) fst (leaving reader)) (said reader) scenario seat (Maybe.isNothing reader) outcome (Map.findWithDefault (sighted finished) seat sent)
+                endingAs reader seat = Link.ending (maybe (Ending.verdictOf reader outcome) fst (leaving reader)) (said reader) scenario seat (Maybe.isNothing reader) outcome (Map.findWithDefault (sighted finished) seat sent)
                 endingFor seat = endingAs (Just seat) seat
                 -- Another person plays at this screen, so its ending takes
                 -- no seat's side.
@@ -193,14 +192,6 @@ moving seatRef breathRef botReading mine bot seat gs depth = do
 -- | Runs a game, then keeps the auto-pass level its seat ended on.
 keepingLevel :: IORef.IORef Web.Question.Level -> IORef.IORef Seat -> IO a -> IO a
 keepingLevel levelRef seatRef run = run `Exception.finally` (IORef.readIORef seatRef >>= IORef.writeIORef levelRef . level)
-
--- | How the game ended for this seat, or for no seat in particular.
-verdictOf :: Maybe PlayerId.PlayerId -> Either a (Result.Result, b) -> Ending.Verdict
-verdictOf reader outcome = case outcome of
-  Left _ -> Ending.MkStopped
-  Right (Result.Won pid, _) -> maybe (Ending.MkWonBy pid) (\seat -> if pid == seat then Ending.MkWon else Ending.MkLost) reader
-  Right (Result.TeamWon _, _) -> Ending.MkStopped
-  Right (Result.Drawn, _) -> Ending.MkDrawn
 
 -- | The seat the page plays.
 player :: PlayerId.PlayerId

@@ -75,6 +75,7 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameEvent as GameEvent
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
 import qualified Parun.Types.HandActionIndex as HandActionIndex
@@ -86,6 +87,7 @@ import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.MulliganOffer as MulliganOffer
 import qualified Parun.Types.Object as Object
@@ -120,6 +122,8 @@ import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Stop as Stop
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.TeamId as TeamId
+import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -1550,6 +1554,24 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     let said pid words' = maybe False (Text.isInfixOf (Text.pack words')) (lookup (labelled pid) (sections held))
     Spec.assertBool s (said S.alice "<span class=\"k\">Their turn</span>") "their turn, in words"
     Spec.assertBool s (said S.dave "<span class=\"k\">Has priority</span>") "their priority, in words"
+
+  Spec.it s "CR 808.1 the viewer's teammates sit in a row of their own beside the viewer's side, each seat naming its team" $ do
+    let marks = Board.MkMarks (\o -> Card.MkCue [] (ObjectView.object o) Nothing) (const Nothing)
+        start = inMain S.fourPlayerGame
+        teams = Teams.MkTeams (Map.fromList [(S.alice, TeamId.MkTeamId 0), (S.bob, TeamId.MkTeamId 0), (S.carol, TeamId.MkTeamId 1), (S.dave, TeamId.MkTeamId 1)])
+        teamed = start {GameState.match = (GameState.match start) {MatchScope.settings = (MatchScope.settings (GameState.match start)) {GameSettings.teams = teams}}}
+        page = Html.toText (Board.view marks Map.empty (PlayerView.viewFor S.carol teamed))
+        has piece = Spec.assertBool s (Text.isInfixOf (Text.pack piece) page) piece
+        -- Each section opening, in page order, as far as its label.
+        openings = [Text.takeWhile (/= '>') section | section <- drop 1 (Text.splitOn (Text.pack "<section class=\"seat ") page)]
+    Spec.assertEqWith
+      s
+      "the opponents across, the teammate by carol"
+      openings
+      (fmap Text.pack ["opponent\" aria-label=\"Player 1\"", "opponent\" aria-label=\"Player 2\"", "teammate\" aria-label=\"Player 4\"", "you\" aria-label=\"Your side\""])
+    has "<div class=\"teammates\">"
+    has "<span class=\"count team\" title=\"On Team 2 (CR 808.1)\"><span class=\"k\">Team 2</span></span>"
+    Spec.assertBool s (not (Text.isInfixOf (Text.pack "teammate") (Html.toText (Board.view marks Map.empty (PlayerView.viewFor S.carol start))))) "no team, no teammate"
 
 -- | The sheet's Oracle text (Card.oracle) of the one battlefield object named,
 -- as the stop's active player reads it.

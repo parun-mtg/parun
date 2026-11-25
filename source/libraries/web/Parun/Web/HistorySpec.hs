@@ -7,6 +7,7 @@ import qualified Data.Text as Text
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.History as History
 import qualified Parun.Web.Html as Html
@@ -20,7 +21,7 @@ spec s = Spec.describe s "Parun.Web.History" $ do
       Spec.assertEqWith s "round trip" (History.decode line) (Right game)
 
     Spec.it s "reads back each verdict, a shared screen's winner too, writing the others as bare tags" $ do
-      let verdicts = [Ending.MkWon, Ending.MkLost, Ending.MkDrawn, Ending.MkWonBy (PlayerId.MkPlayerId 1), Ending.MkStopped]
+      let verdicts = [Ending.MkWon, Ending.MkLost, Ending.MkDrawn, Ending.MkWonBy (PlayerId.MkPlayerId 1), Ending.MkTeamWonBy (TeamId.MkTeamId 1), Ending.MkStopped]
       Spec.assertEqWith s "round trip" (fmap (\v -> fmap History.verdict (History.decode (History.encode game {History.verdict = v}))) verdicts) (fmap Right verdicts)
       -- As summaries kept before the shared screen's verdict hold them.
       Spec.assertBool s (Text.isInfixOf (Text.pack "\"verdict\":\"MkLost\"") (History.encode game)) "a bare tag"

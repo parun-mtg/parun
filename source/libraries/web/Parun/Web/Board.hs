@@ -4,6 +4,7 @@
 -- attachments tucked behind it; graveyards and exile open on a tap.
 module Parun.Web.Board where
 
+import qualified Control.Monad as Monad
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
@@ -143,26 +144,34 @@ phaseIndex p = case p of
     EndingStep.EndStep -> 4
     EndingStep.Cleanup -> 4
 
--- | The table: other seats, the stack, and the seat's own. The others go in
--- turn order from the seat's, those still in the game only (CR 800.4a), side
--- by side where the screen allows; each spell on the stack says its text
--- as `texts` holds it (Card.written).
+-- | The table: the opponents, the stack, the seat's teammates (CR 808.1),
+-- and the seat's own. The others go in turn order from the seat's, those
+-- still in the game only (CR 800.4a), side by side where the screen allows;
+-- each spell on the stack says its text as `texts` holds it (Card.written).
 view :: Marks msg -> Map.Map ObjectId.ObjectId [Text.Text] -> PlayerView.PlayerView -> Html.Html msg
 view marks texts board =
   let (mine, others) = List.partition ((== PlayerView.viewer board) . SeatView.player) (fromViewer board)
       present = filter ((== Status.Playing) . SeatView.status) others
-      across =
+      (teammates, opponents) = List.partition (teammate board) present
+      row cls seats =
         [ Element.keyed
             "div"
-            (["opponents"] <> ["several" | length present > 1])
+            ([cls] <> ["several" | length seats > 1])
             []
-            [(Text.pack (show (PlayerId.unwrap (SeatView.player s))), seatArea marks board False s) | s <- present]
-        | not (null present)
+            [(Text.pack (show (PlayerId.unwrap (SeatView.player s))), seatArea marks board False s) | s <- seats]
+        | not (null seats)
         ]
    in Element.el "div" ["table"] [] $
-        across
+        row "opponents" opponents
           <> stackArea marks texts board
+          <> row "teammates" teammates
           <> fmap (seatArea marks board True) mine
+
+-- | Whether this seat is on the viewer's team (CR 102.3), the viewer not.
+teammate :: PlayerView.PlayerView -> SeatView.SeatView -> Bool
+teammate board s =
+  let viewerTeam = Monad.join (Maybe.listToMaybe [SeatView.team other | other <- PlayerView.seats board, SeatView.player other == PlayerView.viewer board])
+   in SeatView.player s /= PlayerView.viewer board && Maybe.isJust viewerTeam && SeatView.team s == viewerTeam
 
 -- | The seats in turn order (CR 103.1), starting from the viewer's.
 fromViewer :: PlayerView.PlayerView -> [SeatView.SeatView]
@@ -252,7 +261,7 @@ seatArea marks board own s =
       empty = [Element.el "p" ["empty"] [] [Element.string "No permanents"] | null permanents, null phased, null commanded]
    in Element.el
         "section"
-        ["seat", if own then "you" else "opponent"]
+        ["seat", if own then "you" else if teammate board s then "teammate" else "opponent"]
         [Element.attr "aria-label" (if own then Text.pack "Your side" else name pid)]
         (if own then empty <> [field, seatHead marks board own s] else [seatHead marks board own s, field] <> empty)
 
@@ -275,10 +284,12 @@ seatHead marks board own s =
         | (owner, dealt) <- Map.toList (SeatView.commanderDamage s),
           (commander, n) <- Map.toList dealt
         ]
-      -- The seat's designations (CR 726.1, 727.1, 701.54c, 702.179b,
-      -- 702.131c, 702.195b, 309.7) and player counters (CR 122.1).
+      -- The seat's team (CR 808.1), designations (CR 726.1, 727.1,
+      -- 701.54c, 702.179b, 702.131c, 702.195b, 309.7) and player counters
+      -- (CR 122.1).
       designations =
-        [Element.el "span" ["count", "monarch"] [Element.attr "title" (Text.pack "The monarch draws a card at the beginning of their end step (CR 726)")] [Element.el "span" ["k"] [] [Icon.icon [] Icon.MkCrown, Element.string " Monarch"]] | PlayerView.monarch board == Just pid]
+        [chip "team" (Text.unpack (Wording.team team)) "" ("On " <> Text.unpack (Wording.team team) <> " (CR 808.1)") | Just team <- [SeatView.team s]]
+          <> [Element.el "span" ["count", "monarch"] [Element.attr "title" (Text.pack "The monarch draws a card at the beginning of their end step (CR 726)")] [Element.el "span" ["k"] [] [Icon.icon [] Icon.MkCrown, Element.string " Monarch"]] | PlayerView.monarch board == Just pid]
           <> [chip "initiative" "Initiative" "" "Has the initiative: ventures into Undercity on taking it and at their upkeep (CR 727)" | PlayerView.initiative board == Just pid]
           <> [chip "ring" "The Ring" (show (SeatView.ringTemptations s)) "Times the Ring has tempted this player (CR 701.54)" | SeatView.ringTemptations s > 0]
           <> [chip "speed" "Speed" (show n) "Speed (CR 702.179)" | Just n <- [SeatView.speed s]]

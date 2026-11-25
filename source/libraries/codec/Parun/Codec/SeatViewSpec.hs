@@ -17,6 +17,7 @@ import qualified Parun.Types.PlayerDesignation as PlayerDesignation
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.Status as Status
+import qualified Parun.Types.TeamId as TeamId
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.SeatView" $ do
@@ -52,6 +53,12 @@ spec s = Spec.describe s "Parun.Codec.SeatView" $ do
       SeatView.codec
       testSeat {SeatView.status = Status.Departed Departure.Conceded}
       (List.init testSeatJson <> ",\"status\":{\"type\":\"Departed\",\"value\":\"Conceded\"}}")
+  Spec.it s "CR 808.1 the seat's team" $
+    Common.assertCodec
+      s
+      SeatView.codec
+      testSeat {SeatView.team = Just (TeamId.MkTeamId 1)}
+      (List.init testSeatJson <> ",\"team\":1}")
   Spec.it s "has a schema" $ Common.assertHasSchema s SeatView.codec
 
 -- A seat whose hand shows one of its three cards.
@@ -60,6 +67,7 @@ testSeat =
   SeatView.MkSeatView
     { SeatView.player = PlayerId.MkPlayerId 0,
       SeatView.status = Status.Playing,
+      SeatView.team = Nothing,
       SeatView.life = 20,
       SeatView.counters = Map.empty,
       SeatView.handSize = 3,

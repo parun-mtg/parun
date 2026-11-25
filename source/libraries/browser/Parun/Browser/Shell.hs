@@ -380,6 +380,7 @@ lobby shell initial said pending = do
               Lobby.MkStart
                 | not (Lobby.paused current),
                   Map.null (Lobby.invites current),
+                  Right chosen <- Lobby.settings current,
                   Right mine <- Lobby.startable current -> do
                     others <- dealtFor shell current
                     files <- Maybe.fromMaybe Map.empty <$> decksRead shell
@@ -388,7 +389,7 @@ lobby shell initial said pending = do
                       Just seats -> do
                         dealt <- listsOf seats >>= planarDealtFor shell current
                         case dealt of
-                          Right lists -> play shell lists (Lobby.settings current) (Lobby.clock (Lobby.options current)) Map.empty (Lobby.locals current) Nothing
+                          Right lists -> play shell lists chosen (Lobby.clock (Lobby.options current)) Map.empty (Lobby.locals current) Nothing
                           Left why -> go current {Lobby.refusal = Just why}
                       Nothing -> go current
               Lobby.MkAdd Lobby.MkInvited | not (Lobby.paused current), length (Lobby.theirs current) < Lobby.mostOthers -> Browser.linkHost (Lobby.nextLink current) Route.MkGathering >> go (Lobby.update event value current)
@@ -443,7 +444,7 @@ lobby shell initial said pending = do
       dealt <- traverse (planarDealtFor shell current) ((NonEmpty.:|) <$> ((,) <$> Lobby.mine current <*> Monad.join mineFile) <*> sequence seated)
       case dealt of
         Just (Left why) -> go' current {Lobby.ready = False, Lobby.refusal = Just why} told
-        Just (Right seats) -> do
+        Just (Right seats) | Right chosen <- Lobby.settings current -> do
           -- Each player told the match-up again with every bot's deck drawn,
           -- which the history of their game names (Join.places), then their seat.
           (named, listed) <- deckColouring shell
@@ -451,9 +452,10 @@ lobby shell initial said pending = do
             let channel = Browser.channel (page shell) (build shell) (Lobby.linkNumber invite)
             Link.send channel (Link.MkMatchup (Lobby.placesFor named listed i current {Lobby.theirs = others}) (Lobby.told current))
             Link.send channel (Link.MkStart (seatOf i) Ending.unseen)
-          play shell seats (Lobby.settings current) (Lobby.clock (Lobby.options current)) (fmap Lobby.linkNumber invited) (Lobby.locals current) Nothing
-        -- A bot with no deck to play keeps the lobby up.
-        Nothing -> go' current {Lobby.ready = False} told
+          play shell seats chosen (Lobby.clock (Lobby.options current)) (fmap Lobby.linkNumber invited) (Lobby.locals current) Nothing
+        -- A bot with no deck to play, or a table the variant refuses
+        -- (Lobby.settings), keeps the lobby up.
+        _ -> go' current {Lobby.ready = False} told
 
 -- | The lobby with invited slot `i` made afresh, a new link made for it
 -- under its number, saying why.

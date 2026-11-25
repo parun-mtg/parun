@@ -97,6 +97,7 @@ import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.Scenario as Scenario
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Stop as Stop
+import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.When as When
@@ -336,6 +337,9 @@ spec s registry = Spec.describe s "Play" $ do
 
   Spec.it s "CR 104.2a a win is told to its reader as the board names the seat" $
     Spec.assertEq s (fmap (\reader -> Wording.result reader (Result.Won S.alice)) [Nothing, Just S.alice, Just S.bob]) [Text.pack "Player 1 wins.", Text.pack "You win.", Text.pack "Player 1 wins."]
+
+  Spec.it s "CR 104.2c a team's win names the team" $
+    Spec.assertEq s (Wording.result Nothing (Result.TeamWon (TeamId.MkTeamId 1))) (Text.pack "Team 2 wins.")
 
   Spec.it s "CR 201.4 / 201.4a a name chosen over the line is refused, saying why, unless the reference holds it and the choice allows it" $ do
     reference <- mapM (S.cardOf s registry) ["Forest", "Goblin Piker"]

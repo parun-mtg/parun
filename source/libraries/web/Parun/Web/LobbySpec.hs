@@ -22,6 +22,8 @@ import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
+import qualified Parun.Types.TeamId as TeamId
+import qualified Parun.Types.Teams as Teams
 import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.BotSettings as BotSettings
 import qualified Parun.Web.DeckBrowser as DeckBrowser
@@ -182,23 +184,76 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
           page = Lobby.view (chosen three)
           handled prefix l = Html.search (Text.isPrefixOf (Text.pack prefix) . Html.toText) (Lobby.view l) >>= \path -> Html.handler (Text.pack "change") path (Lobby.view l)
           everyOne n = RangeOfInfluence.MkRangeOfInfluence (Map.fromList [(PlayerId.MkPlayerId k, n) | k <- [0 .. 2]])
-      Spec.assertEqWith s "none unless told otherwise" (Lobby.settings three) GameSettings.plain
+      Spec.assertEqWith s "none unless told otherwise" (Lobby.settings three) (Right GameSettings.plain)
       Spec.assertEqWith
         s
         "CR 407.1, 901.15, 806.2b, 806.2a: three seats"
         (Lobby.settings (chosen three))
-        GameSettings.plain {GameSettings.ante = True, GameSettings.singlePlanarDeck = True, GameSettings.attackOption = Just AttackOption.Leftward, GameSettings.rangeOfInfluence = everyOne 1}
-      Spec.assertEqWith s "CR 800.1: two seats choose no multiplayer option" (Lobby.settings (chosen lobby)) GameSettings.plain {GameSettings.ante = True, GameSettings.singlePlanarDeck = True}
-      Spec.assertEqWith s "a switch toggles off" (Lobby.settings (set Lobby.MkAnte "" (chosen three))) (Lobby.settings (chosen three)) {GameSettings.ante = False}
-      Spec.assertEqWith s "CR 901.15: no single planar deck without Planechase" (Lobby.settings (set Lobby.MkPlanechase "" (chosen three))) (Lobby.settings (chosen three)) {GameSettings.singlePlanarDeck = False}
+        (Right GameSettings.plain {GameSettings.ante = True, GameSettings.singlePlanarDeck = True, GameSettings.attackOption = Just AttackOption.Leftward, GameSettings.rangeOfInfluence = everyOne 1})
+      Spec.assertEqWith s "CR 800.1: two seats choose no multiplayer option" (Lobby.settings (chosen lobby)) (Right GameSettings.plain {GameSettings.ante = True, GameSettings.singlePlanarDeck = True})
+      Spec.assertEqWith s "a switch toggles off" (Lobby.settings (set Lobby.MkAnte "" (chosen three))) (fmap (\g -> g {GameSettings.ante = False}) (Lobby.settings (chosen three)))
+      Spec.assertEqWith s "CR 901.15: no single planar deck without Planechase" (Lobby.settings (set Lobby.MkPlanechase "" (chosen three))) (fmap (\g -> g {GameSettings.singlePlanarDeck = False}) (Lobby.settings (chosen three)))
       Spec.assertEqWith s "the single planar deck offered only with Planechase on" (handled "<input id=\"option-single-planar-deck\"" three) Nothing
       Spec.assertEqWith s "unknown" (set Lobby.MkAttackOption "sideways" (chosen three)) (chosen three)
-      Spec.assertEqWith s "unlimited again" (GameSettings.rangeOfInfluence (Lobby.settings (set Lobby.MkRangeOfInfluence "unlimited" (chosen three)))) RangeOfInfluence.unlimited
+      Spec.assertEqWith s "unlimited again" (fmap GameSettings.rangeOfInfluence (Lobby.settings (set Lobby.MkRangeOfInfluence "unlimited" (chosen three)))) (Right RangeOfInfluence.unlimited)
       Spec.assertEqWith s "each switch and menu" (fmap (`handled` chosen three) ["<input id=\"option-ante\"", "<input id=\"option-planechase\"", "<input id=\"option-single-planar-deck\"", "<select class=\"deck-menu\" id=\"option-attack\"", "<select class=\"deck-menu\" id=\"option-range\""]) [Just Lobby.MkAnte, Just Lobby.MkPlanechase, Just Lobby.MkSinglePlanarDeck, Just Lobby.MkAttackOption, Just Lobby.MkRangeOfInfluence]
       Spec.assertEqWith s "no attack option at two seats" (handled "<select class=\"deck-menu\" id=\"option-attack\"" lobby) Nothing
       Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"left\" selected=\"\">Attack left</option>") (Html.toText page)) "the attack option chosen in its menu"
       Spec.assertBool s (Text.isInfixOf (Text.pack "id=\"option-ante\" type=\"checkbox\" aria-describedby=\"option-ante-note\" checked=\"\"") (Html.toText page)) "ante checked"
       Spec.assertEqWith s "a change clears ready" (Lobby.ready (set Lobby.MkAnte "" (Lobby.update Lobby.MkReady Text.empty lobby))) False
+
+    Spec.it s "CR 800.2 plays the variant chosen over each seat's team, Start refusing a table it can't seat" $ do
+      let set event value = Lobby.update event (Text.pack value)
+          four = Lobby.update (Lobby.MkAdd Lobby.MkBot) Text.empty (Lobby.update (Lobby.MkAdd Lobby.MkBot) Text.empty lobby)
+          three = Lobby.update (Lobby.MkAdd Lobby.MkBot) Text.empty lobby
+          teamsOf ns = Teams.MkTeams (Map.fromList [(PlayerId.MkPlayerId k, TeamId.MkTeamId n) | (k, n) <- zip [0 ..] ns])
+          giant = set Lobby.MkVariant "two-headed-giant" four
+          alternating = set Lobby.MkVariant "alternating-teams" four
+          versus = set Lobby.MkVariant "team-vs-team" three
+          refused = either (const True) (const False) . Lobby.settings
+      Spec.assertEqWith
+        s
+        "CR 810.1, 810.2, 810.4: Two-Headed Giant, each team sitting together"
+        (Lobby.settings giant)
+        (Right GameSettings.plain {GameSettings.teams = teamsOf [0, 0, 1, 1], GameSettings.twoHeadedGiant = True, GameSettings.sharedTeamTurns = True, GameSettings.sharedTeamLife = True})
+      Spec.assertBool s (refused (set Lobby.MkVariant "two-headed-giant" three)) "CR 810.1: three seats"
+      Spec.assertBool s (refused (set (Lobby.MkTeam 2) "0" (set (Lobby.MkTeam 1) "1" giant))) "CR 810.3: teammates apart"
+      Spec.assertEqWith s "Start waits on the table" (Lobby.pressable (set Lobby.MkVariant "two-headed-giant" three)) False
+      Spec.assertEqWith
+        s
+        "CR 811.1, 811.3: Alternating Teams, the teams taking turns round the table"
+        (Lobby.settings alternating)
+        (Right GameSettings.plain {GameSettings.teams = teamsOf [0, 1, 0, 1], GameSettings.alternatingTeams = True})
+      Spec.assertBool s (refused (set (Lobby.MkTeam 2) "1" (set (Lobby.MkTeam 1) "0" alternating))) "CR 811.3: teammates side by side"
+      Spec.assertEqWith s "CR 808.1: Team vs. Team" (fmap GameSettings.teams (Lobby.settings versus)) (Right (teamsOf [0, 0, 1]))
+      Spec.assertBool s (refused (set (Lobby.MkTeam 2) "0" versus)) "CR 808.1: one team"
+      Spec.assertEqWith s "CR 800.1: no variant at two seats" (Lobby.settings (set Lobby.MkVariant "two-headed-giant" lobby)) (Lobby.settings lobby)
+      Spec.assertEqWith s "a new variant puts each seat back" (Lobby.teams (set Lobby.MkVariant "alternating-teams" (set (Lobby.MkTeam 1) "1" giant))) Map.empty
+      Spec.assertEqWith s "a team past the variant's" (set (Lobby.MkTeam 1) "2" giant) giant
+      Spec.assertEqWith s "a team below the first" (set (Lobby.MkTeam 1) "-1" giant) giant
+      Spec.assertEqWith s "a seat past the table" (set (Lobby.MkTeam 4) "1" giant) giant
+      Spec.assertEqWith s "the seats after one unseated move up" (Lobby.teams (Lobby.update (Lobby.MkDrop 0) Text.empty (set (Lobby.MkTeam 3) "0" (set (Lobby.MkTeam 0) "1" giant)))) (Map.fromList [(0, 1), (2, 0)])
+      Spec.assertEqWith s "a team change clears ready" (Lobby.ready (set (Lobby.MkTeam 1) "1" (Lobby.update Lobby.MkReady Text.empty giant))) False
+
+    Spec.it s "offers the variant at three seats or more, and each seat's team where it has teams" $ do
+      let set event value = Lobby.update event (Text.pack value)
+          four = Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty (Lobby.update (Lobby.MkAdd (Lobby.MkHere Link.MkHandedOver)) Text.empty lobby)
+          giant = set Lobby.MkVariant "two-headed-giant" four
+          handled prefix l = Html.search (Text.isPrefixOf (Text.pack prefix) . Html.toText) (Lobby.view l) >>= \path -> Html.handler (Text.pack "change") path (Lobby.view l)
+          pairs :: [(Text.Text, Text.Text)] -> [(String, String)]
+          pairs = fmap (Bifunctor.bimap Text.unpack Text.unpack)
+      Spec.assertEqWith s "the variant menu" (handled "<select class=\"deck-menu\" id=\"option-variant\"" four) (Just Lobby.MkVariant)
+      Spec.assertEqWith s "no variant at two seats" (handled "<select class=\"deck-menu\" id=\"option-variant\"" lobby) Nothing
+      Spec.assertEqWith s "no team in Free-for-All" (handled "<select class=\"deck-menu\" id=\"team-0\"" four) Nothing
+      Spec.assertEqWith
+        s
+        "yours, a bot's, a player's here and an invited player's"
+        (fmap (\place -> handled ("<select class=\"deck-menu\" id=\"team-" <> show place <> "\"") giant) [0 .. 3 :: Int])
+        (fmap (Just . Lobby.MkTeam) [0 .. 3])
+      Spec.assertBool s (Text.isInfixOf (Text.pack "<option value=\"1\" selected=\"\">Team 2</option>") (Html.toText (Lobby.view giant))) "the team in its menu"
+      Spec.assertEqWith s "CR 805.10: no attack option in Two-Headed Giant" (handled "<select class=\"deck-menu\" id=\"option-attack\"" giant) Nothing
+      Spec.assertEqWith s "told the variant" (take 1 (pairs (Lobby.told giant))) [("Variant", "Two-Headed Giant")]
+      Spec.assertEqWith s "told who is on whose team" (fmap Link.who (Lobby.placesFor (const Set.empty) (const Set.empty) 2 giant)) (fmap Text.pack ["Player 1, Team 1", "Player 2, Team 1", "Player 3, Team 2", "You, Team 2"])
 
     Spec.it s "tells an invited player the game's options, CR 806.2's at three seats or more only" $ do
       let set event value = Lobby.update event (Text.pack value)
@@ -208,7 +263,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
           pairs = fmap (Bifunctor.bimap Text.unpack Text.unpack)
       Spec.assertEqWith s "none chosen" (pairs (Lobby.told lobby)) [("Play for ante", "No"), ("Planechase", "No"), ("Clock", "Off")]
       Spec.assertEqWith s "two seats" (pairs (Lobby.told (chosen lobby))) [("Play for ante", "Yes"), ("Planechase", "No"), ("Clock", "10 minutes")]
-      Spec.assertEqWith s "three seats" (pairs (Lobby.told (chosen three))) [("Play for ante", "Yes"), ("Planechase", "No"), ("Clock", "10 minutes"), ("Attacks", "Attack left"), ("Range of influence", "1 seat")]
+      Spec.assertEqWith s "three seats" (pairs (Lobby.told (chosen three))) [("Variant", "Free-for-All"), ("Play for ante", "Yes"), ("Planechase", "No"), ("Clock", "10 minutes"), ("Attacks", "Attack left"), ("Range of influence", "1 seat")]
       Spec.assertEqWith s "Planechase" (pairs (Lobby.told (set Lobby.MkPlanechase "" lobby))) [("Play for ante", "No"), ("Planechase", "Yes"), ("Single planar deck", "No"), ("Clock", "Off")]
 
     Spec.it s "sets each seat's clock from its menu, untimed unless told otherwise, at any count of seats" $ do
