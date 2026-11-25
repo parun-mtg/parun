@@ -602,14 +602,21 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         Spec.assertEqWith s "the stack entry" (fmap (Card.stackDetail (Card.written lookUp board') board') (PlayerView.Type.stack board')) [[Text.pack "\"" <> printedLine <> Text.pack "\""]]
       _ -> Spec.assertFailure s ("one activated ability: " <> show (length abilities))
 
-  Spec.it s "CR 702.29a a keyword's ability is offered by its keyword, Irrigated Farmland's \"Cycling {2}\"" $ do
+  Spec.it s "CR 702.29a a keyword's ability is offered and stacked by its keyword, Irrigated Farmland's \"Cycling {2}\"" $ do
     farmland <- S.printingOf s registry "Irrigated Farmland"
-    let (oid, gs) = S.addObjectIn Zone.Hand farmland S.alice (inMain (Setup.emptyGame S.bothPlayers))
-        request = requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice (Action.Pass : fmap (Action.Activate oid) (Projection.abilitiesOf oid gs)))
+    mountain <- S.printingOf s registry "Mountain"
+    let (oid, gs) = S.addObjectIn Zone.Hand farmland S.alice (inMain (S.landsInPlay mountain 2))
+        abilities = Projection.abilitiesOf oid gs
+        request = requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice (Action.Pass : fmap (Action.Activate oid) abilities))
         card = Printing.card farmland
         lookUp n = Right (if any ((== n) . Face.name) (Card.Type.faces card) then Just card else Nothing) :: Either () (Maybe Card.Type.Card)
         texts = Card.written lookUp (PlayerView.viewFor S.alice gs)
     Spec.assertEqWith s "the button" (Map.lookup oid (Question.Web.actionsByObject texts request)) (Just [(1, Text.pack "Irrigated Farmland: Cycling {2}")])
+    case abilities of
+      [ability] -> do
+        let board = PlayerView.viewFor S.bob (S.runPure S.identityAnswer gs (Activate.activateAbility S.alice oid ability))
+        Spec.assertEqWith s "the stack entry" (fmap (Card.stackDetail (Card.written lookUp board) board) (PlayerView.Type.stack board)) [[Text.pack "\"Cycling {2}\""]]
+      _ -> Spec.assertFailure s ("one activated ability: " <> show (length abilities))
 
   Spec.it s "CR 117.4 only what the step's end gives up is headed as gone once the seat passes" $ do
     shock <- S.printingOf s registry "Shock"
