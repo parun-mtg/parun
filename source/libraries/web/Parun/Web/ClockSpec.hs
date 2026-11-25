@@ -17,6 +17,12 @@ spec s = Spec.describe s "Parun.Web.Clock" $ do
       Spec.assertEqWith s "timed" (Clock.left (Clock.starting (Just 5) (Set.fromList [one, two]))) (Map.fromList [(one, 300), (two, 300)])
       Spec.assertEqWith s "untimed" (Clock.starting Nothing (Set.fromList [one, two])) Clock.none
 
+  Spec.describe s "resumed" $ do
+    Spec.it s "reads each seat's time left as the last reply kept found it, or as the game started with none kept" $ do
+      let fresh = Clock.starting (Just 5) (Set.fromList [one, two])
+      Spec.assertEqWith s "kept" (Clock.resumed fresh [Map.fromList [(one, 290), (two, 300)], Map.fromList [(one, 290), (two, 281.5)]]) fresh {Clock.left = Map.fromList [(one, 290), (two, 281.5)]}
+      Spec.assertEqWith s "none kept" (Clock.resumed fresh []) fresh
+
   Spec.describe s "stop" $ do
     Spec.it s "charges only the seat whose clock ran, never below none" $ do
       let started = Clock.start one 100 (Clock.starting (Just 1) (Set.fromList [one, two]))

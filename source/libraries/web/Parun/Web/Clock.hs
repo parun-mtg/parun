@@ -7,8 +7,9 @@
 --
 --   * A seat out of time in a game of three or more leaving it, the others
 --     playing on: the game stops (#9757).
---   * A game picked up after a reload keeping each seat's time left: every
---     clock starts again (#9758).
+--   * A game picked up after a reload charging the seat deciding then the
+--     time it spent on that decision: its clock reads as at the last reply
+--     kept (#9780).
 module Parun.Web.Clock where
 
 import qualified Data.Map.Strict as Map
@@ -77,6 +78,12 @@ timed now within clocks change seat ask request = do
       ended <- now
       change (stop ended)
       maybe (change (\c -> c {out = Just seat}) >> pure Nothing) pure answered
+
+-- | The clocks of a game picked up after a reload (Parun.Web.Link.Saved),
+-- from `fresh`, those it started with, and the time banks kept with each
+-- reply made: every seat's time left as the last reply found it.
+resumed :: Clocks -> [Map.Map PlayerId.PlayerId Double] -> Clocks
+resumed fresh kept = maybe fresh (\l -> fresh {left = l}) (Maybe.listToMaybe (reverse kept))
 
 -- | Each timed seat's time left at this time, in seconds, the running
 -- clock read down to it: what a guest's page is sent (Parun.Web.Link).
