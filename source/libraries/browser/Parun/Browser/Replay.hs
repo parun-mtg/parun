@@ -13,6 +13,7 @@ import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Identity as Identity
 import qualified Data.IORef as IORef
+import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -28,7 +29,6 @@ import qualified Parun.Interpreter as Interpreter
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Generator as Generator
-import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Search as Search
 import qualified Parun.Play.Wording as Wording
@@ -43,12 +43,15 @@ import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Entrant as Entrant
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.LegalityTable as LegalityTable
 import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
+import qualified Parun.Types.Reply as R
+import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.ScenarioFailure as ScenarioFailure
 import qualified Parun.Types.Seat as Seat
@@ -202,13 +205,15 @@ downloadPlayed k game = Browser.download (History.fileName game) =<< Browser.pla
 -- format's pool among `cards` by the legality table `table` gives
 -- (Command.pooled), the page live while it decides (Hotseat.breathing);
 -- with no seat chosen, every seat is answered on the page. Chance comes
--- from a fresh key, the page plays at the auto-pass level kept in
+-- from `key`, the page plays at the auto-pass level kept in
 -- `levelRef`, until the game ends; how it ended, told to the seat chosen,
 -- why the bots could not deal, or nothing when it was given up from the
 -- home screen (`leave`). Each bot remembers what the game's log shows it,
--- from the start (Search.remembering).
-playOn :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> Maybe PlayerId.PlayerId -> Scenario.Type.Scenario -> Natural -> (Maybe PlayerView.PlayerView -> IO Hotseat.Leave) -> IO (Maybe [Text.Text])
-playOn page registry cards table levelRef styles chosen scenario given leave = do
+-- from the start (Search.remembering). The game picks up after the replies
+-- in `stored`, each made again (Protocol.resumed), a bot's given back to it
+-- (Game.remembered), and every reply made from there is given to `kept`.
+playOn :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> Maybe PlayerId.PlayerId -> Scenario.Type.Scenario -> Natural -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Hotseat.Leave) -> IO (Maybe [Text.Text])
+playOn page registry cards table levelRef styles chosen scenario given key stored kept leave = do
   let you = Maybe.fromMaybe Hotseat.player chosen
       numbered = seatsOf scenario
       options = case chosen of
@@ -224,7 +229,7 @@ playOn page registry cards table levelRef styles chosen scenario given leave = d
     Right prior -> do
       seatRef <- IORef.newIORef . Hotseat.newSeat you Ending.unseen =<< IORef.readIORef levelRef
       Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Nothing) $ do
-        key <- Key.fresh
+        storedRef <- IORef.newIORef stored
         memories <- IORef.newIORef Map.empty
         aims <- IORef.newIORef Map.empty
         breathRef <- IORef.newIORef Nothing
@@ -232,11 +237,16 @@ playOn page registry cards table levelRef styles chosen scenario given leave = d
         let at = min (Natural.length (Scenario.Type.timeline scenario)) given
             reference = Registry.hoist (pure . Identity.runIdentity) registry :: Registry.Registry IO
             lookUp = Identity.runIdentity . Interpreter.chosenCard registry
-            here = Hotseat.exchange lookUp page seatRef leave
+            next = IORef.atomicModifyIORef' storedRef $ \left -> maybe ([], Nothing) (\(reply, rest) -> (rest, Just reply)) (List.uncons left)
+            -- What the page's seat was asked, as a reply is made again.
+            replayed request = do
+              Monad.forM_ (Request.view request) $ IORef.modifyIORef' seatRef . Hotseat.witness
+              IORef.modifyIORef' seatRef (Hotseat.keepAsked request)
+            here = Protocol.resumed next replayed kept (Hotseat.exchange lookUp page seatRef leave)
             breathe = Hotseat.breathing lookUp page seatRef leave botReading breathRef
             answererOf pid = case prior of
               Nothing -> Game.wired reference here
-              Just p -> Command.answerer reference here (pure Nothing) (const (pure ())) (IORef.readIORef memories) (Search.keptBy (IORef.readIORef aims) (IORef.modifyIORef' aims) pid) breathe (Command.timed (PlayOptions.thinkLimit options)) options p (PlayerId.unwrap pid + 1)
+              Just p -> Command.answerer reference here next kept (IORef.readIORef memories) (Search.keptBy (IORef.readIORef aims) (IORef.modifyIORef' aims) pid) breathe (Command.timed (PlayOptions.thinkLimit options)) options p (PlayerId.unwrap pid + 1)
             seats = Game.consulting reference (Map.fromList [(pid, answererOf pid) | (pid, _) <- numbered])
             observers = [Search.remembering (IORef.modifyIORef' memories), Link.deciding (Hotseat.moving seatRef breathRef botReading [you] bot)]
             onward = Answerer.MkAnswerer (Driver.ask observers seats)
