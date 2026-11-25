@@ -321,17 +321,18 @@ withDecks names named titled = browsed (DeckBrowser.withDecks names named titled
 mostOthers :: Int
 mostOthers = 3
 
--- | Of so many seats, the player's (seat 1) and each in `people` speak the
+-- | Of so many seats, the player's (`you`) and each in `people` speak the
 -- line protocol; the search bot plays every other, at the difficulty and
 -- persona (Parun.Play.Opponent) its place in 'theirs' has in `styles`
--- ('botAt').
-playOptions :: Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> Natural -> Set.Set PlayerId.PlayerId -> PlayOptions.PlayOptions
-playOptions styles count people =
-  let seatPlay n = case botAt (Natural.toIntSaturating n - 2) styles of
+-- ('botAt'), the seats but the player's taking the places in seating order.
+playOptions :: Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> Natural -> PlayerId.PlayerId -> Set.Set PlayerId.PlayerId -> PlayOptions.PlayOptions
+playOptions styles count you people =
+  let seatPlay place = case botAt place styles of
         (level, style) -> (Opponent.budgetAt level PlayOptions.budget, Opponent.weightsOf style)
+      others = filter ((/= you) . Command.idOf) [1 .. count]
    in PlayOptions.none
         { PlayOptions.json = True,
-          PlayOptions.bots = Map.fromList [(n, seatPlay n) | n <- [2 .. count], Set.notMember (Command.idOf n) people]
+          PlayOptions.bots = Map.fromList [(n, seatPlay place) | (place, n) <- zip [0 ..] others, Set.notMember (Command.idOf n) people]
         }
 
 -- | Whether two decks are under one format, and so may meet: the game's

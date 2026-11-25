@@ -127,15 +127,9 @@ game page registry cards table levelRef bots settings seats remotes locals seed 
                 -- Each seat this page plays sees the game move on while
                 -- another browser's seat decides (awaiting).
                 movedOn seat gs depth = do
-                  IORef.modifyIORef' seatRef (\s -> foldr (\mine -> stand mine (PlayerView.Engine.viewFor mine gs) depth) s (player : Map.keys locals))
-                  -- A card read while bots decide stays open until another
-                  -- seat is asked.
-                  asked <- Clock.getMonotonicTime
-                  let bot = seat /= player && Map.notMember seat remotes && Map.notMember seat locals
-                  IORef.writeIORef breathRef (if bot then Just (MkBreath seat asked False) else Nothing)
-                  Monad.unless bot (IORef.writeIORef botReading Nothing)
+                  moving seatRef breathRef botReading (player : Map.keys locals) (\s -> s /= player && Map.notMember s remotes && Map.notMember s locals) seat gs depth
                   decides seat gs depth
-            (outcome, recorded) <- Command.game (Text.pack "the web client") (Protocol.resumed next replayed kept (Protocol.bySeat elsewhere here)) next kept [Link.deciding movedOn] (breathing lookUp page seatRef leave botReading breathRef) (Lobby.playOptions bots (Natural.length seats) (Map.keysSet remotes <> Map.keysSet locals)) pooled registry settings {GameSettings.format = format} (fmap DeckList.deck lists) seed
+            (outcome, recorded) <- Command.game (Text.pack "the web client") (Protocol.resumed next replayed kept (Protocol.bySeat elsewhere here)) next kept [Link.deciding movedOn] (breathing lookUp page seatRef leave botReading breathRef) (Lobby.playOptions bots (Natural.length seats) player (Map.keysSet remotes <> Map.keysSet locals)) pooled registry settings {GameSettings.format = format} (fmap DeckList.deck lists) seed
             finished <- IORef.readIORef seatRef
             sent <- IORef.readIORef guestsRef
             let said reader = either (\reason -> [Text.pack "The game stopped: " <> stopped reason <> Text.pack "."]) (\(result, gs) -> Wording.result reader result : Wording.departures reader gs) outcome
@@ -150,6 +144,17 @@ game page registry cards table levelRef bots settings seats remotes locals seed 
                 shared = Link.MkHandedOver `elem` locals
             tell endingFor
             pure . Right . Ending.MkFinished $ endingAs (if shared then Nothing else Just player) player
+
+-- | The game come to `seat`'s decision, as it then is at this depth
+-- (Link.deciding): each of `mine`, the seats this page plays, sees it stand
+-- so, a seat `bot` names is timed for breathing, and a card read while bots
+-- decided stays open until another seat is asked.
+moving :: IORef.IORef Seat -> IORef.IORef (Maybe Breath) -> IORef.IORef (Maybe Web.Card.Reading) -> [PlayerId.PlayerId] -> (PlayerId.PlayerId -> Bool) -> PlayerId.PlayerId -> GameState.GameState -> Natural -> IO ()
+moving seatRef breathRef botReading mine bot seat gs depth = do
+  IORef.modifyIORef' seatRef (\s -> foldr (\one -> stand one (PlayerView.Engine.viewFor one gs) depth) s mine)
+  asked <- Clock.getMonotonicTime
+  IORef.writeIORef breathRef (if bot seat then Just (MkBreath seat asked False) else Nothing)
+  Monad.unless (bot seat) (IORef.writeIORef botReading Nothing)
 
 -- | Runs a game, then keeps the auto-pass level its seat ended on.
 keepingLevel :: IORef.IORef Web.Question.Level -> IORef.IORef Seat -> IO a -> IO a

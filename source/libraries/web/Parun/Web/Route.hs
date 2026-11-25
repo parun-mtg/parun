@@ -4,6 +4,7 @@
 -- engine writes back as the page moves between screens.
 module Parun.Web.Route where
 
+import qualified Control.Monad as Monad
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
@@ -13,6 +14,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
 import qualified Data.Text.Encoding.Error as Error
 import Numeric.Natural (Natural)
+import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Uri.Query as Query
 import qualified Parun.Web.Replay as Web.Replay
 import qualified Text.Read as Read
@@ -44,11 +46,13 @@ data Stage
 -- | What a replay's route does at its position.
 data Way
   = MkWatching
-  | MkPlayingOn
+  | -- | Played on as this seat, else every seat (Web.Replay.MkBranch).
+    MkPlayingOn (Maybe PlayerId.PlayerId)
   deriving (Eq, Show)
 
 -- | The route's fields: a scenario by its name (scenario=, and at=), a game
--- finished here by its key (game=), played on with branch; the replays as
+-- finished here by its key (game=), played on with branch, valued by the
+-- seat's number (Web.Board.name) where one seat is played; the replays as
 -- replays, though the empty scenario= of an older link reads so too.
 fields :: Route -> [(Text.Text, Text.Text)]
 fields route =
@@ -67,7 +71,7 @@ fields route =
                 Web.Replay.MkPlayed key -> (Text.pack "game", key)
               branch = case way of
                 MkWatching -> []
-                MkPlayingOn -> [(Text.pack "branch", Text.empty)]
+                MkPlayingOn seat -> [(Text.pack "branch", foldMap (Text.pack . show . (+ 1) . PlayerId.unwrap) seat)]
            in [which, (Text.pack "at", Text.pack (show at))] <> branch
 
 -- | The query naming the route, empty for the home screen.
@@ -89,7 +93,8 @@ parse query =
       field key = lookup (Text.pack key) given
       named key = fmap (\value -> if Text.null value then Nothing else Just value) (field key)
       at = Maybe.fromMaybe (0 :: Natural) (field "at" >>= Read.readMaybe . Text.unpack)
-      way = if Maybe.isJust (field "branch") then MkPlayingOn else MkWatching
+      seatOf value = PlayerId.MkPlayerId . subtract 1 <$> Monad.mfilter (> 0) (Read.readMaybe (Text.unpack value))
+      way = maybe MkWatching (MkPlayingOn . seatOf) (field "branch")
       replay source = MkReplay way source at
    in Maybe.fromMaybe MkHome $
         Foldable.asum
