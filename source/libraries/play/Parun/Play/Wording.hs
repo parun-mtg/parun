@@ -15,6 +15,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.Engine.Keyword as Engine.Keyword
 import qualified Parun.Engine.Sba as Sba
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
@@ -26,6 +27,7 @@ import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
+import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.Ballot as Ballot
@@ -75,6 +77,7 @@ import qualified Parun.Types.HalfUnlocked as HalfUnlocked
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordExpansion as KeywordExpansion
 import qualified Parun.Types.LandPlayed as LandPlayed
 import qualified Parun.Types.LeftTheGame as LeftTheGame
 import qualified Parun.Types.LifeChange as LifeChange
@@ -178,10 +181,21 @@ abilityText view a = stackedText view (AbilityView.source a) (AbilityView.abilit
 -- | An ability's Oracle text, its source as abilityText calls it.
 stackedText :: PlayerView.PlayerView -> Maybe ObjectId.ObjectId -> StackedAbility.StackedAbility -> Maybe Text.Text
 stackedText view source stacked = Maybe.listToMaybe $ case stacked of
-  StackedAbility.Activated activated -> Oracle.activated context activated
+  StackedAbility.Activated activated -> Oracle.activated context activated <> keyworded activated
   StackedAbility.Triggered triggered -> Oracle.triggered context creature triggered
   where
-    context = Oracle.contextOf (Maybe.fromMaybe (Text.pack "this object") (source >>= knownName view)) []
+    name = Maybe.fromMaybe (Text.pack "this object") (source >>= knownName view)
+    context = Oracle.contextOf name []
+    -- CR 702.1: a keyword's ability as the keyword prints, "Cycling {2}",
+    -- where that keyword mints no other activated ability; reconfigure's two
+    -- (CR 702.151a) are not told apart by it.
+    keyworded activated =
+      [ text
+      | Just k <- [ActivatedAbility.keyword activated],
+        let minted = Engine.Keyword.expansionOf k,
+        length (KeywordExpansion.fromHand minted <> KeywordExpansion.fromGraveyard minted <> KeywordExpansion.onBattlefield minted 1) == 1,
+        text <- Oracle.Keyword.printed name k
+      ]
     creature = any (isA CardType.Creature) (source >>= (`Map.lookup` objects view))
 
 -- | CR 708.2a: a face-down object has no name, and a hidden one shows none;
