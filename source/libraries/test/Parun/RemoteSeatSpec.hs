@@ -129,7 +129,7 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
 
   Spec.it s "a whole game on the clocks: each seat charged only while it decides, and the game stopping as Player 2's runs out, lost to Player 1" $ do
     matchup <- BotSpec.bears s registry
-    let options = Lobby.playOptions Map.empty 2 (Set.singleton S.bob)
+    let options = Lobby.playOptions Map.empty 2 S.alice (Set.singleton S.bob)
         seatOf = Question.seat . Request.question
         -- Player 2 takes half a minute over each decision, Player 1 none.
         onScreen request = do
@@ -249,7 +249,7 @@ wholeGame s matchup guests = do
 onOneScreen :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (Either Text.Text (Result.Result, GameState.GameState), [Request.Request], PlayOptions.PlayOptions)
 onOneScreen s registry = do
   matchup <- BotSpec.bears s registry
-  let options = Lobby.playOptions (Map.singleton 0 (Difficulty.MkEasy, Persona.MkBalanced)) 2 (Set.singleton S.bob)
+  let options = Lobby.playOptions (Map.singleton 0 (Difficulty.MkEasy, Persona.MkBalanced)) 2 S.alice (Set.singleton S.bob)
       onScreen request = State.modify' (request :) >> pure (Just (Right (answer request)))
   (outcome, requests) <- State.runStateT (Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) onScreen (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept (pure ()) Search.unhurried options Search.known n) | n <- [1, 2]]) (S.seeded 1) Map.empty matchup) []
   pure (outcome, reverse requests, options)

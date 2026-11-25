@@ -157,8 +157,13 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith
         s
         "a three-seat game plays each bot at its own"
-        (PlayOptions.bots (Lobby.playOptions (Lobby.bots styled) 3 Set.empty))
+        (PlayOptions.bots (Lobby.playOptions (Lobby.bots styled) 3 (PlayerId.MkPlayerId 0) Set.empty))
         (Map.fromList [(2, (Opponent.budgetAt Difficulty.MkEasy PlayOptions.budget, Opponent.weightsOf Persona.MkAggro)), (3, (PlayOptions.budget, Opponent.weightsOf Persona.MkControl))])
+      Spec.assertEqWith
+        s
+        "the player in the second seat, the bots take the first and third in order"
+        (PlayOptions.bots (Lobby.playOptions (Lobby.bots styled) 3 (PlayerId.MkPlayerId 1) Set.empty))
+        (Map.fromList [(1, (Opponent.budgetAt Difficulty.MkEasy PlayOptions.budget, Opponent.weightsOf Persona.MkAggro)), (3, (PlayOptions.budget, Opponent.weightsOf Persona.MkControl))])
 
     Spec.it s "offers the bots' level and style only while a bot is seated" $ do
       let invited = Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty alone

@@ -4791,10 +4791,6 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   gap: 8px;
 }
 
-.replay-actions:has(.download) {
-  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(max-content, 1fr));
-}
-
 #app .replay .replay-actions button {
   min-height: 44px;
   text-align: center;

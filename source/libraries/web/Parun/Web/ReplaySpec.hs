@@ -102,10 +102,11 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
       let line viewed = Replay.lineOf (Replay.tableNames (PlayerId.MkPlayerId viewed) labelled) True Nothing (Timed.MkTimed (When.MkWhen 3 Phase.PrecombatMain (Label.MkLabel (Text.pack "alice")) 0) Nothing (Entry.Do Move.Pass))
       Spec.assertEqWith s "in a line, to the seat viewed as" (line 0, line 1) (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 You pass", Text.pack "Turn 3 \x00b7 Precombat main \x00b7 Player 1 passes")
 
-    Spec.it s "offers to play on from the position, and to go back to the list" $ do
-      let page = Replay.view frame {Replay.position = 1}
+    Spec.it s "offers to play on from the position as the seat viewed or every seat, and to go back to the list" $ do
+      let page = Replay.view frame {Replay.position = 1, Replay.viewer = PlayerId.MkPlayerId 1}
           tapped label = Html.labelled (Text.pack "button") (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
-      Spec.assertEqWith s "play on" (tapped "Play on from here") (Just Replay.MkBranch)
+      Spec.assertEqWith s "as the seat viewed" (tapped "Play on as Player 2") (Just (Replay.MkBranch (Just (PlayerId.MkPlayerId 1))))
+      Spec.assertEqWith s "every seat" (tapped "Play on, every seat") (Just (Replay.MkBranch Nothing))
       Spec.assertEqWith s "back" (tapped "All replays") (Just Replay.MkBack)
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "&amp;branch") (Html.toText page))) "no branch link"
 
@@ -228,10 +229,10 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
 
   Spec.describe s "ended" $ do
     Spec.it s "goes back to the position and plays on from it again" $ do
-      let view = Replay.ended [Text.pack "Alice wins."]
+      let view = Replay.ended (Just (PlayerId.MkPlayerId 1)) [Text.pack "Alice wins."]
           tapped label = Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
       Spec.assertEqWith s "back" (tapped "Back to the replay") (Just Replay.MkResumeReplay)
-      Spec.assertEqWith s "again" (tapped "Play on again") (Just Replay.MkBranch)
+      Spec.assertEqWith s "again" (tapped "Play on again") (Just (Replay.MkBranch (Just (PlayerId.MkPlayerId 1))))
 
 -- | The path to the step button a screen reader names this.
 step :: String -> Html.Html msg -> Maybe (Seq.Seq Natural)
