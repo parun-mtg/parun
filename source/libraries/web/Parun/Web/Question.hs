@@ -26,6 +26,7 @@ import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
+import qualified Parun.Oracle.Normalise as Normalise
 import qualified Parun.Play.Offer as Offer
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Wording as Wording
@@ -546,12 +547,13 @@ actionsByObject texts request = case (Text.unpack (Question.kind (Request.questi
   _ -> Map.empty
 
 -- | An action as its button names it (Offer.actionName), an activation's
--- text as the sheet of its source words the ability (Card.asShown).
+-- text as the sheet of its source words the ability (Card.asShown), less its
+-- reminder text (CR 207.2a): "Cycling {2}".
 actionLabel :: Map.Map ObjectId.ObjectId [Text.Text] -> PlayerView.PlayerView -> R.Reply -> Text.Text
 actionLabel texts shown option = Offer.actionName shown $ case (option, Protocol.field "object" option >>= Offer.objectOf) of
   (R.Object pairs, Just oid)
     | (Protocol.field "action" option >>= Offer.textOf) == Just (Text.pack "Activate") ->
-        R.Object [(k, if k == Text.pack "text" then maybe v (R.Text . Card.asShown texts shown oid) (Offer.textOf v) else v) | (k, v) <- pairs]
+        R.Object [(k, if k == Text.pack "text" then maybe v (R.Text . Text.strip . Normalise.withoutReminders . Card.asShown texts shown oid) (Offer.textOf v) else v) | (k, v) <- pairs]
   _ -> option
 
 -- | How each tile and seat looks and what tapping it does for this request:
