@@ -53,6 +53,7 @@ import qualified Parun.Types.Convoking as Convoking
 import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CounterChange as CounterChange
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterName as CounterName
 import qualified Parun.Types.Countering as Countering
 import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Crewing as Crewing
@@ -274,7 +275,12 @@ counterName kind = case kind of
   CounterKind.MinusOneMinusOne -> Text.pack "-1/-1"
   -- CR 122.1b: a keyword counter by its keyword, as Oracle text prints it.
   CounterKind.Keyword k | word : _ <- Oracle.Keyword.keywordWord Text.empty k -> word
+  CounterKind.UnsafePowerToughness p t -> Text.pack (signed p <> "/" <> signed t)
+  -- CR 122.1: a named kind by the name the card prints.
+  CounterKind.Named name -> CounterName.unwrap name
   other -> Text.unwords (Text.words (spaced (Text.pack (show other))))
+  where
+    signed n = (if n < 0 then "-" else "+") <> show (abs n)
 
 -- | CR 107.4's symbols as the cost is printed.
 manaCost :: ManaCost.ManaCost -> Text.Text
