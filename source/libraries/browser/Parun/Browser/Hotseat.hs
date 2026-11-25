@@ -182,7 +182,7 @@ player :: PlayerId.PlayerId
 player = PlayerId.MkPlayerId 0
 
 -- | One request answered on the page, as values (Protocol.Exchange): a reply the seat is never asked
--- for, or auto's next source once the seat chose auto for this payment, at
+-- for, or auto's next source or its mana once the seat chose auto for this payment, at
 -- once; else after a hand-off when the screen last faced another seat but
 -- for one the same person plays (Web.Question.handsOver), the
 -- question's form until it answers, a card tapped showing its text from the
@@ -195,11 +195,16 @@ exchange lookUp page seatRef leave request = do
     IORef.modifyIORef' seatRef (keepAsked request)
     state <- IORef.readIORef seatRef
     let seat = Question.seat $ Request.question request
-        auto = if Set.member seat (paying state) || level state == Web.Question.MkAutoPass then Web.Question.paying request else Nothing
+        auto = if Map.member seat (paying state) || level state == Web.Question.MkAutoPass then Web.Question.paying (Map.lookup seat (paying state)) request else Nothing
         kind = Question.kind $ Request.question request
         -- The seat's own stop (Web.Question.passesFor).
         (skipped, kept) = maybe (Nothing, Nothing) (`Web.Question.passesFor` request) (Map.lookup seat (skipping state))
-    IORef.writeIORef seatRef state {paying = (if Maybe.isJust auto then Set.insert else Set.delete) seat (paying state), skipping = Map.alter (const kept) seat (skipping state)}
+        -- Auto's source question, kept for the mana its source then makes.
+        paid
+          | Maybe.isNothing auto = Map.delete seat
+          | kind == Text.pack "ChooseManaSource" = Map.insert seat request
+          | otherwise = id
+    IORef.writeIORef seatRef state {paying = paid (paying state), skipping = Map.alter (const kept) seat (skipping state)}
     let -- The board as it stands, while the seat is not asked: redrawn only
         -- when what it shows changed, not at every pass of priority, and
         -- only while the screen faces the seat, or one the same person plays,
@@ -275,7 +280,7 @@ exchange lookUp page seatRef leave request = do
             MkAbandon -> Exception.throwIO MkAbandonedGame
         Screen.MkQuestion e -> case Web.Question.step pending picked e value of
           Web.Question.MkReplied answered -> do
-            Monad.when (e == Web.Question.MkAuto) . IORef.modifyIORef' seatRef $ \s -> s {paying = Set.insert asked (paying s)}
+            Monad.when (e == Web.Question.MkAuto) . IORef.modifyIORef' seatRef $ \s -> s {paying = Map.insert asked pending (paying s)}
             case e of
               Web.Question.MkSkip stop -> IORef.modifyIORef' seatRef $ \s -> s {skipping = Map.insert asked stop (skipping s)}
               _ -> pure ()
@@ -434,7 +439,10 @@ data Seat = MkSeat
     -- | Whether another person plays at this screen, handed it before each
     -- of their questions (Link.MkHandedOver).
     handed :: Bool,
-    paying :: Set.Set PlayerId.PlayerId,
+    -- | The seats that chose auto for the payment under way, each with the
+    -- source question auto last answered for it, whose source's mana auto
+    -- then chooses (Web.Question.paying).
+    paying :: Map.Map PlayerId.PlayerId Request.Request,
     -- | How much the page answers for every seat it plays (Web.Question.Level).
     level :: Web.Question.Level,
     -- | How far each seat asked to pass (Web.Question.MkSkip).
@@ -462,7 +470,7 @@ data Seat = MkSeat
 -- timed, at that auto-pass level, the seat having read what was `seen` already: a
 -- rejoining guest's game before its page reloaded (Link.MkStart).
 newSeat :: PlayerId.PlayerId -> Ending.Seen -> Web.Question.Level -> Seat
-newSeat seat seen initial = MkSeat (Just seat) (Set.singleton seat) False Set.empty initial Map.empty Set.empty Nothing seen (Map.singleton seat (Seq.length (Ending.loggedFor seat seen))) Map.empty Map.empty Web.Clock.none
+newSeat seat seen initial = MkSeat (Just seat) (Set.singleton seat) False Map.empty initial Map.empty Set.empty Nothing seen (Map.singleton seat (Seq.length (Ending.loggedFor seat seen))) Map.empty Map.empty Web.Clock.none
 
 -- | The entries a seat has read so far, oldest first.
 loggedFor :: PlayerId.PlayerId -> Seat -> Seq.Seq Log.Entry

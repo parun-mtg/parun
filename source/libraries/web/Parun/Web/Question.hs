@@ -11,6 +11,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Ord as Ord
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -191,12 +192,27 @@ passesFor stop request = case (stop, Request.view request) of
       MkStep turn phase -> PlayerView.turn shown /= turn || PlayerView.phase shown >= phase
       _ -> False
 
--- | The reply that finishes a payment auto is making: auto's next source,
--- or paying once the cost is covered.
-paying :: Request.Request -> Maybe R.Reply
-paying request = case Text.unpack (Question.kind (Request.question request)) of
+-- | The reply that finishes a payment auto is making, given the source
+-- question auto last answered for the seat: auto's next source, the mana
+-- that source makes (CR 605.3b) of the colors it was tapped for, the most
+-- of those and the fewest others, or paying once the cost is covered.
+paying :: Maybe Request.Request -> Request.Request -> Maybe R.Reply
+paying tapped request = case Text.unpack (Question.kind question) of
   "ChooseExtraManaSource" -> Just R.Null
+  "ChooseManaYield" -> do
+    asked <- tapped
+    shown <- Request.view asked
+    (source, wanted) <- Offer.autoSource shown (Question.offer (Request.question asked))
+    oid <- Offer.objectOf source
+    Monad.guard (Just oid == (Protocol.field "source" offer >>= Offer.objectOf))
+    yields <- Protocol.field "yields" offer >>= Offer.decoded (Common.list (Common.list Codec.ManaType.codec))
+    let counted units = let (towards, others) = List.partition (`Set.member` wanted) units in (length towards, negate (length others))
+    (i, _) <- Maybe.listToMaybe (List.sortOn (Ord.Down . counted . snd) (zip [0 :: Integer ..] yields))
+    Just (R.Number i)
   _ -> auto request
+  where
+    question = Request.question request
+    offer = Question.offer question
 
 -- | A reply the seat is never asked for: the hotseat never concedes unasked
 -- (CR 104.3a), the seat plays first when it chooses, a priority offering nothing but a pass and mana abilities is

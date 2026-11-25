@@ -847,7 +847,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "auto: upkeep" (Question.Web.automatic Question.Web.MkAutoPass (offering (Phase.Beginning BeginningStep.Upkeep))) (Just (R.Number 0))
     Spec.assertEqWith s "auto: main phase" (Question.Web.automatic Question.Web.MkAutoPass (offering Phase.PrecombatMain)) Nothing
     Spec.assertEqWith s "standard: upkeep" (Question.Web.automatic Question.Web.MkStandard (offering (Phase.Beginning BeginningStep.Upkeep))) Nothing
-    Spec.assertEqWith s "a covered cost is paid" (Question.Web.paying (bare (Text.pack "ChooseExtraManaSource") R.Null)) (Just R.Null)
+    Spec.assertEqWith s "a covered cost is paid" (Question.Web.paying Nothing (bare (Text.pack "ChooseExtraManaSource") R.Null)) (Just R.Null)
     Spec.assertEqWith s "named" (Question.Web.levelNamed "auto") (Just Question.Web.MkAutoPass)
 
   Spec.it s "CR 733.2b the seat passes until the step, turn or stack it asked for, and is asked anything else" $ do
@@ -918,6 +918,24 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         offersAuto = Maybe.isJust . Html.labelled (Text.pack "button") (Text.pack "Pay automatically")
     Spec.assertBool s (not (offersAuto (paying (one NonEmpty.:| [])))) "one source"
     Spec.assertBool s (offersAuto (paying (one NonEmpty.:| [two]))) "two sources"
+
+  Spec.it s "CR 605.3b paying automatically chooses the mana of an any-color source it tapped" $ do
+    brass <- S.printingOf s registry "City of Brass"
+    forest <- S.printingOf s registry "Forest"
+    let (city, g1) = S.addPermanent brass S.alice (Setup.emptyGame S.bothPlayers)
+        (land, gs) = S.addPermanent forest S.alice g1
+        colors = [Color.White, Color.Blue, Color.Black, Color.Red, Color.Green]
+        owingFrom sources symbols = requestFor gs (Prompt.ChooseManaSource (Decider.MkDecider S.alice) S.alice (ManaCost.MkManaCost symbols) sources Nothing)
+        owing = owingFrom (city NonEmpty.:| [land])
+        unit color = Either.fromRight R.Null (Codec.Reply.fromValue (Codec.encode Codec.ManaType.codec (ManaType.Colored color)))
+        yielding source = (owing []) {Request.question = Question.MkQuestion S.alice (Text.pack "ChooseManaYield") (R.Object [(Text.pack "source", PromptOffer.object Protocol.namer source), (Text.pack "yields", R.Array [R.Array [unit c] | c <- colors])]) Nothing Nothing}
+        blue = owing [ManaSymbol.OfType (ManaType.Colored Color.Blue)]
+    Spec.assertEqWith s "auto taps the city for blue" (Question.Web.paying Nothing blue) (Just (PromptOffer.object Protocol.namer city))
+    Spec.assertEqWith s "and makes blue" (Question.Web.paying (Just blue) (yielding city)) (Just (R.Number 1))
+    Spec.assertEqWith s "the color still owed" (Question.Web.paying (Just (owing [ManaSymbol.OfType (ManaType.Colored Color.Red)])) (yielding city)) (Just (R.Number 3))
+    Spec.assertEqWith s "any color for generic" (Question.Web.paying (Just (owingFrom (city NonEmpty.:| []) [ManaSymbol.Generic 1])) (yielding city)) (Just (R.Number 0))
+    Spec.assertEqWith s "not another source's" (Question.Web.paying (Just (owing [ManaSymbol.OfType (ManaType.Colored Color.Green)])) (yielding city)) Nothing
+    Spec.assertEqWith s "nor one auto did not tap" (Question.Web.paying Nothing (yielding city)) Nothing
 
   Spec.it s "CR 601.2g a payment's heading names what the pool leaves owed once some is paid" $ do
     mountain <- S.printingOf s registry "Mountain"
