@@ -22,6 +22,7 @@ import qualified Parun.Codec.Request as Codec.Request
 import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.PlayerView as PlayerView.Engine
 import qualified Parun.Extra.Integer as Integer
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Json.Value as Value
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -60,12 +61,14 @@ data Message
     -- seat, which has seen this so far (seeing): a page that reloaded starts
     -- its log from it.
     MkStart PlayerId.PlayerId Ending.Seen
-  | -- | A request the guest's seat answers.
-    MkAsk Request.Request
+  | -- | A request the guest's seat answers, and each timed seat's time left
+    -- (Clock.banks).
+    MkAsk Request.Request Banks
   | -- | The seat whose decision the game now waits on, another's than the
-    -- guest's, and the game as the guest's seat sees it then, at this depth
-    -- (Request.depth), less whose priority it is (telling).
-    MkDeciding PlayerId.PlayerId PlayerView.PlayerView Natural
+    -- guest's, the game as the guest's seat sees it then, at this depth
+    -- (Request.depth), less whose priority it is (telling), and each timed
+    -- seat's time left.
+    MkDeciding PlayerId.PlayerId PlayerView.PlayerView Natural Banks
   | -- | The guest's reply to the last request.
     MkAnswer R.Reply
   | -- | The game ended: the guest's ending, its log and life trail built
@@ -73,6 +76,16 @@ data Message
     -- lost.
     MkEnd Ending.Ending
   deriving (Eq, Show)
+
+-- | Each timed seat's time left, in seconds (Clock.banks).
+type Banks = Map.Map PlayerId.PlayerId Double
+
+-- | Time banks on the wire, in whole milliseconds.
+banksCodec :: Codec.Codec Banks
+banksCodec = Common.keyedList (Common.tuple Codec.PlayerId.codec millis)
+  where
+    millis :: Codec.Codec Double
+    millis = Codec.MkCodec {Codec.encode = Codec.encode Common.natural . round . (* 1000) . max 0, Codec.decode = fmap ((/ 1000) . Natural.toDouble) . Codec.decode Common.natural, Codec.schema = Codec.schema Common.natural}
 
 -- | A seat of the match-up as the guest is shown it.
 data Place = MkPlace
@@ -104,8 +117,8 @@ encode build message =
         MkMatchup places options -> ("matchup", [Value.pair "seats" (Value.array (fmap place places)), Value.pair "options" (Codec.encode (Common.list (Common.tuple Common.text Common.text)) options)])
         MkReady on -> ("ready", [Value.pair "ready" (Value.boolean on)])
         MkStart seat seen' -> ("start", [Value.pair "seat" (Value.integer (toInteger (PlayerId.unwrap seat))), Value.pair "seen" (seenValue seen')])
-        MkAsk request -> ("ask", [Value.pair "request" (Codec.encode Codec.Request.codec request)])
-        MkDeciding seat shown depth -> ("deciding", [Value.pair "seat" (Value.integer (toInteger (PlayerId.unwrap seat))), Value.pair "view" (Codec.encode Codec.PlayerView.codec shown), Value.pair "depth" (Codec.encode Common.natural depth)])
+        MkAsk request clocks -> ("ask", [Value.pair "request" (Codec.encode Codec.Request.codec request), Value.pair "clocks" (Codec.encode banksCodec clocks)])
+        MkDeciding seat shown depth clocks -> ("deciding", [Value.pair "seat" (Value.integer (toInteger (PlayerId.unwrap seat))), Value.pair "view" (Codec.encode Codec.PlayerView.codec shown), Value.pair "depth" (Codec.encode Common.natural depth), Value.pair "clocks" (Codec.encode banksCodec clocks)])
         MkAnswer reply -> ("answer", [Value.pair "reply" (Codec.Reply.toValue reply)])
         MkEnd ending' ->
           ( "end",
@@ -130,13 +143,14 @@ decode build line = do
   Monad.unless (theirs == build) . Left $ Text.pack "the other page runs another build of Parun (" <> theirs <> Text.pack ", this one " <> build <> Text.pack "): reload both pages"
   tag <- Common.field "type" pairs >>= Common.asText
   let text key = Common.field key pairs >>= Common.asText
+      clocks = Common.field "clocks" pairs >>= Codec.decode banksCodec
   case Text.unpack tag of
     "hello" -> MkHello <$> text "name" <*> text "list"
     "matchup" -> MkMatchup <$> (Common.field "seats" pairs >>= Common.asArray >>= traverse place) <*> (Common.field "options" pairs >>= Codec.decode (Common.list (Common.tuple Common.text Common.text)))
     "ready" -> MkReady <$> (Common.field "ready" pairs >>= Common.asBoolean)
     "start" -> MkStart <$> (Common.field "seat" pairs >>= Common.asInteger >>= natural) <*> (Common.field "seen" pairs >>= seenOf)
-    "ask" -> MkAsk <$> (Common.field "request" pairs >>= Codec.decode Codec.Request.codec)
-    "deciding" -> MkDeciding <$> (Common.field "seat" pairs >>= Common.asInteger >>= natural) <*> (Common.field "view" pairs >>= Codec.decode Codec.PlayerView.codec) <*> (Common.field "depth" pairs >>= Codec.decode Common.natural)
+    "ask" -> MkAsk <$> (Common.field "request" pairs >>= Codec.decode Codec.Request.codec) <*> clocks
+    "deciding" -> MkDeciding <$> (Common.field "seat" pairs >>= Common.asInteger >>= natural) <*> (Common.field "view" pairs >>= Codec.decode Codec.PlayerView.codec) <*> (Common.field "depth" pairs >>= Codec.decode Common.natural) <*> clocks
     "answer" -> MkAnswer <$> (Common.field "reply" pairs >>= Codec.Reply.fromValue)
     "end" ->
       fmap MkEnd $
@@ -218,18 +232,19 @@ data Channel m = MkChannel
     receive :: m (Maybe Message)
   }
 
--- | The host's side of a guest's seat (Protocol.Exchange): each request sent,
--- answered by the reply that comes back, any other message (a Ready toggled
+-- | The host's side of a guest's seat (Protocol.Exchange): each request sent
+-- with the time banks `clocks` reads then, answered by the reply that comes
+-- back, any other message (a Ready toggled
 -- as the game began, a rejoining guest's Hello) skipped. Once the channel
 -- closes, `rejoin` connects it anew and the guest is sent `places`, the
 -- match-up its history names, without the options, which a game under way
 -- has no use for, its seat with what `seen` says it has seen, and the
 -- request again, which a guest whose page reloaded needs all of; the
 -- end of input, which stops the game, only where it does not.
-remote :: (Monad m) => m Bool -> [Place] -> m Ending.Seen -> Channel m -> Protocol.Exchange m
-remote rejoin places seen channel request = asked
+remote :: (Monad m) => m Bool -> [Place] -> m Ending.Seen -> m Banks -> Channel m -> Protocol.Exchange m
+remote rejoin places seen clocks channel request = asked
   where
-    asked = send channel (MkAsk request) >> replied
+    asked = clocks >>= send channel . MkAsk request >> replied
     replied = do
       heard <- receive channel
       case heard of
@@ -263,15 +278,16 @@ type Told = (PlayerId.PlayerId, PlayerView.PlayerView, Natural)
 
 -- | Tells each guest, over its channel in `guests`, of the seat `seat`
 -- deciding, another's than its own, with the game `gs` at depth `depth` as
--- its seat sees it, unless `told` holds that already: a guest's own seat
--- asked counts, since it is sent the request. What each was told of then.
-telling :: (Monad m) => Map.Map PlayerId.PlayerId (Channel m) -> PlayerId.PlayerId -> GameState.GameState -> Natural -> Map.Map PlayerId.PlayerId Told -> m (Map.Map PlayerId.PlayerId Told)
-telling guests seat gs depth told = Map.traverseWithKey tell guests
+-- its seat sees it and the time banks `clocks`, unless `told` holds that
+-- already, its clocks aside: a guest's own seat asked counts, since it is
+-- sent the request. What each was told of then.
+telling :: (Monad m) => Map.Map PlayerId.PlayerId (Channel m) -> PlayerId.PlayerId -> GameState.GameState -> Natural -> Banks -> Map.Map PlayerId.PlayerId Told -> m (Map.Map PlayerId.PlayerId Told)
+telling guests seat gs depth clocks told = Map.traverseWithKey tell guests
   where
     tell g channel = do
       let shown = (PlayerView.Engine.viewFor g gs) {PlayerView.priority = Nothing}
           now = (seat, shown, depth)
-      Monad.when (g /= seat && Map.lookup g told /= Just now) (send channel (MkDeciding seat shown depth))
+      Monad.when (g /= seat && Map.lookup g told /= Just now) (send channel (MkDeciding seat shown depth clocks))
       pure now
 
 -- | Each prompt's deciding seat given to `decides` before it is answered,
@@ -287,23 +303,25 @@ deciding decides =
 -- | What the guest does with a message from the host once the game is under
 -- way: a request is answered through `local`, its reply what to send back;
 -- the end is said; whose decision the game waits on is shown, on the board
--- as the guest's seat then sees it, at that depth; anything else is ignored.
+-- as the guest's seat then sees it, at that depth, with the clocks then;
+-- anything else is ignored.
 data Heard
   = MkReply Message
-  | MkWaitingOn PlayerId.PlayerId PlayerView.PlayerView Natural
+  | MkWaitingOn PlayerId.PlayerId PlayerView.PlayerView Natural Banks
   | MkEnded Ending.Ending
   | MkIgnored
   deriving (Eq, Show)
 
 -- | The guest's side of its seat: each request the host sends answered by
--- `local`, the page's own exchange, and nothing else ever answering it. A
--- local exchange that ends (Nothing) answers nothing, which leaves the host
--- waiting until the channel closes.
-guest :: (Monad m) => Protocol.Exchange m -> Message -> m Heard
+-- `local`, the page's own exchange, given the clocks sent with it, and
+-- nothing else ever answering it. A local exchange that ends (Nothing)
+-- answers nothing: the host waits on until the channel closes, or tells the
+-- game's end (Guest.play).
+guest :: (Monad m) => (Banks -> Protocol.Exchange m) -> Message -> m Heard
 guest local message = case message of
-  MkAsk request -> maybe MkIgnored (either (const MkIgnored) (MkReply . MkAnswer)) <$> local request
+  MkAsk request clocks -> maybe MkIgnored (either (const MkIgnored) (MkReply . MkAnswer)) <$> local clocks request
   MkEnd ending' -> pure (MkEnded ending')
-  MkDeciding seat shown depth -> pure (MkWaitingOn seat shown depth)
+  MkDeciding seat shown depth clocks -> pure (MkWaitingOn seat shown depth clocks)
   _ -> pure MkIgnored
 
 -- | A game as the page playing it keeps it (the host's, for a game with

@@ -5,15 +5,12 @@
 --
 -- WHAT IS NOT IMPLEMENTED:
 --
---   * A guest shown the clocks, or told its time ran out before it next
---     answers (#9756).
 --   * A seat out of time in a game of three or more leaving it, the others
 --     playing on: the game stops (#9757).
 --   * A game picked up after a reload keeping each seat's time left: every
 --     clock starts again (#9758).
 module Parun.Web.Clock where
 
-import qualified Control.Monad as Monad
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
@@ -81,6 +78,16 @@ timed now within clocks change seat ask request = do
       change (stop ended)
       maybe (change (\c -> c {out = Just seat}) >> pure Nothing) pure answered
 
+-- | Each timed seat's time left at this time, in seconds, the running
+-- clock read down to it: what a guest's page is sent (Parun.Web.Link).
+banks :: Double -> Clocks -> Map.Map PlayerId.PlayerId Double
+banks at clocks = Map.mapWithKey (\s l -> max 0 (l - maybe 0 (\(r, since) -> if r == s then at - since else 0) (running clocks))) (left clocks)
+
+-- | The clocks a guest's page keeps from the time banks it was sent as
+-- `seat` decides, that seat's clock, if it has one, running from this time.
+heard :: Double -> PlayerId.PlayerId -> Map.Map PlayerId.PlayerId Double -> Clocks
+heard at seat sent = none {left = sent, running = if Map.member seat sent then Just (seat, at) else Nothing}
+
 -- | A seat's clock as a screen shows it: its time left, and, while it
 -- runs, when it runs out, in milliseconds since the Unix epoch, which the
 -- page counts down to (page.js).
@@ -95,11 +102,8 @@ data Face = MkFace
 -- this many milliseconds since the Unix epoch.
 faces :: Double -> Integer -> Clocks -> [Face]
 faces at epoch clocks =
-  [ MkFace s shown (if runs then Just (epoch + round (shown * 1000)) else Nothing)
-  | (s, l) <- Map.toList (left clocks),
-    let since = maybe at snd (Monad.mfilter ((== s) . fst) (running clocks))
-        runs = fmap fst (running clocks) == Just s
-        shown = max 0 (l - (at - since))
+  [ MkFace s l (if fmap fst (running clocks) == Just s then Just (epoch + round (l * 1000)) else Nothing)
+  | (s, l) <- Map.toList (banks at clocks)
   ]
 
 -- | Time left as minutes and seconds, a part second counted whole, so a

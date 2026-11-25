@@ -25,6 +25,19 @@ spec s = Spec.describe s "Parun.Web.Clock" $ do
       Spec.assertEqWith s "never below none" (Map.lookup one (Clock.left (Clock.stop 500 started))) (Just 0)
       Spec.assertEqWith s "nothing running" (Clock.stop 500 (Clock.starting (Just 1) (Set.singleton one))) (Clock.starting (Just 1) (Set.singleton one))
 
+  Spec.describe s "banks" $ do
+    Spec.it s "reads the running clock down to now, never below none, and the others as they stand" $ do
+      let started = Clock.start one 100 (Clock.starting (Just 1) (Set.fromList [one, two]))
+      Spec.assertEqWith s "banks" (Clock.banks 110 started) (Map.fromList [(one, 50), (two, 60)])
+      Spec.assertEqWith s "never below none" (Clock.banks 500 started) (Map.fromList [(one, 0), (two, 60)])
+
+  Spec.describe s "heard" $ do
+    Spec.it s "keeps the banks sent, running the deciding seat's clock from now if it has one" $ do
+      let sent = Map.fromList [(one, 50), (two, 60 :: Double)]
+      Spec.assertEqWith s "timed" (Clock.heard 7 two sent) (Clock.MkClocks sent (Just (two, 7)) Nothing)
+      Spec.assertEqWith s "untimed" (Clock.heard 7 (PlayerId.MkPlayerId 2) sent) (Clock.MkClocks sent Nothing Nothing)
+      Spec.assertEqWith s "read on the guest's page" (Clock.faces 17 1000000 (Clock.heard 7 two sent)) [Clock.MkFace one 50 Nothing, Clock.MkFace two 50 (Just 1050000)]
+
   Spec.describe s "faces" $ do
     Spec.it s "reads the running clock down to now, saying when it runs out, and the others as they stand" $ do
       let started = Clock.start one 100 (Clock.starting (Just 1) (Set.fromList [one, two]))

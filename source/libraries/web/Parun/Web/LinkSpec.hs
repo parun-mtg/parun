@@ -1,5 +1,6 @@
 module Parun.Web.LinkSpec where
 
+import qualified Data.Functor.Identity as Identity
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
@@ -34,8 +35,9 @@ spec s = Spec.describe s "Parun.Web.Link" $ do
               Link.MkReady False,
               Link.MkStart (PlayerId.MkPlayerId 2) Ending.unseen,
               Link.MkStart (PlayerId.MkPlayerId 1) (Ending.MkSeen (Map.fromList [((PlayerId.MkPlayerId 1, 0), (3, 2))]) (Map.singleton (PlayerId.MkPlayerId 1) (Seq.fromList [Log.MkPregame, Log.MkTurn 3 (PlayerId.MkPlayerId 0), Log.MkEvent Log.MkMinor (Text.pack "Grizzly Bears enters.")])) (Seq.fromList [(1, [(PlayerId.MkPlayerId 0, 20), (PlayerId.MkPlayerId 1, 20)]), (3, [(PlayerId.MkPlayerId 0, 18), (PlayerId.MkPlayerId 1, 20)])])),
-              Link.MkAsk request,
-              Link.MkDeciding (PlayerId.MkPlayerId 2) PlayerViewSpec.testView 1,
+              Link.MkAsk request Map.empty,
+              Link.MkAsk request (Map.fromList [(PlayerId.MkPlayerId 0, 59.25), (PlayerId.MkPlayerId 1, 300)]),
+              Link.MkDeciding (PlayerId.MkPlayerId 2) PlayerViewSpec.testView 1 (Map.singleton (PlayerId.MkPlayerId 2) 0.5),
               Link.MkAnswer (R.Object [(Text.pack "action", R.Text (Text.pack "Pass"))]),
               Link.MkEnd (Ending.MkEnding Ending.MkLost [Text.pack "Player 1 wins."] (Text.pack "{}\n") (Seq.fromList [Log.MkTurn 1 (PlayerId.MkPlayerId 0), Log.MkMana (PlayerId.MkPlayerId 0) [Text.pack "Forest", Text.pack "Forest"], Log.MkEvent Log.MkMajor (Text.pack "Player 1 casts Grizzly Bears."), Log.MkEvent Log.MkMinor (Text.pack "Grizzly Bears enters.")]) (PlayerId.MkPlayerId 1) False [(1, [(PlayerId.MkPlayerId 0, 20), (PlayerId.MkPlayerId 1, 20)]), (4, [(PlayerId.MkPlayerId 0, 20), (PlayerId.MkPlayerId 1, -2)])]),
               Link.MkEnd (Ending.MkEnding Ending.MkWon [] Text.empty Seq.empty (PlayerId.MkPlayerId 2) False []),
@@ -48,6 +50,15 @@ spec s = Spec.describe s "Parun.Web.Link" $ do
 
     Spec.it s "puts each message on one line" $ do
       Spec.assertBool s (not (Text.any (== '\n') (Link.encode (Text.pack "b") (Link.MkHello (Text.pack "x") (Text.pack "1 Forest\n1 Island\n"))))) "one line"
+
+  Spec.describe s "guest" $ do
+    Spec.it s "gives the clocks a request comes with to the page answering it, and those a seat deciding comes with to the page shown it" $ do
+      let request = Request.MkRequest Nothing (Question.MkQuestion (PlayerId.MkPlayerId 1) (Text.pack "PlayOrDraw") (R.Array [R.Text (Text.pack "Play"), R.Text (Text.pack "Draw")]) Nothing Nothing) Nothing 0
+          banks = Map.fromList [(PlayerId.MkPlayerId 0, 59.25), (PlayerId.MkPlayerId 1, 300 :: Double)]
+          -- The page answers with the time its own seat has left.
+          local clocks _ = Identity.Identity (Just (Right (R.Number (round (Map.findWithDefault 0 (PlayerId.MkPlayerId 1) clocks)))))
+      Spec.assertEqWith s "asked" (Identity.runIdentity (Link.guest local (Link.MkAsk request banks))) (Link.MkReply (Link.MkAnswer (R.Number 300)))
+      Spec.assertEqWith s "deciding" (Identity.runIdentity (Link.guest local (Link.MkDeciding (PlayerId.MkPlayerId 0) PlayerViewSpec.testView 1 banks))) (Link.MkWaitingOn (PlayerId.MkPlayerId 0) PlayerViewSpec.testView 1 banks)
 
   Spec.describe s "decode" $ do
     Spec.it s "refuses a message from another build" $ do

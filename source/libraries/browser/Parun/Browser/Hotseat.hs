@@ -74,7 +74,8 @@ instance Exception.Exception Abandoned
 -- player's seat answered there (Parun.Web.Question) at the auto-pass level
 -- kept in `levelRef`, and left with the level last chosen there; each seat
 -- in `remotes` answered by its own exchange (Parun.Web.Link.remote), given
--- what the host sent that seat before the request pending, each
+-- what the host sent that seat before the request pending and the time
+-- banks (Web.Clock.banks) as they read, each
 -- in `locals` on the page as the player's is, handed the screen first
 -- (Web.Question.handOff) unless the player plays it too (Link.MkYours),
 -- and every other by the search bot at the difficulty and persona its slot
@@ -87,15 +88,15 @@ instance Exception.Exception Abandoned
 -- `stored`, each made again (Protocol.resumed) and each bot's given back
 -- to it (Game.remembered), and every reply made from there, a bot's
 -- too, is given to `kept`; the seat each prompt asks, a bot's too, is
--- given to `decides` first, with the game then and its depth
--- (Link.deciding). Each bot deals what it cannot see from the game's
+-- given to `decides` first, with the game then, its depth (Link.deciding)
+-- and the time banks. Each bot deals what it cannot see from the game's
 -- format's pool among `cards` (Command.pooled), by the legality table `table` gives.
 -- Once over, `tell` is given each seat's ending, a guest's log and life
 -- trail built from what its seat was sent (Link.seeing), which its page
 -- loses to a reload: how it came out, or why it could not start, taking
 -- no seat's side where another person plays at this screen
 -- (Link.MkHandedOver).
-game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> GameSettings.GameSettings -> Maybe Natural -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (IO Ending.Seen -> Protocol.Exchange IO) -> Map.Map PlayerId.PlayerId Link.Sitting -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> (PlayerId.PlayerId -> GameState.GameState -> Natural -> IO ()) -> ((PlayerId.PlayerId -> Ending.Ending) -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
+game :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> GameSettings.GameSettings -> Maybe Natural -> NonEmpty.NonEmpty (FilePath, Text.Text) -> Map.Map PlayerId.PlayerId (IO Ending.Seen -> IO Link.Banks -> Protocol.Exchange IO) -> Map.Map PlayerId.PlayerId Link.Sitting -> Key.Type.Key -> [R.Reply] -> (R.Reply -> IO ()) -> (PlayerId.PlayerId -> GameState.GameState -> Natural -> Link.Banks -> IO ()) -> ((PlayerId.PlayerId -> Ending.Ending) -> IO ()) -> (Maybe PlayerView.PlayerView -> IO Leave) -> IO (Either [Text.Text] Ending.Played)
 game page registry cards table levelRef bots settings clock seats remotes locals seed stored kept decides tell leave = do
   let people = Set.insert player (Map.keysSet remotes <> Map.keysSet locals)
   seatRef <- IORef.newIORef . (\s -> s {yours = Set.insert player (Map.keysSet (Map.filter (== Link.MkYours) locals)), handed = Link.MkHandedOver `elem` locals, clocks = Web.Clock.starting clock people}) . newSeat player Ending.unseen =<< IORef.readIORef levelRef
@@ -117,10 +118,11 @@ game page registry cards table levelRef bots settings clock seats remotes locals
             let lookUp = Identity.runIdentity . Interpreter.chosenCard registry
                 -- Each seat a person plays on its clock, if timed.
                 timed = Web.Clock.timed Clock.getMonotonicTime (Browser.within page) (clocks <$> IORef.readIORef seatRef) (\f -> IORef.modifyIORef' seatRef (\s -> s {clocks = f (clocks s)}))
+                banks = Web.Clock.banks <$> Clock.getMonotonicTime <*> (clocks <$> IORef.readIORef seatRef)
                 here request = timed (Question.seat (Request.question request)) (exchange lookUp page seatRef leave) request
                 -- The page stays live while another browser's seat decides,
                 -- and while a search bot does.
-                elsewhere = Map.mapWithKey (\seat ask -> timed seat (awaiting lookUp page seatRef leave (const [seat]) . Link.seeing (sentTo seat) (ask (Map.findWithDefault Ending.unseen seat <$> IORef.readIORef guestsRef)))) remotes
+                elsewhere = Map.mapWithKey (\seat ask -> timed seat (awaiting lookUp page seatRef leave (const [seat]) . Link.seeing (sentTo seat) (ask (Map.findWithDefault Ending.unseen seat <$> IORef.readIORef guestsRef) banks))) remotes
                 sentTo seat shown = IORef.modifyIORef' guestsRef (Map.adjust (Ending.see shown) seat)
                 next = IORef.atomicModifyIORef' storedRef $ \left -> maybe ([], Nothing) (\(reply, rest) -> (rest, Just reply)) (List.uncons left)
                 -- What a seat sees as its reply is made again, and what a
@@ -134,7 +136,7 @@ game page registry cards table levelRef bots settings clock seats remotes locals
                 -- another browser's seat decides (awaiting).
                 movedOn seat gs depth = do
                   moving seatRef breathRef botReading (player : Map.keys locals) (\s -> s /= player && Map.notMember s remotes && Map.notMember s locals) seat gs depth
-                  decides seat gs depth
+                  banks >>= decides seat gs depth
             (outcome, recorded) <- Command.game (Text.pack "the web client") (Protocol.resumed next replayed kept (Protocol.bySeat elsewhere here)) next kept [Link.deciding movedOn] (breathing lookUp page seatRef leave botReading breathRef) (Lobby.playOptions bots (Natural.length seats) player (Map.keysSet remotes <> Map.keysSet locals)) pooled registry settings {GameSettings.format = format} (fmap DeckList.deck lists) seed
             finished <- IORef.readIORef seatRef
             sent <- IORef.readIORef guestsRef
@@ -461,7 +463,8 @@ data Seat = MkSeat
     -- | The game as each seat the page plays sees it at a decision another
     -- seat makes since, and its depth (stand).
     standing :: Map.Map PlayerId.PlayerId (PlayerView.PlayerView, Natural),
-    -- | Every timed seat's clock (Web.Clock), kept by the host only.
+    -- | Every timed seat's clock (Web.Clock): a guest's page keeps what the
+    -- host last sent it (Web.Clock.heard).
     clocks :: Web.Clock.Clocks
   }
 
