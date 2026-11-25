@@ -74,8 +74,9 @@ data Choice
   | MkReplays
   | -- | This replay, from its start.
     MkWatch Replay.Source
-  | -- | Plays on by hand from this position of this replay.
-    MkPlayOn Replay.Source Natural
+  | -- | Plays on from this position of this replay, as this seat or every
+    -- seat (Replay.MkBranch).
+    MkPlayOn Replay.Source Natural (Maybe PlayerId.PlayerId)
   | -- | The lobby, on these decks: yours, then each bot's.
     MkPlayAgain (NonEmpty.NonEmpty Text.Text)
   deriving (Eq, Show)
@@ -126,7 +127,7 @@ starts choice = case choice of
   MkBrowseDecks _ -> False
   MkReplays -> False
   MkWatch _ -> False
-  MkPlayOn _ _ -> True
+  MkPlayOn {} -> True
   MkPlayAgain _ -> False
 
 -- | What a tap on the top bar's section means here.
@@ -183,7 +184,7 @@ view home =
       <> [legal]
   where
     confirmLabel choice = case choice of
-      MkPlayOn _ _ -> "Abandon and play on"
+      MkPlayOn {} -> "Abandon and play on"
       _ -> "Abandon and play"
     tile classes choice title said =
       Element.button

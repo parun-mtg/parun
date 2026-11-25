@@ -2,6 +2,7 @@ module Parun.Web.RouteSpec where
 
 import qualified Data.Text as Text
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Web.Replay as Web.Replay
 import qualified Parun.Web.Route as Route
 
@@ -18,9 +19,10 @@ spec s = Spec.describe s "Parun.Web.Route" $ do
           Route.MkBuild (Just (Text.pack "starter/red")),
           Route.MkReplays,
           Route.MkReplay Route.MkWatching (Web.Replay.MkScenario (Text.pack "cards/lightning-bolt")) 3,
-          Route.MkReplay Route.MkPlayingOn (Web.Replay.MkScenario (Text.pack "a&b=c")) 0,
+          Route.MkReplay (Route.MkPlayingOn Nothing) (Web.Replay.MkScenario (Text.pack "a&b=c")) 0,
+          Route.MkReplay (Route.MkPlayingOn (Just (PlayerId.MkPlayerId 1))) (Web.Replay.MkScenario (Text.pack "a&b=c")) 4,
           Route.MkReplay Route.MkWatching (Web.Replay.MkPlayed (Text.pack "1795364751000")) 12,
-          Route.MkReplay Route.MkPlayingOn (Web.Replay.MkPlayed (Text.pack "1795364751000")) 1
+          Route.MkReplay (Route.MkPlayingOn Nothing) (Web.Replay.MkPlayed (Text.pack "1795364751000")) 1
         ]
 
   Spec.describe s "render" $ do
@@ -31,7 +33,10 @@ spec s = Spec.describe s "Parun.Web.Route" $ do
       Spec.assertEq s (Route.render (Route.MkReplay Route.MkWatching (Web.Replay.MkScenario (Text.pack "cards/lightning-bolt")) 3)) (Text.pack "?scenario=cards%2flightning-bolt&at=3")
 
     Spec.it s "names a game played on from a position by branch" $ do
-      Spec.assertEq s (Route.render (Route.MkReplay Route.MkPlayingOn (Web.Replay.MkPlayed (Text.pack "17")) 2)) (Text.pack "?game=17&at=2&branch")
+      Spec.assertEq s (Route.render (Route.MkReplay (Route.MkPlayingOn Nothing) (Web.Replay.MkPlayed (Text.pack "17")) 2)) (Text.pack "?game=17&at=2&branch")
+
+    Spec.it s "names the seat played on as by its number" $ do
+      Spec.assertEq s (Route.render (Route.MkReplay (Route.MkPlayingOn (Just (PlayerId.MkPlayerId 1))) (Web.Replay.MkPlayed (Text.pack "17")) 2)) (Text.pack "?game=17&at=2&branch=2")
 
     Spec.it s "names the join screen by join, the offer left to the fragment" $ do
       Spec.assertEq s (Route.render (Route.MkJoin Route.MkGathering)) (Text.pack "?join")
@@ -48,6 +53,9 @@ spec s = Spec.describe s "Parun.Web.Route" $ do
 
     Spec.it s "reads a scenario with no position at its first" $ do
       Spec.assertEq s (Route.parse (Text.pack "?scenario=foo&level=Standard")) (Route.MkReplay Route.MkWatching (Web.Replay.MkScenario (Text.pack "foo")) 0)
+
+    Spec.it s "reads a branch naming no seat as every seat" $ do
+      Spec.assertEq s (fmap (Route.parse . Text.pack) ["?game=17&branch=0", "?game=17&branch=x"]) (replicate 2 (Route.MkReplay (Route.MkPlayingOn Nothing) (Web.Replay.MkPlayed (Text.pack "17")) 0))
 
     Spec.it s "reads a query naming no screen as the home screen" $ do
       Spec.assertEq s (fmap (Route.parse . Text.pack) ["", "?level=Standard&offer=xyz", "?at=nope"]) [Route.MkHome, Route.MkHome, Route.MkHome]

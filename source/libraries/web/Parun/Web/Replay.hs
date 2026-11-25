@@ -60,8 +60,9 @@ data Event
     MkSearch
   | -- | Opens this scenario.
     MkOpen Text.Text
-  | -- | Plays on by hand from the position shown.
-    MkBranch
+  | -- | Plays on from the position shown as this seat, the search bot
+    -- playing every other, else every seat by hand at this screen.
+    MkBranch (Maybe PlayerId.PlayerId)
   | -- | Back from a replay to the list of scenarios.
     MkBack
   | -- | Back from a game played on to the replay where it began.
@@ -322,7 +323,8 @@ controls frame =
           "div"
           ["replay-actions"]
           []
-          [ Element.button ["branch"] MkBranch [Element.string "Play on from here"],
+          [ Element.button ["branch"] (MkBranch (Just (viewer frame))) [Element.text (Text.pack "Play on as " <> Board.name (viewer frame))],
+            Element.button ["branch"] (MkBranch Nothing) [Element.string "Play on, every seat"],
             Element.button ["back"] MkBack [Element.string "All replays"]
           ],
         Element.el "p" ["subhead"] [] [Element.string "View as"],
@@ -551,9 +553,10 @@ scenarioList typed' listedScenarios =
                    ]
 
 -- | How a game played on from a position ended (Parun.Browser.Replay.playOn),
--- with buttons back to that position and to play on from it again.
-ended :: [Text.Text] -> Html.Html Event
-ended said =
+-- with buttons back to that position and to play on from it again, as
+-- `seat` played on (MkBranch).
+ended :: Maybe PlayerId.PlayerId -> [Text.Text] -> Html.Html Event
+ended seat said =
   Element.el
     "main"
     ["message", "branch-ended"]
@@ -564,7 +567,7 @@ ended said =
                ["ending-actions"]
                []
                [ Element.button [] MkResumeReplay [Element.string "Back to the replay"],
-                 Element.button ["primary"] MkBranch [Element.string "Play on again"]
+                 Element.button ["primary"] (MkBranch seat) [Element.string "Play on again"]
                ]
            ]
     )

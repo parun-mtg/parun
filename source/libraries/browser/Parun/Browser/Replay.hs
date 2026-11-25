@@ -16,27 +16,37 @@ import qualified Data.IORef as IORef
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Browser as Browser
 import qualified Parun.Browser.Hotseat as Hotseat
+import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.PlayerView as PlayerView.Engine
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Interpreter as Interpreter
+import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Generator as Generator
 import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Protocol as Protocol
+import qualified Parun.Play.Search as Search
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Load as Load
+import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Board as Board
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Entrant as Entrant
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Label as Label
+import qualified Parun.Types.LegalityTable as LegalityTable
+import qualified Parun.Types.Persona as Persona
+import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Scenario as Scenario.Type
@@ -47,6 +57,8 @@ import qualified Parun.Types.Stop as Stop
 import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.History as History
+import qualified Parun.Web.Link as Link
+import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Question as Web.Question
 import qualified Parun.Web.Replay as Web.Replay
 import qualified Parun.Web.Screen as Screen
@@ -82,8 +94,9 @@ decode name = do
 -- | Where the replay was left for.
 data Exit
   = MkToList
-  | -- | Plays on by hand from this position.
-    MkPlayOn Natural
+  | -- | Plays on from this position, as this seat or every seat
+    -- (Web.Replay.MkBranch).
+    MkPlayOn Natural (Maybe PlayerId.PlayerId)
 
 -- | The scenario at a position as a seat sees it (the player's of a game
 -- finished here, `played`, else the first), replayed afresh at each
@@ -167,7 +180,7 @@ viewer page moved registry name played scenario given = do
             Web.Replay.MkTable (Web.Question.MkPeek object) | not held -> go playing at stop viewing (readingOf object False <|> reading)
             Web.Replay.MkTable Web.Question.MkUnpeek | not held -> go playing at stop viewing Nothing
             Web.Replay.MkTable Web.Question.MkClose -> go playing at stop viewing Nothing
-            Web.Replay.MkBranch -> pure (MkPlayOn at)
+            Web.Replay.MkBranch seat -> pure (MkPlayOn at seat)
             Web.Replay.MkBack -> pure MkToList
             _ -> go playing at stop viewing reading
           _ -> go playing at stop viewing reading
@@ -175,26 +188,57 @@ viewer page moved registry name played scenario given = do
   stop <- reach first
   go False first stop (maybe (PlayerId.MkPlayerId 0) fst (Maybe.listToMaybe (filter ((`elem` seen) . snd) labelled <> labelled))) Nothing
 
--- | Plays on by hand from a position of the scenario: the run takes the
--- timeline to that stop (Scenario.branch), then every seat is answered on
--- the page as the hotseat answers one (Hotseat.exchange), chance from a
--- fresh key, at the auto-pass level kept in `levelRef`, until the game
--- ends; how it ended, or nothing when it was given up from the home screen
--- (`leave`).
-playOn :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> IORef.IORef Web.Question.Level -> Scenario.Type.Scenario -> Natural -> (Maybe PlayerView.PlayerView -> IO Hotseat.Leave) -> IO (Maybe [Text.Text])
-playOn page registry levelRef scenario given leave = do
-  seatRef <- IORef.newIORef . Hotseat.newSeat Hotseat.player Ending.unseen =<< IORef.readIORef levelRef
-  Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Nothing) $ do
-    key <- Key.fresh
-    let at = min (Natural.length (Scenario.Type.timeline scenario)) given
-        reference = Registry.hoist (pure . Identity.runIdentity) registry :: Registry.Registry IO
-        lookUp = Identity.runIdentity . Interpreter.chosenCard registry
-        seats = Map.fromList [(pid, Game.wired reference (Hotseat.exchange lookUp page seatRef leave)) | (pid, _) <- seatsOf scenario]
-    outcome <- Game.playing (Generator.fromKey key) (Scenario.branch (Game.reference reference) at (Game.consulting reference seats) scenario)
-    pure . Just $ case outcome of
-      Left reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]
-      Right (Left failure) -> [Text.pack "The scenario failed before the position:", Scenario.render failure]
-      Right (Right gs) -> maybe [Text.pack "The game ran out of steps."] (\result -> Wording.result Nothing result : Wording.departures Nothing gs) (GameState.result gs)
+-- | Plays on from a position of the scenario: the run takes the timeline
+-- to that stop (Scenario.branch), then the seat `chosen` is answered on the
+-- page as the hotseat answers one (Hotseat.exchange), and every other by
+-- the search bot at the difficulty and persona its place has in `styles`
+-- (Lobby.playOptions), dealing what it cannot see from the scenario's
+-- format's pool among `cards` by the legality table `table` gives
+-- (Command.pooled), the page live while it decides (Hotseat.breathing);
+-- with no seat chosen, every seat is answered on the page. Chance comes
+-- from a fresh key, the page plays at the auto-pass level kept in
+-- `levelRef`, until the game ends; how it ended, told to the seat chosen,
+-- why the bots could not deal, or nothing when it was given up from the
+-- home screen (`leave`). Each bot remembers what the game's log shows it,
+-- from the start (Search.remembering).
+playOn :: Browser.Page Screen.Event -> Registry.Registry Identity.Identity -> [Either Text.Text Card.Card] -> IO (Either Text.Text LegalityTable.LegalityTable) -> IORef.IORef Web.Question.Level -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> Maybe PlayerId.PlayerId -> Scenario.Type.Scenario -> Natural -> (Maybe PlayerView.PlayerView -> IO Hotseat.Leave) -> IO (Maybe [Text.Text])
+playOn page registry cards table levelRef styles chosen scenario given leave = do
+  let you = Maybe.fromMaybe Hotseat.player chosen
+      numbered = seatsOf scenario
+      options = case chosen of
+        Nothing -> PlayOptions.none
+        Just _ -> Lobby.playOptions styles (Natural.length numbered) you Set.empty
+      bot seat = Map.member (PlayerId.unwrap seat + 1) (PlayOptions.bots options)
+      format = case Scenario.Type.start scenario of
+        Start.FromDecks settings _ _ -> GameSettings.format settings
+        Start.FromBoard _ -> Nothing
+  dealt <- if Map.null (PlayOptions.bots options) then pure (Right Nothing) else fmap Just <$> Command.pooled table format cards
+  case dealt of
+    Left problems -> pure (Just (Text.pack "The bots could not play:" : problems))
+    Right prior -> do
+      seatRef <- IORef.newIORef . Hotseat.newSeat you Ending.unseen =<< IORef.readIORef levelRef
+      Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Nothing) $ do
+        key <- Key.fresh
+        memories <- IORef.newIORef Map.empty
+        aims <- IORef.newIORef Map.empty
+        breathRef <- IORef.newIORef Nothing
+        botReading <- IORef.newIORef Nothing
+        let at = min (Natural.length (Scenario.Type.timeline scenario)) given
+            reference = Registry.hoist (pure . Identity.runIdentity) registry :: Registry.Registry IO
+            lookUp = Identity.runIdentity . Interpreter.chosenCard registry
+            here = Hotseat.exchange lookUp page seatRef leave
+            breathe = Hotseat.breathing lookUp page seatRef leave botReading breathRef
+            answererOf pid = case prior of
+              Nothing -> Game.wired reference here
+              Just p -> Command.answerer reference here (pure Nothing) (const (pure ())) (IORef.readIORef memories) (Search.keptBy (IORef.readIORef aims) (IORef.modifyIORef' aims) pid) breathe (Command.timed (PlayOptions.thinkLimit options)) options p (PlayerId.unwrap pid + 1)
+            seats = Game.consulting reference (Map.fromList [(pid, answererOf pid) | (pid, _) <- numbered])
+            observers = [Search.remembering (IORef.modifyIORef' memories), Link.deciding (Hotseat.moving seatRef breathRef botReading [you] bot)]
+            onward = Answerer.MkAnswerer (Driver.ask observers seats)
+        outcome <- Game.playing (Generator.fromKey key) (Scenario.branch (Game.reference reference) at onward scenario)
+        pure . Just $ case outcome of
+          Left reason -> [Text.pack "The game stopped: " <> reason <> Text.pack "."]
+          Right (Left failure) -> [Text.pack "The scenario failed before the position:", Scenario.render failure]
+          Right (Right gs) -> maybe [Text.pack "The game ran out of steps."] (\result -> Wording.result chosen result : Wording.departures chosen gs) (GameState.result gs)
 
 -- | Each seat and the name the scenario gives it, in seating order.
 seatsOf :: Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)]
