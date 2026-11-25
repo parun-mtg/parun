@@ -45,8 +45,7 @@ import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.RuleFamily as RuleFamily
-import qualified Parun.Types.SearchBudget as SearchBudget
-import qualified Parun.Types.Weights as Weights
+import qualified Parun.Web.BotSettings as BotSettings
 import qualified Parun.Web.Clock as Clock
 import qualified Parun.Web.DeckBrowser as DeckBrowser
 import qualified Parun.Web.Element as Element
@@ -80,7 +79,7 @@ data Lobby = MkLobby
     -- | Whether you are ready to start a game with the players invited.
     ready :: Bool,
     -- | How strongly each bot plays and what it values in a position
-    -- (Parun.Play.Opponent), by its place in 'theirs'; 'defaultBot' in a
+    -- (Parun.Play.Opponent), by its place in 'theirs'; 'BotSettings.defaultBot' in a
     -- place absent ('botAt').
     bots :: Map.Map Int (Difficulty.Difficulty, Persona.Persona),
     -- | Whether a game is in progress, set aside for this lobby, which
@@ -284,13 +283,9 @@ new =
 holding :: Text.Text -> Lobby
 holding name = browsed (\b -> b {DeckBrowser.shelf = DeckBrowser.shelfOf name}) new {mine = Just name}
 
--- | How a bot plays unless told otherwise: as `parun play`'s does.
-defaultBot :: (Difficulty.Difficulty, Persona.Persona)
-defaultBot = (Difficulty.MkHard, Persona.MkBalanced)
-
 -- | How the bot at this place in 'theirs' plays, of these 'bots'.
 botAt :: Int -> Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> (Difficulty.Difficulty, Persona.Persona)
-botAt = Map.findWithDefault defaultBot
+botAt = Map.findWithDefault BotSettings.defaultBot
 
 -- | The lobby with its deck browser changed.
 browsed :: (DeckBrowser.DeckBrowser -> DeckBrowser.DeckBrowser) -> Lobby -> Lobby
@@ -335,17 +330,12 @@ mostOthers = 3
 -- ('botAt'), the seats but the player's taking the places in seating order.
 playOptions :: Map.Map Int (Difficulty.Difficulty, Persona.Persona) -> Natural -> PlayerId.PlayerId -> Set.Set PlayerId.PlayerId -> PlayOptions.PlayOptions
 playOptions styles count you people =
-  let seatPlay place = botPlay (botAt place styles)
+  let seatPlay place = BotSettings.botPlay (botAt place styles)
       others = filter ((/= you) . Command.idOf) [1 .. count]
    in PlayOptions.none
         { PlayOptions.json = True,
           PlayOptions.bots = Map.fromList [(n, seatPlay place) | (place, n) <- zip [0 ..] others, Set.notMember (Command.idOf n) people]
         }
-
--- | How the search bot plays at this difficulty and persona: its budget and
--- weights (Parun.Play.Opponent).
-botPlay :: (Difficulty.Difficulty, Persona.Persona) -> (SearchBudget.SearchBudget, Weights.Weights)
-botPlay (level, style) = (Opponent.budgetAt level PlayOptions.budget, Opponent.weightsOf style)
 
 -- | Whether two decks are under one format, and so may meet: the game's
 -- format is the one their headers name (Parun.Play.Command.settle).
@@ -701,7 +691,7 @@ seatsView lobby =
               Just invite -> [inviteView i invite (remove i)]
               Nothing -> case Map.lookup i (locals lobby) of
                 Just sitting -> [seat (MkTheirs i) (Element.string (if sitting == Link.MkYours then "Y" else "P")) held [] (remove i)]
-                Nothing -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held [botView (show i) (MkDifficulty i) (MkPersona i) (botAt i (bots lobby))] (remove i)]
+                Nothing -> [seat (MkTheirs i) (Icon.icon [] Icon.MkBot) held [BotSettings.botView (show i) (MkDifficulty i) (MkPersona i) (botAt i (bots lobby))] (remove i)]
         | (i, held) <- zip [0 ..] others
         ]
       <> [ Element.el
@@ -750,34 +740,6 @@ seatsView lobby =
               ]
               : below
                 <> [Element.el "div" ["seat-actions"] [] extra | not (null extra)]
-
--- | How a bot plays: its difficulty and its persona, each a choice of those
--- named (Parun.Play.Opponent) sending `pickLevel` or `pickStyle`, the
--- menus' ids ending in `suffix`.
-botView :: String -> e -> e -> (Difficulty.Difficulty, Persona.Persona) -> Html.Html e
-botView suffix pickLevel pickStyle (level, style) =
-  Element.el
-    "div"
-    ["bot-settings"]
-    []
-    [ Element.el "label" [] [Element.attr "for" (Text.pack levelId)] [Element.string "Level"],
-      choice levelId "bot-difficulty" pickLevel Opponent.difficultyName level,
-      Element.el "label" [] [Element.attr "for" (Text.pack styleId)] [Element.string "Style"],
-      choice styleId "bot-persona" pickStyle Opponent.personaName style
-    ]
-  where
-    levelId = "bot-difficulty-" <> suffix
-    styleId = "bot-persona-" <> suffix
-    choice :: (Bounded a, Enum a, Eq a) => String -> String -> e -> (a -> (String, String)) -> a -> Html.Html e
-    choice field kind event nameOf current =
-      Element.el
-        "select"
-        [kind, "deck-menu"]
-        [Element.attr "id" (Text.pack field), Element.on "change" event]
-        [ Element.el "option" [] ([Element.attr "value" (Text.pack value)] <> [Element.attr "selected" Text.empty | option == current]) [Element.string label]
-        | option <- [minBound .. maxBound],
-          let (value, label) = nameOf option
-        ]
 
 -- | The game's options: ante, the single planar deck, each seat's clock,
 -- and at three seats or more CR 806.2's attack option and range of

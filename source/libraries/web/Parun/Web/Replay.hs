@@ -37,12 +37,12 @@ import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.When as When
 import qualified Parun.Web.Bar as Bar
 import qualified Parun.Web.Board as Board
+import qualified Parun.Web.BotSettings as BotSettings
 import qualified Parun.Web.Card as Card
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.History as History
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Icon as Icon
-import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Log as Log
 import qualified Parun.Web.Mana as Mana
 import qualified Parun.Web.Question as Web.Question
@@ -104,11 +104,11 @@ data Filling
   deriving (Eq, Show)
 
 -- | Each kind of filling as the seat's menu values and shows it, a bot as
--- the lobby's default one ('Lobby.defaultBot').
+-- the lobby's default one ('BotSettings.defaultBot').
 fillings :: [(Filling, (String, String))]
 fillings =
   [ (MkHere, ("here", "This screen")),
-    (uncurry MkBot Lobby.defaultBot, ("bot", "Bot")),
+    (uncurry MkBot BotSettings.defaultBot, ("bot", "Bot")),
     (MkGoldfish, ("goldfish", "Goldfish (only passes)"))
   ]
 
@@ -125,7 +125,7 @@ sameKind one two = case (one, two) of
 -- | How a seat is filled to play on: as chosen, else by the person at this
 -- screen if it is the seat viewed as, else by the lobby's default bot.
 fillingOf :: Frame -> PlayerId.PlayerId -> Filling
-fillingOf frame pid = Map.findWithDefault (if pid == viewer frame then MkHere else uncurry MkBot Lobby.defaultBot) pid (chosenFillings frame)
+fillingOf frame pid = Map.findWithDefault (if pid == viewer frame then MkHere else uncurry MkBot BotSettings.defaultBot) pid (chosenFillings frame)
 
 -- | How every seat is filled to play on ('fillingOf').
 plan :: Frame -> Map.Map PlayerId.PlayerId Filling
@@ -439,7 +439,7 @@ fillingsView frame =
                 | (kind, (value, shown)) <- fillings
                 ]
             ]
-            : [Lobby.botView ("seat-" <> show seat) (MkLevel pid) (MkStyle pid) (level, style) | MkBot level style <- [filling]]
+            : [BotSettings.botView ("seat-" <> show seat) (MkLevel pid) (MkStyle pid) (level, style) | MkBot level style <- [filling]]
         | (pid, label) <- seats frame,
           let seat = PlayerId.unwrap pid + 1
               field = "play-on-" <> show seat

@@ -191,7 +191,8 @@ start = do
 -- | Where the page's link leads, read once (engine.js passes its query on):
 -- another browser's game to join (parun_offer, the link's fragment), at the
 -- stage its query names; a replay or the list of them, as the page's query
--- names (parun_query, Parun.Web.Route); else the game the page kept,
+-- names (parun_query, Parun.Web.Route), but a replay played on that is
+-- the game the page kept picks that up; else the game the page kept,
 -- played on this build; else the screen the query names. A kept game
 -- that does not read is forgotten.
 opening :: Text.Text -> IO Next
@@ -199,15 +200,18 @@ opening build' = do
   offered <- Environment.lookupEnv "parun_offer"
   route <- maybe Route.MkHome (Route.parse . Text.pack) <$> Environment.lookupEnv "parun_query"
   kept <- Browser.keptGame
+  let -- A replay played on picks up the game kept only if it is that one.
+      restoring game = case route of
+        Route.MkReplay (Route.MkPlayingOn filled) source at | Link.origin game /= Link.MkReplayed source at filled -> MkToPlayOn source at filled
+        _ -> MkToRestore game
   case (offered, route) of
     (Just code, Route.MkJoin stage) | not (null code) -> pure (MkToJoin stage (Text.pack code))
     (Just code, _) | not (null code) -> pure (MkToJoin Route.MkGathering (Text.pack code))
     (_, Route.MkReplays) -> pure MkToReplays
     (_, Route.MkReplay Route.MkWatching source at) -> pure (MkToReplay source at)
-    (_, Route.MkReplay (Route.MkPlayingOn filled) source at) -> pure (MkToPlayOn source at filled)
     _
       | Text.null kept -> pure (nextOf route)
-      | otherwise -> either (\problem -> Browser.logLine (Text.pack "The game kept does not read: " <> problem) >> Browser.forgetGame >> pure (nextOf route)) (pure . MkToRestore) (Link.unsaved build' kept)
+      | otherwise -> either (\problem -> Browser.logLine (Text.pack "The game kept does not read: " <> problem) >> Browser.forgetGame >> pure (nextOf route)) (pure . restoring) (Link.unsaved build' kept)
 
 -- | Where a route leads.
 nextOf :: Route.Route -> Next
@@ -238,7 +242,9 @@ routeOf next = case next of
   MkToReplay source at -> Route.MkReplay Route.MkWatching source at
   MkToPlayOn source at filled -> Route.MkReplay (Route.MkPlayingOn filled) source at
   MkToJoin stage _ -> Route.MkJoin stage
-  MkToRestore _ -> Route.MkHome
+  MkToRestore kept -> case Link.origin kept of
+    Link.MkLobby _ -> Route.MkHome
+    Link.MkReplayed source at filled -> Route.MkReplay (Route.MkPlayingOn filled) source at
   MkToAbandoned _ _ -> Route.MkPlay
   MkToPaused -> Route.MkHome
 
@@ -260,10 +266,12 @@ follow shell next =
     MkToBuilder deck back -> builder shell deck back >>= follow shell
     MkToReplays -> replays shell >>= follow shell
     MkToReplay source at -> replay shell source at >>= follow shell
-    MkToPlayOn source at filled -> playOnFrom shell source at filled >>= follow shell
+    MkToPlayOn source at filled -> playOnFrom shell source at filled Nothing >>= follow shell
     MkToJoin stage code -> joinGame shell stage code >>= follow shell
     -- Every link of a game picked up is down, so any number serves.
-    MkToRestore kept -> play shell (Link.seats kept) (Link.settings kept) (Link.clock kept) (Map.fromList [(i, i) | i <- Link.invited kept]) (Link.locals kept) (Just kept) >>= follow shell
+    MkToRestore kept -> case Link.origin kept of
+      Link.MkLobby dealt -> play shell (Link.seats dealt) (Link.settings dealt) (Link.clock dealt) (Map.fromList [(i, i) | i <- Link.invited dealt]) (Link.locals dealt) (Just kept) >>= follow shell
+      Link.MkReplayed source at filled -> playOnFrom shell source at filled (Just kept) >>= follow shell
 
 -- | A new lobby with this deck yours, else the deck you chose last, if any.
 lobbyHolding :: Shell -> Maybe Text.Text -> IO Lobby.Lobby
@@ -899,7 +907,7 @@ play shell seats settings clock invited here resuming = do
       -- Rematch leads to offers that.
       Monad.forM_ resuming $ \game -> IORef.writeIORef (opponent shell) (Link.bots game)
       bots <- IORef.readIORef (opponent shell)
-      Monad.when (Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed seats (Map.keys invited) here bots settings clock [])
+      Monad.when (Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved seed (Link.MkLobby (Link.MkDealt seats (Map.keys invited) here settings clock)) bots [])
       (named, listed) <- deckColouring shell
       let rejoinSlot i = do
             back <- rejoin shell (linkOf i) (Rejoin.host (Text.pack ("Player " <> show (i + 2))))
@@ -1204,14 +1212,19 @@ replay shell source at = opened shell source $ \reg title seen scenario -> do
     Replay.MkPlayOn from filled -> MkToPlayOn source from filled
 
 -- | A game played on from a position of the replay, each seat filled as
--- `filled` fills it, then how it ended, with the way back to the position
--- and to play on again; given up from the home screen for another game,
--- that one.
-playOnFrom :: Shell -> Web.Replay.Source -> Natural -> Map.Map PlayerId.PlayerId Web.Replay.Filling -> IO Next
-playOnFrom shell source at filled = opened shell source $ \reg _ played scenario -> do
+-- `filled` fills it, or that game picked up where `resuming` stopped, then
+-- how it ended, with the way back to the position and to play on again;
+-- given up from the home screen for another game, that one. The game is
+-- kept until it is over (Link.saved), for a reload to pick up; its route
+-- holds how each seat is filled, so it keeps no lobby bots.
+playOnFrom :: Shell -> Web.Replay.Source -> Natural -> Map.Map PlayerId.PlayerId Web.Replay.Filling -> Maybe Link.Saved -> IO Next
+playOnFrom shell source at filled resuming = opened shell source $ \reg _ played scenario -> do
   chosen <- IORef.newIORef MkToHome
+  key <- maybe Key.fresh (pure . Link.seed) resuming
+  Monad.when (Maybe.isNothing resuming) . Browser.keepGame $ Link.saved (build shell) (Link.MkSaved key (Link.MkReplayed source at filled) Map.empty [])
   parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-  ended <- Replay.playOn (page shell) reg parsed (tableOf shell) (level shell) filled scenario at (leaveFor shell chosen (foldMap (fmap History.deck . History.seats) played))
+  ended <- Replay.playOn (page shell) reg parsed (tableOf shell) (level shell) filled scenario at key (foldMap Link.replies resuming) (Browser.keepReply . Link.savedReply) (leaveFor shell chosen (foldMap (fmap History.deck . History.seats) played))
+  Browser.forgetGame
   case ended of
     Nothing -> IORef.readIORef chosen
     Just said' -> do
