@@ -922,10 +922,10 @@ play shell seats settings invited here resuming = do
                 | Map.member (i - 1) invited = History.MkSeat History.MkPerson (DeckBrowser.label (DeckBrowser.titleIn seat) name) Nothing (listed' contents)
                 | Just sitting <- Map.lookup (i - 1) here = History.MkSeat (if sitting == Link.MkHandedOver then History.MkHere else History.MkPerson) (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (named' name)
                 | otherwise = History.MkSeat History.MkBot (DeckBrowser.label (DeckBrowser.titleIn seat) name) (Just name) (named' name)
-          remember shell (fmap seatOf' (zip [0 :: Int ..] (NonEmpty.toList seats))) played
+          kept <- remember shell (fmap seatOf' (zip [0 :: Int ..] (NonEmpty.toList seats))) played
           lost <- IORef.readIORef down
           let go said = do
-                Browser.display (page shell) (endingScreen ending)
+                Browser.display (page shell) (endingScreen kept ending)
                 woke <- await shell
                 case woke of
                   MkTapped (Screen.MkNav section) _ -> closeAll >> pure (sectionNext section)
@@ -936,25 +936,32 @@ play shell seats settings invited here resuming = do
                         back <- Monad.foldM (\l i -> reinvite i connectionClosed l) (Lobby.rematch seats invited here) (Set.toList lost)
                         lobby shell back (reverse said) Nothing
                   MkTapped (Screen.MkEnding Ending.MkNewGame) _ -> closeAll >> pure MkToHome
+                  MkTapped (Screen.MkEnding Ending.MkWatchReplay) _ -> closeAll >> pure (maybe MkToReplays watching kept)
                   MkHeard heard' -> go (heard' : said)
                   _ -> go said
           go []
 
 -- | How a game ended, under the top bar with Play, where games start,
--- current.
-endingScreen :: Ending.Ending -> Html.Html Screen.Event
-endingScreen = Bar.framed Screen.MkNav (Just Bar.MkPlay) . fmap Screen.MkEnding . Ending.view
+-- current, offering its replay where it was kept by this key (remember).
+endingScreen :: Maybe Text.Text -> Ending.Ending -> Html.Html Screen.Event
+endingScreen kept = Bar.framed Screen.MkNav (Just Bar.MkPlay) . fmap Screen.MkEnding . Ending.view (Maybe.isJust kept)
+
+-- | The replay of the game kept by this key (History.key), from its start.
+watching :: Text.Text -> Next
+watching k = MkToReplay (Web.Replay.MkPlayed k) 0
 
 -- | Keeps a game this page played among these seats, once it is over with
--- a result (History.recordOf), dropping the oldest kept past the cap.
-remember :: Shell -> [History.Seat] -> Ending.Played -> IO ()
+-- a result (History.recordOf), dropping the oldest kept past the cap; the
+-- key it is kept by, if it is.
+remember :: Shell -> [History.Seat] -> Ending.Played -> IO (Maybe Text.Text)
 remember shell seats played = do
   (at, ahead) <- Browser.clock
-  Monad.forM_ (History.recordOf at ahead (build shell) seats played) $ \(game, scenario) -> do
+  Monad.forM (History.recordOf at ahead (build shell) seats played) $ \(game, scenario) -> do
     (kept, dropped) <- History.adding game <$> IORef.readIORef (finished shell)
     Browser.keepPlayed (History.key game) (History.encode game) scenario
     mapM_ (Browser.forgetPlayed . History.key) dropped
     IORef.writeIORef (finished shell) kept
+    pure (History.key game)
 
 -- | Invited slot `i`'s channel, closed at once while `down` holds the slot,
 -- and held there once it closes.
@@ -1086,10 +1093,10 @@ joinGame shell stage offer = do
                     | Link.who place == Text.pack "You" = History.MkSeat History.MkYou (Link.deck place) (Join.picked current) (maybe Set.empty (\name -> Map.findWithDefault Set.empty name palette') (Join.picked current))
                     | Link.bot place = History.MkSeat History.MkBot (Link.deck place) Nothing (Link.colours place)
                     | otherwise = History.MkSeat History.MkPerson (Link.deck place) Nothing (Link.colours place)
-              remember shell (fmap placed (Join.places current)) played
+              kept <- remember shell (fmap placed (Join.places current)) played
               let back = Join.rematched current
                   ended closed = do
-                    Browser.display (page shell) (endingScreen ending)
+                    Browser.display (page shell) (endingScreen kept ending)
                     woke <- await shell
                     case woke of
                       MkTapped (Screen.MkNav section) _ -> Browser.linkClose n >> pure (sectionNext section)
@@ -1100,7 +1107,8 @@ joinGame shell stage offer = do
                       MkTapped (Screen.MkEnding Ending.MkRematch) _
                         | closed -> go (lost hostClosed back)
                         | otherwise -> go back
-                      MkTapped (Screen.MkEnding _) _ -> Browser.linkClose n >> pure MkToHome
+                      MkTapped (Screen.MkEnding Ending.MkWatchReplay) _ -> Browser.linkClose n >> pure (maybe MkToReplays watching kept)
+                      MkTapped (Screen.MkEnding Ending.MkNewGame) _ -> Browser.linkClose n >> pure MkToHome
                       _ -> ended closed
               -- A game stopped on a dropped connection left it closed.
               ended (Ending.verdict ending == Ending.MkStopped)

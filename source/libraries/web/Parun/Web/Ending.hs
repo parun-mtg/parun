@@ -1,10 +1,7 @@
--- | The web client's last screen: how the game ended for the player, a link
--- saving it as a scenario, one starting another, and everything the player
--- saw happen.
+-- | The web client's last screen: how the game ended for the player, its
+-- replay, another game, and everything the player saw happen.
 module Parun.Web.Ending where
 
-import qualified Data.ByteString.Builder as Builder
-import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
@@ -13,7 +10,6 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
-import qualified Data.Text.Encoding as Encoding
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.PlayerId as Codec.PlayerId
 import qualified Parun.JsonCodec.Arm as Arm
@@ -22,7 +18,6 @@ import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.SeatView as SeatView
-import qualified Parun.Uri.Fragment as Fragment
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Log as Log
@@ -34,6 +29,8 @@ data Event
     MkRematch
   | -- | Back to the home screen.
     MkNewGame
+  | -- | This game's replay, from its start.
+    MkWatchReplay
   deriving (Eq, Show)
 
 -- | How the game ended for the player the page plays, or who won where
@@ -137,8 +134,10 @@ endingOf verdict' said' scenario' seat shared' seen = MkEnding verdict' said' sc
 reader :: Ending -> Maybe PlayerId.PlayerId
 reader ending = if shared ending then Nothing else Just (viewer ending)
 
-view :: Ending -> Html.Html Event
-view ending =
+-- | The ending, offering the game's replay where it was kept among the
+-- replays (`kept`).
+view :: Bool -> Ending -> Html.Html Event
+view kept ending =
   let -- The headline says the result, so the lines under it leave it out
       -- (said holds it first), but for why play stopped.
       (headline, tone, told) = case verdict ending of
@@ -163,10 +162,11 @@ view ending =
                  "div"
                  ["ending-actions"]
                  []
-                 [ Element.button ["primary"] MkRematch [Element.string "Rematch"],
-                   Element.button [] MkNewGame [Element.string "New game"],
-                   Element.el "a" [] [Element.attr "href" (download (scenario ending)), Element.attr "download" (Text.pack "parun-game.json")] [Element.string "Save as a scenario"]
-                 ],
+                 ( [ Element.button ["primary"] MkRematch [Element.string "Rematch"],
+                     Element.button [] MkNewGame [Element.string "New game"]
+                   ]
+                     <> [Element.button [] MkWatchReplay [Element.string "Watch replay"] | kept]
+                 ),
                Element.el "h2" [] [] [Element.string "How it went"],
                summary (reader ending) (trail ending),
                -- A shared screen's log is the seat the page plays's, so its
@@ -279,9 +279,3 @@ confetti =
               [Element.attr "style" (Text.pack ("--angle:" <> show angle <> "deg;--reach:" <> show reach <> "vmin;--delay:" <> show (div (r 2) 8) <> "ms;--spin:" <> show (r 3 - 500) <> "deg;--size:" <> show (14 + mod (r 5) 14) <> "px;--drift:" <> show (div (r 6) 33 - 15) <> "vw;--fall:" <> show (2800 + r 7 * 2) <> "ms;--sway:" <> show (6 + mod (r 8) 18) <> "px;--flutter:" <> show (450 + mod (r 9) 600) <> "ms"))]
               [Element.el "svg" [] [Element.attr "viewBox" (Text.pack "0 0 32 32")] [Element.el "use" [] [Element.attr "href" (Text.pack "#" <> Mana.motifId motif)] []]]
    in Element.el "div" ["confetti"] [Element.attr "aria-hidden" (Text.pack "true")] (fmap piece [1 .. 72 :: Integer])
-
--- | A data URL holding the text as JSON (RFC 2397).
-download :: Text.Text -> Text.Text
-download contents =
-  Text.pack "data:application/json;charset=utf-8,"
-    <> Encoding.decodeLatin1 (LazyByteString.toStrict . Builder.toLazyByteString . Fragment.encode $ Encoding.encodeUtf8Builder contents)

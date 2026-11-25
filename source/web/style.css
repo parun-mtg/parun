@@ -4079,7 +4079,6 @@ main.ending {
   justify-content: center;
 }
 
-.ending-actions a,
 .replay a.branch {
   display: inline-flex;
   align-items: center;
@@ -4091,12 +4090,6 @@ main.ending {
   color: var(--text);
   text-decoration: none;
   font-weight: 600;
-}
-
-.ending-actions a.primary {
-  background: var(--act);
-  border-color: var(--act);
-  color: var(--on-act);
 }
 
 main.ending h2 {
