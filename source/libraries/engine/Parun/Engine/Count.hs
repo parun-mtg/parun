@@ -1417,6 +1417,7 @@ lastKnownView peers oid gs lastKnown =
           Filter.protector = LastKnown.protector lastKnown,
           Filter.paidCosts = LastKnown.paidCosts lastKnown,
           Filter.castUsing = LastKnown.castUsing lastKnown,
+          Filter.enteredUsing = LastKnown.enteredUsing lastKnown,
           -- CR 601.2h / 608.2h: what was spent to cast it, as it left -- a
           -- countered spell's still counts (Muse Seeker's ruling).
           Filter.manaSpentTagColors = Filter.spentTagColors (LastKnown.manaSpent lastKnown),
@@ -1997,6 +1998,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- sentence -- so a past event reports none.
       Filter.tributePaid = False,
       Filter.castUsing = Nothing,
+      Filter.enteredUsing = Nothing,
       -- CR 702.143c's record is a field of an OBJECT -- `tributePaid` above.
       Filter.foretold = False,
       -- CR 719.3c / 719.3d off the snapshot, which carries a copy's answer. The

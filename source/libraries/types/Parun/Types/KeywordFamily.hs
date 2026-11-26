@@ -167,9 +167,8 @@ data KeywordFamily
     Reinforce
   | -- | CR 702.82a: devour N.
     Devour
-  | -- | CR 702.84a: unearth [cost]. The family a card writing "a creature card
-    -- with unearth" names, as against unearth {B}; no card in the pool asks yet,
-    -- and it is owed at the keyword rather than at the first asker.
+  | -- | CR 702.84a: unearth [cost]. The family Malfegor Avatar's "if it was
+    -- unearthed" names (Filter.EnteredUsing), as against unearth {B}.
     Unearth
   | -- | CR 702.128a: embalm [cost].
     Embalm

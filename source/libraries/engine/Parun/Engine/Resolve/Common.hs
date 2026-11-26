@@ -3534,6 +3534,14 @@ resolvingMarks resolving gs = case thisAbilitySource resolving gs of
   Just (Source.OfAbility minted) -> foldMap Keyword.createdMarks (ActivatedAbility.keyword (ActivatedAbilitySource.ability minted))
   _ -> Set.empty
 
+-- CR 400.7: the rule-702 keyword that minted this resolving ability, activated
+-- or triggered, for Object.enteredUsing; resolvingMarks' read.
+resolvingKeyword :: ObjectId -> GameState -> Maybe Keyword.Type.Keyword
+resolvingKeyword resolving gs = case thisAbilitySource resolving gs of
+  Just (Source.OfAbility minted) -> ActivatedAbility.keyword (ActivatedAbilitySource.ability minted)
+  Just (Source.OfTrigger minted) -> TriggeredAbility.keyword (TriggeredAbilitySource.ability minted)
+  _ -> Nothing
+
 -- The carrier CR 707.9a's "this ability" points at: the RESOLVING object's own
 -- Parun.Types.Source, since rule 602.2a and rule 603.3 both put the ability's text
 -- on the stack object, so the words point at a value already in hand rather than

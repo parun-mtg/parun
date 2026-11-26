@@ -236,6 +236,7 @@ codec keywordCodec =
       Arm.payload "TagWasSpent" ProductionTag.codec Filter.TagWasSpent (\x -> case x of Filter.TagWasSpent y -> Just y; _ -> Nothing),
       Arm.nullary "PaidWithManaFromSource" Filter.PaidWithManaFromSource,
       Arm.payload "Paid" (KeywordDesignator.codec keywordCodec) Filter.Paid (\x -> case x of Filter.Paid y -> Just y; _ -> Nothing),
+      Arm.payload "EnteredUsing" (KeywordDesignator.codec keywordCodec) Filter.EnteredUsing (\x -> case x of Filter.EnteredUsing y -> Just y; _ -> Nothing),
       Arm.nullary "IsPrototyped" Filter.IsPrototyped,
       Arm.nullary "IsPreparedSpell" Filter.IsPreparedSpell,
       Arm.nullary "IsModal" Filter.IsModal,
@@ -476,6 +477,7 @@ tagOf x = case x of
   Filter.TagWasSpent {} -> "TagWasSpent"
   Filter.PaidWithManaFromSource {} -> "PaidWithManaFromSource"
   Filter.Paid {} -> "Paid"
+  Filter.EnteredUsing {} -> "EnteredUsing"
   Filter.IsPrototyped {} -> "IsPrototyped"
   Filter.IsPreparedSpell {} -> "IsPreparedSpell"
   Filter.IsModal {} -> "IsModal"

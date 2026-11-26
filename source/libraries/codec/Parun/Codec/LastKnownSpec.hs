@@ -109,6 +109,7 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           LastKnown.protector = Just (PlayerId.MkPlayerId 7),
           LastKnown.paidCosts = Map.singleton (Keyword.Offspring (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) [])) (Map.singleton (KeywordInstance.Own 1) 1),
           LastKnown.castUsing = Just Keyword.Flash,
+          LastKnown.enteredUsing = Just Keyword.Persist,
           LastKnown.prototyped = True,
           LastKnown.announcedX = Just 4,
           LastKnown.manaSpent = Mana.MkMana [greenUnit],
@@ -139,6 +140,7 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           <> ",\"chosenNames\":[{\"key\":{\"type\":\"Own\"},\"value\":{\"8\":[\"Goblin Piker\"]}}],\"chosenPlayers\":[{\"key\":{\"type\":\"Copied\",\"value\":5},\"value\":[{\"key\":{\"type\":\"Promised\",\"value\":[{\"type\":\"Food\"},{\"type\":\"Own\",\"value\":1}]},\"value\":3}]}],\"chosenColors\":[{\"key\":{\"type\":\"Own\"},\"value\":[\"Green\"]}],\"chosenSubtype\":[{\"key\":{\"type\":\"Copied\",\"value\":6},\"value\":[\"Goblin\"]}],\"chosenCardType\":[{\"key\":{\"type\":\"Own\"},\"value\":\"Creature\"}],\"chosenNumber\":[{\"key\":{\"type\":\"Own\"},\"value\":5}],\"chosenObjects\":[{\"key\":{\"type\":\"Own\"},\"value\":[11]}],\"acquisition\":{\"type\":\"Copied\",\"value\":5},\"attacking\":false,\"attackTarget\":null,\"blocking\":[12,13],\"protector\":7"
           <> ",\"paidCosts\":[{\"key\":{\"type\":\"Offspring\",\"value\":{\"mana\":[{\"type\":\"Generic\",\"value\":2}]}},\"value\":[{\"key\":{\"type\":\"Own\",\"value\":1},\"value\":1}]}]"
           <> ",\"castUsing\":{\"type\":\"Flash\"}"
+          <> ",\"enteredUsing\":{\"type\":\"Persist\"}"
           <> ",\"prototyped\":true"
           <> ",\"announcedX\":4"
           <> ",\"manaSpent\":["
@@ -185,6 +187,7 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           LastKnown.protector = Nothing,
           LastKnown.paidCosts = Map.empty,
           LastKnown.castUsing = Nothing,
+          LastKnown.enteredUsing = Nothing,
           LastKnown.prototyped = False,
           LastKnown.announcedX = Nothing,
           LastKnown.manaSpent = Mana.MkMana [],
