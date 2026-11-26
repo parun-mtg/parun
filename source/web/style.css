@@ -94,6 +94,15 @@
   --radius: 10px;
   --card-w-size: 92px;
   --gap: 6px;
+  /* A tile's height (#app button.card), 6.4em at its 0.74rem. */
+  --card-h-size: max(calc(var(--card-w-size) * 0.72), calc(6.4 * 0.74rem));
+  /* A tapped tile's turn, and the margin beside it: the turned corner
+     reaches (h sin - w (1 - cos)) / 2 past each side of its box, at the top
+     on one side and the bottom on the other, and half the gap is left
+     clear of an upright neighbour. Two tapped neighbours turn in parallel,
+     so their edges stay apart. */
+  --tap-turn: 14deg;
+  --tap-room: max(0px, calc((var(--card-h-size) * sin(var(--tap-turn)) - var(--card-w-size) * (1 - cos(var(--tap-turn))) - var(--gap)) / 2));
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   font-size: 15px;
   line-height: 1.4;
@@ -3204,7 +3213,7 @@ details.pile[open] {
   /* One height for every tile, land or spell (Parun.Web.Card's tile): its
      share of the width, or its four lines where those are taller. Only a
      foot of badges too many for one row makes a tile taller. */
-  min-height: max(calc(var(--card-w-size) * 0.72), 6.4em);
+  min-height: var(--card-h-size);
   padding: 0.35em 0.45em 0.3em;
   border: 1px solid var(--cline);
   border-top: 4px solid var(--c);
@@ -3383,11 +3392,11 @@ details.pile[open] {
   border-color: var(--text);
 }
 
-/* Tapped: turned a quarter of the way, its colours and text as they were,
-   room made beside it for its corners. */
+/* Tapped: turned a little, its colours and text as they were, room made
+   beside it for its corners (--tap-room). */
 #app button.card.tapped {
-  rotate: 14deg;
-  margin-inline: 10px;
+  rotate: var(--tap-turn);
+  margin-inline: var(--tap-room);
 }
 
 /* A tapped pile turns as one, its count with it (a counted pile has no
@@ -3395,8 +3404,8 @@ details.pile[open] {
    a turned host, however many there are, the first lowered clear of its
    turned corner. */
 #app .group:has(> .many):has(> .card.tapped:first-child) {
-  rotate: 14deg;
-  margin-inline: 10px;
+  rotate: var(--tap-turn);
+  margin-inline: var(--tap-room);
 }
 
 #app .group:has(> .many) > .card.tapped:first-child {
