@@ -175,10 +175,10 @@ data Frame = MkFrame
     playing :: Bool,
     -- | The table as the viewer sees it; Nothing where the run failed first.
     board :: Maybe PlayerView.PlayerView,
-    -- | The table as the viewer saw it at each earlier position a turn
-    -- begins, oldest first: what the log holds before the board's turn
-    -- (logOf).
-    earlier :: [PlayerView.PlayerView],
+    -- | The log as the viewer read it at each earlier position a turn
+    -- begins, oldest first (readOn): what the log holds before the board's
+    -- turn.
+    earlier :: Logged,
     -- | How the game ended, shown only at the end, so it does not spoil the
     -- replay; empty for a scenario.
     outcome :: Text.Text,
@@ -205,7 +205,7 @@ data Frame = MkFrame
 view :: Frame -> Html.Html Event
 view frame =
   let asked = question frame >>= \r -> if Question.seat (Request.question r) == viewer frame then Just r {Request.view = board frame} else Nothing
-      logged = logOf (earlier frame <> Maybe.maybeToList (board frame))
+      logged = snd (readOn (earlier frame) (Maybe.maybeToList (board frame)))
    in Element.el "main" (["game", "replay"] <> ["playing" | playing frame && position frame < positions frame]) [] $
         foldMap (\b -> [Board.turnBar [] (Web.Question.subgameChip (depth frame) <> [Bar.settingsButton Icon.MkMenu "Menu" Nothing Nothing]) b]) (board frame)
           <> [Element.el "div" ["play-area"] [] (foldMap (\b -> [Board.view readOnly (written frame) b]) (board frame))]
@@ -216,7 +216,20 @@ view frame =
 -- game's keeps it (Parun.Browser.Hotseat): each turn's entries under its
 -- heading, the turn before each view read from its last turn's.
 logOf :: [PlayerView.PlayerView] -> Seq.Seq Log.Entry
-logOf views = snd (List.foldl' (\(seen, logged) v -> let (moved, unread) = Log.unseen seen v in (moved, Log.appended logged unread)) (Map.empty, Seq.empty) views)
+logOf = snd . readOn unread
+
+-- | A log read: how far the seat has read each game's (Log.unseen), and its
+-- entries, oldest first.
+type Logged = (Map.Map (PlayerId.PlayerId, Natural) (Natural, Natural), Seq.Seq Log.Entry)
+
+-- | Nothing read yet.
+unread :: Logged
+unread = (Map.empty, Seq.empty)
+
+-- | The log read on through these views, oldest first, from `logged`: a
+-- replay keeps each turn's, so a later position reads only its own view.
+readOn :: Logged -> [PlayerView.PlayerView] -> Logged
+readOn = List.foldl' (\(seen, logged) v -> let (moved, later) = Log.unseen seen v in (moved, Log.appended logged later))
 
 -- | Every tile opens its sheet, and no seat may be tapped.
 readOnly :: Board.Marks Event

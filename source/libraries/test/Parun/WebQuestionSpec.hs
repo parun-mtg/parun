@@ -1263,7 +1263,7 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     starts <- traverse (replayed s registry named) [0, 1]
     at <- replayed s registry named 3
     let seen stop = PlayerView.viewFor S.bob (Stop.state stop)
-        frame = (frameAt at) {Replay.viewer = S.bob, Replay.board = Just (seen at), Replay.earlier = fmap seen starts}
+        frame = (frameAt at) {Replay.viewer = S.bob, Replay.board = Just (seen at), Replay.earlier = Replay.readOn Replay.unread (fmap seen starts)}
         page = Html.toText (Replay.view frame)
         logged = Replay.logOf (fmap seen starts <> [seen at])
     Spec.assertEqWith s "the turns" [n | Log.MkTurn n _ <- Foldable.toList logged] [2, 3, 4]
@@ -1629,7 +1629,7 @@ frameAt stop =
       Replay.turns = [],
       Replay.playing = False,
       Replay.board = Just (boardOf stop),
-      Replay.earlier = [],
+      Replay.earlier = Replay.unread,
       Replay.outcome = Text.empty,
       Replay.depth = case stop of
         Stop.MkBefore _ _ asked -> Protocol.depthOf asked

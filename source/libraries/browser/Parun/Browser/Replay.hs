@@ -85,15 +85,17 @@ data Exit
 -- here names each seat by who played it (History.seatNames), and says how
 -- it ended at the end; a scenario names each by its number, and its lines
 -- name each as the table does (Web.Replay.tableNames). The state at each
--- position a turn begins is kept once reached, for the log of every later
--- position (Web.Replay.earlier), and what each run keeps for the next to
--- resume from (Scenario.replay).
--- While no tap waits, the runs go on ahead a position at a time, so a
+-- position a turn begins is kept once reached, and the log each seat read
+-- through it once read, for the log of every later position
+-- (Web.Replay.earlier); so is what each run keeps for the next to resume
+-- from (Scenario.replay).
+-- While no tap waits, the runs go on ahead a few positions at a time, so a
 -- later position is kept before it is asked for; a step's taps
 -- queued while the engine works add up to one move.
 viewer :: Browser.Page Screen.Event -> (Natural -> IO ()) -> Registry.Registry Identity.Identity -> Text.Text -> Maybe History.Game -> Scenario.Type.Scenario -> Natural -> IO Exit
 viewer page moved registry name played scenario given = do
   kept <- IORef.newIORef Map.empty
+  logs <- IORef.newIORef Map.empty
   resumable <- IORef.newIORef Scenario.keeping
   furthest <- IORef.newIORef 0
   let count = Natural.length (Scenario.Type.timeline scenario)
@@ -117,11 +119,13 @@ viewer page moved registry name played scenario given = do
         -- A failure fails every later position too: none is left to run.
         IORef.modifyIORef' furthest (max (either (const count) (const at) stop))
         pure stop
-      reach at = moved at >> run at
+      -- The turns' starts before it run first, so the run to it is the
+      -- one paused there, which the next step goes on from.
+      reach at = moved at >> mapM_ stateAt (filter (< at) starts) >> run at
       -- The run a few positions past the furthest any reached, no further
       -- than the next turn's start (which it keeps), if one is left:
-      -- whether it ran. Each run resumes at a whole step's start, so one a
-      -- position at a time would run a step's first entries again for each.
+      -- whether it ran. Each run gives the page a turn after it, so runs
+      -- of a few positions keep a tap's wait short at little cost.
       ahead = do
         reached <- IORef.readIORef furthest
         if reached >= count then pure False else True <$ run (min (reached + 8) (Web.Replay.stepTo starts count reached Web.Replay.MkTurnOn))
@@ -133,13 +137,24 @@ viewer page moved registry name played scenario given = do
       stepOf event = case event of
         Screen.MkReplay (Web.Replay.MkStep way) -> Just way
         _ -> Nothing
-      -- The states at the positions before this one where a turn begins.
-      earlierOf at = fmap Maybe.catMaybes . Monad.forM (filter (< at) starts) $ \s -> do
+      -- The state at a position where a turn begins, unless the run failed first.
+      stateAt s = do
         known <- Map.lookup s <$> IORef.readIORef kept
         maybe (fmap (either (const Nothing) (Just . Stop.state)) (run s)) (pure . Just) known
+      -- The log as the seat read it at the positions before this one where
+      -- a turn begins, each turn's read once.
+      earlierOf viewing at = Monad.foldM (readTo viewing) Web.Replay.unread (filter (< at) starts)
+      readTo viewing logged s = do
+        known <- Map.lookup (viewing, s) <$> IORef.readIORef logs
+        case known of
+          Just through -> pure through
+          Nothing -> do
+            state <- stateAt s
+            let through = maybe logged (Web.Replay.readOn logged . pure . PlayerView.Engine.viewFor viewing) state
+            through <$ IORef.modifyIORef' logs (Map.insert (viewing, s) through)
       go playing at stop viewing reading = do
-        earlier <- earlierOf at
-        let frame = (frameOf lookUp (lineNames viewing) name scenario seats count playing at stop viewing reading) {Web.Replay.earlier = fmap (PlayerView.Engine.viewFor viewing) earlier, Web.Replay.outcome = outcome, Web.Replay.kept = fmap History.key played}
+        earlier <- earlierOf viewing at
+        let frame = (frameOf lookUp (lineNames viewing) name scenario seats count playing at stop viewing reading) {Web.Replay.earlier = earlier, Web.Replay.outcome = outcome, Web.Replay.kept = fmap History.key played}
         Browser.display page . fmap Screen.MkReplay $ Web.Replay.view frame
         (tapped, value) <- awaiting
         let moveTo target = if target == at then go playing at stop viewing Nothing else reach target >>= \next -> go (playing && target < count) target next viewing Nothing
@@ -193,7 +208,7 @@ seatsOf = zip (fmap PlayerId.MkPlayerId [0 ..]) . fmap Label.unwrap . Scenario.s
 -- `names` names it by its label, stepping on by itself where `playing`.
 frameOf :: (CardName.CardName -> Either e (Maybe Card.Card)) -> Map.Map Text.Text Text.Text -> Text.Text -> Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)] -> Natural -> Bool -> Natural -> Either ScenarioFailure.ScenarioFailure Stop.Stop -> PlayerId.PlayerId -> Maybe Web.Card.Reading -> Web.Replay.Frame
 frameOf lookUp names name scenario seats count playing at stop seen reading =
-  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count (Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))) playing Nothing [] Text.empty 0 Nothing Nothing Nothing reading Map.empty Nothing
+  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count (Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))) playing Nothing Web.Replay.unread Text.empty 0 Nothing Nothing Nothing reading Map.empty Nothing
       shown board = base {Web.Replay.board = Just board, Web.Replay.written = Web.Card.written lookUp board}
    in case stop of
         Left failure -> base {Web.Replay.failure = Just (Scenario.render failure)}
