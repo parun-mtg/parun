@@ -233,7 +233,7 @@ data Quantity
     -- Filter.Context.sourceChosenColors, so 0 wherever
     -- Parun.Engine.SourceContext did not fill it.
     ChosenColorsItIs
-  | -- | CR 607.2d / 607.2g: the number last chosen for the source, or the life paid as it entered, undefined (CR 607.5a) being 0 (CR 107.2). Read off Filter.Context.sourceChosenNumber (Shapeshifter, Phyrexian Processor).
+  | -- | CR 607.2d / 607.2g: the number last chosen for the source, or the life paid as it entered or with it, undefined (CR 607.5a) being 0 (CR 107.2). Read off Filter.Context.sourceChosenNumber (Shapeshifter, Phyrexian Processor, Maralen of the Mornsong Avatar).
     ChosenNumber
   | -- | CR 607.2e: the life total last noted for the source (Noted.NotedLifeTotal), undefined (CR 607.5a) answering nothing (Sigarda's Splendor).
     NotedLifeTotal

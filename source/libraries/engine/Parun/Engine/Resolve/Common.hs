@@ -3846,7 +3846,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.PutCounterOfEachKind {} -> False
   Effect.GainPlayerCounters {} -> False
   Effect.RemovePlayerCounters {} -> False
-  Effect.PayAnyEnergy {} -> False
+  Effect.PayAny {} -> False
   Effect.ChooseNumber {} -> False
   Effect.BindAmount {} -> False
   Effect.BindPlayers {} -> False

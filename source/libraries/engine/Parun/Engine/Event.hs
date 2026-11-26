@@ -12903,12 +12903,15 @@ spentWith candidate = Set.insert (ReplacementCandidate.identity candidate)
 -- asked AHEAD of the proposal: CR 614.17c lets no replacement effect modify an
 -- event that can't happen, and no draw is attempted, so an empty library is not
 -- CR 121.4's (Maralen of the Mornsong's 2008-04-01 rulings say both). The ONE
--- gate every draw passes -- the draw step's, an opening hand's, an effect's, one
--- made in another's place -- since each is CR 121.2's individual draws.
--- data/scenarios/cant-draw proves each.
+-- gate every draw passes -- the draw step's, an effect's, one made in another's
+-- place -- since each is CR 121.2's individual draws. data/scenarios/cant-draw
+-- proves each. An opening hand's draw passes it unasked (docs/decisions.md,
+-- "Whether a vanguard's draw prohibition reaches the opening hand"), proved by
+-- Parun.VanguardSpec's Maralen of the Mornsong Avatar case.
 drawCardSpentReturning :: DrawKind.DrawKind -> Settle.Settle -> Set CandidateId -> PlayerId -> Game (Maybe ObjectId)
 drawCardSpentReturning kind settle spent pid = do
-  forbidden <- State.gets (PlayerEffect.prohibitsDrawing pid)
+  let prohibited who = if kind == DrawKind.OpeningHand then pure False else State.gets (PlayerEffect.prohibitsDrawing who)
+  forbidden <- prohibited pid
   if forbidden
     then pure Nothing
     else do
@@ -12923,7 +12926,7 @@ drawCardSpentReturning kind settle spent pid = do
         -- reached. data/scenarios/cant-draw/cr-121-2b-a-draw-taken-in-another-s-place-counts-against-the-taker-s-limit.json
         -- proves it.
         Just drawer -> do
-          barred <- State.gets (PlayerEffect.prohibitsDrawing drawer)
+          barred <- prohibited drawer
           if barred
             then pure Nothing
             else do

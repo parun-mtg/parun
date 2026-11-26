@@ -1788,7 +1788,7 @@ effectObjectRefs effect =
         Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong _ from _ _) -> read_ [from]
         Effect.GainPlayerCounters {} -> []
         Effect.RemovePlayerCounters {} -> []
-        Effect.PayAnyEnergy {} -> []
+        Effect.PayAny {} -> []
         Effect.ChooseNumber {} -> []
         Effect.BindAmount {} -> []
         Effect.BindPlayers {} -> []

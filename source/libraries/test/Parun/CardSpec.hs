@@ -5769,7 +5769,7 @@ effectFilters effect = case effect of
   Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong count from which _) -> frame Unframed (whichCountersFilters which <> foldMap quantityFilters (RemovalCount.quantityOf count)) <> frame SourceHostFramed (objectRefFilters from)
   Effect.GainPlayerCounters (PlayerCounters.MkPlayerCounters _ _ quantity) -> frame Unframed (quantityFilters quantity)
   Effect.RemovePlayerCounters removal -> frame Unframed (quantityFilters (RemovePlayerCounters.quantity removal))
-  Effect.PayAnyEnergy _ -> []
+  Effect.PayAny _ -> []
   Effect.ChooseNumber number -> frame Unframed (foldMap quantityFilters (ChooseNumber.upTo number))
   Effect.BindAmount payload -> frame Unframed (quantityFilters (BindAmount.quantity payload))
   Effect.BindPlayers _ -> []

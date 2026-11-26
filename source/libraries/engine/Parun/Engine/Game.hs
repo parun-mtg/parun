@@ -183,7 +183,7 @@ poolOf pid gs = Map.findWithDefault (Mana.MkMana []) pid (GameState.manaPool gs)
 --
 -- SHARED rather than inlined at its readers: Parun.Engine.Cost's PayEnergy gate
 -- and repeat ceiling, Parun.Engine.Mana's joint payability, and Parun.Engine.Resolve's
--- Effect.PayAnyEnergy bound must agree about what "how much {E} do you have"
+-- Effect.PayAny bound must agree about what "how much {E} do you have"
 -- means. Here rather than in Cost for poolOf's reason: Mana sits below Cost.
 energyOf :: PlayerId -> GameState -> Natural
 energyOf pid gs =
