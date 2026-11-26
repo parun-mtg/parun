@@ -1,11 +1,16 @@
 module Parun.Types.BattlefieldCandidate where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
+import qualified Numeric.Natural as Natural
+import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 
 -- | One permanent as CR 603.10's trigger scan needs to see it: who controlled it
--- (CR 603.3a), what it looked like and what was attached to it at that moment. Parun.Engine.Event's
+-- (CR 603.3a), what it looked like, what was attached to it and its counters at
+-- that moment. Parun.Engine.Event's
 -- battlefieldCandidates builds these, and
 -- Parun.Types.Snapshots.battlefieldWhenTriggered files them per event group with
 -- the reasoning for why a sample is needed at all.
@@ -26,7 +31,10 @@ data BattlefieldCandidate a = MkBattlefieldCandidate
     -- | CR 303.4b / 301.5a: the permanents attached to it (Game.attachments),
     -- so "enchanted creature" reads the attachment the event saw, not one CR
     -- 704.5m has since undone.
-    attached :: Set.Set ObjectId.ObjectId
+    attached :: Set.Set ObjectId.ObjectId,
+    -- | CR 122.1 / 603.10: the counters on it then, so "enters with a counter"
+    -- (CR 122.6) reads the entry and not a counter put on it since.
+    counters :: Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural.Natural
   }
   deriving (Eq, Ord, Show)
 
