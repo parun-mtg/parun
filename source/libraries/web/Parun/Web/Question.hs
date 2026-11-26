@@ -678,6 +678,7 @@ verbOf kind = case Text.unpack kind of
   "MulliganAction" -> Text.pack "use a card before a mulligan"
   "OpeningHandAction" -> Text.pack "use a card in the opening hand"
   "OfferedCast" -> Text.pack "decide whether to cast"
+  "OfferedTokenCopy" -> Text.pack "decide whether to create a token copy"
   "OfferedMiracleReveal" -> Text.pack "decide whether to reveal a miracle"
   "OfferedExtra" -> Text.pack "decide whether to take an offer"
   "ChooseToPay" -> Text.pack "decide whether to pay"
@@ -1446,6 +1447,7 @@ headingOf shown request = case Text.unpack (Question.kind question) of
   "ChooseCardFromAmong" -> Just (Text.pack "Choose a card for " <> self <> Text.pack ".")
   "ChooseExert" -> Just (Text.pack "Exert " <> self <> Text.pack " as it attacks?")
   "OfferedCast" -> Just (Text.pack "Cast " <> Maybe.fromMaybe self (Protocol.field "name" offer >>= Offer.textOf) <> Text.pack "?")
+  "OfferedTokenCopy" -> Just (Text.pack "Create a token copy of " <> Maybe.fromMaybe self (Protocol.field "name" offer >>= Offer.textOf) <> Text.pack "?")
   "ChoosePlayPermission" -> Just (Text.pack "Choose the permission to play " <> self <> Text.pack " by.")
   "ChooseCompanion" -> Just (Text.pack "Reveal a companion? It waits outside the game, and you may put it into your hand for {3}.")
   "OpeningHandAction" -> Just (Text.pack "Before the game begins: use a card in your opening hand?")

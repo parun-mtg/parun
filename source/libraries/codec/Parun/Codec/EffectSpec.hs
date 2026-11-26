@@ -75,6 +75,7 @@ import qualified Parun.Types.ControlPlayerNext as ControlPlayerNext
 import qualified Parun.Types.ControlSides as ControlSides
 import qualified Parun.Types.ControlSpan as ControlSpan
 import qualified Parun.Types.ControllerRelation as ControllerRelation
+import qualified Parun.Types.CopyChoice as CopyChoice
 import qualified Parun.Types.CopyOriginal as CopyOriginal
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
@@ -1464,7 +1465,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy (NamedCopySource.Unchosen (CardName.MkCardName (Text.pack "Disenchant") NonEmpty.:| [CardName.MkCardName (Text.pack "Black Lotus")])) 1 CastOffer.defaultValue))
+      (Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy (NamedCopySource.Unchosen (CardName.MkCardName (Text.pack "Disenchant") NonEmpty.:| [CardName.MkCardName (Text.pack "Black Lotus")])) 1 CastOffer.defaultValue Nothing CopyChoice.CastOne))
       " {\"type\":\"OfferNamedCopy\",\"value\":{\"names\":{\"type\":\"Unchosen\",\"value\":[\"Disenchant\",\"Black Lotus\"]}}} "
   -- CR 104.3e, a bare PlayerRef too. Door to Nothingness writes the targeted
   -- spelling; Final Fortune and the Pacts write this self one.

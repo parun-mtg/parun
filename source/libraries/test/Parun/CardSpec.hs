@@ -222,6 +222,7 @@ import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageR as DamageR
 import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DamageRewrite as DamageRewrite
+import qualified Parun.Types.DamageSources as DamageSources
 import qualified Parun.Types.DamageTrigger as DamageTrigger
 import qualified Parun.Types.DealDamage as DealDamage
 import qualified Parun.Types.DealtDamage as DealtDamage
@@ -494,6 +495,7 @@ import qualified Parun.Types.SkipWindow as SkipWindow
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.SourceDealtDamage as SourceDealtDamage
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.SpeedDecrease as SpeedDecrease
 import qualified Parun.Types.SpellCast as SpellCast
@@ -3596,6 +3598,8 @@ namedCopyReferenceFilters :: NamedCopySource.NamedCopySource -> [(Framing, Filte
 namedCopyReferenceFilters names = case names of
   NamedCopySource.Unchosen {} -> []
   NamedCopySource.AtRandom from -> (Unframed, FromReference.filter from) : foldMap quantityFilters (FromReference.amount from)
+  -- The objects whose mana costs narrow the picks are named by a ref of their own.
+  NamedCopySource.SameManaCostAs ref from -> namedCopyReferenceFilters (NamedCopySource.AtRandom from) <> objectRefFilters ref
 
 -- A conjure reference pick's bound, the one Quantity the card half carries.
 conjureCardsAmount :: ConjureCards.ConjureCards card -> [Quantity.Type.Quantity]
@@ -3730,6 +3734,8 @@ objectRefFilters ref = case ref of
   -- Suffocation's "red instant or sorcery spell", matched against the damage
   -- source as it dealt the damage.
   ObjectRef.LastDamagerController f -> unframed [f]
+  -- The arm above's source Filter, and a permanent recipient's qualifier.
+  ObjectRef.DamageSourcesThisTurn (DamageSources.MkDamageSources (SourceDealtDamage.MkSourceDealtDamage _ recipients) by) -> unframed (by : [qualifier | DamageRecipient.Permanent _ qualifier <- Set.toList recipients])
   ObjectRef.FromAnywhere _ -> []
   ObjectRef.OneAmong _ inner -> objectRefFilters inner
   ObjectRef.AllOf refs -> foldMap objectRefFilters refs

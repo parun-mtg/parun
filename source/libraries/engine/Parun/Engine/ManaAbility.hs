@@ -1133,6 +1133,8 @@ refReachesLibrary ref = case ref of
   ObjectRef.AttackedBy _ -> False
   -- A player, in no zone.
   ObjectRef.LastDamagerController _ -> False
+  -- The sources as they dealt the damage, followed into no zone (CR 400.7).
+  ObjectRef.DamageSourcesThisTurn _ -> False
   -- TRUE: the object followed may be in a library by now.
   ObjectRef.FromAnywhere _ -> True
   ObjectRef.AllOf refs -> any refReachesLibrary refs

@@ -906,8 +906,8 @@ data Effect card ability
     -- cast.
     OfferCast OfferCast.OfferCast
   | -- | CR 707.13: create copies of cards defined by name outside the game, and
-    -- offer their controller the cast of one (Garth One-Eye, Jhoira of the Ghitu
-    -- Avatar).
+    -- offer their controller the cast of one or a token copy of one (Garth
+    -- One-Eye, Jhoira of the Ghitu Avatar, Maelstrom Archangel Avatar).
     OfferNamedCopy OfferNamedCopy.OfferNamedCopy
   | -- | CR 707.14: create a copy of the card noted for the source
     -- (GameState.notedCards) outside the game, from its last graveyard values,

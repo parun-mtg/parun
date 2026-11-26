@@ -3516,3 +3516,21 @@ Entries are ordered by the first rule each cites.
   at-the-beginning-of-the-game life payment sets how many cards Maralen looks
   at".
 - **Issue**: none.
+
+## Maelstrom Archangel Avatar and no mana cost
+
+- **Question**: Maelstrom Archangel Avatar copies "a random card with the same
+  mana cost as that creature". A creature token or a face-down creature that
+  dealt the damage has no mana cost (CR 202.1b), as a land card has: does it
+  name a random card with no mana cost, or nothing?
+- **Rules**: CR 118.6, 202.1, 202.1b; the card has no ruling; CR of
+  2026-11-06.
+- **Decision**: Nothing: having no mana cost is the absence of one (CR 202.1b's
+  "unpayable cost", CR 118.6), so there is no cost to be the same, as
+  `Filter.HasManaCost` answers for any candidate with none. {0} is a mana cost
+  and matches {0}.
+- **Rejected**: Matching every card with no mana cost, which would copy lands,
+  and cards with no mana symbols, for every token that connects.
+- **Site**: `Parun.Engine.Resolve.Arms.Zones.offerNamedCopy`'s
+  `NamedCopySource.SameManaCostAs`.
+- **Issue**: none.

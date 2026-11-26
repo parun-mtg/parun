@@ -432,7 +432,9 @@ data Prompt r where
   -- 707.10e: which of the objects a replacement made of a copy's stated
   -- target the copy targets, the ObjectId the resolving effect. Also CR
   -- 607.2d: which exiled card a ChosenQuality.ExiledCard choice names, the
-  -- ObjectId the object choosing.
+  -- ObjectId the object choosing. Also CR 608.2d: which of the copies a
+  -- Parun.Types.OfferNamedCopy made outside the game is chosen, the ObjectId
+  -- the resolving effect.
   ChooseCardFromAmong :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty ObjectId.ObjectId -> Prompt ObjectId.ObjectId
   -- | CR 309.2a \/ 701.49a: which of the dungeon printings they own a venturing
   -- player brings in from outside the game (CR 400.11), there being no object
@@ -1090,6 +1092,11 @@ data Prompt r where
   -- them to (CR 310.12b), the CardName being the half CR 712.8a puts on the
   -- stack; never elided, and not raised for CR 608.2g's "instructs".
   OfferedCast :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> CardName.CardName -> Prompt OptionalDecision.OptionalDecision
+  -- | CR 111.1 / 707.2: whether the player creates a token that's a copy of the
+  -- card a resolving effect copied outside the game (Maelstrom Archangel
+  -- Avatar's "you may create a token that's a copy of that card"), the ObjectId
+  -- that copy; never elided.
+  OfferedTokenCopy :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> CardName.CardName -> Prompt OptionalDecision.OptionalDecision
   -- | CR 601.3 / 709.3 / 712.8b / 716.3: WHICH CAST an OfferedCast makes, from
   -- those Cast.castableWhenOffered admits; asked before the "may".
   --

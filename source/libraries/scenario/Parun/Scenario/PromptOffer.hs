@@ -392,6 +392,7 @@ offerOf namer gs prompt = case prompt of
   Prompt.ChooseTurnUpAttachment _ _ source -> choosing namer prompt "options" (Just source) [] yesOrNo
   Prompt.ChooseUnleash _ _ source -> choosing namer prompt "options" (Just source) [] yesOrNo
   Prompt.OfferedCast _ _ source name -> choosing namer prompt "options" (Just source) [("name", R.Text (CardName.unwrap name))] yesOrNo
+  Prompt.OfferedTokenCopy _ _ source name -> choosing namer prompt "options" (Just source) [("name", R.Text (CardName.unwrap name))] yesOrNo
   Prompt.OfferedMiracleReveal _ _ source name cost -> choosing namer prompt "options" (Just source) [("name", R.Text (CardName.unwrap name)), ("cost", payment namer cost)] yesOrNo
   Prompt.OfferedExtra _ _ source effect -> choosing namer prompt "options" (Just source) [("effect", Reply.encode (Reply.viaCodec Codec.PlayerEffect.codec) namer effect)] yesOrNo
   -- CR 706.2b: the results in roll order, each spelled as its index, and the

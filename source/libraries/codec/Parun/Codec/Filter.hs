@@ -35,6 +35,7 @@ import qualified Parun.Codec.KeywordDesignator as KeywordDesignator
 import qualified Parun.Codec.KeywordFamily as KeywordFamily
 import qualified Parun.Codec.Layout as Layout
 import qualified Parun.Codec.LibraryDeparture as LibraryDeparture
+import qualified Parun.Codec.ManaCost as ManaCost
 import qualified Parun.Codec.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Codec.Measures as Measures
 import qualified Parun.Codec.NameChooser as NameChooser
@@ -118,6 +119,7 @@ codec keywordCodec =
       Arm.payload "ManaValueParity" ParityOperand.codec Filter.ManaValueParity (\x -> case x of Filter.ManaValueParity y -> Just y; _ -> Nothing),
       Arm.nullary "ManaCostRepeatsSymbol" Filter.ManaCostRepeatsSymbol,
       Arm.payload "ManaCostHasSymbol" ManaSymbolKind.codec Filter.ManaCostHasSymbol (\x -> case x of Filter.ManaCostHasSymbol y -> Just y; _ -> Nothing),
+      Arm.payload "HasManaCost" ManaCost.codec Filter.HasManaCost (\x -> case x of Filter.HasManaCost y -> Just y; _ -> Nothing),
       Arm.nullary "ControllerIsOwner" Filter.ControllerIsOwner,
       Arm.payload "HeldBy" heldBy (uncurry Filter.HeldBy) (\x -> case x of Filter.HeldBy h r -> Just (h, r); _ -> Nothing),
       Arm.payload "IsPlayer" PlayerRelation.codec Filter.IsPlayer (\x -> case x of Filter.IsPlayer y -> Just y; _ -> Nothing),
@@ -377,6 +379,7 @@ tagOf x = case x of
   Filter.ManaValueParity {} -> "ManaValueParity"
   Filter.ManaCostRepeatsSymbol -> "ManaCostRepeatsSymbol"
   Filter.ManaCostHasSymbol {} -> "ManaCostHasSymbol"
+  Filter.HasManaCost {} -> "HasManaCost"
   Filter.ControllerIsOwner {} -> "ControllerIsOwner"
   Filter.HeldBy {} -> "HeldBy"
   Filter.IsPlayer {} -> "IsPlayer"

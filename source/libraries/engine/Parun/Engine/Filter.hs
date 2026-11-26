@@ -2620,6 +2620,12 @@ matches context view predicate = case predicate of
   -- ability with {X} in its activation cost".
   Filter.ManaCostHasSymbol kind ->
     any (ManaSymbolText.isOfKind kind) (foldMap ManaCost.unwrap (manaCost view) <> foldMap ManaCost.unwrap (activationCost view))
+  -- CR 202.1: the same symbols, the order they are printed in aside; CR
+  -- 709.4b's combined cost for a split card. An object with no mana cost (CR
+  -- 202.1b) has none to be the same, and {0} is a mana cost (CR 118.5a).
+  Filter.HasManaCost wanted ->
+    let symbols = List.sort . ManaCost.unwrap
+     in maybe False ((== symbols wanted) . symbols) (manaCost view)
   -- PlayerRelation.holds is what each arm MEANS, and its haddock carries the
   -- argument: an Opponent is CR 102.3's player not on your team, which is every
   -- other player in a free-for-all (CR 806.1) and at two seats (CR 102.2), and
@@ -3699,6 +3705,7 @@ manaValueThresholds predicate = case predicate of
   Filter.ManaValueParity _ -> []
   Filter.ManaCostRepeatsSymbol -> []
   Filter.ManaCostHasSymbol _ -> []
+  Filter.HasManaCost _ -> []
   Filter.HasCardType _ -> []
   Filter.HasSupertype _ -> []
   Filter.HasColor _ -> []
@@ -3883,6 +3890,7 @@ statesAQuality predicate = case predicate of
   Filter.ManaValueParity _ -> True
   Filter.ManaCostRepeatsSymbol -> True
   Filter.ManaCostHasSymbol _ -> True
+  Filter.HasManaCost _ -> True
   Filter.HasCardType _ -> True
   Filter.HasSupertype _ -> True
   Filter.HasColor _ -> True
@@ -4077,6 +4085,7 @@ readsSourceValues predicate = case predicate of
     ParityOperand.ChosenParity -> True
   Filter.ManaCostRepeatsSymbol -> False
   Filter.ManaCostHasSymbol _ -> False
+  Filter.HasManaCost _ -> False
   Filter.HasCardType _ -> False
   Filter.HasSupertype _ -> False
   Filter.HasColor _ -> False
@@ -4243,6 +4252,7 @@ talliesWhatHappened predicate = case predicate of
   Filter.ManaValueParity {} -> False
   Filter.ManaCostRepeatsSymbol {} -> False
   Filter.ManaCostHasSymbol {} -> False
+  Filter.HasManaCost {} -> False
   Filter.HasCardType {} -> False
   Filter.HasSupertype {} -> False
   Filter.HasColor {} -> False

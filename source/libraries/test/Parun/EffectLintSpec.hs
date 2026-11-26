@@ -106,6 +106,7 @@ import qualified Parun.Types.Connive as Connive
 import qualified Parun.Types.ControlSides as ControlSides
 import qualified Parun.Types.ControlSlots as ControlSlots
 import qualified Parun.Types.ControllerRelation as ControllerRelation
+import qualified Parun.Types.CopyChoice as CopyChoice
 import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CopyOriginal as CopyOriginal
@@ -1544,6 +1545,7 @@ questionOf ref = case ref of
   ObjectRef.AttachedToBound {} -> Nothing
   ObjectRef.AttackedBy {} -> Nothing
   ObjectRef.LastDamagerController {} -> Nothing
+  ObjectRef.DamageSourcesThisTurn {} -> Nothing
   ObjectRef.FromAnywhere {} -> Nothing
   -- The first question a member puts, so a member that asks is fenced as it would be alone.
   ObjectRef.AllOf refs -> Foldable.asum (fmap questionOf refs)
@@ -2197,11 +2199,12 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Effect.OfferNamedCopy x -> case OfferNamedCopy.names x of
             NamedCopySource.Unchosen _ -> OfferNamedCopy.count x /= 1
             NamedCopySource.AtRandom _ -> False
+            NamedCopySource.SameManaCostAs _ _ -> False
           _ -> False
         offends = any (any severalUnchosen . cardAuthoredEffects) . Card.Type.faces . Printing.card
     Spec.assertEqWith s "an unchosen-name copy is one copy" (fmap (S.nameOf . Printing.card) (filter offends ps)) []
     -- Not vacuous: a doctored two-copy Garth offends.
-    Spec.assertBool s (severalUnchosen (Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy (NamedCopySource.Unchosen (pure (CardName.MkCardName (Text.pack "Terror")))) 2 CastOffer.defaultValue))) "two unchosen copies offend"
+    Spec.assertBool s (severalUnchosen (Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy (NamedCopySource.Unchosen (pure (CardName.MkCardName (Text.pack "Terror")))) 2 CastOffer.defaultValue Nothing CopyChoice.CastOne))) "two unchosen copies offend"
   Spec.it s "no card writes a baked goader (CR 608.2h)" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace (bakesGoader . Codec.encode (Face.Codec.codec Card.Codec.codec)) . Printing.card) ps
@@ -4744,6 +4747,8 @@ movesAtMostOne ref = case ref of
   ObjectRef.AttackedBy _ -> True
   -- One player, the latest damage's.
   ObjectRef.LastDamagerController _ -> True
+  -- FALSE: every source the damage admits, however many dealt it.
+  ObjectRef.DamageSourcesThisTurn _ -> False
   -- TRUE, InSlot's answer: the slot's object, followed.
   ObjectRef.FromAnywhere _ -> True
   -- TRUE: one draw or pick names one object, however many the pool holds.

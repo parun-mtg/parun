@@ -787,6 +787,9 @@ data Response
     -- CLAUSE, and from CastWhileSearched, which records the same rule's
     -- library-search producer and names which card was cast.
     ChoseOfferedCast OptionalDecision.OptionalDecision
+  | -- | CR 111.1: whether a player took the token copy a resolving effect
+    -- offered them (Prompt.OfferedTokenCopy).
+    ChoseOfferedTokenCopy OptionalDecision.OptionalDecision
   | -- | CR 601.3 / 709.3 / 712.8b / 716.3: which cast a player chose to make
     -- when a resolving effect offered them several -- the object and the half.
     -- Distinct from ChoseOfferedCast, which records whether that cast was taken

@@ -83,6 +83,7 @@ import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
+import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PlayPermissionOrigin as PlayPermissionOrigin
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerEffect as PlayerEffect
@@ -1650,7 +1651,7 @@ payGateAdmits runSubgame resolving source controller idx cIdx legal announced co
     (asked, answers2) <- case Map.lookup offerAt answers of
       Just recorded -> pure (recorded, answers)
       Nothing -> do
-        recorded <- payGatePaid runSubgame resolving source controller idx cIdx legal announced committed gate
+        recorded <- payGatePaid runSubgame resolving source controller (PayOffer.AtClause idx cIdx) legal announced committed gate
         pure (recorded, Map.insert offerAt recorded answers)
     let selected = Common.branchSelects (PayGate.branch gate) asked
     State.modify' (bindPlayersSlot resolving Binding.gatePlayers selected)

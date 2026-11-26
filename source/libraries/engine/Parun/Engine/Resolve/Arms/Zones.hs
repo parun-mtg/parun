@@ -73,6 +73,7 @@ import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.Connive as Connive.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
+import qualified Parun.Types.CopyChoice as CopyChoice
 import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Departure as Departure.Type
@@ -101,8 +102,10 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Facing as Facing
+import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.ForEach as ForEach
 import qualified Parun.Types.ForEachNumber as ForEachNumber
+import qualified Parun.Types.FromReference as FromReference
 import Parun.Types.Game (Game)
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameOutcome as GameOutcome
@@ -828,14 +831,29 @@ offerCastArm offerCast runSubgame resolving source controller legal chosen (Offe
 -- unchosen names are Common.chooseNameAmong's list.
 --
 -- Jhoira of the Ghitu Avatar's are distinct reference cards drawn at random
--- (Common.drawReferenceCards).
-offerNamedCopy :: (Game Result -> Filter.Context -> PlayerId -> [PrintingId.PrintingId] -> CastOffer.CastOffer -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> OfferNamedCopy.OfferNamedCopy -> Game ()
-offerNamedCopy offerOutsideCopy runSubgame resolving source controller legal (OfferNamedCopy.MkOfferNamedCopy names count offer) = do
+-- (Common.drawReferenceCards). Maelstrom Archangel Avatar's are drawn so per
+-- object, each pick narrowed to the object's mana cost as it is or last
+-- existed (CR 608.2h), so a creature that died after dealing the damage still
+-- names one; one with no mana cost names none (docs/decisions.md, "Maelstrom
+-- Archangel Avatar and no mana cost").
+--
+-- CR 118.12: the gate is offered once every pick is drawn, so the payer knows
+-- the copies, and an unpaid gate offers nothing. It is offered with no copy
+-- made too, the rules leaving the payment to choose.
+offerNamedCopy :: (Filter.Context -> PlayerId -> [PrintingId.PrintingId] -> CastOffer.CastOffer -> CopyChoice.CopyChoice -> Game ()) -> (PayGate.PayGate -> Game Bool) -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> OfferNamedCopy.OfferNamedCopy -> Game ()
+offerNamedCopy offerOutsideCopy gatePaid resolving source controller legal (OfferNamedCopy.MkOfferNamedCopy names count offer payGate choice) = do
   printingIds <- case names of
     NamedCopySource.Unchosen listed -> unchosen listed count
     NamedCopySource.AtRandom from -> Common.drawReferenceCards resolving source controller legal count from
-  g <- State.get
-  offerOutsideCopy runSubgame (effectContext g resolving controller source legal (slotBindings resolving g)) controller printingIds offer
+    NamedCopySource.SameManaCostAs ref from -> do
+      gs <- State.get
+      let costs = Maybe.mapMaybe (Projection.viewWithLastKnownAnywhere gs Monad.>=> Filter.manaCost) (objectRefObjects legal resolving controller source gs ref)
+          narrowed cost = from {FromReference.filter = Filter.Type.And [FromReference.filter from, Filter.Type.HasManaCost cost]}
+      concat <$> Monad.mapM (Common.drawReferenceCards resolving source controller legal count . narrowed) costs
+  paid <- maybe (pure True) gatePaid payGate
+  Monad.when paid $ do
+    g <- State.get
+    offerOutsideCopy (effectContext g resolving controller source legal (slotBindings resolving g)) controller printingIds offer choice
   where
     unchosen listed n
       | n <= 0 = pure []
@@ -858,11 +876,11 @@ offerNamedCopy offerOutsideCopy runSubgame resolving source controller legal (Of
 -- that put it there (CR 400.7) -- so the printing is the copy's whole source.
 --
 -- Created outside the game, as CR 707.13's is: CR 707.14 names no zone.
-offerNotedCopy :: (Game Result -> Filter.Context -> PlayerId -> [PrintingId.PrintingId] -> CastOffer.CastOffer -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> CastOffer.CastOffer -> Game ()
-offerNotedCopy offerOutsideCopy runSubgame resolving source controller legal offer = do
+offerNotedCopy :: (Filter.Context -> PlayerId -> [PrintingId.PrintingId] -> CastOffer.CastOffer -> CopyChoice.CopyChoice -> Game ()) -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> CastOffer.CastOffer -> Game ()
+offerNotedCopy offerOutsideCopy resolving source controller legal offer = do
   gs <- State.get
   Monad.forM_ (Map.lookup source (GameState.notedCards gs)) $ \printingId ->
-    offerOutsideCopy runSubgame (effectContext gs resolving controller source legal (slotBindings resolving gs)) controller [printingId] offer
+    offerOutsideCopy (effectContext gs resolving controller source legal (slotBindings resolving gs)) controller [printingId] offer CopyChoice.CastOne
 
 -- CR 601.3: write the standing permission onto every object the ObjectRef names
 -- that lies in the opcode's zone, for the player the PlayerRef names and the
