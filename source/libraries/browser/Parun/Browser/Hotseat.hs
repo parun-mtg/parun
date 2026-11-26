@@ -169,7 +169,7 @@ game page registry cards table levelRef bots start clock host goldfish remotes h
             -- A game dealt here asks a seat leaving at its priority its
             -- concession question again (Command.rewinding), the reply
             -- kept to it last, the seat's, taken back for the one made
-            -- then ('leaving').
+            -- then ('departing').
             rewinds = case start of
               MkDealt {} -> True
               MkBranched {} -> False
@@ -191,7 +191,7 @@ game page registry cards table levelRef bots start clock host goldfish remotes h
             expire seat request = Monad.when (rewinds && Web.Question.atPriority request && not (Web.Question.decisive request)) (leaveNow seat)
             -- A seat that left answers its concession question asked
             -- again yes, off its clock.
-            leaving live request = do
+            departing live request = do
               left <- IORef.readIORef leftRef
               let question = Request.question request
               if Question.kind question == Text.pack "Concede" && Set.member (Question.seat question) left
@@ -218,7 +218,7 @@ game page registry cards table levelRef bots start clock host goldfish remotes h
             movedOn seat gs depth = do
               moving seatRef breathRef botReading (host : Map.keys locals) (\s -> Map.member (PlayerId.unwrap s + 1) (PlayOptions.bots options)) seat gs depth
               banks >>= decides seat gs depth
-        (outcome, scenario) <- played (Protocol.resumed next replayed keep (leaving (Protocol.bySeat elsewhere here))) next keep [Link.deciding movedOn] (breathing lookUp page seatRef leave concedeAs botReading breathRef) pooled
+        (outcome, scenario) <- played (Protocol.resumed next replayed keep (departing (Protocol.bySeat elsewhere here))) next keep [Link.deciding movedOn] (breathing lookUp page seatRef leave concedeAs botReading breathRef) pooled
         finished <- IORef.readIORef seatRef
         sent <- IORef.readIORef guestsRef
         conceded <- IORef.readIORef concededRef

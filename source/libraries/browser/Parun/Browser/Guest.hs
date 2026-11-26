@@ -47,7 +47,7 @@ play page lookUp levelRef channel link rejoin seat seen leave = do
         concede _ = Link.send channel Link.MkConcede
         -- One the guest's own question asks leaves at once (the host
         -- rewinds where the seat has priority, Command.rewinding).
-        conceded seat = True <$ concede seat
+        conceded asked = True <$ concede asked
         -- The clocks as the host says they read, the seat's own running
         -- until it answers.
         clocked deciding banks = Clock.getMonotonicTime >>= \at -> IORef.modifyIORef' seatRef (\s -> s {Hotseat.clocks = Web.Clock.heard at deciding banks})
