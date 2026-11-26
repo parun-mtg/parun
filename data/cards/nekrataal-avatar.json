@@ -1,0 +1,56 @@
+{
+  "faces": [
+    {
+      "name": "Nekrataal Avatar",
+      "oracleText": "Creature spells you cast cost {B} less to cast. This effect reduces only the amount of colored mana you pay.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "ModifyCost",
+            "value": {
+              "change": {
+                "type": "Reduce",
+                "value": {
+                  "amount": [
+                    {
+                      "type": "OfType",
+                      "value": {
+                        "type": "Colored",
+                        "value": "Black"
+                      }
+                    }
+                  ],
+                  "reducesOnly": {
+                    "type": "NotOfType",
+                    "value": {
+                      "type": "Colorless"
+                    }
+                  }
+                }
+              },
+              "matching": {
+                "type": "HasCardType",
+                "value": "Creature"
+              },
+              "subject": {
+                "type": "Spells"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": -1,
+        "lifeModifier": -4
+      }
+    }
+  ]
+}

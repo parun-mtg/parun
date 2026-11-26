@@ -2252,6 +2252,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Legions to Ashes", 1), -- its exile's object
         ("Rat King, Verminister", 1), -- its return's object
         ("Pattern Matcher", 1), -- its search's filter, at AnyPermanent
+        ("Viridian Zealot Avatar", 1), -- its search's filter, against its sacrificed creature
         ("Central Elevator", 1), -- its search's filter, negated, at AnyPermanent
         ("Seasinger", 1), -- its ability's target slot, Controller at AnyPermanent
         ("Key to the Side-Door", 1), -- its ability's discard cost, at AnyPermanent
