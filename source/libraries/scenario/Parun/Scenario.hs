@@ -47,6 +47,7 @@ import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event.Trigger as Event.Trigger
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.GrandMelee as GrandMelee
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.Ledger as Ledger
 import qualified Parun.Engine.Mana as Mana
@@ -1025,12 +1026,19 @@ answerDedicated decider asked =
         Prompt.Type.ReferenceCards predicate amount -> fmap (Interpreter.referenceCards gs predicate amount) referenceWhole
         Prompt.Type.ReferenceNames reading predicate -> fmap (Interpreter.referenceNames gs reading predicate) referenceWhole
         -- CR 724.6: keyed on the conceding player, whom no one decides for.
+        -- Taken at the question asked where the player would act at
+        -- priority, as theirs or as Grand Melee's player without it (CR
+        -- 807.5a), not where every other player is asked theirs too
+        -- (Parun.Engine.Engine.offerConcessions), so a concession waits for
+        -- the moves of others the timeline puts first.
         Prompt.Type.Concede pid -> do
           key <- whenOf gs pid
           found <- takeMove key
+          let ownTurn = TurnRegisters.priority (GameState.turn gs) == Just pid || not (GrandMelee.eligible gs pid)
           case found of
             Just (index, timed)
-              | Timed.entry timed == Entry.Do Move.Concede -> case Timed.source timed of
+              | ownTurn,
+                Timed.entry timed == Entry.Do Move.Concede -> case Timed.source timed of
                   Just ref -> failWith (Failure.MkUnexpectedQualifier key kind ref)
                   Nothing -> do
                     popAt key index

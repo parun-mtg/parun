@@ -30,8 +30,8 @@ import qualified Parun.Web.Screen as Screen
 -- host: each request answered on the page at the auto-pass level kept in
 -- `levelRef`, given up should the host say anything first (the game ended
 -- as the seat's time ran out, say), a card tapped showing its text through
--- `lookUp`, the home screen through `leave`, a concession that decides the
--- game sent to the host at once, the log starting from what the
+-- `lookUp`, the home screen through `leave`, a concession sent to the host
+-- at once, whether the seat is asked or not, the log starting from what the
 -- host says the seat has `seen`, the clocks running as the host last said;
 -- how it came out. Once the channel closes, `rejoin` connects it anew, and
 -- the game goes on as the host asks again; it stops where `rejoin` does not
@@ -42,12 +42,12 @@ play page lookUp levelRef channel link rejoin seat seen leave = do
   Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Ending.MkAbandoned) $ do
     -- The seat the host last said decides, until the guest's own is asked.
     decidingRef <- IORef.newIORef Nothing
-    let -- A concession that leaves at once (Web.Question.MkConceded) is
-        -- the host's to take the seat out with.
+    let -- A concession is the host's to take the seat out with, at once
+        -- where the game it hosts can (Command.rewinding).
         concede _ = Link.send channel Link.MkConcede
-        -- One the guest's own question asks leaves at once (the host
-        -- rewinds where the seat has priority, Command.rewinding).
-        conceded asked = True <$ concede asked
+        -- One the guest's own question asks passes too, which the host
+        -- reads where the seat cannot leave yet.
+        conceded asked = False <$ concede asked
         -- The clocks as the host says they read, the seat's own running
         -- until it answers.
         clocked deciding banks = Clock.getMonotonicTime >>= \at -> IORef.modifyIORef' seatRef (\s -> s {Hotseat.clocks = Web.Clock.heard at deciding banks})
