@@ -1,0 +1,105 @@
+{
+  "faces": [
+    {
+      "name": "Vampire Nocturnus Avatar",
+      "oracleText": "Play with the top card of your library revealed.\nAs long as the top card of your library is black, black creatures you control get +2/+1.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "Shows",
+            "value": {
+              "cards": "TopOfLibrary",
+              "to": "Everyone"
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HasColor",
+                  "value": "Black"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Members"
+                  },
+                  "filter": {
+                    "type": "HasColor",
+                    "value": "Black"
+                  },
+                  "scope": {
+                    "type": "TopOf",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "zone": "Library"
+                    }
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 2
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": -1,
+        "lifeModifier": -2
+      }
+    }
+  ]
+}
