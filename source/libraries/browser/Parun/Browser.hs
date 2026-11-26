@@ -8,6 +8,7 @@ import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import qualified Data.IORef as IORef
+import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
@@ -28,7 +29,8 @@ import qualified Parun.Web.Wire as Wire
 -- channels said since, what takes a tap while a channel is waited on
 -- (meanwhile), whether what they say is held for a game set aside
 -- (aside), when, on the monotonic clock in seconds, waiting gives up
--- (within), and the data channel whose word gives it up (heeding).
+-- (within), the data channel whose word gives it up (heeding), and what
+-- reads each data channel heard while the page waits (hearing).
 data Page msg = MkPage
   { shown :: IORef.IORef (Maybe (Html.Html msg)),
     taken :: IORef.IORef (Seq.Seq (msg, Text.Text)),
@@ -37,7 +39,8 @@ data Page msg = MkPage
     tapped :: IORef.IORef (Maybe ((msg, Text.Text) -> IO ())),
     held :: IORef.IORef Bool,
     due :: IORef.IORef (Maybe Double),
-    heeded :: IORef.IORef (Maybe Int)
+    heeded :: IORef.IORef (Maybe Int),
+    hearers :: IORef.IORef (Map.Map Int (IO ()))
   }
 
 -- | What a data channel to another browser said (page.js), by the number
@@ -67,7 +70,7 @@ data Input msg
 -- | A page showing nothing yet, its events listened for.
 mount :: IO (Page msg)
 mount = do
-  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Nothing <*> IORef.newIORef False <*> IORef.newIORef Nothing <*> IORef.newIORef Nothing
+  page <- MkPage <$> IORef.newIORef Nothing <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Seq.empty <*> IORef.newIORef Nothing <*> IORef.newIORef False <*> IORef.newIORef Nothing <*> IORef.newIORef Nothing <*> IORef.newIORef Map.empty
   listen =<< wrap (dispatch page)
   pure page
 
@@ -378,9 +381,38 @@ heeding page n action = do
   before <- IORef.atomicModifyIORef' (heeded page) (\h -> (Just n, h))
   Exception.handle (\MkInterrupted -> pure Nothing) (fmap Just action) `Exception.finally` IORef.writeIORef (heeded page) before
 
+-- | Runs `action`, `hear` run to read what data channel `n` says each time
+-- it says something while the page waits (hearNow), but where `action` is
+-- 'deaf' to it.
+hearing :: Page msg -> Int -> IO () -> IO a -> IO a
+hearing page n hear action = do
+  before <- IORef.atomicModifyIORef' (hearers page) (\h -> (Map.insert n hear h, h))
+  action `Exception.finally` IORef.writeIORef (hearers page) before
+
+-- | Runs `action`, data channel `n` not heard meanwhile (hearing): what
+-- `action` waits on reads it.
+deaf :: Page msg -> Int -> IO a -> IO a
+deaf page n action = do
+  before <- IORef.atomicModifyIORef' (hearers page) (\h -> (Map.delete n h, h))
+  action `Exception.finally` IORef.writeIORef (hearers page) before
+
+-- | Each data channel heard (hearing) that said a line or closed since,
+-- read by its hearer, without waiting; not while a game is set aside
+-- (aside).
+hearNow :: Page msg -> IO ()
+hearNow page = do
+  holding <- IORef.readIORef (held page)
+  Monad.unless holding $ do
+    gather page
+    listening <- IORef.readIORef (hearers page)
+    said' <- IORef.readIORef (heard page)
+    let spoke n = any (\l -> link l == n && kind l `elem` [Text.pack "message", Text.pack "closed"]) said'
+    Monad.forM_ (Map.toList listening) $ \(n, hear) -> Monad.when (spoke n) (deaf page n hear)
+
 -- | Waits as 'wait' does, giving up (Expired) where the deadline 'within'
 -- set has passed, before or after, and (Interrupted) where the data
--- channel 'heeding' names said something.
+-- channel 'heeding' names said something, each channel heard (hearing)
+-- read meanwhile.
 waitOn :: Page msg -> IO ()
 waitOn page = expire >> wait >> expire
   where
@@ -388,6 +420,7 @@ waitOn page = expire >> wait >> expire
       deadline <- IORef.readIORef (due page)
       now <- Clock.getMonotonicTime
       Monad.when (any (now >=) deadline) (Exception.throwIO MkExpired)
+      hearNow page
       heed <- IORef.readIORef (heeded page)
       holding <- IORef.readIORef (held page)
       Monad.forM_ heed $ \n -> Monad.unless holding $ do

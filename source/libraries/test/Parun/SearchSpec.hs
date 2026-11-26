@@ -881,7 +881,7 @@ declaresAgain program = case program of
 asksAgain :: Program.Program (Asked.Asked GameState.GameState) a -> Maybe (Phase.Phase, [Action.Action])
 asksAgain program = case program of
   Program.Then asked k -> case Asked.prompt asked of
-    Prompt.Concede pid | pid == S.alice -> asksAgain (k Concession.Continues)
+    Prompt.Concede _ -> asksAgain (k Concession.Continues)
     Prompt.ChooseAction _ pid menu | pid == S.alice -> Just (TurnRegisters.phase (GameState.turn (Asked.game asked)), menu)
     _ -> Nothing
   Program.Return _ -> Nothing
