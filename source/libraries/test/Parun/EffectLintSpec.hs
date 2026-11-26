@@ -30,7 +30,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (Framing (SourceHostFramed), MintedKind (MintedEmblem), anyFace, anyFaceOrMinted, cardAuthoredEffects, cardFilters, cardReplacementEffects, cardResolutionEffects, copyTargetsRefs, delayedDeclarations, durationConditions, effectFilters, effectMintedFaces, effectWithNested, enchantSlots, faceModals, frame, framedSlotsReadSingly, grantedActivatedAbilities, grantedModifications, grantedTriggeredAbilities, instantLine, mintedFaces, mintedFacesTagged, objectRefFilters, oneFaced, overFaces, replacementEffectRiders, restrictionFilters, spellLine, triggerConditionFilters, triggerConditionSlots, vanillaFace)
+import Parun.CardSpec (Framing (SourceHostFramed), MintedKind (MintedEmblem), anyFace, anyFaceOrMinted, cardAuthoredEffects, cardFilters, cardReplacementEffects, cardResolutionEffects, copyTargetsRefs, delayedDeclarations, durationConditions, effectFilters, effectMintedFaces, effectWithNested, enchantSlots, entryMembers, faceModals, frame, framedSlotsReadSingly, grantedActivatedAbilities, grantedModifications, grantedReplacements, grantedTriggeredAbilities, instantLine, mintedFaces, mintedFacesTagged, objectRefFilters, oneEffectTrigger, oneFaced, overFaces, replacementEffectRiders, restrictionFilters, spellLine, triggerConditionFilters, triggerConditionSlots, vanillaFace, youDraw)
 import qualified Parun.Codec.Card as Card.Codec
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Keyword as Keyword.Codec
@@ -77,6 +77,7 @@ import qualified Parun.Types.AttachR as AttachR
 import qualified Parun.Types.AttachRewrite as AttachRewrite
 import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttachedToBound as AttachedToBound
+import qualified Parun.Types.Batching as Batching
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.BoundReading as BoundReading
@@ -85,6 +86,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
+import qualified Parun.Types.CausedBy as CausedBy
 import qualified Parun.Types.ChangeTargets as ChangeTargets
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.ChooseGroup as ChooseGroup
@@ -139,6 +141,8 @@ import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntryController as EntryController
 import qualified Parun.Types.EntryCounter as EntryCounter
 import qualified Parun.Types.EntryHost as EntryHost
+import qualified Parun.Types.EntryR as EntryR
+import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.ExchangeCardZones as ExchangeCardZones
 import qualified Parun.Types.ExchangeOwnership as ExchangeOwnership
@@ -220,6 +224,7 @@ import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayAllowance as PlayAllowance
+import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerInstruction as PlayerInstruction
@@ -261,7 +266,10 @@ import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.RoomIndex as RoomIndex
+import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
+import qualified Parun.Types.SacrificeCause as SacrificeCause
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
+import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Search as Search
@@ -2705,6 +2713,36 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- would pass whatever a card said. Aetherspouts is the card that prints one.
     Spec.assertBool s (any (anyFace (any asks . cardResolutionEffects) . Printing.card) ps) "the pool has a card leaving the end to each owner"
     Spec.assertEqWith s "only a library has ends" (fmap (S.nameOf . Printing.card) offenders) []
+  -- Unprinted: a sacrifice trigger narrowed to SacrificeCause.Ordinary, and a
+  -- card-written SacrificeAnyNumber under SacrificeCause.Devour, which only
+  -- Parun.Engine.Keyword's CR 702.82a row may carry (CR 702.82b). The printed
+  -- card that writes either deletes its lint.
+  Spec.it s "no card narrows a sacrifice trigger to ordinary sacrifices" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFaceOrMinted (sacrificeTriggerCaused (== Just SacrificeCause.Ordinary)) . Printing.card) ps
+    -- Guards against a vacuous sweep: Kresh the Bloodbraided Avatar's trigger
+    -- names a cause.
+    Spec.assertBool s (any (anyFaceOrMinted (sacrificeTriggerCaused Maybe.isJust) . Printing.card) ps) "the pool has a sacrifice trigger naming a cause"
+    Spec.assertEqWith s "no ordinary-only sacrifice trigger" (fmap (S.nameOf . Printing.card) offenders) []
+  Spec.it s "no card writes a devour sacrifice" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFaceOrMinted (sacrificeAnyNumberCaused (== SacrificeCause.Devour)) . Printing.card) ps
+    -- Guards against a vacuous sweep: Shimatsu the Bloodcloaked writes an
+    -- ordinary one.
+    Spec.assertBool s (any (anyFaceOrMinted (sacrificeAnyNumberCaused (== SacrificeCause.Ordinary)) . Printing.card) ps) "the pool writes a sacrifice-any-number"
+    Spec.assertEqWith s "no card-written devour sacrifice" (fmap (S.nameOf . Printing.card) offenders) []
+  Spec.it s "the sacrifice-cause lints catch an unprinted cause" $ do
+    let creature = spellLine CardType.Creature Set.empty []
+        sacrificed cause = TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.Type.HasCardType CardType.Creature)) Batching.EachOccurrence cause)
+        triggering condition = (vanillaFace "Watcher" creature) {Face.triggeredAbilities = [oneEffectTrigger condition (youDraw 1)]}
+        entering cause = (vanillaFace "Eater" creature) {Face.replacementEffects = [PrintedReplacement.MkPrintedReplacement Nothing (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber (Filter.Type.HasCardType CardType.Creature) (Just CounterKind.PlusOnePlusOne) (Quantity.Type.Literal 1) cause)))) Set.empty Nothing]}
+        ordinaryOnly = sacrificeTriggerCaused (== Just SacrificeCause.Ordinary)
+        devouring = sacrificeAnyNumberCaused (== SacrificeCause.Devour)
+    Spec.assertBool s (ordinaryOnly (triggering (sacrificed (Just SacrificeCause.Ordinary)))) "an ordinary-only sacrifice trigger is rejected"
+    Spec.assertBool s (ordinaryOnly (triggering (TriggerCondition.AnyOf [sacrificed (Just SacrificeCause.Ordinary)]))) "and one inside AnyOf"
+    Spec.assertEqWith s "and a devour or uncaused trigger is accepted" (fmap (ordinaryOnly . triggering . sacrificed) [Just SacrificeCause.Devour, Nothing]) [False, False]
+    Spec.assertBool s (devouring (entering SacrificeCause.Devour)) "a card-written devour sacrifice is rejected"
+    Spec.assertBool s (not (devouring (entering SacrificeCause.Ordinary))) "and an ordinary one is accepted"
   -- Unprinted: Parun.Engine.Cost and Parun.Engine.Cast read a play
   -- permission's keywords, its budget and an increase no target waives off a
   -- card in exile only (CR 601.3, 601.2f, 400.7h), and no printing writes
@@ -4813,3 +4851,23 @@ takesAtMostOne player quantity = case quantity of
 -- Does this encoding hold a Goaded tag that is not the bare, unbaked one?
 bakesGoader :: Value.Value -> Bool
 bakesGoader encoded = jsonAtoms (Text.pack "Goaded") encoded /= occurrences (Value.object [Value.pair "type" (Value.string "Goaded")]) encoded
+
+-- Whether a face's sacrifice trigger, printed, granted or delayed, names a cause
+-- `p` accepts (CR 702.82b).
+sacrificeTriggerCaused :: (Maybe SacrificeCause.SacrificeCause -> Bool) -> Face.Face Card.Type.Card -> Bool
+sacrificeTriggerCaused p face =
+  let caused condition = case condition of
+        TriggerCondition.PermanentSacrificed payload -> p (SacrificeTrigger.cause payload)
+        TriggerCondition.AnyOf conditions -> any caused conditions
+        TriggerCondition.CausedBy narrowed -> caused (CausedBy.condition narrowed)
+        _ -> False
+   in any (caused . TriggeredAbility.condition) (Face.triggeredAbilities face <> grantedTriggeredAbilities face <> delayedDeclarations face)
+
+-- Whether a face authors a CR 614.1c sacrifice-any-number whose cause `p`
+-- accepts.
+sacrificeAnyNumberCaused :: (SacrificeCause.SacrificeCause -> Bool) -> Face.Face Card.Type.Card -> Bool
+sacrificeAnyNumberCaused p face =
+  let caused replacement = case replacement of
+        ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.SacrificeAnyNumber payload)) -> p (SacrificeAnyNumber.cause payload)
+        _ -> False
+   in any (any caused . entryMembers) (cardReplacementEffects face <> fmap PrintedReplacement.effect (grantedReplacements face))
