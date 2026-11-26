@@ -2768,9 +2768,10 @@ protectionFromEach = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Irid
 -- CR 702.16g's "protection from [A] and from [B]": the cards printing a list,
 -- which any subset of the domain satisfies. Council Guardian's per-colour
 -- grants, each gated on that colour's votes, are listed the same way, and so
--- are Akroma, Angel of Wrath Avatar's, two branches of a random group.
+-- are Akroma, Angel of Wrath Avatar's, two branches of a random group, and
+-- Eight-and-a-Half-Tails Avatar's five, one drawn at random.
 protectionListed :: Set.Set CardName.CardName
-protectionListed = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Akroma, Angel of Fury", "Akroma, Angel of Wrath Avatar", "Akroma's Memorial", "Animar, Soul of Elements", "Council Guardian", "Great Sable Stag", "Paladin en-Vec", "Sword of Forge and Frontier", "Sword of Light and Shadow", "Sword of Once and Future", "Sword of Wealth and Power", "Ureni, the Song Unending"])
+protectionListed = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Akroma, Angel of Fury", "Akroma, Angel of Wrath Avatar", "Akroma's Memorial", "Animar, Soul of Elements", "Council Guardian", "Eight-and-a-Half-Tails Avatar", "Great Sable Stag", "Paladin en-Vec", "Sword of Forge and Frontier", "Sword of Light and Shadow", "Sword of Once and Future", "Sword of Wealth and Power", "Ureni, the Song Unending"])
 
 -- The qualities of each protection group a face prints: its own keywords, each
 -- static ability's grants, and every grant its resolution effects make.

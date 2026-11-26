@@ -115,6 +115,8 @@ data Filter keyword
     -- HasKeyword above rather than a widening of it, and answered off the
     -- projection for that atom's reason.
     HasKeywordFamily KeywordFamily.KeywordFamily
+  | -- | CR 702.16a: the object has protection from this colour (Eight-and-a-Half-Tails Avatar).
+    HasProtectionFrom Color.Color
   | -- | CR 208.1 / 202.3: the candidate's measure relates thus to the operand;
     -- see Parun.Engine.Filter.matches for an absent number.
     Measures Measures.Measures
