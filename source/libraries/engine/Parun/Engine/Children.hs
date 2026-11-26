@@ -350,6 +350,7 @@ import qualified Parun.Types.MoveDuration as MoveDuration
 import qualified Parun.Types.MoveMana as MoveMana
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.NamedCopySource as NamedCopySource
 import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextStepOf as NextStepOf
@@ -361,6 +362,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.ObjectRestriction as ObjectRestriction
 import qualified Parun.Types.OfferCast as OfferCast
+import qualified Parun.Types.OfferNamedCopy as OfferNamedCopy
 import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
@@ -1398,7 +1400,8 @@ effectChildren c effect = case effect of
           <*> pure controlWhileResolving
           <*> traverse (onSlot c) named
       )
-  Effect.OfferNamedCopy _ -> pure effect
+  Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy names count offer) ->
+    fmap Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy <$> namedCopySourceChildren c names <*> pure count <*> castOfferChildren c offer)
   Effect.OfferNotedCopy offer -> fmap Effect.OfferNotedCopy (castOfferChildren c offer)
   Effect.GrantCopyCast (GrantCopyCast.MkGrantCopyCast duration who spending recopy) ->
     fmap Effect.GrantCopyCast (GrantCopyCast.MkGrantCopyCast <$> onDuration c duration <*> onPlayer c who <*> pure spending <*> traverse (onCondition c) recopy)
@@ -1501,6 +1504,12 @@ copyOriginalChildren c original = case original of
   CopyOriginal.Named name -> pure (CopyOriginal.Named name)
   CopyOriginal.Defined card -> fmap CopyOriginal.Defined (onCard c card)
   CopyOriginal.AtRandom from -> fmap CopyOriginal.AtRandom (fromReferenceChildren c from)
+
+-- | Where a named copy's names come from: a list, or a reference pick.
+namedCopySourceChildren :: (Applicative f) => EffectChildren card ability f -> NamedCopySource.NamedCopySource -> f NamedCopySource.NamedCopySource
+namedCopySourceChildren c names = case names of
+  NamedCopySource.Unchosen _ -> pure names
+  NamedCopySource.AtRandom from -> fmap NamedCopySource.AtRandom (fromReferenceChildren c from)
 
 -- | CR 108.1: a reference pick's filter and the bound it reads.
 fromReferenceChildren :: (Applicative f) => EffectChildren card ability f -> FromReference.FromReference -> f FromReference.FromReference

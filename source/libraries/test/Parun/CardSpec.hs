@@ -380,6 +380,7 @@ import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveThisFrom as MoveThisFrom
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.NamedCopySource as NamedCopySource
 import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.Ninjutsu as Ninjutsu
@@ -388,6 +389,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.ObjectRestriction as ObjectRestriction
 import qualified Parun.Types.OfferCast as OfferCast
+import qualified Parun.Types.OfferNamedCopy as OfferNamedCopy
 import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
@@ -3587,6 +3589,12 @@ conjureReferenceFilters cards = case cards of
   ConjureCards.Duplicate {} -> []
   ConjureCards.Reference from -> (Unframed, FromReference.filter from) : foldMap quantityFilters (FromReference.amount from)
 
+-- A named copy's reference pick's own Filters, conjureReferenceFilters' reading.
+namedCopyReferenceFilters :: NamedCopySource.NamedCopySource -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
+namedCopyReferenceFilters names = case names of
+  NamedCopySource.Unchosen {} -> []
+  NamedCopySource.AtRandom from -> (Unframed, FromReference.filter from) : foldMap quantityFilters (FromReference.amount from)
+
 -- A conjure reference pick's bound, the one Quantity the card half carries.
 conjureCardsAmount :: ConjureCards.ConjureCards card -> [Quantity.Type.Quantity]
 conjureCardsAmount cards = case cards of
@@ -5848,7 +5856,12 @@ effectFilters effect = case effect of
   -- A PlayerRef carries no Filter, exactly as GainPlayerCounters' does not.
   Effect.Shuffle {} -> []
   -- Nor do card names.
-  Effect.OfferNamedCopy {} -> []
+  -- A reference pick's Filters, conjureReferenceFilters' reading, and the
+  -- offer's own, OfferCast's arm below.
+  Effect.OfferNamedCopy x ->
+    namedCopyReferenceFilters (OfferNamedCopy.names x)
+      <> slotlessCost (foldMap costFilters (CastOffer.payingInstead (OfferNamedCopy.offer x)))
+      <> outsideTheGameFramed (Maybe.maybeToList (CastOffer.restriction (OfferNamedCopy.offer x)))
   Effect.OfferNotedCopy {} -> []
   Effect.GrantCopyCast grant -> frame Unframed (durationFilters (GrantCopyCast.duration grant)) <> foldMap conditionFilters (GrantCopyCast.recopy grant)
   -- All THREE positions the opcode can hold a Filter in: the reference, CR 118.9's

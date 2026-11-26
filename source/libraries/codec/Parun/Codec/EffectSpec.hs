@@ -177,12 +177,14 @@ import qualified Parun.Types.MoveDuration as MoveDuration
 import qualified Parun.Types.MoveMana as MoveMana
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.NamedCopySource as NamedCopySource
 import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextDamageOutcome as NextDamageOutcome
 import qualified Parun.Types.NoteKind as NoteKind
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
+import qualified Parun.Types.OfferNamedCopy as OfferNamedCopy
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.OutsideDestination as OutsideDestination
 import qualified Parun.Types.PermanentActed as PermanentActed
@@ -1453,8 +1455,8 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.OfferNamedCopy (CardName.MkCardName (Text.pack "Disenchant") NonEmpty.:| [CardName.MkCardName (Text.pack "Black Lotus")]))
-      " {\"type\":\"OfferNamedCopy\",\"value\":[\"Disenchant\",\"Black Lotus\"]} "
+      (Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy (NamedCopySource.Unchosen (CardName.MkCardName (Text.pack "Disenchant") NonEmpty.:| [CardName.MkCardName (Text.pack "Black Lotus")])) 1 CastOffer.defaultValue))
+      " {\"type\":\"OfferNamedCopy\",\"value\":{\"names\":{\"type\":\"Unchosen\",\"value\":[\"Disenchant\",\"Black Lotus\"]}}} "
   -- CR 104.3e, a bare PlayerRef too. Door to Nothingness writes the targeted
   -- spelling; Final Fortune and the Pacts write this self one.
   Spec.it s "LoseGame" $

@@ -32,6 +32,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Parun.CardSpec (Framing (SourceHostFramed), MintedKind (MintedEmblem), anyFace, anyFaceOrMinted, cardAuthoredEffects, cardFilters, cardReplacementEffects, cardResolutionEffects, copyTargetsRefs, delayedDeclarations, durationConditions, effectFilters, effectMintedFaces, effectWithNested, enchantSlots, entryMembers, faceModals, frame, framedSlotsReadSingly, grantedActivatedAbilities, grantedModifications, grantedReplacements, grantedTriggeredAbilities, instantLine, mintedFaces, mintedFacesTagged, objectRefFilters, oneEffectTrigger, oneFaced, overFaces, replacementEffectRiders, restrictionFilters, spellLine, triggerConditionFilters, triggerConditionSlots, vanillaFace, youDraw)
 import qualified Parun.Codec.Card as Card.Codec
+import qualified Parun.Codec.CastOffer as CastOffer
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Keyword as Keyword.Codec
 import qualified Parun.Codec.PhaseSelector as PhaseSelector.Codec
@@ -196,6 +197,7 @@ import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.NamedCopySource as NamedCopySource
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextDamageOutcome as NextDamageOutcome
 import qualified Parun.Types.NextWindow as NextWindow
@@ -204,6 +206,7 @@ import qualified Parun.Types.ObjectDamage as ObjectDamage
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
+import qualified Parun.Types.OfferNamedCopy as OfferNamedCopy
 import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Optionality as Optionality
@@ -2183,6 +2186,19 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "BecomeCopy's original is never a random pick" (fmap (S.nameOf . Printing.card) (filter offends ps)) []
     -- Not vacuous: a doctored BecomeCopy offends.
     Spec.assertBool s (becomesRandom (Effect.BecomeCopy (BecomeCopy.MkBecomeCopy (CopyOriginal.AtRandom (FromReference.MkFromReference (Filter.Type.And []) Nothing)) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing [] False))) "a random BecomeCopy offends"
+  -- Unprinted: several copies of names chosen from a list (NamedCopySource.Unchosen
+  -- with a count other than one); Garth One-Eye copies one.
+  Spec.it s "no card copies more than one unchosen name" $ do
+    ps <- S.allPrintings s corpus
+    let severalUnchosen effect = case effect of
+          Effect.OfferNamedCopy x -> case OfferNamedCopy.names x of
+            NamedCopySource.Unchosen _ -> OfferNamedCopy.count x /= 1
+            NamedCopySource.AtRandom _ -> False
+          _ -> False
+        offends = any (any severalUnchosen . cardAuthoredEffects) . Card.Type.faces . Printing.card
+    Spec.assertEqWith s "an unchosen-name copy is one copy" (fmap (S.nameOf . Printing.card) (filter offends ps)) []
+    -- Not vacuous: a doctored two-copy Garth offends.
+    Spec.assertBool s (severalUnchosen (Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy (NamedCopySource.Unchosen (pure (CardName.MkCardName (Text.pack "Terror")))) 2 CastOffer.defaultValue))) "two unchosen copies offend"
   Spec.it s "no card writes a baked goader (CR 608.2h)" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace (bakesGoader . Codec.encode (Face.Codec.codec Card.Codec.codec)) . Printing.card) ps
