@@ -741,6 +741,32 @@ enclosingAmountCounts card =
 enclosingAmountOffends :: Face.Face Card.Type.Card -> Bool
 enclosingAmountOffends card = snd (enclosingAmountCounts card) /= 0
 
+-- How many Filter.HasCounters atoms a face's encoding carries whose operand is
+-- neither a printed number nor the enclosing amount. Every other Operand arm is
+-- answered as a Measure of some object (Parun.Engine.Filter.relatesTo), so a
+-- counter-to-counter comparison ("the most +1/+1 counters") written with one
+-- would compare counters against power or mana value without error.
+measuredCounterAtoms :: Face.Face Card.Type.Card -> Int
+measuredCounterAtoms = walk . Codec.encode (Face.Codec.codec Card.codec)
+  where
+    named k pairs = [Pair.value pair | pair <- pairs, String.unwrap (Pair.name pair) == Text.pack k]
+    tagged tag v = case v of
+      Value.String t -> String.unwrap t == Text.pack tag
+      _ -> False
+    plain operand = case operand of
+      Value.Object x -> any (\v -> tagged "Literal" v || tagged "EnclosingAmount" v) (named "type" (Object.unwrap x))
+      _ -> False
+    walk value = case value of
+      Value.Array a -> sum (fmap walk (Array.unwrap a))
+      Value.Object o ->
+        let pairs = Object.unwrap o
+            operands = [operand | any (tagged "HasCounters") (named "type" pairs), Value.Object x <- named "value" pairs, operand <- named "operand" (Object.unwrap x)]
+         in length (filter (not . plain) operands) + sum (fmap (walk . Pair.value) pairs)
+      Value.String _ -> 0
+      Value.Null _ -> 0
+      Value.Boolean _ -> 0
+      Value.Number _ -> 0
+
 -- The CR 608.2d other-candidates operand's tag, spelled once.
 otherCandidateTag :: Text.Text
 otherCandidateTag = Text.pack "OfEachOtherCandidate"
@@ -3887,6 +3913,29 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             }
     Spec.assertEqWith s "a planted atom is seen" (atoms planted) 1
     Spec.assertEqWith s "and the Active one is not" (atoms (S.combinedFace troi)) 0
+  -- CR 122.1: no printed card compares an object's counters against another
+  -- object's, or against a measure of its own (MTGJSON AtomicCards, 2026-11-24,
+  -- "most ... counters", "more ... counters than", no object hit), so card data
+  -- keeps HasCounters to a number. See measuredCounterAtoms.
+  Spec.it s "CR 122.1 no card writes HasCounters against a measure" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace ((/= 0) . measuredCounterAtoms) . Printing.card) ps
+    Spec.assertEqWith s "every HasCounters operand is a number" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous: Figure of Destiny Avatar's EnclosingAmount operand is read and
+    -- accepted, and a planted other-candidates or Own operand is seen.
+    avatar <- S.printingOf s registry "Figure of Destiny Avatar"
+    piker <- S.printingOf s registry "Goblin Piker"
+    let avatarFace = S.combinedFace avatar
+        planted operand =
+          (S.combinedFace piker)
+            { Face.spell =
+                Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures (Just (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.HasCounters Comparison.AtLeast operand CounterKind.PlusOnePlusOne])))) Seq.empty
+            }
+    Spec.assertBool s (jsonAtoms (Text.pack "HasCounters") (Codec.encode (Face.Codec.codec Card.codec) avatarFace) /= 0) "the Avatar carries HasCounters"
+    Spec.assertEqWith s "and its EnclosingAmount operand is accepted" (measuredCounterAtoms avatarFace) 0
+    Spec.assertEqWith s "a literal operand is accepted" (measuredCounterAtoms (planted (Operand.Literal 3))) 0
+    Spec.assertEqWith s "an other-candidates operand is seen" (measuredCounterAtoms (planted (Operand.OfEachOtherCandidate (OtherCandidates.MkOtherCandidates Measure.Power CandidateScope.EveryCandidate)))) 1
+    Spec.assertEqWith s "and an Own one" (measuredCounterAtoms (planted (Operand.Own Measure.ManaValue))) 1
   Spec.it s "CR 603.2 no card writes HeldByPlayer" $ do
     ps <- S.allPrintings s corpus
     let atoms c = jsonAtoms (Text.pack "HeldByPlayer") (Codec.encode (Face.Codec.codec Card.codec) c)
