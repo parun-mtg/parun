@@ -19,4 +19,7 @@ data PayOffer
     -- the payer only where another player chose the creature owing it (Odric,
     -- Master Tactician's ruling).
     CombatToll
+  | -- | CR 118.12: an instruction's own gate on the copies it made (Maelstrom
+    -- Archangel Avatar's "You may pay {3}").
+    ForCopies
   deriving (Eq, Ord, Show)

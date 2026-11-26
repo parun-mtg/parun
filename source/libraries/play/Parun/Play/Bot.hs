@@ -170,6 +170,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
     takers <- Monad.filterM (const coin) (fmap fst offered)
     fmap (Map.fromList . zip takers) (Generator.shuffle takers)
   Prompt.OfferedCast {} -> exercisesOrDeclines
+  Prompt.OfferedTokenCopy {} -> exercisesOrDeclines
   -- Each of these is a "may" or an either-or, both answers always legal.
   Prompt.ChooseCommandZoneOfferFirst {} -> exercisesOrDeclines
   Prompt.ChooseDredge {} -> exercisesOrDeclines

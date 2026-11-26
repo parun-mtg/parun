@@ -5,6 +5,7 @@ import qualified Parun.Codec.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Codec.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Codec.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Codec.ChosenPermanents as ChosenPermanents
+import qualified Parun.Codec.DamageSources as DamageSources
 import qualified Parun.Codec.EachCardFromAmong as EachCardFromAmong
 import qualified Parun.Codec.EachCardInExiledPile as EachCardInExiledPile
 import qualified Parun.Codec.EachCardInGraveyard as EachCardInGraveyard
@@ -85,6 +86,7 @@ codec =
           Arm.payload "AttachedToBound" AttachedToBound.codec ObjectRef.AttachedToBound (\x -> case x of ObjectRef.AttachedToBound y -> Just y; _ -> Nothing),
           Arm.payload "AttackedBy" SlotName.codec ObjectRef.AttackedBy (\x -> case x of ObjectRef.AttackedBy y -> Just y; _ -> Nothing),
           Arm.payload "LastDamagerController" filterCodec ObjectRef.LastDamagerController (\x -> case x of ObjectRef.LastDamagerController y -> Just y; _ -> Nothing),
+          Arm.payload "DamageSourcesThisTurn" DamageSources.codec ObjectRef.DamageSourcesThisTurn (\x -> case x of ObjectRef.DamageSourcesThisTurn y -> Just y; _ -> Nothing),
           Arm.payload "FromAnywhere" FromAnywhere.codec ObjectRef.FromAnywhere (\x -> case x of ObjectRef.FromAnywhere y -> Just y; _ -> Nothing),
           Arm.payload "AllOf" (Common.nonEmpty codec) ObjectRef.AllOf (\x -> case x of ObjectRef.AllOf y -> Just y; _ -> Nothing)
         ]
@@ -119,5 +121,6 @@ tagOf x = case x of
   ObjectRef.AttachedToBound {} -> "AttachedToBound"
   ObjectRef.AttackedBy {} -> "AttackedBy"
   ObjectRef.LastDamagerController {} -> "LastDamagerController"
+  ObjectRef.DamageSourcesThisTurn {} -> "DamageSourcesThisTurn"
   ObjectRef.FromAnywhere {} -> "FromAnywhere"
   ObjectRef.AllOf {} -> "AllOf"

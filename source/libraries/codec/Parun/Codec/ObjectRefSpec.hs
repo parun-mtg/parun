@@ -18,6 +18,8 @@ import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.ControllerRelation as ControllerRelation
+import qualified Parun.Types.DamageKind as DamageKind
+import qualified Parun.Types.DamageSources as DamageSources
 import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
 import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
@@ -41,6 +43,7 @@ import qualified Parun.Types.RandomCard as RandomCard
 import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
 import qualified Parun.Types.Reach as Reach
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.SourceDealtDamage as SourceDealtDamage
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
@@ -459,6 +462,8 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
   -- CR 120.1: the damage source's Filter, bare under the tag.
   Spec.it s "LastDamagerController" $
     Common.assertCodec s ObjectRef.codec (ObjectRef.LastDamagerController (Filter.Not Filter.IsSource)) " {\"type\":\"LastDamagerController\",\"value\":{\"type\":\"Not\",\"value\":{\"type\":\"IsSource\"}}} "
+  Spec.it s "DamageSourcesThisTurn" $
+    Common.assertCodec s ObjectRef.codec (ObjectRef.DamageSourcesThisTurn (DamageSources.MkDamageSources (SourceDealtDamage.MkSourceDealtDamage (Just DamageKind.Combat) Set.empty) (Filter.HasCardType CardType.Creature))) " {\"type\":\"DamageSourcesThisTurn\",\"value\":{\"dealt\":{\"kind\":\"Combat\"},\"by\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- CR 400.7j: the slot whose object is followed, a bare string.
   Spec.it s "FromAnywhere" $
     Common.assertCodec s ObjectRef.codec (ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere {FromAnywhere.slot = SlotName.MkSlotName (Text.pack "self"), FromAnywhere.among = Nothing, FromAnywhere.reach = Reach.PublicZone})) " {\"type\":\"FromAnywhere\",\"value\":{\"slot\":\"self\"}} "

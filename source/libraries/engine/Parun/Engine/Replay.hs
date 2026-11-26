@@ -273,6 +273,7 @@ encode p answer = case p of
   Prompt.ChooseOptional {} -> Response.ChoseOptional answer
   Prompt.ChooseClause {} -> Response.ChoseClause answer
   Prompt.OfferedCast {} -> Response.ChoseOfferedCast answer
+  Prompt.OfferedTokenCopy {} -> Response.ChoseOfferedTokenCopy answer
   Prompt.ChooseOfferedCastSpell {} -> Response.ChoseOfferedCastSpell answer
   Prompt.OfferedMiracleReveal {} -> Response.ChoseMiracleReveal answer
   Prompt.OfferedExtra {} -> Response.ChoseExtra answer
@@ -776,6 +777,9 @@ decode p response = case p of
     _ -> Nothing
   Prompt.OfferedCast {} -> case response of
     Response.ChoseOfferedCast decision -> Just decision
+    _ -> Nothing
+  Prompt.OfferedTokenCopy {} -> case response of
+    Response.ChoseOfferedTokenCopy decision -> Just decision
     _ -> Nothing
   Prompt.ChooseOfferedCastSpell {} -> case response of
     Response.ChoseOfferedCastSpell picked -> Just picked
@@ -1435,6 +1439,8 @@ defaultAnswer p = case p of
   -- CR 608.2g: declining an offered cast is always legal, and it leaves the card
   -- exactly where the resolving effect put it.
   Prompt.OfferedCast {} -> OptionalDecision.Declines
+  -- CR 111.1: declining an offered token copy creates nothing.
+  Prompt.OfferedTokenCopy {} -> OptionalDecision.Declines
   -- CR 601.3 / 709.3a / 712.8c: every offered cast was gated on its own before
   -- it reached the prompt, so the first is legal. Printed order within a card, so
   -- it is the earliest surviving half rather than the front face -- a front face

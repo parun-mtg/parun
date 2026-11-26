@@ -253,6 +253,7 @@ import qualified Parun.Codec.ControllerGrantSpec
 import qualified Parun.Codec.ControllerRelationSpec
 import qualified Parun.Codec.ConvokingSpec
 import qualified Parun.Codec.CopiesSpec
+import qualified Parun.Codec.CopyChoiceSpec
 import qualified Parun.Codec.CopyClauseSpec
 import qualified Parun.Codec.CopyCoverageSpec
 import qualified Parun.Codec.CopyDomainSpec
@@ -329,6 +330,7 @@ import qualified Parun.Codec.DamagePreventedSpec
 import qualified Parun.Codec.DamageRSpec
 import qualified Parun.Codec.DamageRecipientSpec
 import qualified Parun.Codec.DamageRewriteSpec
+import qualified Parun.Codec.DamageSourcesSpec
 import qualified Parun.Codec.DamageTallySpec
 import qualified Parun.Codec.DamageTriggerSpec
 import qualified Parun.Codec.DamagedPartySpec
@@ -1839,6 +1841,8 @@ spec s reference corpus = do
   Parun.Codec.OfferCastSpec.spec s
   Parun.Codec.OfferNamedCopySpec.spec s
   Parun.Codec.NamedCopySourceSpec.spec s
+  Parun.Codec.CopyChoiceSpec.spec s
+  Parun.Codec.DamageSourcesSpec.spec s
   Parun.Codec.NumberFloorSpec.spec s
   Parun.Codec.OnePerSpec.spec s
   Parun.Codec.OnsetSpec.spec s

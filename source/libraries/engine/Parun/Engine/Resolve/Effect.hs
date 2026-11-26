@@ -18,6 +18,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.ActivationRestriction as ActivationRestriction
@@ -61,14 +62,16 @@ import qualified Parun.Types.AttackChoice as AttackChoice
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card.Type
+import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastObligation as CastObligation
 import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.CastRepetition as CastRepetition
-import Parun.Types.ClauseIndex (ClauseIndex)
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.ControlDuration as ControlDuration
+import qualified Parun.Types.CopyChoice as CopyChoice
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Cost as Cost.Type
@@ -95,7 +98,6 @@ import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.Modal as Modal.Type
-import Parun.Types.ModeIndex (ModeIndex)
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.Object as Object
@@ -138,6 +140,7 @@ import qualified Parun.Types.Settle as Settle
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StoredEffects as StoredEffects
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Throw as Throw
 import qualified Parun.Types.ThrowKind as ThrowKind
 import qualified Parun.Types.ThrowResult as ThrowResult
@@ -217,19 +220,46 @@ offerCast runSubgame context reading named caster optionality verb retake repeti
           (Maybe.maybeToList spell <>) <$> again (fmap (\(weigh, room) -> (weigh, room - spent weigh)) budget) (fmap (subtract 1) casts) (filter (/= oid) remaining)
 
 -- CR 707.13 / 707.14: offer the cast of one copy of these printings, each
--- created outside the game (Event.mintOutside), bracketing `offerCast` with the
--- mint and the discard. CR 608.2d's choice of which copy is offerCast's. An
+-- created outside the game (Event.mintOutside), bracketing the offer with the
+-- mint and the discard. Under CopyChoice.CastOne, CR 608.2d's choice of which
+-- copy is offerCast's. Under CopyChoice.ChooseThenTokenOrCast the caster first
+-- chooses one among them all (CR 608.2d), unasked for one: a permanent card's
+-- copy offers a token copy of it (CR 111.1, 707.2), through CreateCopy's
+-- funnel, and an instant or sorcery card's its cast, and any other nothing. An
 -- uncast copy is deleted as the offer returns: CR 109.1 and CR 400.11c leave
 -- nothing able to observe it afterwards, and it bounds Object.zone's
 -- placeholder to one resolution, in which no player gets priority and no SBA is
 -- checked.
-offerOutsideCopy :: Game Result -> Filter.Context -> PlayerId -> [PrintingId.PrintingId] -> CastOffer.CastOffer -> Game ()
-offerOutsideCopy runSubgame context caster printingIds offer = do
+offerOutsideCopy :: Game Result -> ObjectId -> Filter.Context -> PlayerId -> [PrintingId.PrintingId] -> CastOffer.CastOffer -> CopyChoice.CopyChoice -> Game ()
+offerOutsideCopy runSubgame resolving context caster printingIds offer choice = do
   copyIds <- Monad.mapM (State.state . Event.mintOutside caster) printingIds
-  Monad.void (offerCast runSubgame context (\_ _ -> Nothing) copyIds caster CastObligation.Optional PermissionVerb.Cast Nothing CastRepetition.Once False offer)
+  let castAmong copies = Monad.void (offerCast runSubgame context (\_ _ -> Nothing) copies caster CastObligation.Optional PermissionVerb.Cast Nothing CastRepetition.Once False offer)
+  case choice of
+    CopyChoice.CastOne -> castAmong copyIds
+    CopyChoice.ChooseThenTokenOrCast -> do
+      chosen <- Game.chooseAmong (\decider asked -> Prompt.ChooseCardFromAmong decider asked resolving) caster copyIds
+      gs <- State.get
+      Foldable.for_ ((,) <$> chosen <*> (chosen >>= Projection.fullView gs)) $ \(copy, view) ->
+        let types = Filter.cardTypes view
+            name = Maybe.fromMaybe (CardName.MkCardName Text.empty) (Set.lookupMin (Filter.names view))
+            token = do
+              decision <- Game.choose (Prompt.OfferedTokenCopy (Decide.deciderFor caster gs) caster copy name)
+              Monad.when (decision == OptionalDecision.Exercises) (Foldable.for_ (Event.copiedTokenCard copy gs) mint)
+            mint card = Monad.void (Event.simultaneously (Event.together (Event.createTokens (settleWith runSubgame) caster (pure (card, Just (Event.copiedToken copy gs))) Nothing 1 TapState.Untapped Map.empty Nothing (Common.resolvingMarks resolving gs))))
+         in if any Card.isPermanentType types
+              then token
+              else Monad.when (Set.member CardType.Instant types || Set.member CardType.Sorcery types) (castAmong [copy])
   State.modify' $ \g ->
     let uncast = filter (`Set.member` GameState.outsideCopies g) copyIds
      in g {GameState.objects = foldr Map.delete (GameState.objects g) uncast, GameState.outsideCopies = foldr Set.delete (GameState.outsideCopies g) uncast}
+
+-- CR 118.12 on an instruction's own gate (Parun.Types.OfferNamedCopy's
+-- payGate), offered once the copies are made: payGatePaid's offer and payment,
+-- under PayOffer.ForCopies, and whether its branch selects anybody.
+copyGatePaid :: Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PayGate.PayGate -> Game Bool
+copyGatePaid runSubgame resolving source controller legal gate = do
+  asked <- payGatePaid runSubgame resolving source controller PayOffer.ForCopies legal Nothing Set.empty gate
+  pure (not (Set.null (Common.branchSelects (PayGate.branch gate) asked)))
 
 -- One round of the offer above: CR 608.2d's choice among the cards `named`
 -- still holds, and the cast if it is taken. Answers the id of the card that was
@@ -633,8 +663,8 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.PutSticker payload -> Zones.putSticker resolving source controller legal chosen payload
   Effect.Shuffle payload -> Zones.shuffle resolving source controller legal payload
   Effect.OfferCast payload -> Zones.offerCastArm offerCast runSubgame resolving source controller legal chosen payload
-  Effect.OfferNamedCopy payload -> Zones.offerNamedCopy offerOutsideCopy runSubgame resolving source controller legal payload
-  Effect.OfferNotedCopy payload -> Zones.offerNotedCopy offerOutsideCopy runSubgame resolving source controller legal payload
+  Effect.OfferNamedCopy payload -> Zones.offerNamedCopy (offerOutsideCopy runSubgame resolving) (copyGatePaid runSubgame resolving source controller legal) resolving source controller legal payload
+  Effect.OfferNotedCopy payload -> Zones.offerNotedCopy (offerOutsideCopy runSubgame resolving) resolving source controller legal payload
   Effect.GrantPlayFromExile payload -> Zones.grantPlayFromExile resolving source controller legal payload
   Effect.GrantCopyCast payload -> Zones.grantCopyCast resolving source controller legal payload
   Effect.GrantLookAtExiled payload -> Zones.grantLookAtExiled resolving source controller legal payload
@@ -1799,7 +1829,7 @@ performManaAbility runSubgame =
 performManaPayGate :: Game Result -> ObjectId -> PlayerId -> ClauseIndex.ClauseIndex -> PayGate.PayGate -> Map.Map ClauseIndex.ClauseIndex (Map.Map PlayerId Bool) -> Game (Bool, Map.Map ClauseIndex.ClauseIndex (Map.Map PlayerId Bool))
 performManaPayGate runSubgame source controller cIdx gate answers = do
   let offerAt = Maybe.fromMaybe cIdx (PayGate.offeredAt gate)
-  asked <- maybe (payGatePaid runSubgame source source controller (ModeIndex.MkModeIndex 0) cIdx Map.empty Nothing Set.empty gate) pure (Map.lookup offerAt answers)
+  asked <- maybe (payGatePaid runSubgame source source controller (PayOffer.AtClause (ModeIndex.MkModeIndex 0) cIdx) Map.empty Nothing Set.empty gate) pure (Map.lookup offerAt answers)
   pure (not (Set.null (Common.branchSelects (PayGate.branch gate) asked)), Map.insert offerAt asked answers)
 
 -- CR 605.4a: apply one triggered mana ability where it stands. CR 605.1b's
@@ -2123,14 +2153,14 @@ applyLoopBody runSubgame resolving source controller legal chosen bodyDefined bo
 -- (Event.causedBy; Tamiyo, Collector of Tales' ruling of 2019-05-03). The
 -- scenario ajanis-last-stand-makes-an-avatar-discarded-to-an-opponents-painful-quandary
 -- proves it.
-payGatePaid :: Game Result -> ObjectId -> ObjectId -> PlayerId -> ModeIndex -> ClauseIndex -> Map.Map SlotName (Set Recipient) -> Maybe (Set PlayerId) -> Set PlayerId -> PayGate.PayGate -> Game (Map.Map PlayerId Bool)
-payGatePaid runSubgame resolving source controller idx cIdx legal announced committed gate = caused resolving source controller $ do
+payGatePaid :: Game Result -> ObjectId -> ObjectId -> PlayerId -> PayOffer.PayOffer -> Map.Map SlotName (Set Recipient) -> Maybe (Set PlayerId) -> Set PlayerId -> PayGate.PayGate -> Game (Map.Map PlayerId Bool)
+payGatePaid runSubgame resolving source controller offer legal announced committed gate = caused resolving source controller $ do
   gs <- State.get
   -- A COMMITTED payer (Parun.Engine.Resolve.chosenBranch) already chose to pay
   -- when they announced the branch, so their offer is CR 118.12's mandatory
   -- limb: paid when CR 118.3 allows, and not asked.
   let offerTo payer = if Set.member payer committed then gate {PayGate.obligation = PayObligation.Mandatory} else gate
-      rehearse earlier payer = payGatePaidBy runSubgame resolving source controller (PayOffer.AtClause idx cIdx) (fmap (fmap (Common.payerAnswerOf gs)) earlier) legal payer (offerTo payer)
+      rehearse earlier payer = payGatePaidBy runSubgame resolving source controller offer (fmap (fmap (Common.payerAnswerOf gs)) earlier) legal payer (offerTo payer)
   rehearsed <-
     Monad.foldM
       ( \earlier payer -> do

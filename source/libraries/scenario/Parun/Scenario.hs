@@ -1561,6 +1561,7 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.ChooseMutateSide {} -> True
   Prompt.Type.ChooseLibraryEnd {} -> True
   Prompt.Type.OfferedCast {} -> True
+  Prompt.Type.OfferedTokenCopy {} -> True
   Prompt.Type.OfferedMiracleReveal {} -> True
   Prompt.Type.OfferedExtra {} -> True
   Prompt.Type.Rethrow {} -> True

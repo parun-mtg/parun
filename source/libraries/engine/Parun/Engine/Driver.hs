@@ -259,6 +259,7 @@ subjectOf prompt = case prompt of
   Prompt.ChooseOptional _ pid _ _ _ _ -> Just pid
   Prompt.ChooseClause _ pid _ _ _ _ _ -> Just pid
   Prompt.OfferedCast _ pid _ _ -> Just pid
+  Prompt.OfferedTokenCopy _ pid _ _ -> Just pid
   Prompt.ChooseOfferedCastSpell _ pid _ -> Just pid
   Prompt.OfferedMiracleReveal _ pid _ _ _ -> Just pid
   Prompt.OfferedExtra _ pid _ _ -> Just pid
@@ -455,6 +456,7 @@ deciderOf prompt = case prompt of
   Prompt.ChooseOptional decider _ _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseClause decider _ _ _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.OfferedCast decider _ _ _ -> Just (Decider.unwrap decider)
+  Prompt.OfferedTokenCopy decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseOfferedCastSpell decider _ _ -> Just (Decider.unwrap decider)
   Prompt.OfferedMiracleReveal decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.OfferedExtra decider _ _ _ -> Just (Decider.unwrap decider)

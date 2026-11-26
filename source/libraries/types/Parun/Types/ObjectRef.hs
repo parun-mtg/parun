@@ -7,6 +7,7 @@ import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
+import qualified Parun.Types.DamageSources as DamageSources
 import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
 import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
@@ -156,6 +157,10 @@ data ObjectRef
     AttackedBy SlotName.SlotName
   | -- | CR 120.1 / 608.2h: who controlled the latest source the Filter admits to damage you this turn, as it dealt it.
     LastDamagerController (Filter.Filter Keyword.Keyword)
+  | -- | CR 120.1 / 608.2h: each source of this turn's damage the payload admits,
+    -- as it is now or last existed (Maelstrom Archangel Avatar's "each creature
+    -- you controlled at the time it dealt combat damage to a player this turn").
+    DamageSourcesThisTurn DamageSources.DamageSources
   | -- | CR 400.7j with the printed "from anywhere": the object a slot holds,
     -- followed to wherever it is now.
     FromAnywhere FromAnywhere.FromAnywhere

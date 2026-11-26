@@ -46,6 +46,8 @@ import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.Lookback as Lookback
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
+import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
@@ -198,6 +200,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.ManaCostHasSymbol ManaSymbolKind.PhyrexianSymbol)
       " {\"type\":\"ManaCostHasSymbol\",\"value\":{\"type\":\"PhyrexianSymbol\"}} "
+  Spec.it s "HasManaCost" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.HasManaCost (ManaCost.MkManaCost [ManaSymbol.Generic 1]))
+      " {\"type\":\"HasManaCost\",\"value\":[{\"type\":\"Generic\",\"value\":1}]} "
   Spec.it s "ManaValueParity" $
     Common.assertCodec
       s

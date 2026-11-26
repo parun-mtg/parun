@@ -184,6 +184,7 @@ import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageR as DamageR
 import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DamageRewrite as DamageRewrite
+import qualified Parun.Types.DamageSources as DamageSources
 import qualified Parun.Types.DamageTally as DamageTally
 import qualified Parun.Types.DamageTrigger as DamageTrigger
 import qualified Parun.Types.DamagedParty as DamagedParty
@@ -610,6 +611,7 @@ filterChildren children predicate = case predicate of
   Filter.ManaValueParity _ -> pure predicate
   Filter.ManaCostRepeatsSymbol -> pure predicate
   Filter.ManaCostHasSymbol _ -> pure predicate
+  Filter.HasManaCost _ -> pure predicate
   Filter.HeldBy _ _ -> pure predicate
   Filter.ControllerIsOwner -> pure predicate
   Filter.ControlledByRole _ -> pure predicate
@@ -1402,8 +1404,8 @@ effectChildren c effect = case effect of
           <*> pure controlWhileResolving
           <*> traverse (onSlot c) named
       )
-  Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy names count offer) ->
-    fmap Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy <$> namedCopySourceChildren c names <*> pure count <*> castOfferChildren c offer)
+  Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy names count offer payGate choice) ->
+    fmap Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy <$> namedCopySourceChildren c names <*> pure count <*> castOfferChildren c offer <*> traverse (onPayGate c) payGate <*> pure choice)
   Effect.OfferNotedCopy offer -> fmap Effect.OfferNotedCopy (castOfferChildren c offer)
   Effect.GrantCopyCast (GrantCopyCast.MkGrantCopyCast duration who spending recopy) ->
     fmap Effect.GrantCopyCast (GrantCopyCast.MkGrantCopyCast <$> onDuration c duration <*> onPlayer c who <*> pure spending <*> traverse (onCondition c) recopy)
@@ -1512,6 +1514,7 @@ namedCopySourceChildren :: (Applicative f) => EffectChildren card ability f -> N
 namedCopySourceChildren c names = case names of
   NamedCopySource.Unchosen _ -> pure names
   NamedCopySource.AtRandom from -> fmap NamedCopySource.AtRandom (fromReferenceChildren c from)
+  NamedCopySource.SameManaCostAs ref from -> NamedCopySource.SameManaCostAs <$> onObjectRef c ref <*> fromReferenceChildren c from
 
 -- | CR 108.1: a reference pick's filter and the bound it reads.
 fromReferenceChildren :: (Applicative f) => EffectChildren card ability f -> FromReference.FromReference -> f FromReference.FromReference
@@ -3547,6 +3550,11 @@ objectRefChildren c ref = case ref of
   ObjectRef.AttackedBy bound -> ObjectRef.AttackedBy <$> refSlot c bound
   -- CR 120.1: which source dealt the damage is read off the turn's damage.
   ObjectRef.LastDamagerController by -> refLooksBack c HistoryRead.Damage *> fmap ObjectRef.LastDamagerController (refFilter c by)
+  ObjectRef.DamageSourcesThisTurn (DamageSources.MkDamageSources (SourceDealtDamage.MkSourceDealtDamage kind recipients) by) ->
+    refLooksBack c HistoryRead.Damage
+      *> fmap
+        ObjectRef.DamageSourcesThisTurn
+        (DamageSources.MkDamageSources <$> fmap (SourceDealtDamage.MkSourceDealtDamage kind) (traverseSet (damageRecipientChildren (refPlayer c) (refFilter c)) recipients) <*> refFilter c by)
   -- CR 400.7j: which object the slot's card became is read off the zone moves.
   ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere bound among reach) -> refLooksBack c HistoryRead.Moves *> fmap ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere <$> refSlot c bound <*> traverse (refSlot c) among <*> pure reach)
   ObjectRef.AllOf refs -> ObjectRef.AllOf <$> traverse (refNested c) refs

@@ -33,6 +33,7 @@ import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
+import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.NameChooser as NameChooser
@@ -131,6 +132,11 @@ data Filter keyword
     -- cost, or an activated ability's activation cost (CR 602.2b) (Zaxara, the
     -- Exemplary's {X}, Rage Extractor's {H}, Glava, Five-Advents Mage's {X}).
     ManaCostHasSymbol ManaSymbolKind.ManaSymbolKind
+  | -- | CR 202.1: the candidate's mana cost is this one, symbol for symbol in any
+    -- order; one with no mana cost has none to match (CR 202.1b) (Maelstrom
+    -- Archangel Avatar's "the same mana cost as that creature", baked per
+    -- creature).
+    HasManaCost ManaCost.ManaCost
   | -- | CR 108.3 / 108.4 / 110.2: the candidate's holder relates thus to the
     -- perspective, or is the player the source enchants (CR 303.4b); False
     -- where it has none (CR 108.4, 109.1).

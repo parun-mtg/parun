@@ -18,6 +18,7 @@ import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Children as Children
+import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Plane as Plane
@@ -115,7 +116,9 @@ import qualified Parun.Types.CreateEmblem as CreateEmblem
 import qualified Parun.Types.DamagePart as DamagePart
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageR as DamageR
+import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DamageRewrite as DamageRewrite
+import qualified Parun.Types.DamageSources as DamageSources
 import qualified Parun.Types.DealDamage as DealDamage
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Destroy as Destroy
@@ -147,6 +150,7 @@ import qualified Parun.Types.EntryPrice as EntryPrice
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
+import qualified Parun.Types.EventShape as EventShape
 import qualified Parun.Types.ExchangeBlocks as ExchangeBlocks
 import qualified Parun.Types.ExchangeSides as ExchangeSides
 import qualified Parun.Types.ExchangeValues as ExchangeValues
@@ -192,6 +196,7 @@ import qualified Parun.Types.LifeGainR as LifeGainR
 import qualified Parun.Types.LifeLoss as LifeLoss
 import qualified Parun.Types.LifeLossPattern as LifeLossPattern
 import qualified Parun.Types.LifeLossR as LifeLossR
+import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
@@ -294,6 +299,7 @@ import qualified Parun.Types.SlotCount as SlotCount
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.SourceDealtDamage as SourceDealtDamage
 import qualified Parun.Types.SpeedDecrease as SpeedDecrease
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StaticRead as StaticRead
@@ -322,6 +328,7 @@ import qualified Parun.Types.Vote as Vote
 import qualified Parun.Types.VoteChoices as VoteChoices
 import qualified Parun.Types.VoteObjects as VoteObjects
 import qualified Parun.Types.VotePlayers as VotePlayers
+import qualified Parun.Types.WhichTurn as WhichTurn
 import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
@@ -681,6 +688,10 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   ObjectRef.AttackedBy slot -> Map.singleton slot SlotArity.Many
   -- The Filter over the damage source may name slots of its own.
   ObjectRef.LastDamagerController filter_ -> filterSlotsOf filter_
+  -- The Filters over the source and over a permanent dealt the damage, the
+  -- arm above's reason.
+  ObjectRef.DamageSourcesThisTurn (DamageSources.MkDamageSources (SourceDealtDamage.MkSourceDealtDamage _ recipients) by) ->
+    joinSlots (filterSlotsOf by : [filterSlotsOf qualifier | DamageRecipient.Permanent _ qualifier <- Set.toList recipients])
   -- Every ref's own reads; the PlayerRefs are objectRefPlayerRefs', which recurses.
   ObjectRef.AllOf refs -> joinSlots (fmap objectRefSlots (NonEmpty.toList refs))
 
@@ -749,6 +760,7 @@ objectRefQuantities ref = case ref of
   ObjectRef.AttachedToBound _ -> []
   ObjectRef.AttackedBy _ -> []
   ObjectRef.LastDamagerController _ -> []
+  ObjectRef.DamageSourcesThisTurn (DamageSources.MkDamageSources _ _) -> []
   ObjectRef.FromAnywhere _ -> []
   ObjectRef.AllOf refs -> concatMap objectRefQuantities refs
 
@@ -802,6 +814,8 @@ objectRefPlayerRefs ref = case ref of
   ObjectRef.AttachedToBound _ -> []
   ObjectRef.AttackedBy _ -> []
   ObjectRef.LastDamagerController _ -> []
+  -- The players a recipient names, the damage's own read.
+  ObjectRef.DamageSourcesThisTurn (DamageSources.MkDamageSources (SourceDealtDamage.MkSourceDealtDamage _ recipients) _) -> [player | DamageRecipient.Player player <- Set.toList recipients]
   ObjectRef.FromAnywhere _ -> []
   ObjectRef.AllOf refs -> concatMap objectRefPlayerRefs refs
 
@@ -3286,6 +3300,16 @@ objectRefObjects legal resolving controller source gs ref = case ref of
      in Maybe.mapMaybe attackedObject (attackedBy legal resolving controller source gs slot)
   -- Names a player and so no object; objectRefRecipients names them.
   ObjectRef.LastDamagerController _ -> []
+  -- CR 120.1 / 608.2h: the sources of this turn's damage the payload admits, the
+  -- source judged as it dealt the damage (Filter.dealtByView) in the resolving
+  -- controller's context, so "you controlled at the time" reads the deal-time
+  -- controller. Once each, in the order each first dealt such damage, by the id
+  -- it dealt it under: one that has since left is last known information (CR
+  -- 608.2h), never the object it became (CR 400.7).
+  ObjectRef.DamageSourcesThisTurn (DamageSources.MkDamageSources dealt by) ->
+    let context = effectContext gs resolving controller source legal (slotBindings resolving gs)
+        views = Maybe.mapMaybe (Count.snapshotView (effectViewOf resolving source legal gs) context gs (EventShape.SourceDealtDamage dealt) . LoggedEvent.event) (Foldable.toList (Game.turnLog WhichTurn.ThisTurn Nothing gs))
+     in ListUtils.nubOrd (Maybe.mapMaybe Filter.identity (filter (\view -> Filter.matches context view by) views))
   -- CR 400.7j's finding, read back: each object the slot holds, followed through
   -- this turn's logged zone changes to the objects it is now -- and, given an
   -- `among`, kept only where that slot holds the incarnation too (CR 400.7j).
@@ -3980,6 +4004,7 @@ namedCopyQuantities :: OfferNamedCopy.OfferNamedCopy -> [Quantity.Type.Quantity]
 namedCopyQuantities x = case OfferNamedCopy.names x of
   NamedCopySource.Unchosen {} -> []
   NamedCopySource.AtRandom from -> Maybe.maybeToList (FromReference.amount from)
+  NamedCopySource.SameManaCostAs ref from -> objectRefQuantities ref <> Maybe.maybeToList (FromReference.amount from)
 
 -- | CR 115.1's kind of the spell or ability `resolving` is, which CR 608.2b's
 -- re-check and CR 115.7's and CR 707.10c's re-choices hand the targeting

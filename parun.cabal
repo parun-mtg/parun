@@ -588,6 +588,8 @@ library codec
     Parun.Codec.CopiesSpec
     Parun.Codec.Copyability
     Parun.Codec.CopyabilitySpec
+    Parun.Codec.CopyChoice
+    Parun.Codec.CopyChoiceSpec
     Parun.Codec.CopyClause
     Parun.Codec.CopyClauseSpec
     Parun.Codec.CopyCoverage
@@ -743,6 +745,8 @@ library codec
     Parun.Codec.DamageRewrite
     Parun.Codec.DamageRewriteSpec
     Parun.Codec.DamageRSpec
+    Parun.Codec.DamageSources
+    Parun.Codec.DamageSourcesSpec
     Parun.Codec.DamageTally
     Parun.Codec.DamageTallySpec
     Parun.Codec.DamageTrigger
@@ -3270,6 +3274,7 @@ library types
     Parun.Types.Convoking
     Parun.Types.Copies
     Parun.Types.Copyability
+    Parun.Types.CopyChoice
     Parun.Types.CopyClause
     Parun.Types.CopyCoverage
     Parun.Types.CopyDomain
@@ -3354,6 +3359,7 @@ library types
     Parun.Types.DamageR
     Parun.Types.DamageRecipient
     Parun.Types.DamageRewrite
+    Parun.Types.DamageSources
     Parun.Types.DamageTally
     Parun.Types.DamageTrigger
     Parun.Types.Daytime

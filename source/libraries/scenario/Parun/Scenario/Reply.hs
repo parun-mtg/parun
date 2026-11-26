@@ -508,6 +508,7 @@ shapeOf prompt = case prompt of
   Prompt.ChooseOptional {} -> viaCodec Codec.OptionalDecision.codec
   Prompt.ChooseClause {} -> maybeOf (wrapped ClauseIndex.MkClauseIndex ClauseIndex.unwrap)
   Prompt.OfferedCast {} -> viaCodec Codec.OptionalDecision.codec
+  Prompt.OfferedTokenCopy {} -> viaCodec Codec.OptionalDecision.codec
   Prompt.ChooseOfferedCastSpell {} -> pairOf object (viaCodec Codec.CardName.codec)
   Prompt.OfferedMiracleReveal {} -> viaCodec Codec.OptionalDecision.codec
   Prompt.OfferedExtra {} -> viaCodec Codec.OptionalDecision.codec

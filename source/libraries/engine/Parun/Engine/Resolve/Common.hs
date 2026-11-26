@@ -986,6 +986,7 @@ askingObjects offered forKind resolving source controller legal chosen ref = cas
   ObjectRef.AttachedToBound _ -> swept
   ObjectRef.AttackedBy _ -> swept
   ObjectRef.LastDamagerController _ -> swept
+  ObjectRef.DamageSourcesThisTurn _ -> swept
   ObjectRef.FromAnywhere _ -> swept
   where
     swept :: Game [ObjectId]
@@ -1413,6 +1414,8 @@ objectRefRecipients legal resolving controller source gs ref = case ref of
         latest = Maybe.listToMaybe (reverse (filter admitted (Count.damageThisTurn ((== Just controller) . Game.damagedPlayer) gs)))
         reached = Players.reaches (resolutionReads legal resolving source controller gs)
      in fmap Recipient.ToPlayer (filter reached (Maybe.maybeToList (latest >>= DamageEvent.dealtByController)))
+  -- A read, so the sweep answers it.
+  ObjectRef.DamageSourcesThisTurn _ -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
   -- A read, so the sweep answers it.
   ObjectRef.FromAnywhere _ -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
   -- Each ref's recipients in the order written, one named twice named once.

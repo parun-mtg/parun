@@ -1,0 +1,117 @@
+{
+  "faces": [
+    {
+      "name": "Maelstrom Archangel Avatar",
+      "oracleText": "At end of combat, for each creature you controlled at the time it dealt combat damage to a player this turn, copy a random card with the same mana cost as that creature. You may pay {3}. If you do, choose one of those copies. If a copy of a permanent card is chosen, you may create a token that's a copy of that card. If a copy of an instant or sorcery card is chosen, you may cast the copy without paying its mana cost.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Combat",
+                "value": "EndOfCombat"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "OfferNamedCopy",
+                        "value": {
+                          "choice": "ChooseThenTokenOrCast",
+                          "names": {
+                            "type": "SameManaCostAs",
+                            "value": {
+                              "from": {
+                                "filter": {
+                                  "type": "And",
+                                  "value": []
+                                }
+                              },
+                              "objects": {
+                                "type": "DamageSourcesThisTurn",
+                                "value": {
+                                  "by": {
+                                    "type": "And",
+                                    "value": [
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Creature"
+                                      },
+                                      {
+                                        "type": "HeldBy",
+                                        "value": {
+                                          "holder": "Controller",
+                                          "relation": "You"
+                                        }
+                                      }
+                                    ]
+                                  },
+                                  "dealt": {
+                                    "kind": "Combat",
+                                    "recipients": [
+                                      {
+                                        "type": "Player",
+                                        "value": {
+                                          "type": "Relative",
+                                          "value": "AnyPlayer"
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "offer": {
+                            "withoutPayingManaCost": true
+                          },
+                          "payGate": {
+                            "branch": "IfPaid",
+                            "cost": {
+                              "mana": [
+                                {
+                                  "type": "Generic",
+                                  "value": 3
+                                }
+                              ]
+                            },
+                            "payer": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 0,
+        "lifeModifier": 5
+      }
+    }
+  ]
+}

@@ -214,6 +214,7 @@ kindOf prompt = Text.pack $ case prompt of
   Prompt.ChooseOptional {} -> "ChooseOptional"
   Prompt.ChooseClause {} -> "ChooseClause"
   Prompt.OfferedCast {} -> "OfferedCast"
+  Prompt.OfferedTokenCopy {} -> "OfferedTokenCopy"
   Prompt.ChooseOfferedCastSpell {} -> "ChooseOfferedCastSpell"
   Prompt.OfferedMiracleReveal {} -> "OfferedMiracleReveal"
   Prompt.OfferedExtra {} -> "OfferedExtra"
