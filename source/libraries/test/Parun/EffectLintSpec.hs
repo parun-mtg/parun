@@ -1257,6 +1257,7 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   PlayerEffect.PutTappedAsYouCascade _ -> False
   PlayerEffect.CastOnlyAtSorcerySpeed -> False
   PlayerEffect.CantPlayLands _ -> False
+  PlayerEffect.PlayAsCopy _ -> False
   PlayerEffect.CastFrom _ -> False
   PlayerEffect.PlayLandsFrom _ -> False
   PlayerEffect.PlotFrom _ -> False
@@ -1344,6 +1345,7 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.PutTappedAsYouCascade _ -> False
   PlayerEffect.CastOnlyAtSorcerySpeed -> False
   PlayerEffect.CantPlayLands _ -> False
+  PlayerEffect.PlayAsCopy _ -> False
   PlayerEffect.CastFrom _ -> False
   PlayerEffect.PlayLandsFrom _ -> False
   PlayerEffect.PlotFrom _ -> False

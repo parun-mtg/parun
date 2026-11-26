@@ -127,6 +127,7 @@ import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.Payment as Payment
 import qualified Parun.Types.PaymentMoment as PaymentMoment
 import qualified Parun.Types.PaymentSubject as PaymentSubject
@@ -135,9 +136,11 @@ import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.PlayAllowance as PlayAllowance
+import qualified Parun.Types.PlayAsCopy as PlayAsCopy
 import qualified Parun.Types.PlayBudget as PlayBudget
 import qualified Parun.Types.PlayPermissionOrigin as PlayPermissionOrigin
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
+import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -3193,6 +3196,68 @@ landDropOpen pid gs =
 -- A player permission's rider is `riders` below.
 playLand :: Settle.Settle -> Bool -> PlayerId -> ObjectId -> Maybe CardName.CardName -> Game ()
 playLand settle offered pid oid mName = do
+  copy <- playedAsCopy offered pid oid
+  case copy of
+    Nothing -> playLandAs settle offered False pid oid mName
+    -- Implementation-defined: a play-as-copy permission whose reference admits
+    -- no card the player may play plays nothing; the CR is silent.
+    Just Nothing -> pure ()
+    -- CR 707.2: the card is the copy as it is played, so the reads below
+    -- (landFacesOf, CR 101.2's prohibitions, CR 614.12's entry) see the land.
+    Just (Just pc) -> do
+      State.modify' (stampedAsCopy pc oid)
+      playLandAs settle offered True pid oid Nothing
+
+-- CR 707.2: `oid` stamped as a copy of these values (Binding.setCopy).
+stampedAsCopy :: PC.ProjectedCharacteristics -> ObjectId -> GameState -> GameState
+stampedAsCopy pc oid gs = gs {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setCopy pc (Object.bindings o)}) oid (GameState.objects gs)}
+
+-- CR 305.1 / 707.2: what `pid`'s play of `oid` makes it a copy of under a
+-- play-as-copy permission (Dakkon Blackblade Avatar): Nothing for a play made
+-- as the card itself -- under no such permission, one an effect instructs
+-- (`offered`), or one declining the printed "may" (Prompt.OfferedExtra) where
+-- the card is playable as itself too. Otherwise the copiable values of a card
+-- of the Oracle reference (CR 108.1) chosen at random among those the
+-- permission admits, the played card bound at Binding.playedLand, and Just
+-- Nothing where none is left.
+--
+-- Narrowed to the cards CR 101.2's land-play prohibitions leave playable, each
+-- asked as the copy it would make. Implementation-defined: picking first and
+-- refusing the play differs only where a prohibition stops some of the
+-- candidates, and every printed one stops every land or no basic one.
+--
+-- ONE permission: CR 902.7's vanguard is the only printing, and a player has
+-- one vanguard.
+playedAsCopy :: Bool -> PlayerId -> ObjectId -> Game (Maybe (Maybe PC.ProjectedCharacteristics))
+playedAsCopy offered pid oid = do
+  gs <- State.get
+  case (offered, PlayerEffect.playAsCopyPermissions pid oid gs, Game.lookupLayerOne oid gs, Game.cardOfHandMember oid gs) of
+    (False, (src, permission) : _, Just obj, Just card) -> do
+      let itself = not (null (Game.landFacesOf obj card)) && not (PlayerEffect.prohibitsPlayingLand pid oid gs)
+      taken <-
+        if itself
+          then (== OptionalDecision.Exercises) <$> Game.choose (Prompt.OfferedExtra (Decide.deciderFor pid gs) pid src (PlayerEffect.Type.PlayAsCopy permission))
+          else pure True
+      if not taken
+        then pure Nothing
+        else do
+          let colors = maybe Set.empty Filter.colors (Projection.fullView gs oid)
+              predicate = Filter.bakeProducedColors (Map.singleton Binding.playedLand colors) (PlayAsCopy.original permission)
+          names <- Game.ask (Prompt.ReferenceCards predicate Nothing)
+          let copyOf printingId g = let (minted, board) = Event.mintOutside pid printingId g in Event.copiedSnapshot minted board
+              playable (_, pc) = not (PlayerEffect.prohibitsPlayingLand pid oid (stampedAsCopy pc oid gs))
+          found <- traverse (\name -> fmap (fmap (\printingId -> (name, printingId))) (Game.lookUpCard name)) (ListUtils.nubOrd names)
+          -- Read after the lookups, which intern each printing.
+          interned <- State.get
+          let candidates = filter playable [(name, copyOf printingId interned) | (name, printingId) <- Maybe.catMaybes found]
+          picked <- Game.drawAmong Prompt.RandomCard (fmap fst candidates)
+          pure (Just (picked >>= (`lookup` candidates)))
+    _ -> pure Nothing
+
+-- The play itself, `asCopy` where playedAsCopy stamped the card, whose copy
+-- then follows it onto the battlefield.
+playLandAs :: Settle.Settle -> Bool -> Bool -> PlayerId -> ObjectId -> Maybe CardName.CardName -> Game ()
+playLandAs settle offered asCopy pid oid mName = do
   -- CR 406.3a, the land half of the turn turnedUpForPlay states: a land played
   -- out of face-down exile is turned face up just before it is played, so the
   -- reads below see the card rather than that rule's characteristicless object.
@@ -3232,6 +3297,13 @@ playLand settle offered pid oid mName = do
     if Map.member oid (GameState.outsideFinds before)
       then Event.playFromOutside settle pid oid mName
       else Event.changeZoneShowing settle (Just pid) oid Zone.Battlefield mName
+  -- CR 707.2: a card played as a copy is that copy on the battlefield, and
+  -- stops being one as it leaves (CR 400.7). A move CR 616.1 cancelled left
+  -- it in the hand, played as nothing, so it is no copy there.
+  Monad.when asCopy $
+    if Seq.null moved
+      then State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Map.delete Binding.copySource (Object.bindings o)}) oid (GameState.objects g)})
+      else State.modify' (\g -> foldr (carryCopyIntoSpell before oid) g moved)
   -- CR 614.3: the row watched this one entry, so one the entry left unapplied
   -- (a CR 614.6 redirect, SacrificeToEnter's CR 614.1a graveyard) goes with it.
   Monad.forM_ entryRow $ \ts ->

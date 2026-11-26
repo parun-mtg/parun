@@ -386,6 +386,7 @@ import qualified Parun.Types.PhaseRewrite as PhaseRewrite
 import qualified Parun.Types.PlacesSticker as PlacesSticker
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
 import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
+import qualified Parun.Types.PlayAsCopy as PlayAsCopy
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
@@ -597,6 +598,7 @@ filterChildren children predicate = case predicate of
   Filter.HasColor _ -> pure predicate
   Filter.Shares trait anchor -> fmap (Filter.Shares trait) (anchorChildren children anchor)
   Filter.HasSubtype _ -> pure predicate
+  Filter.ProducesColorOf name -> fmap Filter.ProducesColorOf (slot children SlotArity.One name)
   Filter.HasName _ -> pure predicate
   Filter.HasNameOriginallyPrintedIn _ -> pure predicate
   Filter.NameWordsAtLeast _ -> pure predicate
@@ -2364,6 +2366,7 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.CantCastMatching filter_ -> PlayerEffect.CantCastMatching <$> playerFilter c filter_
   PlayerEffect.CastOnlyAtSorcerySpeed -> pure effect
   PlayerEffect.CantPlayLands filter_ -> PlayerEffect.CantPlayLands <$> playerFilter c filter_
+  PlayerEffect.PlayAsCopy (PlayAsCopy.MkPlayAsCopy cards original) -> fmap PlayerEffect.PlayAsCopy (PlayAsCopy.MkPlayAsCopy <$> playerFilter c cards <*> playerFilter c original)
   PlayerEffect.CastFrom (CastFromZone.MkCastFromZone from matching limit verb pool additionalCosts reduction spending alternativeCost entersWith exiledInstead amount creatureTypes outsideTheGame) ->
     fmap PlayerEffect.CastFrom (CastFromZone.MkCastFromZone <$> traverse (playerZone c) from <*> playerFilter c matching <*> pure limit <*> pure verb <*> pure pool <*> traverse (playerCostComponent c) additionalCosts <*> pure reduction <*> pure spending <*> pure alternativeCost <*> traverse (\(WithCounters.MkWithCounters counters) -> WithCounters.MkWithCounters <$> traverse (playerQuantity c) counters) entersWith <*> pure exiledInstead <*> traverse (playerQuantity c) amount <*> traverseSet (playerCreatureSubtype c) creatureTypes <*> pure outsideTheGame)
   PlayerEffect.PlayLandsFrom from -> PlayerEffect.PlayLandsFrom <$> playerZone c from
