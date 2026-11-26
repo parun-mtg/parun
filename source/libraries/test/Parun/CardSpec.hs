@@ -1512,7 +1512,7 @@ carrierEffects =
 -- CR 103.5b and CR 103.6: the actions a face grants before the game, one effect
 -- list per action: every faceHandAction child, the two fields
 -- Parun.Engine.Mulligan passes to handWindow and the vanguard's
--- Face.gameStartActions, which Parun.Engine.Setup.beginGame performs.
+-- Face.gameStartActions, which Parun.Engine.Setup.takeGameStartActions performs.
 --
 -- A list of ACTIONS rather than one flat list, because each action is performed
 -- on its own (Parun.Engine.Mulligan.handWindow performs one and asks again), so a

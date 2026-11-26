@@ -4047,16 +4047,18 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         offends c = isVanguard c /= Maybe.isJust (Face.vanguard c)
         offenders = filter (anyFace offends . Printing.card) ps
     Spec.assertEqWith s "vanguard iff modifiers" (fmap (S.nameOf . Printing.card) offenders) []
-  -- Parun.Engine.Setup.beginGame takes Face.gameStartActions off a player's
-  -- vanguard only (CR 902.7), so the field on any other card is never read, and
-  -- performs each action without reading its HandAction.condition.
+  -- Parun.Engine.Setup.takeGameStartActions takes Face.gameStartActions off a
+  -- player's vanguard only (CR 902.7), so the field on any other card is never
+  -- read, and performs each action without reading its HandAction.condition.
+  -- Buried Ogre (CMB2) prints a non-vanguard game-start action and is not in
+  -- the pool (#9918).
   Spec.it s "only a vanguard begins the game with something, unconditionally" $ do
     ps <- S.allPrintings s corpus
     let offends c =
           (not (null (Face.gameStartActions c)) && not (Set.member CardType.Vanguard (TypeLine.types (Face.typeLine c))))
             || any (Maybe.isJust . HandAction.condition) (Face.gameStartActions c)
         offenders = filter (anyFace offends . Printing.card) ps
-    Spec.assertEqWith s "no other card begins the game with something" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertEqWith s "no card in the pool but a vanguard begins the game with something" (fmap (S.nameOf . Printing.card) offenders) []
     avatar <- S.combinedFace <$> S.printingOf s registry "Elvish Champion Avatar"
     bears <- S.combinedFace <$> S.printingOf s registry "Grizzly Bears"
     Spec.assertBool s (not (offends avatar)) "the real Elvish Champion Avatar is accepted"

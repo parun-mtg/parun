@@ -1036,7 +1036,7 @@ runDamageRewriteEffect runSubgame pending = do
 
 -- CR 103.5b / CR 103.6: perform the effects of an action a card grants from a
 -- player's hand, or a vanguard's from the command zone. Parun.Engine.Mulligan's
--- window loops and Parun.Engine.Setup.beginGame reach this through the
+-- window loops and Parun.Engine.Setup.takeGameStartActions reach this through the
 -- HandActionPerformer parameter (see Parun.Types.HandActionPerformer).
 --
 -- The action does not use the stack, so there is nothing to put on it and no

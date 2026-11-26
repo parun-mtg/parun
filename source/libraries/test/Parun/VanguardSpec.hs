@@ -10,10 +10,11 @@
 -- replacement ones and Parun.Engine.CombatRestriction.inForce. Parun.Engine.Event's
 -- triggered one, Parun.Engine.Activate's activated one and
 -- Parun.Engine.BlockPermission's are scenarios under data/scenarios/vanguard. A
--- game-start trigger (Setup.beginGame) needs a game played from its decks, which
--- no scenario board is, so it is here.
+-- game-start trigger (Setup.beginGame) or action (Setup.takeGameStartActions)
+-- needs a game played from its decks, which no scenario board is, so it is here.
 module Parun.VanguardSpec where
 
+import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
@@ -25,6 +26,7 @@ import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Damage as Damage
+import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Filter as Filter
@@ -35,9 +37,12 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Vanguard as Vanguard
+import qualified Parun.Play.Chance as Chance
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Types.Answerer as Answerer
+import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat.Type
@@ -145,6 +150,37 @@ declaringAttackers gs =
 -- Whether the game in `gs`'s log began, the event Setup.beginGame records.
 begins :: GameState.GameState -> Bool
 begins gs = any ((== GameEvent.GameBegan) . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
+
+-- keepAnswer, naming `chosen` for Seshiro's creature type.
+choosing :: Subtype.Subtype -> Prompt.Prompt r -> r
+choosing chosen p = case p of
+  Prompt.ChooseSubtype {} -> chosen
+  _ -> keepAnswer p
+
+-- A game already begun (a restart's, a subgame's) played on through its first
+-- turn, Support.opening's seats and seed over a board rather than decks.
+playedOn :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> GameState.GameState
+playedOn answer gs =
+  let seat = Answerer.MkAnswerer (pure . answer . Asked.prompt)
+      seats = Driver.bySeat (Map.fromList [(S.alice, seat), (S.bob, seat)]) Chance.chance
+   in State.evalState (Driver.drive [] seats 100000 (pure . S.pastTurn 1) gs) (S.seeded 1)
+
+-- Alice under Seshiro, bob under Elvish Champion Avatar, each on thirty Grizzly
+-- Bears, played from those decks through the first turn with Seshiro naming
+-- Wizard.
+seshiroAgainstChampion :: Printing.Printing -> Printing.Printing -> Printing.Printing -> GameState.GameState
+seshiroAgainstChampion bears seshiro champion =
+  S.opening 1 1 (choosing Subtype.Wizard) ((S.alice, deckOf bears (Just seshiro)) NonEmpty.:| [(S.bob, deckOf bears (Just champion))])
+
+-- Alice's cards in her hand and library that are `chosen`, and how many there are.
+ofChosenType :: Subtype.Subtype -> GameState.GameState -> ([ObjectId.ObjectId], Int)
+ofChosenType chosen gs =
+  let mine = Game.zoneMembers Zone.Hand S.alice gs <> Game.zoneMembers Zone.Library S.alice gs
+   in (filter (Set.member chosen . (`Projection.subtypesOf` gs)) mine, length mine)
+
+-- The Elf tokens `pid` controls.
+elfTokens :: PlayerId.PlayerId -> GameState.GameState -> [ObjectId.ObjectId]
+elfTokens pid gs = filter (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just (CardName.MkCardName (Text.pack "Elf Token"))) (Game.zoneMembers Zone.Battlefield pid gs)
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Vanguard" $ do
@@ -323,6 +359,49 @@ spec s registry = Spec.describe s "Vanguard" $ do
     Spec.assertBool s (begins sub) "and the subgame begins, for an at-the-beginning-of-the-game trigger"
     Spec.assertEqWith s "the main game has it back when the subgame ends" (commandNames back) [CardName.MkCardName (Text.pack "Selenia")]
 
+  -- CR 728.1: the restarted game follows CR 103 again, so Seshiro's game-start
+  -- trigger goes on the stack and resolves in its first upkeep, naming Goblin
+  -- where the first game named Wizard, and Elvish Champion Avatar makes
+  -- bob's Elf again where CR 728.2 left no token.
+  Spec.it s "CR 728.1 a restarted game takes its vanguards' game-start trigger and action again" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    seshiro <- S.printingOf s registry "Seshiro the Anointed Avatar"
+    champion <- S.printingOf s registry "Elvish Champion Avatar"
+    let main = seshiroAgainstChampion bears seshiro champion
+        rebuilt = S.runPure (choosing Subtype.Goblin) main (Setup.restartGame S.performer Set.empty S.alice)
+        restarted = playedOn (choosing Subtype.Goblin) rebuilt
+        (mainWizards, mainCards) = ofChosenType Subtype.Wizard main
+        (goblins, cards) = ofChosenType Subtype.Goblin restarted
+    Spec.assertEqWith s "the first game's cards are Wizards" (length mainWizards) mainCards
+    Spec.assertEqWith s "and bob has its Elf" (length (elfTokens S.bob main)) 1
+    Spec.assertEqWith s "the restart rebuilt thirty cards for alice" cards 30
+    Spec.assertEqWith s "each a Goblin, chosen in the restarted game" (length goblins) cards
+    Spec.assertEqWith s "and none a Wizard" (fst (ofChosenType Subtype.Wizard restarted)) []
+    Spec.assertEqWith s "bob begins the restarted game with one Elf" (length (elfTokens S.bob rebuilt)) 1
+    Spec.assertBool s (elfTokens S.bob rebuilt /= elfTokens S.bob main) "a new token, not the first game's"
+
+  -- CR 730.2b: the vanguards cross into the subgame, which follows CR 103, so
+  -- Seshiro names Goblin there and bob's Elf is made in it; CR 730.5b brings
+  -- Seshiro back as a new object (CR 400.7), which remembers neither choice.
+  Spec.it s "CR 730.2b a subgame takes its vanguards' game-start trigger and action, and forgets the choice after" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    seshiro <- S.printingOf s registry "Seshiro the Anointed Avatar"
+    champion <- S.printingOf s registry "Elvish Champion Avatar"
+    let main = seshiroAgainstChampion bears seshiro champion
+        built0 = S.runPure (choosing Subtype.Goblin) (Setup.subgameStateFrom S.alice main) (Setup.startGameFromCards S.performer Set.empty)
+        sub = playedOn (choosing Subtype.Goblin) built0
+        back = Setup.funnelBack sub main
+        (goblins, cards) = ofChosenType Subtype.Goblin sub
+        (_, backCards) = ofChosenType Subtype.Wizard back
+    Spec.assertEqWith s "the main game's cards are Wizards" (length (fst (ofChosenType Subtype.Wizard main))) (snd (ofChosenType Subtype.Wizard main))
+    Spec.assertBool s (cards > 0) "alice holds subgame cards"
+    Spec.assertEqWith s "each a Goblin, chosen in the subgame" (length goblins) cards
+    Spec.assertEqWith s "and none a Wizard" (fst (ofChosenType Subtype.Wizard sub)) []
+    Spec.assertEqWith s "bob begins the subgame with one Elf" (length (elfTokens S.bob built0)) 1
+    Spec.assertBool s (backCards > 0) "alice holds main-game cards after it"
+    Spec.assertEqWith s "which are no longer Wizards" (fst (ofChosenType Subtype.Wizard back)) []
+    Spec.assertEqWith s "nor Goblins" (fst (ofChosenType Subtype.Goblin back)) []
+
   -- "At the beginning of the game" (Setup.beginGame), a trigger put on the
   -- stack at the game's first priority, in the first turn's upkeep (CR 603.3).
   -- Seshiro's choice is then what its CR 902.7 static reads: alice's creature
@@ -359,8 +438,9 @@ spec s registry = Spec.describe s "Vanguard" $ do
     Spec.assertEqWith s "alice, not an opponent, discarded nothing" (namesIn S.alice Zone.Graveyard) []
     Spec.assertEqWith s "a hand of Mountains alone keeps every card" (Game.zoneMembers Zone.Graveyard S.bob lands) []
 
-  -- "You begin the game with" (Setup.beginGame): no stack, so Elvish Champion's
-  -- Elf is alice's before her first turn begins and taps on it (CR 302.6) for the
+  -- "You begin the game with" (Setup.takeGameStartActions): no stack, so Elvish
+  -- Champion's Elf is alice's before her first turn begins and taps on it (CR
+  -- 302.6), though it entered before her opening hand was drawn, for the
   -- {G} that casts a Llanowar Elves from a deck holding no land. bob, the same
   -- deck under no vanguard, begins with no Elf.
   Spec.it s "a vanguard's you-begin-the-game-with gives Elvish Champion's Elf, untapped on turn one" $ do
@@ -405,11 +485,11 @@ spec s registry = Spec.describe s "Vanguard" $ do
     Spec.assertEqWith s "so she drew no card on that turn, holding the seven she kept" (handOf S.alice none) 7
     Spec.assertEqWith s "bob, under no vanguard, drew on his turn" (length (Game.zoneMembers Zone.Library S.bob none)) 22
 
-  -- docs/decisions.md, "When a vanguard's game-start actions are taken": after
-  -- CR 103.6's opening-hand actions, so each Leyline of Vitality alice began the
-  -- game with sees her Elf enter and gains her 1 life at the first priority.
-  -- bob, the same deck under no vanguard, has no Elf to see.
-  Spec.it s "a vanguard's game-start Elf enters after the opening-hand Leylines" $ do
+  -- docs/decisions.md, "When a vanguard's game-start actions are taken": with
+  -- the starting life totals (CR 103.4), before CR 103.6's opening-hand
+  -- actions, so no Leyline of Vitality alice began the game with sees her Elf
+  -- enter. The proof is the Elf beside seven Leylines and no life gained.
+  Spec.it s "a vanguard's game-start Elf enters before the opening-hand Leylines" $ do
     vitality <- S.printingOf s registry "Leyline of Vitality"
     avatar <- S.printingOf s registry "Elvish Champion Avatar"
     let answer :: Prompt.Prompt r -> r
@@ -419,6 +499,7 @@ spec s registry = Spec.describe s "Vanguard" $ do
           _ -> keepAnswer p
         begun = S.opening 1 1 answer ((S.alice, deckOf vitality (Just avatar)) NonEmpty.:| [(S.bob, deckOf vitality Nothing)])
         leylines pid = S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Leyline of Vitality")) pid begun
-    Spec.assertEqWith s "alice's seven Leylines each gained her 1 life over CR 902.4's fifteen" (S.lifeOf S.alice begun) (Just 22)
-    Spec.assertEqWith s "bob gained none" (S.lifeOf S.bob begun) (Just 20)
     Spec.assertEqWith s "each began the game with seven Leylines" (leylines S.alice, leylines S.bob) (7, 7)
+    Spec.assertEqWith s "alice began it with her Elf" (length (elfTokens S.alice begun)) 1
+    Spec.assertEqWith s "which no Leyline saw enter: CR 902.4's fifteen life" (S.lifeOf S.alice begun) (Just 15)
+    Spec.assertEqWith s "bob gained none either" (S.lifeOf S.bob begun) (Just 20)

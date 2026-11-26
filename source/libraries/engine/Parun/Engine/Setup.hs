@@ -620,32 +620,37 @@ newGame perform matchup = do
   drawStickerSheets seated
   -- CR 407.2: after CR 103.1 and before CR 103.5's draws.
   anteFromLibraries seated
+  takeGameStartActions perform seated
   Mulligan.openingHands perform seated
   -- CR 103.7: in a Planechase game the starting player sets the starting plane,
   -- after every opening hand is kept (CR 901.5); in Grand Melee each player
   -- with a turn marker does (CR 901.14a).
   Planechase.setStartingPlanes
-  beginGame perform seated
+  beginGame
 
--- The game begins, every CR 103 step before CR 103.8's first turn behind it.
--- First each player's vanguard (CR 902.7) gives them what they begin the game
--- with (Face.gameStartActions), the starting player first, then each other in
--- turn order, CR 103.6's order for actions taken before the game; no stack, so a
--- creature put onto the battlefield is under its controller's control when their
--- first turn begins (CR 302.6). Then the event a vanguard's "at the beginning of
--- the game" triggers on (TriggerCondition.GameBegins), put on the stack at the
--- first priority, in the first turn's upkeep (CR 603.3). Shared by a new game, a
--- restart (CR 728.2) and a subgame (CR 730.2), each of which begins a game.
---
--- The CR has no rule placing the beginning of the game among CR 103's steps;
--- after the last of them, CR 103.7's: docs/decisions.md, "When a vanguard's
--- game-start actions are taken".
-beginGame :: HandActionPerformer -> [PlayerId] -> Game ()
-beginGame perform seated = do
+-- Each player's vanguard (CR 902.7) gives them what they begin the game with
+-- (Face.gameStartActions), the starting player first, then each other in turn
+-- order, CR 103.6's order for actions taken before the game. With the starting
+-- life totals (CR 103.4, 103.4b), before CR 103.5's opening hands:
+-- docs/decisions.md, "When a vanguard's game-start actions are taken". No stack,
+-- so a creature put onto the battlefield is under its controller's control when
+-- their first turn begins (CR 302.6). Shared by a new game, a restart (CR 728.1)
+-- and a subgame (CR 730.2b brings the vanguard along).
+takeGameStartActions :: HandActionPerformer -> [PlayerId] -> Game ()
+takeGameStartActions perform seated =
   Monad.forM_ seated $ \pid -> do
     actions <- State.gets (Vanguard.gameStartActionsOf pid)
     Monad.forM_ actions (\(oid, action) -> perform oid pid (HandAction.effects action))
-  State.modify' (Event.recordEvent GameEvent.GameBegan)
+
+-- The event a vanguard's "at the beginning of the game" triggers on
+-- (TriggerCondition.GameBegins), recorded once every CR 103 step before CR
+-- 103.8's first turn is done. The game begins earlier, its decks becoming
+-- libraries (CR 401.1) and its hands drawn (CR 402.1), and a vanguard takes its
+-- timestamp then (CR 613.7i); recording the event here plays the same, since
+-- the trigger waits for the first priority, in the first turn's upkeep (CR
+-- 603.3). Shared by a new game, a restart and a subgame.
+beginGame :: Game ()
+beginGame = State.modify' (Event.recordEvent GameEvent.GameBegan)
 
 -- CR 713.8 / CR 108.2: a melded permanent is ONE object represented by TWO
 -- cards, so a funnel that carries cards over -- CR 728.2's restart and CR
@@ -892,12 +897,13 @@ startGameFromCards perform exemptions = do
   -- CR 407.2 again: CR 728.1 and CR 730.2 each start a new game following
   -- rule 103.
   anteFromLibraries seated
+  takeGameStartActions perform seated
   Mulligan.openingHands perform seated
   -- CR 103.7, newGame's step: the new game's starting player sets a starting
   -- plane after the opening hands (CR 901.14a: in Grand Melee, each marker
   -- holder).
   Planechase.setStartingPlanes
-  beginGame perform seated
+  beginGame
 
 -- CR 315.2 / 905.4: in a game rebuilt from cards (CR 728.1, 730.2), this player
 -- may put any number of conspiracy cards from their sideboard into the command
