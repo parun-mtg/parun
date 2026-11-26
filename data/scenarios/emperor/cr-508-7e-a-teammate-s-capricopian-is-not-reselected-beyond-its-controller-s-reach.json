@@ -1,0 +1,130 @@
+{
+  "board": {
+    "active": "bob",
+    "attackOption": null,
+    "deployCreatures": true,
+    "seats": [
+      {
+        "name": "alice",
+        "range": 1,
+        "team": 1
+      },
+      {
+        "emperor": true,
+        "name": "bob",
+        "range": 2,
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Capricopian",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 2
+              }
+            ],
+            "label": "goat",
+            "ready": true
+          }
+        ],
+        "name": "carol",
+        "range": 1,
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "d1"
+          },
+          {
+            "card": "Forest",
+            "label": "d2"
+          }
+        ],
+        "name": "dave",
+        "range": 1,
+        "team": 2
+      },
+      {
+        "emperor": true,
+        "name": "erin",
+        "range": 2,
+        "team": 2
+      },
+      {
+        "name": "frank",
+        "range": 1,
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 508.7e / 801.3 under CR 805.10a: a teammate's Capricopian is reselected only within its own controller's range of influence",
+  "note": "The Emperor board of cr-805-10a-an-emperor-team-s-shared-turn-attacks-from-each-general-s-seat: dave and frank are both defending players, but only dave is within carol's range. Carol's Capricopian attacks dave, who pays {2} to reselect it; frank is never offered, so it stays on dave with no prompt and deals him 3. The -control file gives carol a range of 3.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$goat"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$d1",
+            "$d2"
+          ],
+          "object": "$goat"
+        }
+      },
+      "player": "dave",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Attackers": {
+          "attackers": {
+            "$goat": "$dave"
+          }
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "dave"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "frank"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}
