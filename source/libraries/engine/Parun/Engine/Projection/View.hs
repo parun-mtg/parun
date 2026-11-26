@@ -1174,6 +1174,12 @@ settleCopyException this own exception = case exception of
     Just mine -> case retained of
       RetainedCharacteristic.Colors -> [CopyException.SetColors ChangeMode.Replace (PC.colors mine)]
       RetainedCharacteristic.Supertypes -> [CopyException.RemoveSupertypes (Set.fromList [minBound .. maxBound]), CopyException.AddSupertypes (PC.supertypes mine)]
+      -- Implementation-defined: SetName holds one name, so a retained set of
+      -- any other size (CR 709.4a's pair, a face-down permanent's none)
+      -- settles to nothing.
+      RetainedCharacteristic.Name -> case Set.toList (PC.names mine) of
+        [name] -> [CopyException.SetName name]
+        _ -> []
     Nothing -> []
   CopyException.SetPowerToughness CopyPowerToughness.Own -> case own >>= \mine -> SetPowerToughness.MkSetPowerToughness <$> PC.power mine <*> PC.toughness mine of
     Just numbers -> [CopyException.SetPowerToughness (CopyPowerToughness.Numbers numbers)]
@@ -1556,10 +1562,14 @@ applyCopyException this own snapshot exception = case exception of
   -- reason: they are independent of the card types the copy changes. No
   -- characteristic-defining ability defines one, so CR 707.9d strips nothing.
   -- data/scenarios/bombardment-keeps-a-legendary-card-legendary.json proves it.
+  --
+  -- Names likewise (Sakashima the Impostor Avatar): no parun
+  -- characteristic-defining ability defines one.
   CopyException.DontCopy retained -> case own of
     Nothing -> snapshot
     Just mine -> case retained of
       RetainedCharacteristic.Supertypes -> snapshot {PC.supertypes = PC.supertypes mine}
+      RetainedCharacteristic.Name -> snapshot {PC.names = PC.names mine}
       RetainedCharacteristic.Colors ->
         snapshot
           { PC.colors = PC.colors mine,

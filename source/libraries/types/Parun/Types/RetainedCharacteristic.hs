@@ -8,4 +8,7 @@ data RetainedCharacteristic
   | -- | CR 707.9c / 205.4b: supertypes (Bombardment's ruling, "keep any
     -- supertypes they may have").
     Supertypes
+  | -- | CR 707.9c / 201.1: name ("except for its name", Sakashima the Impostor
+    -- Avatar).
+    Name
   deriving (Bounded, Enum, Eq, Ord, Show)

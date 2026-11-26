@@ -210,7 +210,7 @@ data CopyException ability
     --
     -- CR 707.9d's strip applies to colour: the arm clears devoid (CR 702.114a)
     -- out of the copied snapshot, exactly as SetColors does. No
-    -- characteristic-defining ability defines a supertype, so it has nothing to
-    -- take there.
+    -- characteristic-defining ability defines a supertype or a name, so it has
+    -- nothing to take there.
     DontCopy RetainedCharacteristic.RetainedCharacteristic
   deriving (Eq, Ord, Show)

@@ -19,6 +19,12 @@ spec s = Spec.describe s "Parun.Codec.RetainedCharacteristic" $ do
       RetainedCharacteristic.codec
       RetainedCharacteristic.Supertypes
       " \"Supertypes\" "
+  Spec.it s "Name" $
+    Common.assertCodec
+      s
+      RetainedCharacteristic.codec
+      RetainedCharacteristic.Name
+      " \"Name\" "
   Spec.it s "round trips every constructor" $ Common.assertEnumCodec s RetainedCharacteristic.codec
   Spec.it s "has a schema" $
     Common.assertHasSchema s RetainedCharacteristic.codec
