@@ -2601,6 +2601,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- most, against the mana value, in an attack trigger's slot counting your
     -- modified creatures: Unforgiving One. At most, against the mana value, in
     -- an enters trigger's slot counting your Vampires: Dominating Vampire.
+    --
+    -- Less than, against a count of +1/+1 counters (Filter.HasCounters), on an
+    -- ACTIVATED ability whose X CR 602.2b announces: Figure of Destiny Avatar.
     assertAuthors
       s
       registry
@@ -2625,6 +2628,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Lay Down Arms", 1),
         ("Dominating Vampire", 1),
         ("Tameshi, Reality Architect", 1),
+        ("Figure of Destiny Avatar", 1),
         ("Chthonian Nightmare", 1),
         ("Shelob, Dread Weaver", 1),
         ("Gelatinous Cube", 1),
@@ -3497,7 +3501,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         anywhere = ObjectRef.EachMatching (Filter.Type.HasCardType CardType.Creature)
         -- NESTED: the atom reached by descending an ordinary Filter, which the
         -- walk stops at.
-        nested = filterSlotsReadSingly (Filter.Type.HasCounters 1 kind)
+        nested = filterSlotsReadSingly (Filter.Type.HasCounters Comparison.AtLeast (Operand.Literal 1) kind)
         -- TOP-LEVEL: the same keyword, the same atom, handed back by
         -- counterKindFilters as its own (KeywordFramed, f) pair -- the route that
         -- used to disagree.

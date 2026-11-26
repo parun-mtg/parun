@@ -1,0 +1,79 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Variable"
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "amount": {
+                      "type": "InSlot",
+                      "value": "X"
+                    },
+                    "filter": {
+                      "type": "HasCounters",
+                      "value": {
+                        "comparison": "LessThan",
+                        "kind": {
+                          "type": "PlusOnePlusOne"
+                        },
+                        "operand": {
+                          "type": "EnclosingAmount"
+                        }
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Figure of Destiny Avatar",
+      "oracleText": "{X}: Put a +1/+1 counter on target creature with fewer than X +1/+1 counters on it.",
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 0,
+        "lifeModifier": 3
+      }
+    }
+  ]
+}
