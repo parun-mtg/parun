@@ -776,6 +776,13 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       TriggerCondition.codec
       TriggerCondition.DaytimeChanges
       " {\"type\":\"DaytimeChanges\"} "
+  -- Nullary, either direction.
+  Spec.it s "GameBegins" $
+    Common.assertCodec
+      s
+      TriggerCondition.codec
+      TriggerCondition.GameBegins
+      " {\"type\":\"GameBegins\"} "
   -- CR 901.8: the planeswalking ability's condition, PlayerBecomesMonarch's shape.
   Spec.it s "PlayerRollsPlaneswalker round-trips" $
     Common.assertCodec

@@ -706,6 +706,8 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
   -- CR 732.1a.
   Spec.it s "DaytimeChanged" $
     Common.assertCodec s GameEvent.codec (GameEvent.DaytimeChanged Daytime.Night) " {\"type\":\"DaytimeChanged\",\"value\":\"Night\"} "
+  Spec.it s "GameBegan" $
+    Common.assertCodec s GameEvent.codec GameEvent.GameBegan " {\"type\":\"GameBegan\"} "
   -- CR 701.57b.
   Spec.it s "CountedAct" $
     Common.assertCodec

@@ -1147,6 +1147,7 @@ anyTriggerReads event = case event of
   GameEvent.TurnedUpOffDeck {} -> True
   GameEvent.ChaosEnsued {} -> True
   GameEvent.DaytimeChanged {} -> True
+  GameEvent.GameBegan -> True
   GameEvent.ClassLevelSet {} -> True
   GameEvent.Plotted {} -> True
   GameEvent.BecameTapped {} -> True
@@ -2559,6 +2560,9 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     _ -> False
   -- CR 732.1a: either direction, never the game's first designation, which
   -- Parun.Engine.Daytime.becomes records no event for.
+  TriggerCondition.GameBegins -> case event of
+    GameEvent.GameBegan -> True
+    _ -> False
   TriggerCondition.DaytimeChanges -> case event of
     GameEvent.DaytimeChanged _ -> True
     _ -> False

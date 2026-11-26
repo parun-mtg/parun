@@ -500,6 +500,10 @@ data GameEvent
     -- gained. Recorded by Parun.Engine.Daytime.becomes, never for CR 732.1's
     -- first designation.
     DaytimeChanged Daytime.Daytime
+  | -- | A game began: recorded once its opening hands are kept, CR 103.6's
+    -- actions taken and CR 103.7's starting plane set, before CR 103.8's first
+    -- turn (Parun.Engine.Setup.beginGame).
+    GameBegan
   | -- | CR 717.2a: a permanent's class level BECAME something -- the level BEFORE
     -- and the level AFTER, CountersPut's shape and for CR 715.2b's reason, since
     -- "becomes level N" is a threshold crossing. Recorded by Parun.Engine.Resolve's

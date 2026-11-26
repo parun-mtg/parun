@@ -4193,6 +4193,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   TriggerCondition.Visit -> []
   TriggerCondition.ChaosEnsues -> []
   TriggerCondition.DaytimeChanges -> []
+  TriggerCondition.GameBegins -> []
   TriggerCondition.PlayerRollsPlaneswalker _ -> []
   TriggerCondition.TurnedUpOffDeck subject -> actingFilters subject
   TriggerCondition.SelfPlaneswalkedAwayFrom -> []

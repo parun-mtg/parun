@@ -724,6 +724,7 @@ event reader view logged = case LoggedEvent.event logged of
   GameEvent.ChaosEnsued _ -> said [Text.pack "Chaos ensues"]
   GameEvent.DaytimeChanged Daytime.Day -> said [Text.pack "Night becomes day"]
   GameEvent.DaytimeChanged Daytime.Night -> said [Text.pack "Day becomes night"]
+  GameEvent.GameBegan -> said [Text.pack "The game begins"]
   GameEvent.ClassLevelSet c -> said [name (ClassLevelChange.object c), Text.pack "becomes level", Text.pack (show (ClassLevel.unwrap (ClassLevelChange.after c)))]
   GameEvent.Plotted oid -> said [name oid, Text.pack "becomes plotted"]
   GameEvent.CoinFlipped c ->

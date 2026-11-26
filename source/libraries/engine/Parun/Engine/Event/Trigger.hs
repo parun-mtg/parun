@@ -705,6 +705,7 @@ movedOf event = case event of
   GameEvent.TurnedUpOffDeck _ -> Nothing
   GameEvent.ChaosEnsued _ -> Nothing
   GameEvent.DaytimeChanged _ -> Nothing
+  GameEvent.GameBegan -> Nothing
   GameEvent.ClassLevelSet _ -> Nothing
   GameEvent.Plotted _ -> Nothing
   GameEvent.BecameAttacked _ -> Nothing
@@ -876,6 +877,7 @@ participants event =
         GameEvent.TurnedUpOffDeck e -> ([TurnedUpOffDeck.card e], [TurnedUpOffDeck.player e])
         GameEvent.ChaosEnsued on -> (Maybe.maybeToList on, [])
         GameEvent.DaytimeChanged _ -> ([], [])
+        GameEvent.GameBegan -> ([], [])
         GameEvent.ClassLevelSet c -> one (ClassLevelChange.object c)
         GameEvent.Plotted oid -> one oid
         GameEvent.BecameTapped t -> one (BecameTapped.permanent t)
@@ -946,6 +948,7 @@ looksBack condition = case condition of
   TriggerCondition.Visit -> False
   TriggerCondition.ChaosEnsues -> False
   TriggerCondition.DaytimeChanges -> False
+  TriggerCondition.GameBegins -> False
   TriggerCondition.PlayerRollsPlaneswalker _ -> False
   TriggerCondition.TurnedUpOffDeck _ -> False
   -- CR 603.10g: on the rule's list of exceptions, though no zone change of a
@@ -1171,6 +1174,7 @@ batchScoped condition = case condition of
   TriggerCondition.Visit -> False
   TriggerCondition.ChaosEnsues -> False
   TriggerCondition.DaytimeChanges -> False
+  TriggerCondition.GameBegins -> False
   TriggerCondition.PlayerRollsPlaneswalker _ -> False
   TriggerCondition.TurnedUpOffDeck _ -> False
   TriggerCondition.SelfPlaneswalkedAwayFrom -> False
@@ -1631,6 +1635,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.TurnedUpOffDeck _ -> Map.empty
         GameEvent.ChaosEnsued _ -> Map.empty
         GameEvent.DaytimeChanged _ -> Map.empty
+        GameEvent.GameBegan -> Map.empty
         GameEvent.ClassLevelSet _ -> Map.empty
         GameEvent.Plotted _ -> Map.empty
         GameEvent.PermanentActed _ -> Map.empty
@@ -2027,6 +2032,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.TurnedUpOffDeck _ -> Map.empty
         GameEvent.ChaosEnsued _ -> Map.empty
         GameEvent.DaytimeChanged _ -> Map.empty
+        GameEvent.GameBegan -> Map.empty
         GameEvent.ClassLevelSet _ -> Map.empty
         GameEvent.Plotted _ -> Map.empty
         GameEvent.BecameAttacked _ -> Map.empty
@@ -2264,6 +2270,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.TurnedUpOffDeck _ -> Map.empty
         GameEvent.ChaosEnsued _ -> Map.empty
         GameEvent.DaytimeChanged _ -> Map.empty
+        GameEvent.GameBegan -> Map.empty
         GameEvent.ClassLevelSet _ -> Map.empty
         GameEvent.Plotted _ -> Map.empty
         GameEvent.BecameAttacked _ -> Map.empty
@@ -2388,6 +2395,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.TurnedUpOffDeck _ -> Map.empty
         GameEvent.ChaosEnsued _ -> Map.empty
         GameEvent.DaytimeChanged _ -> Map.empty
+        GameEvent.GameBegan -> Map.empty
         GameEvent.ClassLevelSet _ -> Map.empty
         GameEvent.Plotted _ -> Map.empty
         GameEvent.BecameAttacked _ -> Map.empty
@@ -2978,6 +2986,9 @@ zonesTriggeredFrom cond =
         -- CR 113.6's default: Firmament Sage is a creature. Sunstreak Phoenix
         -- functions from the graveyard by CR 113.6m instead.
         TriggerCondition.DaytimeChanges -> battlefield
+        -- CR 113.6's default; a vanguard's reaches the command zone by CR 902.7
+        -- (Vanguard.functionsFromCommandZone).
+        TriggerCondition.GameBegins -> battlefield
         -- CR 904.9 / 312.5: a scheme's set-in-motion ability and a phenomenon's
         -- encounter ability trigger from the card face up in the command zone.
         TriggerCondition.TurnedUpOffDeck _ -> Set.singleton Zone.Command
@@ -3349,6 +3360,7 @@ stateTriggersOn gs
             TriggerCondition.Visit -> False
             TriggerCondition.ChaosEnsues -> False
             TriggerCondition.DaytimeChanges -> False
+            TriggerCondition.GameBegins -> False
             TriggerCondition.PlayerRollsPlaneswalker _ -> False
             TriggerCondition.TurnedUpOffDeck _ -> False
             TriggerCondition.SelfPlaneswalkedAwayFrom -> False
@@ -4227,6 +4239,7 @@ resnapshot gs without event =
         GameEvent.TurnedUpOffDeck {} -> Just event
         GameEvent.ChaosEnsued {} -> Just event
         GameEvent.DaytimeChanged {} -> Just event
+        GameEvent.GameBegan -> Just event
         GameEvent.ClassLevelSet {} -> Just event
         GameEvent.Plotted {} -> Just event
         GameEvent.BecameTapped {} -> Just event

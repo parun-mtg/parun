@@ -1669,6 +1669,7 @@ eventBindingSlots cond = case cond of
   TriggerCondition.Visit -> Set.empty
   TriggerCondition.ChaosEnsues -> Set.empty
   TriggerCondition.DaytimeChanges -> Set.empty
+  TriggerCondition.GameBegins -> Set.empty
   TriggerCondition.PlayerRollsPlaneswalker _ -> Set.empty
   -- CR 701.32b's "that scheme" under a Matching subject, guaranteed given a
   -- match; a Self one names the bearer, CR 113.7a's source slot.
