@@ -1,0 +1,99 @@
+{
+  "board": {
+    "active": "carl",
+    "seats": [
+      {
+        "battlefield": [],
+        "command": [
+          {
+            "card": "Karona, False God Avatar",
+            "label": "karona"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Cabal Evangel",
+            "label": "evangel"
+          },
+          {
+            "card": "Forest",
+            "label": "forest"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "name": "carl"
+      }
+    ],
+    "step": "EndStep",
+    "turn": 1
+  },
+  "description": "CR 701.12a Karona, False God Avatar exchanges nothing when its controller controls no permanent",
+  "note": "Bob's pick is still drawn, but alice's side is empty, so bob's evangel stays his.",
+  "timeline": [
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RandomObject",
+          "with": "$evangel"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": "bob",
+          "object": "$evangel",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}
