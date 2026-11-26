@@ -309,17 +309,28 @@ instance Exception.Exception Leaving
 
 -- | Each prompt answered once, but for a seat leaving, which `catchLeaving`
 -- catches (MkLeaving in IO): asked again the main game's concession question
--- asked of it just before (Engine.priorityDecision asks it right before the
--- seat's priority), the game standing still since, so leaving then is
--- leaving as it was asked. A seat leaving with no such question just before
--- stops play.
+-- asked of it just before (Engine.priorityDecision asks every still-playing
+-- seat's right before each priority), the game standing still since, so
+-- leaving then is leaving as it was asked. A seat leaving with no such
+-- question just before stops play.
 rewinding :: (Monad m) => (forall b. m b -> (PlayerId.PlayerId -> m b) -> m b) -> Driver.Fold (Game.Play m)
 rewinding catchLeaving = Program.foldProgramResuming conceding (playCatching catchLeaving) (const (Game.stop (Text.pack "a player left the game at no concession question")))
-  where
-    conceding :: Asked.Asked GameState.GameState r -> Maybe PlayerId.PlayerId
-    conceding asked = case Asked.prompt asked of
-      Prompt.Concede pid | null (Asked.enclosing asked) -> Just pid
-      _ -> Nothing
+
+-- | The seat a main game's concession question asks, which 'rewinding' can
+-- ask again.
+conceding :: Asked.Asked g r -> Maybe PlayerId.PlayerId
+conceding asked = case Asked.prompt asked of
+  Prompt.Concede pid | null (Asked.enclosing asked) -> Just pid
+  _ -> Nothing
+
+-- | `run` moved on by the prompt `asked`: the seats asked the main game's
+-- concession questions one after another, in order, up to the prompt
+-- pending, and whether one other than those follows them. Leaving at that
+-- prompt, a seat is asked its own again ('rewinding'), and each after it.
+concessionRun :: Asked.Asked g r -> ([PlayerId.PlayerId], Bool) -> ([PlayerId.PlayerId], Bool)
+concessionRun asked (run, closed) = case conceding asked of
+  Just pid -> (if closed then [pid] else run <> [pid], False)
+  Nothing -> (if closed then [] else run, True)
 
 -- | A seat leaving caught in play, the generator as the play started.
 playCatching :: (forall c. m c -> (PlayerId.PlayerId -> m c) -> m c) -> Game.Play m b -> (PlayerId.PlayerId -> Game.Play m b) -> Game.Play m b

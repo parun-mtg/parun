@@ -785,8 +785,8 @@ payableCountedAtGiven modes pcs sources x extra spending narrowing spell pid oid
 --
 -- Inert on today's pool: this map is built only for a cost whose criterion
 -- names a slot (Cost.readsBoundSlot), and no card in `data/cards/` has both
--- that and a target slot bounded by X. Filter.Measures' EnclosingAmount
--- operand is what reads boundUnannounced, so its cards are the whole list
+-- that and a target slot bounded by X. An EnclosingAmount operand (Filter.Measures',
+-- Filter.HasCounters') is what reads boundUnannounced, so its cards are the whole list
 -- (Spawnbroker and Nihiloor, its power comparisons, bound triggered abilities'
 -- slots); grepped
 -- over data/cards/ on 2026-09-14 the SPELLS among them are Stir the Grave,

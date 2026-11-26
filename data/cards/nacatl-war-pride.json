@@ -110,6 +110,13 @@
                       {
                         "type": "CreateCopy",
                         "value": {
+                          "original": {
+                            "type": "OfObject",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "self"
+                            }
+                          },
                           "quantity": {
                             "type": "Count",
                             "value": {
@@ -140,10 +147,6 @@
                                 }
                               }
                             }
-                          },
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "self"
                           },
                           "riders": {
                             "attacking": {

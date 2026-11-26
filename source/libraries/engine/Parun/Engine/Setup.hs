@@ -623,6 +623,18 @@ newGame perform matchup = do
   -- after every opening hand is kept (CR 901.5); in Grand Melee each player
   -- with a turn marker does (CR 901.14a).
   Planechase.setStartingPlanes
+  beginGame
+
+-- The game begins, every CR 103 step before CR 103.8's first turn behind it:
+-- the event a vanguard's "at the beginning of the game" triggers on
+-- (TriggerCondition.GameBegins), put on the stack at the first priority, in the
+-- first turn's upkeep (CR 603.3). Shared by a new game, a restart (CR 728.2) and
+-- a subgame (CR 730.2), each of which begins a game.
+--
+-- Implementation-defined: the CR has no rule placing the beginning of the game
+-- among CR 103's steps; after the last of them, CR 103.7's.
+beginGame :: Game ()
+beginGame = State.modify' (Event.recordEvent GameEvent.GameBegan)
 
 -- CR 713.8 / CR 108.2: a melded permanent is ONE object represented by TWO
 -- cards, so a funnel that carries cards over -- CR 728.2's restart and CR
@@ -874,6 +886,7 @@ startGameFromCards perform exemptions = do
   -- plane after the opening hands (CR 901.14a: in Grand Melee, each marker
   -- holder).
   Planechase.setStartingPlanes
+  beginGame
 
 -- CR 315.2 / 905.4: in a game rebuilt from cards (CR 728.1, 730.2), this player
 -- may put any number of conspiracy cards from their sideboard into the command

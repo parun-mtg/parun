@@ -257,7 +257,7 @@ codec cardCodec abilityCodec =
           Arm.payload "DecreaseSpeed" SpeedDecrease.codec Effect.DecreaseSpeed (\x -> case x of Effect.DecreaseSpeed y -> Just y; _ -> Nothing),
           Arm.payload "Create" createCodec Effect.Create (\x -> case x of Effect.Create y -> Just y; _ -> Nothing),
           Arm.payload "Conjure" conjureCodec Effect.Conjure (\x -> case x of Effect.Conjure y -> Just y; _ -> Nothing),
-          Arm.payload "CreateCopy" (CreateCopy.codec abilityCodec) Effect.CreateCopy (\x -> case x of Effect.CreateCopy y -> Just y; _ -> Nothing),
+          Arm.payload "CreateCopy" (CreateCopy.codec cardCodec abilityCodec) Effect.CreateCopy (\x -> case x of Effect.CreateCopy y -> Just y; _ -> Nothing),
           Arm.payload "CopyStackObject" (CopyStackObject.codec abilityCodec) Effect.CopyStackObject (\x -> case x of Effect.CopyStackObject y -> Just y; _ -> Nothing),
           Arm.payload "BecomeCopy" (BecomeCopy.codec cardCodec abilityCodec) Effect.BecomeCopy (\x -> case x of Effect.BecomeCopy y -> Just y; _ -> Nothing),
           Arm.payload "Replace" replaceCodec Effect.Replace (\x -> case x of Effect.Replace y -> Just y; _ -> Nothing),

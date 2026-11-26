@@ -244,7 +244,8 @@ data Channel m = MkChannel
 
 -- | The host's side of a guest's seat (Protocol.Exchange): each request sent
 -- with the time banks `clocks` reads then, answered by the reply that comes
--- back, or by `conceded` where the guest concedes instead, any other
+-- back, or by what `conceded` gives where the guest concedes, if anything,
+-- the reply that follows else, any other
 -- message (a Ready toggled
 -- as the game began, a rejoining guest's Hello) skipped. Once the channel
 -- closes, `rejoin` connects it anew and the guest is sent `places`, the
@@ -260,7 +261,7 @@ remote rejoin places seen clocks conceded channel request = asked
       heard <- receive channel
       case heard of
         Just (MkAnswer reply) -> pure (Just (Right reply))
-        Just MkConcede -> conceded
+        Just MkConcede -> conceded >>= maybe replied (pure . Just)
         Just _ -> replied
         Nothing -> do
           back <- rejoin

@@ -4,8 +4,8 @@ module Parun.Codec.CreateCopy where
 
 import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.CopyException as CopyException
+import qualified Parun.Codec.CopyOriginal as CopyOriginal
 import qualified Parun.Codec.EntryRiders as EntryRiders
-import qualified Parun.Codec.ObjectRef as ObjectRef
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.SlotName as SlotName
@@ -18,7 +18,7 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 
 -- | The count is ELIDED when it is one, so every card that mints a single copy
--- writes the ref alone. Previously that was two whole payload SHAPES -- a bare
+-- writes the original alone. Previously that was two whole payload SHAPES -- a bare
 -- ObjectRef or a [quantity, ref] array -- told apart by JSON type; as a
 -- defaulted key there is one shape with an optional field (#1305).
 --
@@ -30,10 +30,10 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 -- default is no riders at all, which is every copy token in the pool but
 -- Littjara Mirrorlake's. So are the CR 707.9 exceptions, and for AsCopy's
 -- reason: the "except ..." clause is absent from most printings.
-codec :: (Typeable.Typeable ability, Eq ability) => Codec.Codec ability -> Codec.Codec (CreateCopy.CreateCopy ability)
-codec abilityCodec = Fields.object $ do
+codec :: (Typeable.Typeable card, Typeable.Typeable ability, Eq ability) => Codec.Codec card -> Codec.Codec ability -> Codec.Codec (CreateCopy.CreateCopy card ability)
+codec cardCodec abilityCodec = Fields.object $ do
   quantity <- Fields.defaulted "quantity" CreateCopy.defaultQuantity Quantity.codec CreateCopy.quantity
-  ref <- Fields.required "ref" ObjectRef.codec CreateCopy.ref
+  original <- Fields.required "original" (CopyOriginal.codec cardCodec) CreateCopy.original
   riders <- Fields.defaulted "riders" EntryRiders.defaultValue (EntryRiders.codec abilityCodec) CreateCopy.riders
   slot <- Fields.defaulted "slot" Nothing (Common.maybe SlotName.codec) CreateCopy.slot
   exceptions <- Fields.defaulted "exceptions" [] (Common.list (CopyException.codec abilityCodec)) CreateCopy.exceptions
@@ -43,7 +43,7 @@ codec abilityCodec = Fields.object $ do
   pure
     CreateCopy.MkCreateCopy
       { CreateCopy.quantity = quantity,
-        CreateCopy.ref = ref,
+        CreateCopy.original = original,
         CreateCopy.riders = riders,
         CreateCopy.slot = slot,
         CreateCopy.exceptions = exceptions,

@@ -276,6 +276,9 @@ data TriggerCondition
   | -- | CR 732.1a: "whenever day becomes night or night becomes day" (Firmament
     -- Sage), against a GameEvent.DaytimeChanged.
     DaytimeChanges
+  | -- | "At the beginning of the game" (Seshiro the Anointed Avatar), against a
+    -- GameEvent.GameBegan.
+    GameBegins
   | -- | CR 901.8: "whenever you roll the Planeswalker symbol on the planar die".
     PlayerRollsPlaneswalker PlayerRelation.PlayerRelation
   | -- | CR 904.9 / 312.5 / 701.31d: "When you set this scheme in motion", "When

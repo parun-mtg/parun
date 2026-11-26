@@ -1020,12 +1020,12 @@ remember shell seats played = do
 
 -- | The seats of a game played from other browsers (Parun.Web.Link): each
 -- asked over its channel (remotes), heard while another seat decides
--- (heeds), told whose decision the game waits on (decides) and how the
+-- over the channel numbered so (heeds, Browser.hearing), told whose decision the game waits on (decides) and how the
 -- game ended (tellAll); their channels closed (closeAll); and the seats
 -- whose channel is down (downSeats).
 data Guests = MkGuests
   { remotes :: Map.Map PlayerId.PlayerId (IO Ending.Seen -> IO Link.Banks -> IO (Maybe (Either Text.Text R.Reply)) -> Protocol.Exchange IO),
-    heeds :: Map.Map PlayerId.PlayerId (IO (Maybe (Either Text.Text R.Reply)) -> Protocol.Exchange IO -> Protocol.Exchange IO),
+    heeds :: Map.Map PlayerId.PlayerId (Int, IO Bool),
     decides :: PlayerId.PlayerId -> GameState.GameState -> Natural -> Link.Banks -> IO (),
     tellAll :: (PlayerId.PlayerId -> Ending.Ending) -> IO (),
     closeAll :: IO (),
@@ -1047,25 +1047,16 @@ guestsOver shell seated resumed = do
         Monad.when back (IORef.modifyIORef' down (Set.delete seat))
         pure back
       remote seat (n, placesOf) seen clocks conceded request = placesOf >>= \shown -> Link.remote (rejoinSeat seat n) shown seen clocks conceded (channelOf seat n) request
-      -- What a guest says while another seat decides is heard at once, its
-      -- concession given to `conceded`, anything else dropped, as the
-      -- guest's exchange would (Link.remote), and the decision asked
-      -- again; not while its connection is down.
-      heedOf seat n conceded ask request = do
+      -- What a guest says while another seat decides, read: whether it
+      -- conceded, anything else dropped, as the guest's exchange would
+      -- (Link.remote); nothing read while its connection is down.
+      heedOf seat n = do
         closed <- Set.member seat <$> IORef.readIORef down
-        if closed
-          then ask request
-          else do
-            answered <- Browser.heeding (page shell) n (ask request)
-            case answered of
-              Just reply -> pure reply
-              Nothing -> do
-                said <- Link.receive (channelOf seat n)
-                if said == Just Link.MkConcede then conceded else heedOf seat n conceded ask request
+        if closed then pure False else (== Just Link.MkConcede) <$> Link.receive (channelOf seat n)
   pure
     MkGuests
       { remotes = Map.mapWithKey remote seated,
-        heeds = Map.mapWithKey heedOf linkOf,
+        heeds = Map.mapWithKey (\seat n -> (n, heedOf seat n)) linkOf,
         -- Each guest is told whose decision the game waits on (Link.telling).
         decides = \seat gs depth clocks -> IORef.readIORef told >>= Link.telling (Map.mapWithKey channelOf linkOf) seat gs depth clocks >>= IORef.writeIORef told,
         tellAll = \endingFor -> Monad.forM_ (Map.toList linkOf) $ \(seat, n) -> Link.send (channelOf seat n) (Link.MkEnd (endingFor seat)),

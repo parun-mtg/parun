@@ -77,9 +77,12 @@
                 {
                   "type": "HasCounters",
                   "value": {
-                    "atLeast": 3,
                     "kind": {
                       "type": "PlusOnePlusOne"
+                    },
+                    "operand": {
+                      "type": "Literal",
+                      "value": 3
                     }
                   }
                 }

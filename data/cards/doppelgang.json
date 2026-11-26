@@ -41,13 +41,16 @@
                         {
                           "type": "CreateCopy",
                           "value": {
+                            "original": {
+                              "type": "OfObject",
+                              "value": {
+                                "type": "InSlot",
+                                "value": "permanent"
+                              }
+                            },
                             "quantity": {
                               "type": "InSlot",
                               "value": "X"
-                            },
-                            "ref": {
-                              "type": "InSlot",
-                              "value": "permanent"
                             },
                             "slot": "token"
                           }

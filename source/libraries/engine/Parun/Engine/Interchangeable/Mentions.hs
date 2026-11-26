@@ -316,6 +316,7 @@ filterNames :: (Monoid r) => Asking r -> Filter.Filter keyword -> r
 filterNames asking criterion = case criterion of
   -- The operand may read the enclosing amount as well as a slot.
   Filter.Measures measures -> measuresNames asking measures
+  Filter.HasCounters _comparison operand _kind -> operandNames asking operand
   Filter.IsTarget -> slotNames asking Binding.Engine.announcedTargets
   Filter.DeclaredThisTurn role -> keyed asking <> history asking (case role of DeclaredRole.Attacked _ -> HistoryRead.Attacks; DeclaredRole.Blocked -> HistoryRead.Blockers)
   Filter.CouldAttackThisTurn -> keyed asking

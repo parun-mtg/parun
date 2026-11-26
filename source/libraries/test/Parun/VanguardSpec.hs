@@ -9,10 +9,13 @@
 -- Vanguard.functionsFromCommandZone: Parun.Engine.Projection's static and
 -- replacement ones and Parun.Engine.CombatRestriction.inForce. Parun.Engine.Event's
 -- triggered one, Parun.Engine.Activate's activated one and
--- Parun.Engine.BlockPermission's are scenarios under data/scenarios/vanguard.
+-- Parun.Engine.BlockPermission's are scenarios under data/scenarios/vanguard. A
+-- game-start trigger (Setup.beginGame) needs a game played from its decks, which
+-- no scenario board is, so it is here.
 module Parun.VanguardSpec where
 
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
@@ -39,9 +42,11 @@ import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Facing as Facing
+import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LastKnown as LastKnown
+import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MulliganOffer as MulliganOffer
 import qualified Parun.Types.Object as Object
@@ -53,6 +58,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Snapshots as Snapshots
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
@@ -129,6 +135,10 @@ declaringAttackers gs =
             TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]}
           }
     }
+
+-- Whether the game in `gs`'s log began, the event Setup.beginGame records.
+begins :: GameState.GameState -> Bool
+begins gs = any ((== GameEvent.GameBegan) . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Vanguard" $ do
@@ -291,6 +301,7 @@ spec s registry = Spec.describe s "Vanguard" $ do
     Spec.assertEqWith s "still in the command zone" (commandNames restarted) [CardName.MkCardName (Text.pack "Selenia")]
     Spec.assertEqWith s "and CR 902.4's twenty-seven is dealt out again" (S.lifeOf S.alice restarted) (Just 27)
     Spec.assertEqWith s "her opening hand is eight again" (handSize restarted) 8
+    Spec.assertBool s (begins restarted) "and the new game begins, for an at-the-beginning-of-the-game trigger"
 
   -- CR 730.2b and CR 730.5b: the vanguard card crosses into a subgame and comes
   -- back out of it, which is the pair CR 730.2c and CR 730.5c make for a
@@ -303,4 +314,41 @@ spec s registry = Spec.describe s "Vanguard" $ do
         back = Setup.funnelBack sub parent
     Spec.assertEqWith s "the subgame's command zone holds it" (commandNames sub) [CardName.MkCardName (Text.pack "Selenia")]
     Spec.assertEqWith s "and CR 902.4 applies inside the subgame too" (S.lifeOf S.alice sub) (Just 27)
+    Spec.assertBool s (begins sub) "and the subgame begins, for an at-the-beginning-of-the-game trigger"
     Spec.assertEqWith s "the main game has it back when the subgame ends" (commandNames back) [CardName.MkCardName (Text.pack "Selenia")]
+
+  -- "At the beginning of the game" (Setup.beginGame), a trigger put on the
+  -- stack at the game's first priority, in the first turn's upkeep (CR 603.3).
+  -- Seshiro's choice is then what its CR 902.7 static reads: alice's creature
+  -- cards in her hand and library are the chosen type, and bob's, the same card
+  -- under no vanguard, are not.
+  Spec.it s "a vanguard's at-the-beginning-of-the-game ability chooses Seshiro's creature type" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    seshiro <- S.printingOf s registry "Seshiro the Anointed Avatar"
+    let answer :: Prompt.Prompt r -> r
+        answer p = case p of
+          Prompt.ChooseSubtype {} -> Subtype.Wizard
+          _ -> keepAnswer p
+        begun = S.opening 1 1 answer ((S.alice, deckOf bears (Just seshiro)) NonEmpty.:| [(S.bob, deckOf bears Nothing)])
+        wizards pid zone = filter (Set.member Subtype.Wizard . (`Projection.subtypesOf` begun)) (Game.zoneMembers zone pid begun)
+    Spec.assertEqWith s "every card in alice's hand is a Wizard" (length (wizards S.alice Zone.Hand)) (handSize begun)
+    Spec.assertEqWith s "and every card in her library" (wizards S.alice Zone.Library) (Game.zoneMembers Zone.Library S.alice begun)
+    Spec.assertEqWith s "and none of bob's" (wizards S.bob Zone.Hand <> wizards S.bob Zone.Library) []
+    Spec.assertBool s (not (null (Game.zoneMembers Zone.Hand S.bob begun))) "bob holds Grizzly Bears to be Wizards"
+
+  -- Ink-Eyes's game-start trigger targets an opponent and discards the nonland
+  -- card alice chooses from bob's hand, half Mountains, half Grizzly Bears; a
+  -- hand of Mountains alone offers nothing to choose.
+  Spec.it s "a vanguard's at-the-beginning-of-the-game ability discards Ink-Eyes's chosen nonland card" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    inkEyes <- S.printingOf s registry "Ink-Eyes, Servant of Oni Avatar"
+    let mixed = (deckOf mountain Nothing) {Deck.cards = Map.fromList [(mountain, 15), (bears, 15)]}
+        beganWith deck = S.opening 1 1 keepAnswer ((S.alice, deckOf mountain (Just inkEyes)) NonEmpty.:| [(S.bob, deck)])
+        begun = beganWith mixed
+        lands = beganWith (deckOf mountain Nothing)
+        namesIn pid zone = fmap (\oid -> fmap S.nameOf (Game.cardOf oid begun)) (Game.zoneMembers zone pid begun)
+    Spec.assertEqWith s "bob discarded one Grizzly Bears" (namesIn S.bob Zone.Graveyard) [Just (CardName.MkCardName (Text.pack "Grizzly Bears"))]
+    Spec.assertBool s (elem (Just (CardName.MkCardName (Text.pack "Mountain"))) (namesIn S.bob Zone.Hand)) "and kept a Mountain, a land the choice could not take"
+    Spec.assertEqWith s "alice, not an opponent, discarded nothing" (namesIn S.alice Zone.Graveyard) []
+    Spec.assertEqWith s "a hand of Mountains alone keeps every card" (Game.zoneMembers Zone.Graveyard S.bob lands) []

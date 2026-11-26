@@ -94,9 +94,12 @@
                                 ]
                               }
                             ],
-                            "ref": {
-                              "type": "InSlot",
-                              "value": "creature"
+                            "original": {
+                              "type": "OfObject",
+                              "value": {
+                                "type": "InSlot",
+                                "value": "creature"
+                              }
                             },
                             "slot": "token"
                           }

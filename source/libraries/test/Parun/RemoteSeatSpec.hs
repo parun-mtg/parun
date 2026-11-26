@@ -204,6 +204,44 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     Spec.assertEqWith s "no seat kept as out of time, so none stops the game" (Clock.out after) Nothing
     Spec.assertEqWith s "Player 2's time spent" (Map.lookup S.bob (Clock.left after)) (Just 0)
 
+  Spec.it s "CR 104.3a / 800.4 a seat conceding a game of three while another holds priority leaves it at once, the holder asked again, the others playing on to a result" $ do
+    matchup <- BotSpec.bears s registry
+    let decks = NonEmpty.toList matchup <> [(S.carol, snd (NonEmpty.head matchup))]
+        options = Lobby.playOptions Map.empty 3 S.alice (Set.fromList [S.bob, S.carol])
+        seatOf = Question.seat . Request.question
+        kindOf = Text.unpack . Question.kind . Request.question
+        turnOf = maybe 0 PlayerView.turn . Request.view
+        -- Player 3 concedes while Player 1 decides at its priority past turn
+        -- 1, that exchange given up (Command.MkLeaving), and answers its
+        -- concession question, asked again (Command.rewinding), yes; every
+        -- request after is logged.
+        exchange request = do
+          (gone, logged) <- Trans.lift State.get
+          case gone of
+            Nothing
+              | seatOf request == S.alice,
+                Question.Web.atPriority request,
+                turnOf request > 1 -> do
+                  Trans.lift (State.put (Just (turnOf request), logged))
+                  Except.throwE S.carol
+            Just _
+              | seatOf request == S.carol,
+                kindOf request == "Concede" ->
+                  Trans.lift (State.put (gone, logged <> [(seatOf request, kindOf request, turnOf request)])) >> pure (Just (Right (R.Text (Text.pack "Concedes"))))
+            _ -> do
+              Monad.when (Maybe.isJust gone) (Trans.lift (State.put (gone, logged <> [(seatOf request, kindOf request, turnOf request)])))
+              pure (Just (Right (answer request)))
+        (outcome, (left, after)) = State.runState (Except.runExceptT (Game.run (Command.rewinding Except.catchE) (S.fixtureRegistry []) GameSettings.plain Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) exchange (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept (pure ()) Search.unhurried options Search.known n) | n <- [1, 2, 3]]) (S.seeded 1) Map.empty (NonEmpty.fromList decks))) (Nothing, [])
+        actions = [(seat, turn) | (seat, "ChooseAction", turn) <- after]
+    case outcome of
+      Right (Right (Result.Won winner, gs)) -> do
+        Spec.assertBool s (winner /= S.carol) "a seat still playing wins"
+        Spec.assertEqWith s "Player 3 left the game, conceding" (fmap Player.status (Map.lookup S.carol (GameState.players gs))) (Just (Status.Departed Departure.Conceded))
+      _ -> Spec.assertBool s False ("the game plays on to a winner: " <> show (fmap (fmap fst) outcome))
+    Spec.assertEqWith s "Player 3 is asked its concession question again, and nothing after" [(seat, kind) | (seat, kind, _) <- after, seat == S.carol] [(S.carol, "Concede")]
+    Spec.assertEqWith s "Player 1's priority is asked again, in the turn Player 3 left in" (take 1 actions) (fmap ((,) S.alice) (Maybe.maybeToList left))
+    Spec.assertBool s (S.bob `elem` fmap fst actions) "Player 2 plays on"
+
   Spec.it s "a guest whose connection drops mid-game rejoins, is sent the match-up, its seat and the request again, and the game finishes" $ do
     matchup <- BotSpec.bears s registry
     (outcome, wire) <- State.runStateT (hosted [S.bob] matchup) (MkWire Map.empty Map.empty Map.empty (Map.singleton S.bob 40) 0 [] Map.empty Map.empty [] Map.empty Map.empty Map.empty)

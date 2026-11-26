@@ -55,7 +55,6 @@ import qualified Parun.Types.LoyaltyClause as LoyaltyClause
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.ManaNarrowing as ManaNarrowing
 import qualified Parun.Types.ManaSpending as ManaSpending
-import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Modal as Modal.Type
 import qualified Parun.Types.Mode as Mode
@@ -674,17 +673,18 @@ criterionReadsX cost = not (all (null . CostAmount.Engine.criterionReadsOfX) (Co
 -- Cast.gateXs extends it with a spell's own climb.
 gateXs :: Maybe Natural -> Natural -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> [Natural]
 gateXs mCeiling floorX pid srcId gs cost =
-  let compared = fmap Measures.measure (concatMap CostAmount.Engine.criterionReadsOfX (Cost.Type.components cost))
+  let compared = fmap (Filter.measureOf . Measures.measure) (concatMap CostAmount.Engine.criterionReadsOfX (Cost.Type.components cost))
       totals = [x | x <- Cost.totallingXs pid srcId gs cost, x > floorX, all (x <=) mCeiling]
    in floorX : Set.toAscList (Set.fromList (breakpointXs [0, 1] mCeiling floorX gs compared <> totals))
 
 -- The values of X, past the floor and up to CR 101.1's ceiling, lying at one of
--- `offsets` from a compared measure of some object: where an X-reading
--- comparison can change its answer. gateXs' and boundXs' one enumeration.
-breakpointXs :: [Integer] -> Maybe Natural -> Natural -> GameState -> [Measure.Measure] -> [Natural]
+-- `offsets` from a compared number of some object, each read off its view:
+-- where an X-reading comparison can change its answer. gateXs' and boundXs' one
+-- enumeration.
+breakpointXs :: [Integer] -> Maybe Natural -> Natural -> GameState -> [Filter.View -> Maybe Integer] -> [Natural]
 breakpointXs offsets mCeiling floorX gs compared =
   let viewOf = Projection.viewsOf gs
-      values = [v | measure <- compared, oid <- Map.keys (GameState.objects gs), Just v <- [Filter.measureOf measure (viewOf oid)]]
+      values = [v | readOf <- compared, oid <- Map.keys (GameState.objects gs), Just v <- [readOf (viewOf oid)]]
    in [n | v <- values, offset <- offsets, Just n <- [Integer.toNatural (v + offset)], n > floorX, all (n <=) mCeiling]
 
 -- Does a target slot's computed bound (TargetSlot.amount) read CR 601.2b's X
@@ -695,14 +695,14 @@ boundReadsX = any (any (maybe False (Set.member Binding.variableX . QuantitySlot
 
 -- The values of X activatableGiven asks an activation at, and Cast.fillableXs
 -- a spell: the cost's own (`costXs`, either module's gateXs), and where a target's bound reads the X (boundReadsX),
--- also every X at which that bound meets a compared measure of some object
+-- also every X at which that bound meets a compared number of some object
 -- (Filter.enclosingReads): each such value, the one before it and the one
 -- after it, which reach the pool's bounds of X, X plus 1 and less than X. In
 -- ascending order; costXs holds the floor.
 boundXs :: Maybe Natural -> Natural -> Modal.Type.Modal Card.Card (GrantedAbility.GrantedAbility Card.Card) -> GameState -> [Natural] -> [Natural]
 boundXs mCeiling floorX modal gs costXs
   | boundReadsX modal =
-      let compared = fmap Measures.measure (concatMap (foldMap Filter.enclosingReads . TargetSlot.filter) (concatMap (Map.elems . Mode.targetSlots) (Modal.Type.modes modal)))
+      let compared = concatMap (foldMap Filter.enclosingReads . TargetSlot.filter) (concatMap (Map.elems . Mode.targetSlots) (Modal.Type.modes modal))
        in Set.toAscList (Set.fromList (costXs <> breakpointXs [-1, 0, 1] mCeiling floorX gs compared))
   | otherwise = costXs
 

@@ -200,9 +200,9 @@ spec s registry = Spec.describe s "GrandMelee" $ do
         conceding gs = fst (State.execState (Engine.runGame recordAsked gs Engine.priorityLoop) ([], []))
     Spec.assertEqWith s "the empty stack" (asked staged) (seats [0, 1, 7])
     Spec.assertEqWith s "CR 807.5a Shock on the stack" (asked cast) (seats [0, 1, 2, 7, 0, 1, 7])
-    -- CR 104.3a: a player without priority is still asked whether they
-    -- concede, as the window opens, and a player with priority as they get it.
-    Spec.assertEqWith s "CR 104.3a the others are asked to concede" (conceding cast) (seats [3, 4, 5, 6] <> asked cast)
+    -- CR 104.3a: every player is asked whether they concede before each
+    -- priority decision, the holder first, those without priority among them.
+    Spec.assertEqWith s "CR 104.3a the others are asked to concede" (conceding cast) (foldMap (\p -> p : filter (/= p) (seats [0 .. 7])) (asked cast))
 
   -- CR 807.4b / 807.5: in both turns' upkeeps, the questions go round the
   -- markers one priority decision at a time: seat 0's stack asks 0, 1 and 7,

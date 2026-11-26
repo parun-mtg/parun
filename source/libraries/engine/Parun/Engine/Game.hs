@@ -3653,6 +3653,7 @@ castOf event = case event of
   GameEvent.TurnedUpOffDeck _ -> Nothing
   GameEvent.ChaosEnsued _ -> Nothing
   GameEvent.DaytimeChanged _ -> Nothing
+  GameEvent.GameBegan -> Nothing
   GameEvent.ClassLevelSet _ -> Nothing
   GameEvent.Plotted _ -> Nothing
   GameEvent.BecameAttacked _ -> Nothing
@@ -3861,6 +3862,7 @@ abilityResolved event = case event of
   GameEvent.TurnedUpOffDeck _ -> Nothing
   GameEvent.ChaosEnsued _ -> Nothing
   GameEvent.DaytimeChanged _ -> Nothing
+  GameEvent.GameBegan -> Nothing
   GameEvent.ClassLevelSet _ -> Nothing
   GameEvent.Plotted _ -> Nothing
   GameEvent.BecameAttacked _ -> Nothing
@@ -3961,6 +3963,7 @@ discardOf event = case event of
   GameEvent.TurnedUpOffDeck _ -> Nothing
   GameEvent.ChaosEnsued _ -> Nothing
   GameEvent.DaytimeChanged _ -> Nothing
+  GameEvent.GameBegan -> Nothing
   GameEvent.ClassLevelSet _ -> Nothing
   GameEvent.Plotted _ -> Nothing
   GameEvent.BecameAttacked _ -> Nothing
@@ -4220,6 +4223,7 @@ movedChange event = case event of
   GameEvent.TurnedUpOffDeck _ -> Nothing
   GameEvent.ChaosEnsued _ -> Nothing
   GameEvent.DaytimeChanged _ -> Nothing
+  GameEvent.GameBegan -> Nothing
   GameEvent.ClassLevelSet _ -> Nothing
   GameEvent.Plotted _ -> Nothing
   GameEvent.BecameAttacked _ -> Nothing
@@ -4339,6 +4343,7 @@ damageDealt event = case event of
   GameEvent.TurnedUpOffDeck _ -> Nothing
   GameEvent.ChaosEnsued _ -> Nothing
   GameEvent.DaytimeChanged _ -> Nothing
+  GameEvent.GameBegan -> Nothing
   GameEvent.ClassLevelSet _ -> Nothing
   GameEvent.Plotted _ -> Nothing
   GameEvent.BecameAttacked _ -> Nothing
@@ -4643,6 +4648,7 @@ lifeChangeOf direction event = case event of
   GameEvent.TurnedUpOffDeck _ -> Nothing
   GameEvent.ChaosEnsued _ -> Nothing
   GameEvent.DaytimeChanged _ -> Nothing
+  GameEvent.GameBegan -> Nothing
   GameEvent.ClassLevelSet _ -> Nothing
   GameEvent.Plotted _ -> Nothing
   GameEvent.BecameAttacked _ -> Nothing

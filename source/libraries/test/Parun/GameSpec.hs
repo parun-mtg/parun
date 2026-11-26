@@ -929,16 +929,23 @@ concedeAnswer who p = case p of
   Prompt.Concede asked -> if asked == who then Concession.Concedes else Concession.Continues
   _ -> S.identityAnswer p
 
--- Records the PlayerId of every Concede ask, in order, and concedes for `who`.
--- Prompt.Concede is asked of the priority holder before anything else, so the
--- recorded order IS the order priority moved in. Delegating through a wildcard
--- keeps this answerer out of the -Werror exhaustiveness net.
-concedeOrderAnswer :: PlayerId.PlayerId -> Prompt.Prompt r -> State.State [PlayerId.PlayerId] r
+-- Records the PlayerId of every Concede ask made of the priority holder, in
+-- order, and concedes for `who` there. The holder is asked first, the others
+-- after (Engine.offerConcessions), so a Concede ask following another prompt,
+-- or a holder's concession, is the holder's, and the recorded order IS the
+-- order priority moved in.
+-- Delegating through a wildcard keeps this answerer out of the -Werror
+-- exhaustiveness net.
+concedeOrderAnswer :: PlayerId.PlayerId -> Prompt.Prompt r -> State.State ([PlayerId.PlayerId], Bool) r
 concedeOrderAnswer who p = case p of
   Prompt.Concede asked -> do
-    State.modify' (\seen -> seen <> [asked])
-    pure (if asked == who then Concession.Concedes else Concession.Continues)
-  _ -> pure (S.identityAnswer p)
+    (seen, following) <- State.get
+    let holder = not following
+        concedes = holder && asked == who
+    -- A holder conceding ends the decision, so the next holder's comes next.
+    State.put (if holder then seen <> [asked] else seen, not concedes)
+    pure (if concedes then Concession.Concedes else Concession.Continues)
+  _ -> State.modify' (\(seen, _) -> (seen, False)) >> pure (S.identityAnswer p)
 
 concedeSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 concedeSpec s _ = Spec.describe s "concede (CR 104.3a)" $ do
@@ -955,10 +962,10 @@ concedeSpec s _ = Spec.describe s "concede (CR 104.3a)" $ do
     Spec.assertEqWith s "reason recorded" (fmap Player.status (Map.lookup S.alice (GameState.players after))) (Just (Status.Departed Departure.Type.Conceded))
 
   -- #144, and the proof that the elision is NOT cosmetic latency. CR 104.3a
-  -- says a player may concede "at any time"; Engine.priorityLoop offers the
-  -- ask only at a priority the conceder themselves holds, and CR 117.5 /
-  -- CR 704.3 put a state-based action check in front of every priority
-  -- grant. So the two are in a race, and the race decides the game.
+  -- says a player may concede "at any time"; Engine.priorityDecision offers
+  -- the ask only at a priority decision, and CR 117.5 / CR 704.3 put a
+  -- state-based action check in front of every priority grant. So the two
+  -- are in a race, and the race decides the game.
   --
   -- alice is at 0 life and it is her turn, with nothing yet settled. bob
   -- wants out.
@@ -985,10 +992,10 @@ concedeSpec s _ = Spec.describe s "concede (CR 104.3a)" $ do
                   }
             }
         gs = base {GameState.players = Map.adjust (\p -> p {Player.life = 0}) S.alice (GameState.players base)}
-        -- The engine as it stands. concedeOrderAnswer records every Concede
-        -- ask, so the test does not have to take the narrowness of the
-        -- window on trust: bob is asked nothing at all.
-        ((_, atOwnPriority), asks) = State.runState (Engine.runGame (concedeOrderAnswer S.bob) gs Engine.runStep) []
+        -- The engine as it stands. concedeOrderAnswer records the holder's
+        -- Concede ask of every priority decision, so the test does not have
+        -- to take the narrowness of the window on trust: no decision comes.
+        ((_, atOwnPriority), (asks, _)) = State.runState (Engine.runGame (concedeOrderAnswer S.bob) gs Engine.runStep) ([], False)
         -- The counterfactual, reached through the same door the engine
         -- uses (Departure.leaveGame IS priorityLoop's concede arm): bob's
         -- concession lands before the settle instead of after it.
@@ -1031,20 +1038,16 @@ theAbility p = case Face.activatedAbilities (S.combinedFace p) of
   ab : _ -> ab
   [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] Nothing (Face.spell (S.combinedFace p)) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable Nothing
 
--- Records every player asked Prompt.Concede, in order -- the
--- concedeOrderAnswer shape -- and drives alice through exactly one Activate
--- of Greed's ability, then Pass for everyone (including alice, on any later
--- ask: by then she can no longer afford the cost, so Greed's Activate is not
--- offered). Prompt.Concede is asked of the priority holder before anything
--- else, so the recorded order IS the order priority moved in -- including a
--- stale holder who has already departed, which is exactly what the CR 800.4a
--- guard below is for.
+-- Records every player asked Prompt.ChooseAction, in order, and drives alice
+-- through exactly one Activate of Greed's ability, then Pass for everyone
+-- (including alice, on any later ask: by then she can no longer afford the
+-- cost, so Greed's Activate is not offered). The recorded order IS the order
+-- priority moved in -- including a stale holder who has already departed,
+-- which is exactly what the CR 800.4a guard below is for.
 greedThenPassAnswer :: ObjectId.ObjectId -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Prompt.Prompt r -> State.State [PlayerId.PlayerId] r
 greedThenPassAnswer greedId ability p = case p of
-  Prompt.Concede asked -> do
-    State.modify' (\seen -> seen <> [asked])
-    pure Concession.Continues
-  Prompt.ChooseAction _ pid actions ->
+  Prompt.ChooseAction _ pid actions -> do
+    State.modify' (\seen -> seen <> [pid])
     pure (if pid == S.alice && List.elem (A.Activate greedId ability) actions then A.Activate greedId ability else A.Pass)
   _ -> pure (S.identityAnswer p)
 
@@ -1147,10 +1150,39 @@ turnOrderSpec s registry = Spec.describe s "TurnOrder (CR 800.4)" $ do
                     TurnRegisters.activePlayer = S.alice
                   }
             }
-        ((_, after), asks) = State.runState (Engine.runGame (concedeOrderAnswer S.bob) gs Engine.priorityLoop) []
+        ((_, after), (asks, _)) = State.runState (Engine.runGame (concedeOrderAnswer S.bob) gs Engine.priorityLoop) ([], False)
     Spec.assertEqWith s "alice, then bob, then CAROL, then alice again" asks [S.alice, S.bob, S.carol, S.alice]
     Spec.assertEqWith s "bob departed by conceding" (fmap Player.status (Map.lookup S.bob (GameState.players after))) (Just (Status.Departed Departure.Type.Conceded))
     Spec.assertEqWith s "the game continues" (GameState.result after) Nothing
+
+  Spec.it s "CR 104.3a/117.4 a player conceding while another holds priority leaves at once, the holder keeping priority, and the pass cycle restarts" $ do
+    -- Alice's Goblin Piker is on the stack. Alice passes; carol concedes
+    -- while BOB holds priority, before he acts, so he keeps it, and alice's
+    -- pass no longer counts: she must pass again before the Piker resolves
+    -- (docs/decisions.md, "Whether a concession restarts the pass count").
+    -- Kept, her pass would resolve it on bob's, and the list would be four
+    -- long.
+    piker <- S.printingOf s registry "Goblin Piker"
+    let (_, withSpell) = S.spellOnStack piker S.alice S.threePlayerGame
+        gs =
+          withSpell
+            { GameState.turn =
+                (GameState.turn withSpell)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice
+                  }
+            }
+        -- Records each player asked for an action; carol concedes once one
+        -- has been, at the next priority decision's questions.
+        answer :: Prompt.Prompt r -> State.State [PlayerId.PlayerId] r
+        answer p = case p of
+          Prompt.Concede asked -> State.gets (\acted -> if asked == S.carol && length acted == 1 then Concession.Concedes else Concession.Continues)
+          Prompt.ChooseAction _ pid _ -> State.modify' (<> [pid]) >> pure (S.identityAnswer p)
+          _ -> pure (S.identityAnswer p)
+        ((_, after), asks) = State.runState (Engine.runGame answer gs Engine.priorityLoop) []
+    Spec.assertEqWith s "alice, bob, alice AGAIN; then the empty stack's round" asks [S.alice, S.bob, S.alice, S.alice, S.bob]
+    Spec.assertEqWith s "carol departed by conceding" (fmap Player.status (Map.lookup S.carol (GameState.players after))) (Just (Status.Departed Departure.Type.Conceded))
+    Spec.assertEqWith s "alice's Piker is on the battlefield" (S.creaturesInPlay S.alice after) 1
 
   Spec.it s "CR 800.4j the active player having left does not stop the turn: priority starts at the next seat" $ do
     -- Alice left during her own turn. The turn continues to its completion
@@ -1166,7 +1198,7 @@ turnOrderSpec s registry = Spec.describe s "TurnOrder (CR 800.4)" $ do
                       }
                 }
             )
-        ((_, after), asks) = State.runState (Engine.runGame (concedeOrderAnswer S.carol) gone Engine.priorityLoop) []
+        ((_, after), (asks, _)) = State.runState (Engine.runGame (concedeOrderAnswer S.carol) gone Engine.priorityLoop) ([], False)
     Spec.assertEqWith s "priorityHolder skips the departed active player" (Engine.priorityHolder gone) S.bob
     Spec.assertEqWith s "bob is asked first, alice never" (take 2 asks) [S.bob, S.carol]
     Spec.assertBool s (notElem S.alice asks) "alice was never asked"
@@ -1190,7 +1222,7 @@ turnOrderSpec s registry = Spec.describe s "TurnOrder (CR 800.4)" $ do
                       }
                 }
             )
-        ((_, after), asks) = State.runState (Engine.runGame (concedeOrderAnswer S.alice) gone Engine.priorityLoop) []
+        ((_, after), (asks, _)) = State.runState (Engine.runGame (concedeOrderAnswer S.alice) gone Engine.priorityLoop) ([], False)
     Spec.assertEqWith s "bob, carol, then bob AGAIN -- never alice" asks [S.bob, S.carol, S.bob, S.carol]
     Spec.assertEqWith s "the spell resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
     Spec.assertEqWith s "carol's Piker is on the battlefield" (S.creaturesInPlay S.carol after) 1

@@ -10,7 +10,9 @@
 module Parun.Oracle where
 
 import qualified Control.Monad as Monad
+import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
+import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -122,6 +124,42 @@ without whole part = case (whole, part) of
     EQ -> without ws ps
     GT -> Nothing
 
+-- | A face's abilities, each with its wordings ('described').
+faceAbilities :: Face.Face Card.Card -> [[Text.Text]]
+faceAbilities = fmap wordings . described
+
+-- | One of a face's abilities as 'described' reads it.
+data Described = MkDescribed
+  { kind :: Kind,
+    -- | The card data it is read from, shown: what 'blockers' reads
+    -- constructor names off. A keyword is shown with the face's other
+    -- keywords, and a combat restriction with its other restrictions, since
+    -- Oracle text joins them.
+    node :: String,
+    -- | Every wording Oracle uses, the current first; none when it is not
+    -- rendered yet.
+    wordings :: [Text.Text]
+  }
+  deriving (Eq, Show)
+
+-- | Which part of a face an ability is read from.
+data Kind
+  = Keyword
+  | Enchant
+  | DefiningPowerToughness
+  | DefiningColors
+  | Static
+  | Replacement
+  | CombatRestriction
+  | PlayerRule
+  | Spell
+  | Activated
+  | Triggered
+  | DeckLimit
+  | -- | A face field nothing here reads.
+    Unread
+  deriving (Bounded, Enum, Eq, Ord, Show)
+
 -- | A face's abilities, each with its wordings: its keywords, its enchant
 -- abilities (CR 702.5a), its characteristic-defining power and toughness
 -- (CR 604.3), its static abilities (CR 604) and the replacement effects of
@@ -132,8 +170,8 @@ without whole part = case (whole, part) of
 -- else the face holds is one more ability, never rendered: the face with the
 -- fields rendered here cleared must be 'Face.Oracle.bare', so a field nothing
 -- here renders keeps the card unrendered rather than silently left out.
-faceAbilities :: Face.Face Card.Card -> [[Text.Text]]
-faceAbilities face =
+described :: Face.Face Card.Card -> [Described]
+described face =
   let self = CardName.unwrap (Face.name face)
       host = do
         word <- Maybe.maybeToList attached
@@ -154,20 +192,54 @@ faceAbilities face =
       bestowed = any (\k -> case k of Keyword.Type.Bestow _ -> True; _ -> False) (Map.keys (Face.keywords face))
       attached = Continuous.attachedWord subtypes bestowed
       (statics, combat, joint) = Continuous.evasive context attached (Face.enchant face) (Face.staticAbilities face) (Face.combatRestrictions face)
-   in Keyword.abilities self (Face.keywords face)
-        <> fmap (Continuous.enchant context) (Face.enchant face)
-        <> fmap (Continuous.defining context (Face.power face) (Face.toughness face)) (Maybe.maybeToList (Face.characteristicPT face))
-        <> fmap (colorDefining self) (Maybe.maybeToList (Face.characteristicColors face))
-        <> joint
-        <> fmap (Continuous.static context attached (Face.enchant face)) statics
-        <> fmap (Continuous.replacement context) (Face.replacementEffects face)
-        <> Continuous.combatRestrictions context attached (Face.enchant face) combat
-        <> fmap (Continuous.playerRule context) (Face.playerAbilities face)
-        <> spell
-        <> fmap (activated context) (Face.activatedAbilities face)
-        <> fmap (triggered context (Set.member CardType.Creature (TypeLine.types (Face.typeLine face)))) (Face.triggeredAbilities face)
-        <> fmap (deckLimit self) (Maybe.maybeToList (Face.deckLimit face))
-        <> [[] | unread]
+      each k word xs = [MkDescribed k (show x) (word x) | x <- xs]
+      grouped k xs = fmap (MkDescribed k (show xs))
+   in grouped Keyword (Face.keywords face) (Keyword.abilities self (Face.keywords face))
+        <> each Enchant (Continuous.enchant context) (Face.enchant face)
+        <> each DefiningPowerToughness (Continuous.defining context (Face.power face) (Face.toughness face)) (Maybe.maybeToList (Face.characteristicPT face))
+        <> each DefiningColors (colorDefining self) (Maybe.maybeToList (Face.characteristicColors face))
+        <> grouped Static (filter (`notElem` statics) (Face.staticAbilities face), filter (`notElem` combat) (Face.combatRestrictions face)) joint
+        <> each Static (Continuous.static context attached (Face.enchant face)) statics
+        <> each Replacement (Continuous.replacement context) (Face.replacementEffects face)
+        <> grouped CombatRestriction combat (Continuous.combatRestrictions context attached (Face.enchant face) combat)
+        <> each PlayerRule (Continuous.playerRule context) (Face.playerAbilities face)
+        <> grouped Spell (Face.spell face) spell
+        <> each Activated (activated context) (Face.activatedAbilities face)
+        <> each Triggered (triggered context (Set.member CardType.Creature (TypeLine.types (Face.typeLine face)))) (Face.triggeredAbilities face)
+        <> each DeckLimit (deckLimit self) (Maybe.maybeToList (Face.deckLimit face))
+        <> [MkDescribed Unread (show rest) [] | unread]
+
+-- | For each constructor that only abilities with no wording hold (read off
+-- their 'node's, so two types' same-named constructors count as one), how
+-- many of those abilities hold no other such constructor, then how many hold
+-- it: what wording it would unblock alone, and at most. `parun oracle` ranks
+-- them. An 'Unread' ability is left out: its node is the whole face.
+blockers :: [Described] -> Map.Map String (Int, Int)
+blockers pool =
+  let (unworded, worded) = List.partition (null . wordings) (filter ((/= Unread) . kind) pool)
+      seen = foldMap (constructors . node) worded
+      held = [Set.difference (constructors (node a)) seen | a <- unworded]
+   in Map.fromListWith
+        (\(a, b) (c, d) -> (a + c, b + d))
+        [(name, (if Set.size names == 1 then 1 else 0, 1)) | names <- held, name <- Set.toList names]
+
+-- | The constructor names in a value 'show' wrote, its string literals
+-- skipped.
+constructors :: String -> Set.Set String
+constructors shown = case shown of
+  [] -> Set.empty
+  '"' : rest -> constructors (literal rest)
+  c : _
+    | Char.isUpper c -> let (name, rest) = span identifier shown in Set.insert name (constructors rest)
+    | identifier c -> constructors (dropWhile identifier shown)
+  _ : rest -> constructors rest
+  where
+    identifier c = Char.isAlphaNum c || c == '_' || c == '\''
+    literal s = case s of
+      [] -> []
+      '\\' : _ : rest -> literal rest
+      '"' : rest -> rest
+      _ : rest -> literal rest
 
 -- | CR 604.3 / 105.2: the line by which a card named `self` defines its
 -- colours: "is all colors" (Transguild Courier), or CR 607.2p's linked pair

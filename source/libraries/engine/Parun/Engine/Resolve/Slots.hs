@@ -96,6 +96,7 @@ import qualified Parun.Types.ControlSides as ControlSides
 import qualified Parun.Types.ControlSlots as ControlSlots
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyClause as CopyClause
+import qualified Parun.Types.CopyOriginal as CopyOriginal
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CostBasis as CostBasis
 import qualified Parun.Types.CostChoice as CostChoice
@@ -1382,10 +1383,10 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.Conjure conjure -> joinSlots (fmap quantitySlots (conjureQuantities conjure))
   -- CR 607.1d: the exiled cards whose links move to the token, a read of
   -- every card the slot holds (CR 607.3).
-  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity _ riders _ _ _ _ linkExiled) -> joinSlots [quantitySlots quantity, joinSlots (fmap quantitySlots (riderQuantities riders)), riderSlots riders, foldMap (`Map.singleton` SlotArity.Many) linkExiled]
+  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity original riders _ _ _ _ linkExiled) -> joinSlots [quantitySlots quantity, joinSlots (fmap quantitySlots (riderQuantities riders <> originalQuantities original)), riderSlots riders, foldMap (`Map.singleton` SlotArity.Many) linkExiled]
   -- The DURATION reads slots, ModifyTarget's arm above; the two refs are
   -- effectObjectRefs' half.
-  Effect.BecomeCopy (BecomeCopy.MkBecomeCopy _ _ duration _ _) -> foldMap durationSlots duration
+  Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original _ duration _ _) -> joinSlots (foldMap durationSlots duration : fmap quantitySlots (originalQuantities original))
   Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _ _) -> quantitySlots quantity
   Effect.SetX (SetX.MkSetX value _) -> joinSlots (fmap quantitySlots (NewX.quantities value))
   -- The Duration and Condition each carry Quantities; a Quantity.InSlot is a read.
@@ -2332,8 +2333,8 @@ ownSlotsAreExhaustive effect = case effect of
   -- slots -- CreateCopy's arm below reads its own ref the same way, which is to
   -- say not at all.
   Effect.Conjure conjure -> all Quantity.slotsAreExhaustive (conjureQuantities conjure)
-  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity _ riders _ _ _ _ _) -> all Quantity.slotsAreExhaustive (quantity : riderQuantities riders)
-  Effect.BecomeCopy (BecomeCopy.MkBecomeCopy _ _ duration _ _) -> all durationSlotsAreExhaustive duration
+  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity original riders _ _ _ _ _) -> all Quantity.slotsAreExhaustive (quantity : riderQuantities riders <> originalQuantities original)
+  Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original _ duration _ _) -> all durationSlotsAreExhaustive duration && all Quantity.slotsAreExhaustive (originalQuantities original)
   Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _ _) -> Quantity.slotsAreExhaustive quantity
   Effect.SetX (SetX.MkSetX value _) -> all Quantity.slotsAreExhaustive (NewX.quantities value)
   -- The ReplacementEffect's own reads are replacementRowReads', and slotsOf
@@ -2647,8 +2648,8 @@ hasRead wanted =
         Effect.Conjure conjure -> any (Quantity.hasRead wanted) (conjureQuantities conjure)
         Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _ _) -> Quantity.hasRead wanted quantity
         Effect.SetX (SetX.MkSetX value _) -> any (Quantity.hasRead wanted) (NewX.quantities value)
-        Effect.CreateCopy (CreateCopy.MkCreateCopy quantity _ riders _ _ _ _ _) -> any (Quantity.hasRead wanted) (quantity : riderQuantities riders)
-        Effect.BecomeCopy {} -> False
+        Effect.CreateCopy (CreateCopy.MkCreateCopy quantity original riders _ _ _ _ _) -> any (Quantity.hasRead wanted) (quantity : riderQuantities riders <> originalQuantities original)
+        Effect.BecomeCopy x -> any (Quantity.hasRead wanted) (originalQuantities (BecomeCopy.original x))
         -- CR 601.2b's X reaches the effects a rewrite or a CR 615.5 rider nests,
         -- the three prevention opcodes' posture with their own riders.
         -- Aladdin's Lamp's count sits on the row, not on an effect it holds.
@@ -3960,6 +3961,15 @@ conjureQuantities conjure =
     ConjureCards.Written {} -> []
     ConjureCards.Duplicate {} -> []
     ConjureCards.Reference from -> Maybe.maybeToList (FromReference.amount from)
+
+-- The quantities a copy's original reads: a reference pick's bound
+-- (Parun.Types.FromReference's amount).
+originalQuantities :: CopyOriginal.CopyOriginal card -> [Quantity.Type.Quantity]
+originalQuantities original = case original of
+  CopyOriginal.OfObject {} -> []
+  CopyOriginal.Named {} -> []
+  CopyOriginal.Defined {} -> []
+  CopyOriginal.AtRandom from -> Maybe.maybeToList (FromReference.amount from)
 
 -- | CR 115.1's kind of the spell or ability `resolving` is, which CR 608.2b's
 -- re-check and CR 115.7's and CR 707.10c's re-choices hand the targeting

@@ -13,6 +13,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CounterKind as CounterKind
@@ -36,6 +37,7 @@ import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.NameChooser as NameChooser
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.ParityOperand as ParityOperand
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PlayerId as PlayerId
@@ -681,11 +683,12 @@ data Filter keyword
     -- designation of the object an evaluation is aimed at, and not what CR
     -- 701.60c hangs off a designation. Uncharacteristic for IsRingBearer's reason.
     HasDesignation Designation.Designation
-  | -- | CR 122.1: does the CANDIDATE have at least that many counters of this
-    -- kind on it (Runadi, Behemoth Caller's "three or more")? Uncharacteristic:
-    -- CR 109.3's list has no counters in it, and the P/T a +1/+1 counter grants
-    -- is CR 613.4c's, applied over the top of this.
-    HasCounters Natural.Natural (CounterKind.CounterKind keyword)
+  | -- | CR 122.1: the CANDIDATE's count of counters of this kind relates thus to
+    -- the operand (Runadi, Behemoth Caller's "three or more", Figure of Destiny
+    -- Avatar's "fewer than X"). Uncharacteristic: CR 109.3's list has no
+    -- counters in it, and the P/T a +1/+1 counter grants is CR 613.4c's, applied
+    -- over the top of this.
+    HasCounters Comparison.Comparison Operand.Operand (CounterKind.CounterKind keyword)
   | -- | CR 122.1 again, kind-agnostic: does the CANDIDATE have one or more
     -- counters on it of ANY kind? Not spellable as an Or over the kinds, CR
     -- 122.1b's keyword counters making CounterKind unenumerable, and a separate
