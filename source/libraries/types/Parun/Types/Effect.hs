@@ -1,6 +1,5 @@
 module Parun.Types.Effect where
 
-import qualified Data.List.NonEmpty as NonEmpty
 import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
 import qualified Parun.Types.AddPhases as AddPhases
 import qualified Parun.Types.AffectPlayers as AffectPlayers
@@ -18,7 +17,6 @@ import qualified Parun.Types.BindAmount as BindAmount
 import qualified Parun.Types.BindLeaders as BindLeaders
 import qualified Parun.Types.BindPlayers as BindPlayers
 import qualified Parun.Types.Blight as Blight
-import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.ChangeTargets as ChangeTargets
 import qualified Parun.Types.ChangeText as ChangeText
@@ -88,6 +86,7 @@ import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NoteKind as NoteKind
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
+import qualified Parun.Types.OfferNamedCopy as OfferNamedCopy
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseOut as PhaseOut
@@ -906,10 +905,10 @@ data Effect card ability
     -- CR 601.3's permission comes from the offer itself, and an offer is never a
     -- cast.
     OfferCast OfferCast.OfferCast
-  | -- | CR 707.13: choose one of these card names not yet chosen for the source,
-    -- create a copy of that card outside the game, and offer its controller the
-    -- cast (Garth One-Eye).
-    OfferNamedCopy (NonEmpty.NonEmpty CardName.CardName)
+  | -- | CR 707.13: create copies of cards defined by name outside the game, and
+    -- offer their controller the cast of one (Garth One-Eye, Jhoira of the Ghitu
+    -- Avatar).
+    OfferNamedCopy OfferNamedCopy.OfferNamedCopy
   | -- | CR 707.14: create a copy of the card noted for the source
     -- (GameState.notedCards) outside the game, from its last graveyard values,
     -- and offer its controller the cast (Magar of the Magic Strings).

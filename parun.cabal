@@ -1334,6 +1334,8 @@ library codec
     Parun.Codec.MulliganDeclared
     Parun.Codec.NameChooser
     Parun.Codec.NameChooserSpec
+    Parun.Codec.NamedCopySource
+    Parun.Codec.NamedCopySourceSpec
     Parun.Codec.NameInsertion
     Parun.Codec.NamesAre
     Parun.Codec.NamesAreSpec
@@ -1378,6 +1380,8 @@ library codec
     Parun.Codec.ObjectViewSpec
     Parun.Codec.OfferCast
     Parun.Codec.OfferCastSpec
+    Parun.Codec.OfferNamedCopy
+    Parun.Codec.OfferNamedCopySpec
     Parun.Codec.OnePer
     Parun.Codec.OnePerSpec
     Parun.Codec.Onset
@@ -3694,6 +3698,7 @@ library types
     Parun.Types.MulliganOffer
     Parun.Types.MutateSide
     Parun.Types.NameChooser
+    Parun.Types.NamedCopySource
     Parun.Types.NameInsertion
     Parun.Types.NameReading
     Parun.Types.NamesAre
@@ -3720,6 +3725,7 @@ library types
     Parun.Types.ObjectView
     Parun.Types.Observer
     Parun.Types.OfferCast
+    Parun.Types.OfferNamedCopy
     Parun.Types.OnePer
     Parun.Types.Onset
     Parun.Types.Operand

@@ -93,7 +93,6 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CarryOver as CarryOver
-import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.ChangeCount as ChangeCount
@@ -153,6 +152,7 @@ import qualified Parun.Types.Feasibility as Feasibility
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.ForEach as ForEach
 import qualified Parun.Types.FromAnywhere as FromAnywhere
+import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.GainControl as GainControl
 import Parun.Types.Game (Game)
 import qualified Parun.Types.GameEvent as GameEvent
@@ -222,6 +222,7 @@ import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
 import qualified Parun.Types.PlayersWho as PlayersWho
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.PreventionRider as PreventionRider
+import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.ProposedEvent as ProposedEvent
@@ -1633,21 +1634,6 @@ castableCopy caster original = do
         State.put (Game.insertIntoZone zone LibraryPosition.Top caster copyId gs2 {GameState.objects = Map.insert copyId copy (GameState.objects gs2)})
         pure (Just copyId)
 
--- Garth One-Eye's "you still pay its costs": an ordinary cast of the copy.
-ordinaryOffer :: CastOffer.CastOffer
-ordinaryOffer =
-  CastOffer.MkCastOffer
-    { CastOffer.transformed = False,
-      CastOffer.withoutPayingManaCost = False,
-      CastOffer.payingInstead = Nothing,
-      CastOffer.spending = ManaSpending.AsProduced,
-      CastOffer.restriction = Nothing,
-      CastOffer.offeredBy = Nothing,
-      CastOffer.faceDown = Nothing,
-      CastOffer.payableFromSpent = False,
-      CastOffer.reduction = 0
-    }
-
 -- CR 615.5: a shield's additional effect, baked with the installing
 -- resolution's chosen targets, CR 109.5's "you" and CR 113.7's source, the
 -- environment the rider runs in long after that resolution is gone. Nothing for
@@ -2296,6 +2282,33 @@ fromAmongMembers legal resolving chosen slot = do
   pure $ case bound of
     Just objects -> objects
     Nothing -> Maybe.mapMaybe Recipient.objectOf (legalMany slot legal)
+
+-- | CR 108.1: up to @count@ distinct cards of the Oracle reference the pick
+-- admits, chosen at random (Game.drawDistinct) and interned. The interpreter
+-- answers which cards the filter admits, off the pre-effect board, and each
+-- answer is filtered back: a reference admitting nothing yields nothing (CR
+-- 609.3).
+drawReferenceCards :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Natural -> FromReference.FromReference -> Game [PrintingId.PrintingId]
+drawReferenceCards resolving source controller legal count from = do
+  gs <- State.get
+  let predicate = FromReference.filter from
+      context = effectContext gs resolving controller source legal (slotBindings resolving gs)
+      amount = FromReference.amount from >>= evaluateForRecipient (effectViewOf resolving source legal gs) context gs resolving source controller
+  names <- Game.ask (Prompt.ReferenceCards predicate amount)
+  drawn <- Game.drawDistinct Prompt.RandomCard count (ListUtils.nubOrd names)
+  Maybe.catMaybes <$> traverse (admittedReferenceCard predicate amount) drawn
+
+-- | CR 108.1: the reference card of this name, interned, provided the filter
+-- admits it -- an answer outside what the filter admits is not taken.
+admittedReferenceCard :: Filter.Type.Filter Keyword.Type.Keyword -> Maybe Integer -> CardName.CardName -> Game (Maybe PrintingId.PrintingId)
+admittedReferenceCard predicate amount answer = do
+  found <- Game.lookUpCard answer
+  g <- State.get
+  pure $ do
+    printingId <- found
+    card <- Game.cardOfPrinting printingId g
+    Monad.guard (Projection.referenceAdmits (Game.teams g) amount predicate card)
+    Just printingId
 
 -- CR 201.4a: a card name chosen from a list the engine holds (CR 707.13's
 -- names, ChooseCardName's `among`). None chooses nothing (CR 609.3), one is

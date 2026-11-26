@@ -216,20 +216,20 @@ offerCast runSubgame context reading named caster optionality verb retake repeti
           let spent weigh = maybe 0 (\sid -> maybe 0 (weigh sid) (Projection.fullView gs sid)) spell
           (Maybe.maybeToList spell <>) <$> again (fmap (\(weigh, room) -> (weigh, room - spent weigh)) budget) (fmap (subtract 1) casts) (filter (/= oid) remaining)
 
--- CR 707.13 / 707.14: offer the cast of a copy of this printing created outside
--- the game (Event.mintOutside), bracketing `offerCast` with the mint and the
--- discard. An uncast copy is deleted as the offer returns: CR 109.1 and CR
--- 400.11c leave nothing able to observe it afterwards, and it bounds
--- Object.zone's placeholder to one resolution, in which no player gets priority
--- and no SBA is checked.
-offerOutsideCopy :: Game Result -> Filter.Context -> PlayerId -> PrintingId.PrintingId -> CastOffer.CastOffer -> Game ()
-offerOutsideCopy runSubgame context caster printingId offer = do
-  copyId <- State.state (Event.mintOutside caster printingId)
-  Monad.void (offerCast runSubgame context (\_ _ -> Nothing) [copyId] caster CastObligation.Optional PermissionVerb.Cast Nothing CastRepetition.Once False offer)
+-- CR 707.13 / 707.14: offer the cast of one copy of these printings, each
+-- created outside the game (Event.mintOutside), bracketing `offerCast` with the
+-- mint and the discard. CR 608.2d's choice of which copy is offerCast's. An
+-- uncast copy is deleted as the offer returns: CR 109.1 and CR 400.11c leave
+-- nothing able to observe it afterwards, and it bounds Object.zone's
+-- placeholder to one resolution, in which no player gets priority and no SBA is
+-- checked.
+offerOutsideCopy :: Game Result -> Filter.Context -> PlayerId -> [PrintingId.PrintingId] -> CastOffer.CastOffer -> Game ()
+offerOutsideCopy runSubgame context caster printingIds offer = do
+  copyIds <- Monad.mapM (State.state . Event.mintOutside caster) printingIds
+  Monad.void (offerCast runSubgame context (\_ _ -> Nothing) copyIds caster CastObligation.Optional PermissionVerb.Cast Nothing CastRepetition.Once False offer)
   State.modify' $ \g ->
-    if Set.member copyId (GameState.outsideCopies g)
-      then g {GameState.objects = Map.delete copyId (GameState.objects g), GameState.outsideCopies = Set.delete copyId (GameState.outsideCopies g)}
-      else g
+    let uncast = filter (`Set.member` GameState.outsideCopies g) copyIds
+     in g {GameState.objects = foldr Map.delete (GameState.objects g) uncast, GameState.outsideCopies = foldr Set.delete (GameState.outsideCopies g) uncast}
 
 -- One round of the offer above: CR 608.2d's choice among the cards `named`
 -- still holds, and the cast if it is taken. Answers the id of the card that was
