@@ -393,7 +393,7 @@ search registry budget weights prior watched recalled aim breathe clock = Answer
       best restart pid deal choices move = do
         expired <- clock
         case SearchBudget.method budget of
-          SearchMethod.Flat -> flat registry budget weights breathe expired restart pid deal choices (picking pid . move)
+          SearchMethod.Flat -> flat registry budget weights breathe expired restart pid deal choices move
           SearchMethod.InformationSet -> informationSet registry budget weights breathe expired restart pid (Asked.game asked) deal choices move
       unaimed = hold aim Nothing >> Answerer.unwrap (Game.bot registry) asked
       kept pid = do
@@ -612,15 +612,15 @@ scoredOnly scored = Maybe.fromMaybe scored (NonEmpty.nonEmpty (NonEmpty.filter (
 -- `SearchBudget.samples` worlds `deal` deals, every option in each world from
 -- the same random stream, until `expired` ('spending'); the best average
 -- taken among those played out ('slipping').
-flat :: (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Play m () -> Game.Play m Bool -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> [Pick]) -> Game.Play m a
-flat registry budget weights breathe expired restart pid deal choices pick = do
+flat :: (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Play m () -> Game.Play m Bool -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> Game.Play m GameState.GameState -> NonEmpty.NonEmpty a -> (a -> Move) -> Game.Play m a
+flat registry budget weights breathe expired restart pid deal choices move = do
   let indexed = NonEmpty.zip (NonEmpty.iterate (+ 1) (0 :: Int)) choices
       play world tallies (index, option) = do
-        scored <- rollout registry budget weights breathe restart pid (pick option) world
+        scored <- rollout registry budget weights breathe restart pid (picking pid (move option)) world
         pure (Map.insertWith (\(total, tries) (total', tries') -> (total + total', tries + tries')) index (scored, 1 :: Integer) tallies)
   tallies <- spending expired (SearchBudget.samples budget) deal play Map.empty (NonEmpty.toList indexed)
   let averaged index = (\(total, tries) -> toRational total / toRational tries) <$> Map.lookup index tallies
-  slipping budget (scoredOnly (fmap (Bifunctor.first averaged) indexed))
+  slipping budget (idle . move) (scoredOnly (fmap (Bifunctor.first averaged) indexed))
 
 -- | Single-observer information-set Monte Carlo tree search (Cowling, Powley
 -- & Whitehouse 2012, "Information Set Monte Carlo Tree Search", SO-ISMCTS):
@@ -641,7 +641,7 @@ informationSet registry budget weights breathe expired restart viewer gs deal ch
         pure (backup value path grown)
   MkTree (MkNode root) _ <- spending expired (SearchBudget.samples budget) deal play (MkTree (MkNode Map.empty) Nothing) (NonEmpty.toList choices)
   let tried option = (\branch -> toRational (reward branch) / toRational (max 1 (visits branch))) <$> Map.lookup (edgeFor option) root
-  slipping budget (scoredOnly (fmap (\option -> (tried option, option)) choices))
+  slipping budget (idle . move) (scoredOnly (fmap (\option -> (tried option, option)) choices))
 
 -- | A choice at a decision the tree holds, whatever its prompt answers.
 data Move
@@ -832,14 +832,23 @@ backup value path (MkTree root range) =
       widened = foldr (\r -> Just . maybe (r, r) (\(lowest, highest) -> (min lowest r, max highest r))) range rewards
    in MkTree (along path root) widened
 
--- | The choice scored best, one of the best at random on a tie, or at a
--- 'mistaken' decision one of those scored best below it, where one is.
-slipping :: (Monad m, Ord s) => SearchBudget.SearchBudget -> NonEmpty.NonEmpty (s, a) -> State.StateT Generator.Type.Generator m a
-slipping budget scored = do
+-- | The choice scored best, or at a 'mistaken' decision one of those scored
+-- best below it, where one is; on a tie, the 'idle' one where it is among
+-- them, else one at random. Parun.SearchSpec's Drudge Skeletons is the proof.
+slipping :: (Monad m, Ord s) => SearchBudget.SearchBudget -> (a -> Bool) -> NonEmpty.NonEmpty (s, a) -> State.StateT Generator.Type.Generator m a
+slipping budget resting scored = do
   let top = maximum (fmap fst scored)
   slipped <- mistaken budget
   let aim = if slipped then maybe top maximum (NonEmpty.nonEmpty [total | (total, _) <- NonEmpty.toList scored, total < top]) else top
-  maybe (pure (snd (NonEmpty.head scored))) Generator.pick (NonEmpty.nonEmpty [option | (total, option) <- NonEmpty.toList scored, total == aim])
+      tied = [option | (total, option) <- NonEmpty.toList scored, total == aim]
+  case (List.find resting tied, NonEmpty.nonEmpty tied) of
+    (Just option, _) -> pure option
+    (Nothing, Just drawn) -> Generator.pick drawn
+    (Nothing, Nothing) -> pure (snd (NonEmpty.head scored))
+
+-- | Whether a move does nothing: a pass of priority (CR 117.3d).
+idle :: Move -> Bool
+idle move = move == Acted Action.Pass
 
 -- | Whether a searched decision is a mistake, at the budget's
 -- `SearchBudget.mistakes` percent: drawn once its playouts are, and only at

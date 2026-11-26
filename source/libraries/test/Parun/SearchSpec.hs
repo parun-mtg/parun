@@ -50,6 +50,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Features as Features
 import qualified Parun.Types.GameSettings as GameSettings
@@ -360,6 +361,13 @@ spec s registry = Spec.describe s "Search" $ do
     Spec.assertEqWith s "the Militia cast, one land tapped at most, in every seed, flat" flatly (Just (True, 1) <$ flatly)
     treed <- traverse (alicesTurn s (budget SearchMethod.InformationSet) gs) [1 .. 4]
     Spec.assertEqWith s "the Militia cast, one land tapped at most, in every seed, by the tree" treed (Just (True, 1) <$ treed)
+
+  Spec.it s "CR 117.3d the search bot passes in its end step rather than activate Drudge Skeletons' regeneration for nothing, flat or by an information-set tree" $ do
+    asked <- skeletonsAtEnd s registry
+    let budget method = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = method}
+    Monad.forM_ [SearchMethod.Flat, SearchMethod.InformationSet] $ \method -> do
+      taken <- traverse (searchedAt s (budget method) Weights.neutral asked) [1 .. 8]
+      Spec.assertEqWith s ("a pass in every seed, " <> show method) taken (Action.Pass <$ taken)
 
   Spec.it s "the search bot making a mistake at every decision takes the option scored next below the best: no attack on an opponent at 1 life who has nothing untapped" $ do
     (_, asked) <- openAttack s registry
@@ -737,6 +745,28 @@ militiaOnThreeLands s registry = do
       bob = (S.battlefield S.bob []) {Seat.library = Seq.fromList (cards (replicate 5 "Forest"))}
   gs <- Staged.state <$> S.buildBoardOrFail s registry (S.board (alice NonEmpty.:| [bob]) S.alice S.precombatMain)
   pure gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just S.alice}}
+
+-- Alice's priority decision in her end step, a Swamp and Drudge Skeletons
+-- untapped and her hand empty, Bob with no permanents: regenerating changes
+-- nothing a playout scores.
+skeletonsAtEnd :: forall m n. (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (Asked.Asked GameState.GameState Action.Action)
+skeletonsAtEnd s registry = do
+  let cards :: [String] -> [Placement.Placement]
+      cards = fmap S.cardSetup
+      alice = (S.battlefield S.alice (cards ["Swamp", "Drudge Skeletons"])) {Seat.library = Seq.fromList (cards (replicate 5 "Swamp"))}
+      bob = (S.battlefield S.bob []) {Seat.library = Seq.fromList (cards (replicate 5 "Forest"))}
+  built <- Staged.state <$> S.buildBoardOrFail s registry (S.board (alice NonEmpty.:| [bob]) S.alice (Phase.Ending EndingStep.EndStep))
+  let gs = built {GameState.turn = (GameState.turn built) {TurnRegisters.priority = Just S.alice}}
+      first :: Program.Program (Asked.Asked GameState.GameState) a -> m (Asked.Asked GameState.GameState Action.Action)
+      first program = case program of
+        Program.Then asked k
+          | Prompt.Concede _ <- Asked.prompt asked -> first (k Concession.Continues)
+          | Prompt.ChooseAction decider pid menu <- Asked.prompt asked,
+            pid == S.alice,
+            any (\action -> case action of Action.Activate {} -> True; _ -> False) menu ->
+              pure (Asked.MkAsked [] (Asked.game asked) (Prompt.ChooseAction decider pid menu))
+        _ -> Spec.assertFailure s "Alice is asked to act, the regeneration offered"
+  first (State.runStateT Engine.resumePriority gs)
 
 -- The rest of Alice's turn played on from `gs`'s priority decision
 -- (Engine.resumePriority), Alice the search bot at `budget`, Bob the random
