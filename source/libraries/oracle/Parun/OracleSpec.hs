@@ -540,6 +540,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "At the beginning of your upkeep, if you haven't begun an extra turn this game, you gain 1 life.")) (Oracle.render (gated (upkeeps (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))) unextended [gainLife 1]))
     let whales = compares (countOf (Filter.And [Filter.HasSubtype Subtype.Whale, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)]) (onBattlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) Comparison.AtLeast 1
     Spec.assertEq s (Just (Text.pack "At the beginning of your upkeep, if you control a Whale and haven't begun an extra turn this game, you gain 1 life.")) (Oracle.render (gated (upkeeps (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))) (Condition.All [whales, unextended]) [gainLife 1]))
+    -- CR 103.8: not the game's first turn (Necropotence Avatar).
+    Spec.assertEq s (Just (Text.pack "At the beginning of your end step, if it's not the first turn of the game, you gain 1 life.")) (Oracle.render (gated endStep (compares Quantity.IsFirstTurnOfGame Comparison.Exactly 0) [gainLife 1]))
 
   -- A creature type names creatures alone ("target attacking Goblin you
   -- control", Boggart Prankster); a change to each of several objects reads

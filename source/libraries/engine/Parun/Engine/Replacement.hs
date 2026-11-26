@@ -3285,6 +3285,7 @@ quantityAccess quantity = case quantity of
   Quantity.Type.InSlot _ -> nested
   Quantity.Type.IsActivePlayer _ -> nested
   Quantity.Type.TurnsBegun _ _ -> nested
+  Quantity.Type.IsFirstTurnOfGame -> nested
   Quantity.Type.TimesPaid _ -> nested
   Quantity.Type.CastUsing _ -> nested
   Quantity.Type.ManaSpent _ -> nested

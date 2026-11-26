@@ -849,6 +849,7 @@ quantityChildren children quantity = case quantity of
   Quantity.IsStartingPlayer ref -> fmap Quantity.IsStartingPlayer (player children ref)
   Quantity.IsActivePlayer ref -> fmap Quantity.IsActivePlayer (player children ref)
   Quantity.TurnsBegun kind ref -> fmap (Quantity.TurnsBegun kind) (player children ref)
+  Quantity.IsFirstTurnOfGame -> pure quantity
   Quantity.Devotion (Devotion.MkDevotion ref colors) -> fmap (\renamed -> Quantity.Devotion (Devotion.MkDevotion renamed colors)) (player children ref)
   Quantity.PartySize ref -> fmap Quantity.PartySize (player children ref)
   Quantity.PlayerCounters (PlayerCounterTally.MkPlayerCounterTally ref kind) -> fmap (\renamed -> Quantity.PlayerCounters (PlayerCounterTally.MkPlayerCounterTally renamed kind)) (player children ref)

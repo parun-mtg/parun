@@ -79,6 +79,14 @@ spec s registry = Spec.describe s "GrandMelee" $ do
     Spec.assertEqWith s "CR 807.4d the order" (fmap fst (turnsAfter 9 (melee forest 8))) (seats [4, 1, 5, 2, 6, 3, 7, 4, 0])
     Spec.assertEqWith s "CR 807.4b each turn its own number" (fmap ((TurnRegisters.turnNumber . GameState.turn) . snd) (turnStates 9 (melee forest 8))) [2 .. 10]
 
+  -- CR 103.8 / 807.4b: seat 4's opening turn starts alongside seat 0's, but
+  -- only the starting player's is the game's first (docs/decisions.md, "Which
+  -- Grand Melee turn is the first turn of the game").
+  Spec.it s "CR 103.8 only the starting player's opening turn is the game's first" $ do
+    forest <- S.printingOf s registry "Forest"
+    Spec.assertEqWith s "CR 103.8 seat 0's turn is the first" (Turn.isFirstTurnOfGame (melee forest 8)) True
+    Spec.assertEqWith s "CR 807.4b seat 4's opening turn is not" (fmap (Turn.isFirstTurnOfGame . snd) (turnStates 1 (melee forest 8))) [False]
+
   -- CR 807.4d over a departed seat: seat 2 concedes during seat 0's turn, so
   -- seat 1, given seat 0's marker, has seats 3, 4 and 5 as its three to the
   -- left and waits while seat 4's marker is at seat 5.

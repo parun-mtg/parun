@@ -156,6 +156,8 @@ data Quantity
     IsActivePlayer PlayerRef.PlayerRef
   | -- | CR 500.7: how many turns of that kind of the game that player has begun.
     TurnsBegun TurnKind.TurnKind PlayerRef.PlayerRef
+  | -- | CR 103.8: 1 if the turn running is the game's first, else 0.
+    IsFirstTurnOfGame
   | -- | CR 700.5: that player's devotion to the payload's colours -- how many
     -- mana symbols of any of them appear among the mana costs of the permanents
     -- they control.

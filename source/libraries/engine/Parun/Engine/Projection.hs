@@ -5445,6 +5445,7 @@ quantityReads q = case q of
   Quantity.Type.IsStartingPlayer _ -> Set.empty
   Quantity.Type.IsActivePlayer _ -> Set.empty
   Quantity.Type.TurnsBegun {} -> Set.empty
+  Quantity.Type.IsFirstTurnOfGame -> Set.empty
   Quantity.Type.PlayerCounters {} -> Set.empty
   -- CR 700.5 reads three things off each permanent -- who controls it (layer 2),
   -- its mana cost and its copiable player abilities (CR 700.5a). Only the first

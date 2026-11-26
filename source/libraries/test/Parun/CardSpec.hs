@@ -3841,6 +3841,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.ActivationsThisTurn tally -> [(Unframed, ActivationsThisTurn.source tally)]
   Quantity.Type.RollTotalsThisTurn tally -> quantityKindFilters (RollTotalsThisTurn.total tally)
   Quantity.Type.PermanentsDiedThisTurn -> []
+  Quantity.Type.IsFirstTurnOfGame -> []
   Quantity.Type.DamagePreventedThisWay -> []
   Quantity.Type.SpellsCastUsingThisTurn {} -> []
   Quantity.Type.PhasesBegunThisTurn {} -> []
