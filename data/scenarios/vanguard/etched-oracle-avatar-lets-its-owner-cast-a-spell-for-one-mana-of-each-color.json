@@ -1,0 +1,174 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "aw"
+          },
+          {
+            "card": "Island",
+            "label": "au"
+          },
+          {
+            "card": "Swamp",
+            "label": "ab"
+          },
+          {
+            "card": "Mountain",
+            "label": "ar"
+          },
+          {
+            "card": "Forest",
+            "label": "ag"
+          }
+        ],
+        "command": [
+          {
+            "card": "Etched Oracle Avatar",
+            "label": "oracle"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Colossal Dreadmaw",
+            "label": "mine"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "bw"
+          },
+          {
+            "card": "Island",
+            "label": "bu"
+          },
+          {
+            "card": "Swamp",
+            "label": "bb"
+          },
+          {
+            "card": "Mountain",
+            "label": "br"
+          },
+          {
+            "card": "Forest",
+            "label": "bg"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Colossal Dreadmaw",
+            "label": "theirs"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Etched Oracle Avatar lets its owner, and not an opponent, cast a spell for {W}{U}{B}{R}{G} rather than its mana cost",
+  "note": "Five lands can't pay Colossal Dreadmaw's six-mana cost, so {W}{U}{B}{R}{G} is the only way to cast it.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$aw",
+            "$au",
+            "$ab",
+            "$ar",
+            "$ag"
+          ],
+          "object": "$mine"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Colossal Dreadmaw",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$bw",
+            "$bu",
+            "$bb",
+            "$br",
+            "$bg"
+          ],
+          "object": "$theirs"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Colossal Dreadmaw",
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}

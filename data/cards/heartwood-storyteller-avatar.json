@@ -1,0 +1,96 @@
+{
+  "faces": [
+    {
+      "name": "Heartwood Storyteller Avatar",
+      "oracleText": "The first creature spell you cast each turn costs {1} less to cast.\nThe first noncreature spell each opponent casts each turn costs {1} more to cast.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "ModifyCost",
+            "value": {
+              "change": {
+                "type": "Reduce",
+                "value": {
+                  "amount": [
+                    {
+                      "type": "Generic",
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              "matching": {
+                "type": "HasCardType",
+                "value": "Creature"
+              },
+              "onlyNth": {
+                "ordinal": 1,
+                "scope": {
+                  "type": "PlayersTurn",
+                  "value": {
+                    "type": "Relative",
+                    "value": "AnyPlayer"
+                  }
+                }
+              },
+              "subject": {
+                "type": "Spells"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        },
+        {
+          "effect": {
+            "type": "ModifyCost",
+            "value": {
+              "change": {
+                "type": "Increase",
+                "value": [
+                  {
+                    "type": "Generic",
+                    "value": 1
+                  }
+                ]
+              },
+              "matching": {
+                "type": "Not",
+                "value": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                }
+              },
+              "onlyNth": {
+                "ordinal": 1,
+                "scope": {
+                  "type": "PlayersTurn",
+                  "value": {
+                    "type": "Relative",
+                    "value": "AnyPlayer"
+                  }
+                }
+              },
+              "subject": {
+                "type": "Spells"
+              }
+            }
+          },
+          "scope": {
+            "type": "Opponent"
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": -1,
+        "lifeModifier": 4
+      }
+    }
+  ]
+}
