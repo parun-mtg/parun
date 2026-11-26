@@ -3149,12 +3149,14 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- Parun.Engine.Resolve reads each arm on ONE opcode: the Create arm hands the
   -- host EntryHost.Specified names to Event.createTokens, and the MoveToZone arm
   -- narrows CR 303.4f's choice by EntryHost.Chosen's filter or to the objects
-  -- EntryHost.Specified names (moveOne). So a Chosen on a Create, either on a
-  -- move anywhere but the battlefield, or either on a CreateCopy would say
-  -- something nothing performs.
+  -- EntryHost.Specified names (moveOne), and the CreateCopy arm draws a
+  -- reference original's host at random by EntryHost.Chosen's filter. So a
+  -- Chosen on a Create, either on a move anywhere but the battlefield, or on a
+  -- CreateCopy a Specified, a chosen host, or a host for an object in the game
+  -- would say something nothing performs.
   --
-  -- The CreateCopy half is the "no CreateCopy carries an entry rider but ..." lint
-  -- below, which fences every field this one does not.
+  -- The CreateCopy's other fields are the "no CreateCopy carries an entry rider
+  -- but ..." lint below.
   Spec.it s "each attachment rider is on the opcode that reads it" $ do
     ps <- S.allPrintings s corpus
     let specified riders = case EntryRiders.attachedTo riders of
@@ -3166,6 +3168,14 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         offends effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ zone riders _ _ _ _) -> (specified riders || chosenAmong riders) && zone /= Zone.Battlefield
           Effect.Create (Create.MkCreate _ _ riders _ _ _ _ _) -> chosenAmong riders
+          Effect.CreateCopy (CreateCopy.MkCreateCopy _ original riders _ _ _ _ _) -> case (EntryRiders.attachedTo riders, original) of
+            (Nothing, _) -> False
+            (_, CopyOriginal.OfObject _) -> True
+            (Just (EntryHost.Chosen CardSelection.AtRandom Nothing _), _) -> False
+            (Just _, _) -> True
+          _ -> False
+        copies effect = case effect of
+          Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ riders _ _ _ _ _) -> chosenAmong riders
           _ -> False
         creates effect = case effect of
           Effect.Create (Create.MkCreate _ _ riders _ _ _ _ _) -> specified riders
@@ -3205,9 +3215,11 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         offenders = filter ((\card -> anyFace (offendsOn card) card) . Printing.card) ps
     -- Guards against a vacuous sweep, one per arm: Preston Garvey, Minuteman
     -- creates a token attached to a target, Nomad Mythmaker moves an Aura card
-    -- attached to a creature its controller controls, and Necrotic Plague and
-    -- Eagle's Rescue return themselves attached to a target.
+    -- attached to a creature its controller controls, Necrotic Plague and
+    -- Eagle's Rescue return themselves attached to a target, and Peacekeeper
+    -- Avatar copies Arrest onto a random host.
     Spec.assertBool s (any (anyFace (any creates . cardResolutionEffects) . Printing.card) ps) "the pool has a card creating a token attached to something"
+    Spec.assertBool s (any (anyFace (any copies . cardResolutionEffects) . Printing.card) ps) "the pool has a card creating a copy token attached to a host it describes"
     Spec.assertBool s (any (anyFace (any moves . cardResolutionEffects) . Printing.card) ps) "the pool has a card moving an Aura attached to a host it describes"
     Spec.assertBool s (any (anyFace (any (\effect -> case effect of Effect.MoveToZone m -> specified (MoveToZone.riders m); _ -> False) . cardResolutionEffects) . Printing.card) ps) "the pool has a card moving an Aura attached to a host a slot names"
     Spec.assertEqWith s "each attachment rider is on the opcode that reads it (CR 303.4f, 303.4i)" (fmap (S.nameOf . Printing.card) offenders) []
@@ -3224,6 +3236,18 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
       "a transformed self-move is refused exactly where its back face is no Aura"
       (fmap (frontOffends . withBackSubtypes) [[Subtype.Type.Aura], []])
       [False, True]
+    -- The rejecting side for a copy token's host: Peacekeeper Avatar's random
+    -- host passes, and the same rider chosen by its creator does not.
+    peacekeeper <- Printing.card <$> S.printingOf s registry "Peacekeeper Avatar"
+    let peacekeeperCopies = [c | Effect.CreateCopy c <- concatMap cardResolutionEffects (Card.Type.faces peacekeeper)]
+        withSelection selection c = case EntryRiders.attachedTo (CreateCopy.riders c) of
+          Just (EntryHost.Chosen _ chooser filter_) -> Effect.CreateCopy c {CreateCopy.riders = (CreateCopy.riders c) {EntryRiders.attachedTo = Just (EntryHost.Chosen selection chooser filter_)}}
+          _ -> Effect.CreateCopy c
+    Spec.assertEqWith
+      s
+      "a copy token's host is refused unless drawn at random"
+      (fmap (\selection -> fmap (offends . withSelection selection) peacekeeperCopies) [CardSelection.AtRandom, CardSelection.ByChoice])
+      [[False], [True]]
   -- The sibling lint for the OTHER face-down rider, one field over and pointed
   -- at the opposite zone: CR 708.3 is a rule about entering the BATTLEFIELD, so
   -- on any other destination it is inert card data. Inert on a Create outright,
@@ -3282,9 +3306,11 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "only a move onto the battlefield enters under CR 611.2e effects" (fmap (S.nameOf . Printing.card) offenders) []
   -- Effect.CreateCopy carries the SAME EntryRiders record Create and MoveToZone
   -- do, but Parun.Engine.Resolve's arm reads only CR 122.6's `counters`, CR
-  -- 110.5b's `tapped`, CR 508.4's `attacking` and CR 509.4's `blocking` --
-  -- Littjara Mirrorlake's counter, Flamerush Rider's "tapped and attacking" and
-  -- Mirror Match's "blocking that creature". This is the fence for
+  -- 110.5b's `tapped`, CR 508.4's `attacking`, CR 509.4's `blocking` and CR
+  -- 303.4f's `attachedTo` -- Littjara Mirrorlake's counter, Flamerush Rider's
+  -- "tapped and attacking", Mirror Match's "blocking that creature" and
+  -- Peacekeeper Avatar's random host, whose shapes the lint above fences. This
+  -- is the fence for
   -- every other field, and ONE lint rather than a CreateCopy arm added to each
   -- above, so a card setting any of them would say something nothing performs.
   --
@@ -3293,13 +3319,10 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- and `faceDown` are inert for the reason the two lints above give: a token is
   -- not a card (CR 111.1), and CR 707.8a decides a copy token's face by copy rules.
   -- `exiledFaceDown` is inert because a token is created onto the battlefield and
-  -- CR 111.7 would end one anywhere else. `attachedTo` is unwired rather than
-  -- inert -- CR 303.4i speaks about any effect putting an Aura onto the
-  -- battlefield, and a copy token could be one -- and no printing writes it on a
-  -- CreateCopy, which is what the lint above says of the MoveToZone road too.
-  Spec.it s "no CreateCopy carries an entry rider but counters, tapped, attacking and blocking" $ do
+  -- CR 111.7 would end one anywhere else.
+  Spec.it s "no CreateCopy carries an entry rider but counters, tapped, attacking, blocking and attachedTo" $ do
     ps <- S.allPrintings s corpus
-    let bare riders = riders == EntryRiders.defaultValue {EntryRiders.counters = EntryRiders.counters riders, EntryRiders.tapped = EntryRiders.tapped riders, EntryRiders.attacking = EntryRiders.attacking riders, EntryRiders.blocking = EntryRiders.blocking riders}
+    let bare riders = riders == EntryRiders.defaultValue {EntryRiders.counters = EntryRiders.counters riders, EntryRiders.tapped = EntryRiders.tapped riders, EntryRiders.attacking = EntryRiders.attacking riders, EntryRiders.blocking = EntryRiders.blocking riders, EntryRiders.attachedTo = EntryRiders.attachedTo riders}
         offends effect = case effect of
           Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ riders _ _ _ _ _) -> not (bare riders)
           _ -> False
@@ -3311,7 +3334,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- this would pass whatever the arm read. Littjara Mirrorlake is the card that
     -- prints one.
     Spec.assertBool s (any (anyFace (any counters . cardResolutionEffects) . Printing.card) ps) "the pool has a card creating a copy token with counters on it"
-    Spec.assertEqWith s "a copy token reads only counters, tapped, attacking and blocking" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertEqWith s "a copy token reads only counters, tapped, attacking, blocking and attachedTo" (fmap (S.nameOf . Printing.card) offenders) []
   -- Unprinted: a meld rider other than CR 110.5b's tap state and CR 508.4's
   -- attacking (Mishra, Claimed by Gix's "It enters tapped and attacking"), which
   -- are all Parun.Engine.Resolve's Meld arm reads.

@@ -42,7 +42,7 @@ import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Resolve.Common as Common
-import Parun.Engine.Resolve.Slots (battlefieldMatching, conditionSlots, effectContext, effectViewOf, legalOne, objectRefObjects, overRelations, playerEffectFilterSlots, playerRefPlayers, replacementRowSlots, resolvingAbilityName, slotBindings, slotGroup)
+import Parun.Engine.Resolve.Slots (battlefieldMatching, conditionSlots, effectContext, effectViewOf, legalOne, matchingFromAmong, objectRefObjects, overRelations, playerEffectFilterSlots, playerRefPlayers, replacementRowSlots, resolvingAbilityName, slotBindings, slotGroup)
 import qualified Parun.Engine.Room as Room
 import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Turn as Turn
@@ -243,7 +243,7 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
   -- several for Dunbarrow Revivalist's "one of them", whose CR 608.2d choice
   -- among the legal hosts Event.createTokens makes once the token exists.
   --
-  -- EntryHost.Chosen is the MoveToZone's alone (moveOne), which
+  -- EntryHost.Chosen is MoveToZone's (moveOne) and CreateCopy's, which
   -- Parun.EffectLintSpec fences, so a Create reads it as naming no host.
   mAttached <- case EntryRiders.attachedTo entry of
     Nothing -> pure Nothing
@@ -600,11 +600,29 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
                 -- away with the read. ONE pick for every creator and the whole
                 -- count: no card in data/cards/ copies a reference card more than
                 -- once per resolution, so this reading is a regression fence.
-                originals = fmap (\src -> (src, gs)) sources <> foldMap (\printingId -> [Event.mintOutside controller printingId gs]) outside
+                counterfactual = fmap (\printingId -> Event.mintOutside controller printingId gs) outside
+                originals = fmap (\src -> (src, gs)) sources <> Maybe.maybeToList counterfactual
+            -- CR 303.4f's "any other applicable effects": the host the effect
+            -- describes, drawn at random (Peacekeeper Avatar's "a creature that
+            -- player controls chosen at random") from the Aura's own
+            -- entryHostsFor off the counterfactual board, narrowed by the
+            -- filter, MoveToZone's chosenHost offer. Handed to createTokens as
+            -- the one host it names, so CR 303.4g / 303.4i's "isn't created"
+            -- is the funnel's own where none is legal.
+            --
+            -- Unprinted: a chosen host for an object in the game, or chosen by
+            -- a player; Parun.EffectLintSpec keeps both out of card data, and a
+            -- CreateCopy reads them as naming no host, Create's reading.
+            attached <- case (EntryRiders.attachedTo entry, counterfactual) of
+              (Just (EntryHost.Chosen CardSelection.AtRandom Nothing filter_), Just (subject, board)) -> do
+                let offered = Maybe.mapMaybe Recipient.objectOf (Attach.entryHostsFor creating subject board)
+                drawn <- Game.drawAmong Prompt.RandomObject (matchingFromAmong legal resolving controller source gs filter_ offered)
+                pure (Just (fmap Recipient.ToObject (Maybe.maybeToList drawn)))
+              _ -> pure Nothing
             case NonEmpty.nonEmpty (Maybe.mapMaybe shapeOf originals) of
               Nothing -> pure []
               -- CR 508.4 / 509.4, Create's road.
-              Just shapes -> Common.creatingIntoCombat mAttack mBlocked (Event.createTokens settle creating shapes Nothing (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) Nothing (Common.resolvingMarks resolving gs))
+              Just shapes -> Common.creatingIntoCombat mAttack mBlocked (Event.createTokens settle creating shapes Nothing (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) attached (Common.resolvingMarks resolving gs))
     _ -> pure []
   -- Dance of Many's later abilities mean this token.
   Monad.when linked (State.modify' (\g -> foldr (Common.linkEntrant resolving source) g minted))

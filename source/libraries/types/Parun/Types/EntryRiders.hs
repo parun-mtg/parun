@@ -222,8 +222,10 @@ import qualified Parun.Types.TapState as TapState
 -- the rule's "and any other applicable effects": Nomad Mythmaker's "attached to
 -- a creature you control". Its CardSelection.AtRandom draws the host instead
 -- of asking (Infectious Rage), and its chooser asks another player
--- (Takklemaggot's "that creature's controller chooses"). Read by the MOVETOZONE alone
--- (Parun.Engine.Resolve.Arms.Zones's moveOne). Parun.EffectLintSpec fences both
+-- (Takklemaggot's "that creature's controller chooses"). Read by the MOVETOZONE
+-- (Parun.Engine.Resolve.Arms.Zones's moveOne), and its random draw by a
+-- CREATECOPY of a reference card (Peacekeeper Avatar's Arrest, drawn off
+-- Event.mintOutside's counterfactual). Parun.EffectLintSpec fences both
 -- arms; putFound carries CR 303.4i's fixed host down its own road instead.
 --
 -- NOT the road CR 701.58a's cloak takes, though the pairing it needs -- the 2/2

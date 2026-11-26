@@ -1,0 +1,108 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 3
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "CreateCopy",
+                              "value": {
+                                "original": {
+                                  "type": "Named",
+                                  "value": "Arrest"
+                                },
+                                "riders": {
+                                  "attachedTo": {
+                                    "type": "Chosen",
+                                    "value": {
+                                      "filter": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Creature"
+                                          },
+                                          {
+                                            "type": "HeldByBound",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "slot": "opponent"
+                                            }
+                                          },
+                                          {
+                                            "type": "IsInZone",
+                                            "value": "Battlefield"
+                                          }
+                                        ]
+                                      },
+                                      "selection": "AtRandom"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "Players",
+                            "value": {
+                              "players": {
+                                "type": "Relative",
+                                "value": "Opponent"
+                              },
+                              "who": {
+                                "type": "Controls",
+                                "value": {
+                                  "filter": {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  "margin": {
+                                    "type": "AtLeast",
+                                    "value": 1
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "slot": "opponent"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Peacekeeper Avatar",
+      "oracleText": "{3}: For each opponent who controls a creature, create a token that's a copy of a card named Arrest and attach it to a creature that player controls chosen at random.",
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 0,
+        "lifeModifier": 9
+      }
+    }
+  ]
+}
