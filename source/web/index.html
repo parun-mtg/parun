@@ -28,10 +28,12 @@
     <link rel="apple-touch-icon" href="./icon.png">
     <link rel="manifest" href="./manifest.webmanifest">
     <!-- The settings before first paint: those saved from the settings menu
-         (page.js), else the system's theme, normal cards and full motion. -->
+         (page.js), else the system's theme, compact cards below the 700px
+         breakpoint and normal above it, and full motion. A stored size the
+         menu no longer offers reads as normal. -->
     <script>
       document.documentElement.dataset.theme = localStorage.getItem("parun-theme") ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-      document.documentElement.dataset.density = localStorage.getItem("parun-density") ?? "normal";
+      document.documentElement.dataset.density = (localStorage.getItem("parun-density") ?? (matchMedia("(max-width: 699px)").matches ? "compact" : "normal")) === "compact" ? "compact" : "normal";
       document.documentElement.dataset.motion = localStorage.getItem("parun-motion") ?? "full";
     </script>
     <link rel="stylesheet" href="./style.css">
@@ -110,7 +112,6 @@
         <fieldset><legend>Card size</legend>
           <label><input type="radio" name="density" value="compact"> Compact</label>
           <label><input type="radio" name="density" value="normal"> Normal</label>
-          <label><input type="radio" name="density" value="large"> Large</label>
         </fieldset>
         <fieldset><legend>Motion</legend>
           <label><input type="radio" name="motion" value="full"> Full</label>

@@ -4624,17 +4624,9 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   font-size: 14px;
 }
 
-:root[data-density="large"] {
-  --card-w-size: 112px;
-}
-
 @media (min-width: 700px) {
   :root[data-density="compact"] {
     --card-w-size: 92px;
-  }
-
-  :root[data-density="large"] {
-    --card-w-size: 140px;
   }
 }
 
