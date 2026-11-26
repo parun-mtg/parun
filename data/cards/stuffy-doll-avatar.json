@@ -1,0 +1,127 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PreventAllDamage",
+                        "value": {
+                          "chosenSource": {
+                            "type": "And",
+                            "value": []
+                          },
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "you"
+                          },
+                          "riders": [
+                            {
+                              "type": "DealDamage",
+                              "value": {
+                                "parts": [
+                                  {
+                                    "quantity": {
+                                      "type": "Quotient",
+                                      "value": {
+                                        "divisor": {
+                                          "type": "Literal",
+                                          "value": 2
+                                        },
+                                        "quantity": {
+                                          "type": "InSlot",
+                                          "value": "thatMuch"
+                                        },
+                                        "rounding": "Up"
+                                      }
+                                    },
+                                    "ref": {
+                                      "type": "InSlot",
+                                      "value": "you"
+                                    }
+                                  },
+                                  {
+                                    "quantity": {
+                                      "type": "Quotient",
+                                      "value": {
+                                        "divisor": {
+                                          "type": "Literal",
+                                          "value": 2
+                                        },
+                                        "quantity": {
+                                          "type": "InSlot",
+                                          "value": "thatMuch"
+                                        },
+                                        "rounding": "Up"
+                                      }
+                                    },
+                                    "ref": {
+                                      "type": "InSlot",
+                                      "value": "target"
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "IsPlayer",
+                          "value": "Opponent"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Planeswalker"
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "AnyTarget"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "restrictions": [
+            {
+              "type": "TimesEachTurn",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "name": "Stuffy Doll Avatar",
+      "oracleText": "{0}: If damage would be dealt to you this turn by a source of your choice, prevent that damage. Stuffy Doll Avatar deals damage to you and target opponent or planeswalker equal to half the damage prevented this way, rounded up. Activate only once each turn.",
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 0,
+        "lifeModifier": -6
+      }
+    }
+  ]
+}
