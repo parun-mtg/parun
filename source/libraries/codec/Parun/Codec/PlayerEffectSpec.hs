@@ -51,6 +51,7 @@ import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
+import qualified Parun.Types.PlayAsCopy as PlayAsCopy
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -71,6 +72,7 @@ import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TriggeringMove as TriggeringMove
@@ -595,6 +597,13 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       PlayerEffect.codec
       (PlayerEffect.CantPlayLands (Filter.HasName (CardName.MkCardName (Text.pack "Bazaar of Baghdad"))))
       " {\"type\":\"CantPlayLands\",\"value\":{\"type\":\"HasName\",\"value\":\"Bazaar of Baghdad\"}} "
+  -- CR 305.1 / 707.2 / Dakkon Blackblade Avatar.
+  Spec.it s "PlayAsCopy" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      (PlayerEffect.PlayAsCopy (PlayAsCopy.MkPlayAsCopy (Filter.And []) (Filter.HasSupertype Supertype.Basic)))
+      " {\"type\":\"PlayAsCopy\",\"value\":{\"cards\":{\"type\":\"And\",\"value\":[]},\"original\":{\"type\":\"HasSupertype\",\"value\":\"Basic\"}}} "
   -- CR 601.3 / Yawgmoth's Will, whose sentence names no quality of the spell and
   -- whose zone is the caster's own.
   Spec.it s "CastFrom, an empty filter" $

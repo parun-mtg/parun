@@ -75,7 +75,6 @@ import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.BlockChoice as BlockChoice
 import qualified Parun.Types.Card as Card.Type
-import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChangeTargets as ChangeTargets
@@ -125,7 +124,6 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.InitiativeTarget as InitiativeTarget
-import qualified Parun.Types.Keyword as KeywordType
 import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.LibraryDepth as LibraryDepth
@@ -438,7 +436,7 @@ conjure settle resolving source controller legal payload = do
           -- nothing conjures nothing.
           referenceAmount from = FromReference.amount from >>= Common.evaluateForRecipient viewOf context gs resolving source conjuring
           pickReference predicate amount names = do
-            found <- pickName names >>= admittedReferenceCard predicate amount
+            found <- pickName names >>= Common.admittedReferenceCard predicate amount
             g <- State.get
             pure (fmap (\card -> (card, Nothing)) (found >>= (`Game.cardOfPrinting` g)))
           referencePickers from count = do
@@ -639,38 +637,15 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
 
 -- | CR 108.1: the card a copy's original names outside the game, interned --
 -- the Oracle reference's card of that name, the effect's own defined card, or
--- one the reference admits chosen at random -- and Nothing for an object in
--- the game. A random pick asks the interpreter which cards the filter admits,
--- off the pre-effect board like conjure's reference road, and is filtered back:
--- a reference admitting nothing copies nothing (CR 111.12).
+-- one the reference admits chosen at random (Common.drawReferenceCards) -- and
+-- Nothing for an object in the game. A reference admitting nothing copies
+-- nothing (CR 111.12).
 referenceOriginal :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> CopyOriginal.CopyOriginal Card.Type.Card -> Game (Maybe PrintingId.PrintingId)
 referenceOriginal resolving source controller legal original = case original of
   CopyOriginal.Named name -> Game.lookUpCard name
   CopyOriginal.Defined card -> fmap Just (State.state (Game.intern (Printing.ofCard card)))
   CopyOriginal.OfObject _ -> pure Nothing
-  CopyOriginal.AtRandom from -> do
-    gs <- State.get
-    let predicate = FromReference.filter from
-        context = effectContext gs resolving controller source legal (slotBindings resolving gs)
-        amount = FromReference.amount from >>= Common.evaluateForRecipient (effectViewOf resolving source legal gs) context gs resolving source controller
-    names <- Game.ask (Prompt.ReferenceCards predicate amount)
-    case NonEmpty.nonEmpty (ListUtils.nubOrd names) of
-      Nothing -> pure Nothing
-      Just offered -> do
-        answer <- Maybe.fromMaybe (NonEmpty.head offered) <$> Game.drawAmong Prompt.RandomCard (NonEmpty.toList offered)
-        admittedReferenceCard predicate amount answer
-
--- | CR 108.1: the reference card of this name, interned, provided the filter
--- admits it -- an answer outside what the filter admits is not taken.
-admittedReferenceCard :: Filter.Type.Filter KeywordType.Keyword -> Maybe Integer -> CardName.CardName -> Game (Maybe PrintingId.PrintingId)
-admittedReferenceCard predicate amount answer = do
-  found <- Game.lookUpCard answer
-  g <- State.get
-  pure $ do
-    printingId <- found
-    card <- Game.cardOfPrinting printingId g
-    Monad.guard (Projection.referenceAdmits (Game.teams g) amount predicate card)
-    Just printingId
+  CopyOriginal.AtRandom from -> Maybe.listToMaybe <$> Common.drawReferenceCards resolving source controller legal 1 from
 
 becomeCopy :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> BecomeCopy.BecomeCopy Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 becomeCopy resolving source controller legal chosen (BecomeCopy.MkBecomeCopy original subjectRef duration exceptions newTargets) = do

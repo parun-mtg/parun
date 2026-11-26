@@ -350,6 +350,7 @@ import qualified Parun.Types.MoveDuration as MoveDuration
 import qualified Parun.Types.MoveMana as MoveMana
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.NamedCopySource as NamedCopySource
 import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextStepOf as NextStepOf
@@ -361,6 +362,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.ObjectRestriction as ObjectRestriction
 import qualified Parun.Types.OfferCast as OfferCast
+import qualified Parun.Types.OfferNamedCopy as OfferNamedCopy
 import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
@@ -387,6 +389,7 @@ import qualified Parun.Types.PhaseRewrite as PhaseRewrite
 import qualified Parun.Types.PlacesSticker as PlacesSticker
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
 import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
+import qualified Parun.Types.PlayAsCopy as PlayAsCopy
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
@@ -598,6 +601,7 @@ filterChildren children predicate = case predicate of
   Filter.HasColor _ -> pure predicate
   Filter.Shares trait anchor -> fmap (Filter.Shares trait) (anchorChildren children anchor)
   Filter.HasSubtype _ -> pure predicate
+  Filter.ProducesColorOf name -> fmap Filter.ProducesColorOf (slot children SlotArity.One name)
   Filter.HasName _ -> pure predicate
   Filter.HasNameOriginallyPrintedIn _ -> pure predicate
   Filter.NameWordsAtLeast _ -> pure predicate
@@ -723,6 +727,7 @@ filterChildren children predicate = case predicate of
   Filter.WasCastFrom _ -> pure predicate
   Filter.TagWasSpent _ -> pure predicate
   Filter.Paid designator -> fmap Filter.Paid (designatorChildren children designator)
+  Filter.EnteredUsing designator -> fmap Filter.EnteredUsing (designatorChildren children designator)
   Filter.IsPrototyped -> pure predicate
   Filter.IsPreparedSpell -> pure predicate
   Filter.IsModal -> pure predicate
@@ -1399,7 +1404,8 @@ effectChildren c effect = case effect of
           <*> pure controlWhileResolving
           <*> traverse (onSlot c) named
       )
-  Effect.OfferNamedCopy _ -> pure effect
+  Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy names count offer) ->
+    fmap Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy <$> namedCopySourceChildren c names <*> pure count <*> castOfferChildren c offer)
   Effect.OfferNotedCopy offer -> fmap Effect.OfferNotedCopy (castOfferChildren c offer)
   Effect.GrantCopyCast (GrantCopyCast.MkGrantCopyCast duration who spending recopy) ->
     fmap Effect.GrantCopyCast (GrantCopyCast.MkGrantCopyCast <$> onDuration c duration <*> onPlayer c who <*> pure spending <*> traverse (onCondition c) recopy)
@@ -1502,6 +1508,12 @@ copyOriginalChildren c original = case original of
   CopyOriginal.Named name -> pure (CopyOriginal.Named name)
   CopyOriginal.Defined card -> fmap CopyOriginal.Defined (onCard c card)
   CopyOriginal.AtRandom from -> fmap CopyOriginal.AtRandom (fromReferenceChildren c from)
+
+-- | Where a named copy's names come from: a list, or a reference pick.
+namedCopySourceChildren :: (Applicative f) => EffectChildren card ability f -> NamedCopySource.NamedCopySource -> f NamedCopySource.NamedCopySource
+namedCopySourceChildren c names = case names of
+  NamedCopySource.Unchosen _ -> pure names
+  NamedCopySource.AtRandom from -> fmap NamedCopySource.AtRandom (fromReferenceChildren c from)
 
 -- | CR 108.1: a reference pick's filter and the bound it reads.
 fromReferenceChildren :: (Applicative f) => EffectChildren card ability f -> FromReference.FromReference -> f FromReference.FromReference
@@ -2367,6 +2379,7 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.CantCastMatching filter_ -> PlayerEffect.CantCastMatching <$> playerFilter c filter_
   PlayerEffect.CastOnlyAtSorcerySpeed -> pure effect
   PlayerEffect.CantPlayLands filter_ -> PlayerEffect.CantPlayLands <$> playerFilter c filter_
+  PlayerEffect.PlayAsCopy (PlayAsCopy.MkPlayAsCopy cards original) -> fmap PlayerEffect.PlayAsCopy (PlayAsCopy.MkPlayAsCopy <$> playerFilter c cards <*> playerFilter c original)
   PlayerEffect.CastFrom (CastFromZone.MkCastFromZone from matching limit verb pool additionalCosts reduction spending alternativeCost entersWith exiledInstead amount creatureTypes outsideTheGame) ->
     fmap PlayerEffect.CastFrom (CastFromZone.MkCastFromZone <$> traverse (playerZone c) from <*> playerFilter c matching <*> pure limit <*> pure verb <*> pure pool <*> traverse (playerCostComponent c) additionalCosts <*> pure reduction <*> pure spending <*> pure alternativeCost <*> traverse (\(WithCounters.MkWithCounters counters) -> WithCounters.MkWithCounters <$> traverse (playerQuantity c) counters) entersWith <*> pure exiledInstead <*> traverse (playerQuantity c) amount <*> traverseSet (playerCreatureSubtype c) creatureTypes <*> pure outsideTheGame)
   PlayerEffect.PlayLandsFrom from -> PlayerEffect.PlayLandsFrom <$> playerZone c from

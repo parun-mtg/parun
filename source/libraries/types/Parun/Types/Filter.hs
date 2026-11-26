@@ -81,6 +81,11 @@ data Filter keyword
     -- Parun.FilterPositionLintSpec keeps out of card data.
     Shares Trait.Trait (Anchor.Anchor (Filter keyword))
   | HasSubtype Subtype.Subtype -- CR 205.3: the object's subtypes include this one.
+  | -- | CR 305.6: one of the candidate's basic land types has an intrinsic mana
+    -- ability adding a colour of the object bound at this slot, read off the
+    -- land types rather than the abilities (Dakkon
+    -- Blackblade Avatar's "can produce mana of one of the card's colors").
+    ProducesColorOf SlotName.SlotName
   | -- | CR 201.2: the object's names include this LITERAL one. Membership, as CR
     -- 709.4a states the test -- a split card off the stack and a Room with both
     -- doors unlocked each show two names at once. The printed name, never a
@@ -752,6 +757,10 @@ data Filter keyword
     -- -- Hallar's "if that spell was kicked", Henzie "Toolbox" Torre's "blitz
     -- costs you pay".
     Paid (KeywordDesignator.KeywordDesignator keyword)
+  | -- | CR 400.7: the candidate, as this object, was put onto the battlefield by
+    -- an ability of a keyword the designator names -- Malfegor Avatar's "if it
+    -- was unearthed" (CR 702.84a). Read off Object.enteredUsing.
+    EnteredUsing (KeywordDesignator.KeywordDesignator keyword)
   | -- | CR 719.3c / 719.3d: the candidate is a prototyped spell or a permanent
     -- that was one, a copy of either included. Not Paid above: a Clone of a
     -- kicked permanent was not kicked (CR 707.2), where CR 719.3d makes a copy

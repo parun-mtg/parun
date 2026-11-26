@@ -380,6 +380,7 @@ import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveThisFrom as MoveThisFrom
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.NamedCopySource as NamedCopySource
 import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.Ninjutsu as Ninjutsu
@@ -388,6 +389,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.ObjectRestriction as ObjectRestriction
 import qualified Parun.Types.OfferCast as OfferCast
+import qualified Parun.Types.OfferNamedCopy as OfferNamedCopy
 import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
@@ -412,6 +414,7 @@ import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlacesSticker as PlacesSticker
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
 import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
+import qualified Parun.Types.PlayAsCopy as PlayAsCopy
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerCounters as PlayerCounters
@@ -3587,6 +3590,12 @@ conjureReferenceFilters cards = case cards of
   ConjureCards.Duplicate {} -> []
   ConjureCards.Reference from -> (Unframed, FromReference.filter from) : foldMap quantityFilters (FromReference.amount from)
 
+-- A named copy's reference pick's own Filters, conjureReferenceFilters' reading.
+namedCopyReferenceFilters :: NamedCopySource.NamedCopySource -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
+namedCopyReferenceFilters names = case names of
+  NamedCopySource.Unchosen {} -> []
+  NamedCopySource.AtRandom from -> (Unframed, FromReference.filter from) : foldMap quantityFilters (FromReference.amount from)
+
 -- A conjure reference pick's bound, the one Quantity the card half carries.
 conjureCardsAmount :: ConjureCards.ConjureCards card -> [Quantity.Type.Quantity]
 conjureCardsAmount cards = case cards of
@@ -4438,6 +4447,9 @@ playerEffectFilters playerEffect = case playerEffect of
   -- exactly as the cast-side one above is (City in a Bottle's is an Or of
   -- HasName, Damping Engine's is `And []`).
   PlayerEffect.CantPlayLands f -> [f]
+  -- CR 305.1's play-as-copy permission: the played card's qualities, and the
+  -- reference card's, read against the printed card (CR 400.11).
+  PlayerEffect.PlayAsCopy (PlayAsCopy.MkPlayAsCopy f original) -> [f, original]
   -- CR 601.3's zone permission, narrowed by the card's own qualities exactly as
   -- the timing permission beside it is (Yawgmoth's Will's is `And []`, Garruk's
   -- Horde's "creature spells"). WHOSE zone rides beside the Filter and is no
@@ -5848,7 +5860,12 @@ effectFilters effect = case effect of
   -- A PlayerRef carries no Filter, exactly as GainPlayerCounters' does not.
   Effect.Shuffle {} -> []
   -- Nor do card names.
-  Effect.OfferNamedCopy {} -> []
+  -- A reference pick's Filters, conjureReferenceFilters' reading, and the
+  -- offer's own, OfferCast's arm below.
+  Effect.OfferNamedCopy x ->
+    namedCopyReferenceFilters (OfferNamedCopy.names x)
+      <> slotlessCost (foldMap costFilters (CastOffer.payingInstead (OfferNamedCopy.offer x)))
+      <> outsideTheGameFramed (Maybe.maybeToList (CastOffer.restriction (OfferNamedCopy.offer x)))
   Effect.OfferNotedCopy {} -> []
   Effect.GrantCopyCast grant -> frame Unframed (durationFilters (GrantCopyCast.duration grant)) <> foldMap conditionFilters (GrantCopyCast.recopy grant)
   -- All THREE positions the opcode can hold a Filter in: the reference, CR 118.9's

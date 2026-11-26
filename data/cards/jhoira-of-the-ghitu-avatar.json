@@ -1,0 +1,134 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "DiscardCards",
+                "value": {
+                  "count": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "whichCards": {
+                    "type": "And",
+                    "value": []
+                  }
+                }
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 3
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "OfferNamedCopy",
+                        "value": {
+                          "count": 3,
+                          "names": {
+                            "type": "AtRandom",
+                            "value": {
+                              "filter": {
+                                "type": "HasCardType",
+                                "value": "Instant"
+                              }
+                            }
+                          },
+                          "offer": {
+                            "withoutPayingManaCost": true
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "DiscardCards",
+                "value": {
+                  "count": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "whichCards": {
+                    "type": "And",
+                    "value": []
+                  }
+                }
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 3
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "OfferNamedCopy",
+                        "value": {
+                          "count": 3,
+                          "names": {
+                            "type": "AtRandom",
+                            "value": {
+                              "filter": {
+                                "type": "HasCardType",
+                                "value": "Sorcery"
+                              }
+                            }
+                          },
+                          "offer": {
+                            "withoutPayingManaCost": true
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "restrictions": [
+            {
+              "type": "SorcerySpeed"
+            }
+          ]
+        }
+      ],
+      "name": "Jhoira of the Ghitu Avatar",
+      "oracleText": "{3}, Discard a card: Copy three instant cards chosen at random. You may cast one of the copies without paying its mana cost.\n{3}, Discard a card: Copy three sorcery cards chosen at random. You may cast one of the copies without paying its mana cost. Activate only as a sorcery.",
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 1,
+        "lifeModifier": 0
+      }
+    }
+  ]
+}

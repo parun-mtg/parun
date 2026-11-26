@@ -224,6 +224,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           Object.castFrom = Just (CastOrigin.FromZone Zone.Graveyard),
           Object.castBy = Just (PlayerId.MkPlayerId 2),
           Object.castUsing = Just Keyword.JumpStart,
+          Object.enteredUsing = Just Keyword.Persist,
           Object.castGrants = [Keyword.Retrace, Keyword.Convoke],
           Object.castCostChanges = [CostReduction.MkCostReduction (ManaCost.MkManaCost [ManaSymbol.Generic 8]) (Quantity.Literal 1) Nothing Nothing True CostDirection.More],
           Object.exileLookers = Set.singleton (ExileLooker.ThePlayer (PlayerId.MkPlayerId 27)),
@@ -281,6 +282,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           <> ",\"announcedX\":20,\"castFrom\":{\"type\":\"FromZone\",\"value\":\"Graveyard\"}"
           <> ",\"castBy\":2"
           <> ",\"castUsing\":{\"type\":\"JumpStart\"}"
+          <> ",\"enteredUsing\":{\"type\":\"Persist\"}"
           <> ",\"castGrants\":[{\"type\":\"Retrace\"},{\"type\":\"Convoke\"}]"
           <> ",\"castCostChanges\":[{\"amount\":[{\"type\":\"Generic\",\"value\":8}],\"perEach\":{\"type\":\"Literal\",\"value\":1},\"noneTargeted\":true,\"direction\":\"More\"}]"
           <> ",\"exileLookers\":[{\"type\":\"ThePlayer\",\"value\":27}]"

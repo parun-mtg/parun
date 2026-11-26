@@ -64,7 +64,6 @@ import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.BlockChoice as BlockChoice
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card.Type
-import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CarryOver as CarryOver
 import qualified Parun.Types.CastObligation as CastObligation
@@ -130,12 +129,14 @@ import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.MillTally as MillTally
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.MoveToZone as MoveToZone
+import qualified Parun.Types.NamedCopySource as NamedCopySource
 import qualified Parun.Types.NumberFloor as NumberFloor
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.ObjectRef (ObjectRef)
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
+import qualified Parun.Types.OfferNamedCopy as OfferNamedCopy
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PermissionVerb as PermissionVerb
@@ -276,11 +277,13 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
             State.modify' (\g -> g {GameState.movedUntil = Map.insert newId watch (GameState.movedUntil g)})
           -- CR 400.7 / 607.5: which object's effect put this permanent onto
           -- the battlefield, and with which of its abilities, for
-          -- Filter.EnteredWithSource. Read off where the incarnation landed, so
-          -- a redirected move records nothing.
+          -- Filter.EnteredWithSource, and which keyword minted that ability, for
+          -- Filter.EnteredUsing. Read off where the incarnation landed, so a
+          -- redirected move records nothing.
           landed <- State.gets (fmap Object.zone . Game.lookupObject newId)
           Monad.when (landed == Just Zone.Battlefield) $ do
             State.modify' (Common.linkEntrant resolving source newId)
+            State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.enteredUsing = Common.resolvingKeyword resolving g}) newId (GameState.objects g)})
             State.modify' (Common.linkCraftMaterials resolving newId)
         -- CR 614.1c with CR 616.1g's Voice of All example: the member's
         -- as-enters effects run before the next member's entry applies, in the
@@ -813,29 +816,39 @@ offerCastArm offerCast runSubgame resolving source controller legal chosen (Offe
   -- CR 400.7h: the rest of the effect names the spells, bindObjects's shape.
   Common.bindObjects resolving slot spells
 
--- CR 707.13 (Garth One-Eye): choose one of the listed names not yet chosen for
--- this source, look the card up (CR 108.1), create a copy of it outside the
--- game, and offer its controller the cast. The names are card data; nothing
--- here asks which one it holds.
+-- CR 707.13: name the copies, look each card up (CR 108.1), create the copies
+-- outside the game, and offer their controller the cast of one. The names are
+-- card data; nothing here asks which one it holds.
 --
+-- Garth One-Eye's names are chosen among those not yet chosen for this source.
 -- The memory is GameState.namedCopyChoices under the SOURCE's id, so it holds
 -- across a change of control and after the source has left (CR 113.7a), and
--- CR 400.7's new object starts empty. The name is spent whether or not the
--- copy is cast, and with none left the arm does nothing (rulings, 2021-06-18).
+-- CR 400.7's new object starts empty. A name is spent whether or not the copy
+-- is cast, and with none left nothing is copied (rulings, 2021-06-18). The
+-- unchosen names are Common.chooseNameAmong's list.
 --
--- The unchosen names are Common.chooseNameAmong's list.
-offerNamedCopy :: (Game Result -> Filter.Context -> PlayerId -> PrintingId.PrintingId -> CastOffer.CastOffer -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> NonEmpty.NonEmpty CardName.CardName -> Game ()
-offerNamedCopy offerOutsideCopy runSubgame resolving source controller legal names = do
-  gs <- State.get
-  let spent = Map.findWithDefault Set.empty source (GameState.namedCopyChoices gs)
-      remaining = NonEmpty.filter (`Set.notMember` spent) names
-  picked <- Common.chooseNameAmong controller source Seq.empty remaining
-  Monad.forM_ picked $ \name -> do
-    State.modify' $ \g -> g {GameState.namedCopyChoices = Map.insertWith Set.union source (Set.singleton name) (GameState.namedCopyChoices g)}
-    found <- Game.lookUpCard name
-    Monad.forM_ found $ \printingId -> do
-      g <- State.get
-      offerOutsideCopy runSubgame (effectContext g resolving controller source legal (slotBindings resolving g)) controller printingId Common.ordinaryOffer
+-- Jhoira of the Ghitu Avatar's are distinct reference cards drawn at random
+-- (Common.drawReferenceCards).
+offerNamedCopy :: (Game Result -> Filter.Context -> PlayerId -> [PrintingId.PrintingId] -> CastOffer.CastOffer -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> OfferNamedCopy.OfferNamedCopy -> Game ()
+offerNamedCopy offerOutsideCopy runSubgame resolving source controller legal (OfferNamedCopy.MkOfferNamedCopy names count offer) = do
+  printingIds <- case names of
+    NamedCopySource.Unchosen listed -> unchosen listed count
+    NamedCopySource.AtRandom from -> Common.drawReferenceCards resolving source controller legal count from
+  g <- State.get
+  offerOutsideCopy runSubgame (effectContext g resolving controller source legal (slotBindings resolving g)) controller printingIds offer
+  where
+    unchosen listed n
+      | n <= 0 = pure []
+      | otherwise = do
+          gs <- State.get
+          let spent = Map.findWithDefault Set.empty source (GameState.namedCopyChoices gs)
+          picked <- Common.chooseNameAmong controller source Seq.empty (NonEmpty.filter (`Set.notMember` spent) listed)
+          case picked of
+            Nothing -> pure []
+            Just name -> do
+              State.modify' $ \g -> g {GameState.namedCopyChoices = Map.insertWith Set.union source (Set.singleton name) (GameState.namedCopyChoices g)}
+              found <- Game.lookUpCard name
+              (Maybe.maybeToList found <>) <$> unchosen listed (n - 1)
 
 -- CR 707.14 (Magar of the Magic Strings): the copy is made from the card noted
 -- for the SOURCE as it entered (EntryRiders.noted), so a copy of that permanent,
@@ -845,11 +858,11 @@ offerNamedCopy offerOutsideCopy runSubgame resolving source controller legal nam
 -- that put it there (CR 400.7) -- so the printing is the copy's whole source.
 --
 -- Created outside the game, as CR 707.13's is: CR 707.14 names no zone.
-offerNotedCopy :: (Game Result -> Filter.Context -> PlayerId -> PrintingId.PrintingId -> CastOffer.CastOffer -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> CastOffer.CastOffer -> Game ()
+offerNotedCopy :: (Game Result -> Filter.Context -> PlayerId -> [PrintingId.PrintingId] -> CastOffer.CastOffer -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> CastOffer.CastOffer -> Game ()
 offerNotedCopy offerOutsideCopy runSubgame resolving source controller legal offer = do
   gs <- State.get
   Monad.forM_ (Map.lookup source (GameState.notedCards gs)) $ \printingId ->
-    offerOutsideCopy runSubgame (effectContext gs resolving controller source legal (slotBindings resolving gs)) controller printingId offer
+    offerOutsideCopy runSubgame (effectContext gs resolving controller source legal (slotBindings resolving gs)) controller [printingId] offer
 
 -- CR 601.3: write the standing permission onto every object the ObjectRef names
 -- that lies in the opcode's zone, for the player the PlayerRef names and the

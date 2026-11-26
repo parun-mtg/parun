@@ -210,6 +210,7 @@ import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveMana as MoveMana
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.NamedCopySource as NamedCopySource
 import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextStepOf as NextStepOf
@@ -219,6 +220,7 @@ import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.ObjectRef (ObjectRef)
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
+import qualified Parun.Types.OfferNamedCopy as OfferNamedCopy
 import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Optionality as Optionality
@@ -1598,7 +1600,8 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   -- it names a slot at all.
   -- And the slots Rod of Absorption's total reads (its X).
   Effect.OfferCast (OfferCast.MkOfferCast ref _ _ _ _ repetition _ _ _) -> joinTwo (objectRefSlots ref) (repetitionSlots repetition)
-  Effect.OfferNamedCopy {} -> Map.empty
+  -- A reference pick's bound, CreateCopy's originalQuantities.
+  Effect.OfferNamedCopy x -> joinSlots (fmap quantitySlots (namedCopyQuantities x))
   Effect.OfferNotedCopy {} -> Map.empty
   Effect.GrantPlayFromExile grant -> joinTwo (durationSlots (GrantPlayFromExile.duration grant)) (maybe Map.empty conditionSlots (GrantPlayFromExile.condition grant))
   Effect.GrantCopyCast grant -> joinTwo (durationSlots (GrantCopyCast.duration grant)) (maybe Map.empty conditionSlots (GrantCopyCast.recopy grant))
@@ -2462,7 +2465,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.ExchangeOwnership {} -> True
   Effect.Shuffle {} -> True
   Effect.OfferCast {} -> True
-  Effect.OfferNamedCopy {} -> True
+  Effect.OfferNamedCopy x -> all Quantity.slotsAreExhaustive (namedCopyQuantities x)
   Effect.OfferNotedCopy {} -> True
   Effect.GrantPlayFromExile grant -> durationSlotsAreExhaustive (GrantPlayFromExile.duration grant) && all conditionSlotsAreExhaustive (GrantPlayFromExile.condition grant)
   Effect.GrantCopyCast grant -> durationSlotsAreExhaustive (GrantCopyCast.duration grant) && all conditionSlotsAreExhaustive (GrantCopyCast.recopy grant)
@@ -2753,7 +2756,7 @@ hasRead wanted =
         -- Illusionary Mask's "whose mana cost could be paid by ... the mana you
         -- spent on {X}" reads that mana.
         Effect.OfferCast offer -> any (Quantity.hasRead wanted) (repetitionQuantities (OfferCast.repetition offer)) || (wanted == StaticRead.ReadsManaSpentOnX && CastOffer.payableFromSpent (OfferCast.offer offer))
-        Effect.OfferNamedCopy {} -> False
+        Effect.OfferNamedCopy x -> any (Quantity.hasRead wanted) (namedCopyQuantities x)
         Effect.OfferNotedCopy {} -> False
         Effect.GrantPlayFromExile {} -> False
         Effect.GrantCopyCast {} -> False
@@ -3971,6 +3974,13 @@ originalQuantities original = case original of
   CopyOriginal.Named {} -> []
   CopyOriginal.Defined {} -> []
   CopyOriginal.AtRandom from -> Maybe.maybeToList (FromReference.amount from)
+
+-- The quantities a named copy's names read: a reference pick's bound
+-- (Parun.Types.FromReference's amount).
+namedCopyQuantities :: OfferNamedCopy.OfferNamedCopy -> [Quantity.Type.Quantity]
+namedCopyQuantities x = case OfferNamedCopy.names x of
+  NamedCopySource.Unchosen {} -> []
+  NamedCopySource.AtRandom from -> Maybe.maybeToList (FromReference.amount from)
 
 -- | CR 115.1's kind of the spell or ability `resolving` is, which CR 608.2b's
 -- re-check and CR 115.7's and CR 707.10c's re-choices hand the targeting

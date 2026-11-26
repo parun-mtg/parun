@@ -102,9 +102,16 @@ playableLands :: PlayerId -> GameState -> [(ObjectId, Maybe CardName.CardName)]
 playableLands pid gs =
   let playable oid = case (Game.lookupLayerOne oid gs, Game.cardOfHandMember oid gs) of
         (Just obj, Just card) ->
-          if PlayerEffect.prohibitsPlayingLand pid oid (Cast.turnedUpForPlay oid Facing.FaceUp gs)
-            then []
-            else [(oid, mName) | (mName, _) <- Game.landFacesOf obj card, Set.member oid open || permitted oid mName]
+          let native =
+                if PlayerEffect.prohibitsPlayingLand pid oid (Cast.turnedUpForPlay oid Facing.FaceUp gs)
+                  then []
+                  else [(oid, mName) | (mName, _) <- Game.landFacesOf obj card, Set.member oid open || permitted oid mName]
+              -- CR 305.1 / 707.2: a card a play-as-copy permission opens
+              -- (Dakkon Blackblade Avatar), played as no face of its own.
+              -- Where the card is playable as itself as well, Cast.playLand
+              -- asks the printed "may" instead.
+              asCopy = [(oid, Nothing) | null native, not (null (PlayerEffect.playAsCopyPermissions pid oid gs))]
+           in native <> asCopy
         _ -> []
       -- CR 305.1's own zone, which needs no permission.
       fromHand = Game.zoneMembers Zone.Hand pid gs

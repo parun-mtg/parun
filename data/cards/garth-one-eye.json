@@ -19,14 +19,19 @@
                     "effects": [
                       {
                         "type": "OfferNamedCopy",
-                        "value": [
-                          "Disenchant",
-                          "Braingeyser",
-                          "Terror",
-                          "Shivan Dragon",
-                          "Regrowth",
-                          "Black Lotus"
-                        ]
+                        "value": {
+                          "names": {
+                            "type": "Unchosen",
+                            "value": [
+                              "Disenchant",
+                              "Braingeyser",
+                              "Terror",
+                              "Shivan Dragon",
+                              "Regrowth",
+                              "Black Lotus"
+                            ]
+                          }
+                        }
                       }
                     ]
                   }

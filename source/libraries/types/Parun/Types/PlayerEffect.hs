@@ -26,6 +26,7 @@ import qualified Parun.Types.LoyaltyGrant as LoyaltyGrant
 import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
+import qualified Parun.Types.PlayAsCopy as PlayAsCopy
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
@@ -259,6 +260,11 @@ data PlayerEffect
     -- Parun.Engine.Cast.pileCandidates states for both halves of Future Sight's
     -- sentence; Parun.CastPermissionSpec's FutureSight group proves it.
     PlayLandsFrom InZone.InZone
+  | -- | CR 305.1 / 707.2 / Dakkon Blackblade Avatar: this player may play a
+    -- matching card from their hand as a copy of a reference card chosen at
+    -- random. Proved by
+    -- data/scenarios/vanguard/dakkon-blackblade-avatar-plays-a-colored-card-as-a-random-basic-land.json.
+    PlayAsCopy PlayAsCopy.PlayAsCopy
   | -- | CR 702.170f / Fblthp, Lost on the Range: a matching card in the named
     -- zone may be plotted from there, for its own plot cost or its mana cost.
     PlotFrom PlotFromZone.PlotFromZone

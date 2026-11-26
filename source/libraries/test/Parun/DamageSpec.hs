@@ -830,6 +830,7 @@ lastKnownRiderSpec s registry =
                     LastKnown.protector = Nothing,
                     LastKnown.paidCosts = Map.empty,
                     LastKnown.castUsing = Nothing,
+                    LastKnown.enteredUsing = Nothing,
                     LastKnown.prototyped = False,
                     LastKnown.announcedX = Nothing,
                     LastKnown.manaSpent = Mana.MkMana [],
