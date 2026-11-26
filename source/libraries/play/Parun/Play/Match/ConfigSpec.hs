@@ -44,8 +44,8 @@ spec s = Spec.describe s "Parun.Play.Match.Config" $ do
     Spec.it s "reads the match's own flags" $
       Spec.assertEq
         s
-        (options [Flag.Seed key, Flag.Games "4", Flag.Save "out", Flag.Search "2", Flag.Meta "m.txt", Flag.Pool "pauper"])
-        (Right MatchOptions.none {MatchOptions.seed = Key.fromHex (Text.pack key), MatchOptions.games = 4, MatchOptions.save = Just "out", MatchOptions.searching = Set.singleton 2, MatchOptions.meta = Just "m.txt", MatchOptions.pool = Just (Text.pack "pauper")})
+        (options [Flag.Seed key, Flag.Games "4", Flag.Save "out", Flag.Positions "p.tsv", Flag.Search "2", Flag.Meta "m.txt", Flag.Pool "pauper"])
+        (Right MatchOptions.none {MatchOptions.seed = Key.fromHex (Text.pack key), MatchOptions.games = 4, MatchOptions.save = Just "out", MatchOptions.positions = Just "p.tsv", MatchOptions.searching = Set.singleton 2, MatchOptions.meta = Just "m.txt", MatchOptions.pool = Just (Text.pack "pauper")})
     Spec.it s "sets each budget flag in every seat" $
       Spec.assertEq
         s

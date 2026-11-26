@@ -25,3 +25,8 @@ toNatural = Bits.toIntegralSized
 -- this will return '0'.
 toNaturalSaturating :: Integer -> Natural.Natural
 toNaturalSaturating = Maybe.fromMaybe 0 . toNatural
+
+-- | Converts an 'Integer' into a 'Double', exactly within @2^53@ of zero and
+-- to the nearest otherwise.
+toDouble :: Integer -> Double
+toDouble n = encodeFloat n 0

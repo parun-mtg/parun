@@ -16,6 +16,8 @@ import qualified Parun.BotSpec as BotSpec
 import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Play.Command as Command
+import qualified Parun.Play.Fit as Fit
+import qualified Parun.Play.Key as Key.Hex
 import qualified Parun.Play.Match as Match
 import qualified Parun.Play.Match.Config as Config
 import qualified Parun.Play.Match.Flag as Flag
@@ -27,6 +29,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Difficulty as Difficulty
+import qualified Parun.Types.Features as Features
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Generator as Generator
@@ -35,6 +38,7 @@ import qualified Parun.Types.Label as Label
 import qualified Parun.Types.MatchOptions as MatchOptions
 import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Position as Position
 import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Scenario as Scenario.Type
@@ -57,13 +61,13 @@ spec s registry = Spec.describe s "Match" $ do
 
   Spec.it s "the decks take turns playing first, game by game" $ do
     decks <- pair <$> BotSpec.sevens s registry
-    starts <- mapM (\index -> firstToAct . snd <$> Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) index (Match.both decks)) [0, 1, 2, 3]
+    starts <- mapM (\index -> firstToAct . Match.timeline . snd <$> Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) index [] (Match.both decks)) [0, 1, 2, 3]
     Spec.assertEqWith s "first to act on turn 1" starts (fmap (Just . Label.MkLabel . Text.pack) ["player1", "player2", "player1", "player2"])
 
   Spec.it s "each game of a match replays clean to its result" $ do
     decks <- pair <$> BotSpec.sevens s registry
     Foldable.for_ [0, 1, 2, 3] $ \index -> do
-      (outcome, timeline) <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) index (Match.both decks)
+      (outcome, Match.MkPlayed {Match.timeline = timeline}) <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) index [] (Match.both decks)
       let matchup = Command.seated (Match.firstAt index) (Match.both decks)
       replayed <- Scenario.run registry (saved matchup timeline)
       case (outcome, replayed) of
@@ -76,7 +80,7 @@ spec s registry = Spec.describe s "Match" $ do
     let decks = one NonEmpty.:| [one, one]
         matchup = Command.seated 2 decks
     Spec.assertEqWith s "turn order" (fmap fst matchup) (fmap PlayerId.MkPlayerId (1 NonEmpty.:| [2, 0]))
-    (outcome, timeline) <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 1 decks
+    (outcome, Match.MkPlayed {Match.timeline = timeline}) <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 1 [] decks
     Spec.assertEqWith s "every seat answers" (Set.fromList (Foldable.toList (fmap (When.player . Timed.when) timeline))) (Set.fromList (fmap (Label.MkLabel . Text.pack) ["player1", "player2", "player3"]))
     replayed <- Scenario.run registry (saved matchup timeline)
     case (outcome, replayed) of
@@ -86,14 +90,32 @@ spec s registry = Spec.describe s "Match" $ do
 
   Spec.it s "a game's key is derived from the match's and its index" $ do
     decks <- pair <$> BotSpec.sevens s registry
-    once <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 2 (Match.both decks)
-    again <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 2 (Match.both decks)
-    early <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 0 (Match.both decks)
-    other <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 9) 2 (Match.both decks)
-    Spec.assertEqWith s "the same game again" (snd once) (snd again)
-    Spec.assertBool s (snd once /= snd early) "another index, another game"
-    Spec.assertBool s (snd once /= snd other) "another match, another game"
+    once <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 2 [] (Match.both decks)
+    again <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 2 [] (Match.both decks)
+    early <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 0 [] (Match.both decks)
+    other <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 9) 2 [] (Match.both decks)
+    Spec.assertEqWith s "the same game again" (Match.timeline (snd once)) (Match.timeline (snd again))
+    Spec.assertBool s (Match.timeline (snd once) /= Match.timeline (snd early)) "another index, another game"
+    Spec.assertBool s (Match.timeline (snd once) /= Match.timeline (snd other)) "another match, another game"
     Spec.assertBool s (Match.seedAt (key 7) 2 /= key 7) "not the match's own key"
+
+  Spec.it s "--positions keeps both seats' features at each decision at priority, and writes a won game's as parun fit reads them" $ do
+    decks <- pair <$> BotSpec.sevens s registry
+    (outcome, played) <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 0 [Match.positioning] (Match.both decks)
+    let kept = Foldable.toList (Match.positions played)
+        turns = fmap Position.turn kept
+    case kept of
+      [] -> Spec.assertFailure s "no position kept"
+      first : _ -> do
+        Spec.assertEqWith s "the first decision's turn" (Position.turn first) 1
+        Spec.assertEqWith s "the first decision's lives" (fmap Features.life (Position.features first)) (Map.fromList [(PlayerId.MkPlayerId 0, 20), (PlayerId.MkPlayerId 1, 20)])
+    Spec.assertBool s (and (zipWith (<=) turns (drop 1 turns))) "turns in order"
+    case outcome of
+      Right (Result.Won winner, _) -> Spec.assertEqWith s "read back" (Fit.rowsOf (Text.unlines (Fit.header : Match.rows (key 7) outcome (Match.positions played)))) (Right [(Key.Hex.toHex (key 7), winner, position) | position <- kept])
+      _ -> Spec.assertFailure s "game 0 not won"
+    Spec.assertEqWith s "a drawn game's rows" (Match.rows (key 7) (Right (Result.Drawn, S.threePlayerGame)) (Match.positions played)) []
+    (_, unwatched) <- Match.game (S.fixtureRegistry []) Nothing Map.empty Search.known (key 7) 0 [] (Match.both decks)
+    Spec.assertEqWith s "none kept unasked" (Match.positions unwatched) Seq.empty
 
   Spec.it s "tallies each result, the stops, and the turns of a game with a result" $ do
     let ended n result =

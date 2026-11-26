@@ -18,6 +18,9 @@ data MatchOptions = MkMatchOptions
     games :: Natural.Natural,
     -- | The directory to save each game in as a scenario.
     save :: Maybe FilePath,
+    -- | The file to write the position of each decision at priority to, as
+    -- `parun fit` reads it (Parun.Play.Fit).
+    positions :: Maybe FilePath,
     -- | The seats the search bot plays (Parun.Play.Search), the random bot
     -- playing the rest.
     searching :: Set.Set Natural.Natural,
@@ -36,10 +39,10 @@ data MatchOptions = MkMatchOptions
   }
   deriving (Eq, Show)
 
--- | A hundred games keyed from the operating system's entropy, none saved,
--- the random bot in every seat, every list known.
+-- | A hundred games keyed from the operating system's entropy, none saved
+-- and no position written, the random bot in every seat, every list known.
 none :: MatchOptions
-none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, searching = Set.empty, budgets = Map.fromList [(1, budget), (2, budget)], weighing = Map.empty, meta = Nothing, pool = Nothing}
+none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, positions = Nothing, searching = Set.empty, budgets = Map.fromList [(1, budget), (2, budget)], weighing = Map.empty, meta = Nothing, pool = Nothing}
 
 -- | The search bot's budget unless told otherwise, played out by the random
 -- bot.

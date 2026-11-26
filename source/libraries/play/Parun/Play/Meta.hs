@@ -64,10 +64,10 @@ metaAndDecks files = case files of
   metaPath : one : rest -> Just (metaPath, one NonEmpty.:| rest)
   _ -> Nothing
 
--- | `parun match`'s flags but `--save`, seat 1 being the deck tried and
--- seat 2 the meta's.
+-- | `parun match`'s flags but `--save` and `--positions`, seat 1 being the
+-- deck tried and seat 2 the meta's.
 flags :: [GetOpt.OptDescr Flag.Flag]
-flags = filter (\(GetOpt.Option _ long _ _) -> notElem "save" long) Flag.flags
+flags = filter (\(GetOpt.Option _ long _ _) -> all (`notElem` ["save", "positions"]) long) Flag.flags
 
 usage :: String
 usage = GetOpt.usageInfo "usage: parun meta [OPTION...] META DECK [DECK]" flags
@@ -102,7 +102,7 @@ run options searchers prior registry format versions meta = do
 -- so a difference between versions is not a difference between draws.
 matchup :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natural (SearchBudget.SearchBudget, Weights.Weights) -> Search.Prior -> Key.Type.Key -> Natural -> Natural -> Deck.Deck -> Deck.Deck -> m [Either Text.Text (Result.Result, GameState.GameState)]
 matchup registry format searchers prior seed games index deck opponent =
-  traverse (\n -> fst <$> Match.game registry format searchers prior (Match.seedAt seed index) n (Match.both (deck, opponent))) (takeWhile (< games) [0 ..])
+  traverse (\n -> fst <$> Match.game registry format searchers prior (Match.seedAt seed index) n [] (Match.both (deck, opponent))) (takeWhile (< games) [0 ..])
 
 -- | Whether seat 1 won; a draw or a stop is not a win.
 won :: Either Text.Text (Result.Result, GameState.GameState) -> Bool

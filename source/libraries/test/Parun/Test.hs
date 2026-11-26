@@ -1094,6 +1094,7 @@ import qualified Parun.PlaneswalkerCombatSpec
 import qualified Parun.PlaneswalkerSpec
 import qualified Parun.Play.Command.ConfigSpec
 import qualified Parun.Play.Command.FlagSpec
+import qualified Parun.Play.FitSpec
 import qualified Parun.Play.GeneratorSpec
 import qualified Parun.Play.KeySpec
 import qualified Parun.Play.Match.ConfigSpec
@@ -2245,6 +2246,7 @@ spec s reference corpus = do
   Parun.Play.Command.FlagSpec.spec s
   Parun.Play.Match.ConfigSpec.spec s
   Parun.Play.Match.FlagSpec.spec s
+  Parun.Play.FitSpec.spec s
   Parun.Play.OpponentSpec.spec s
   Parun.Extra.OrdSpec.spec s
   Parun.Extra.SemigroupSpec.spec s
