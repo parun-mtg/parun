@@ -276,6 +276,12 @@ withinReach pid gs target
   | GameSettings.sharedTeamTurns (MatchScope.settings (GameState.match gs)) = all (`List.elem` attackableBy pid gs) (targetDefender target gs)
   | otherwise = True
 
+-- withinReach for the controller of the creature `oid`: CR 801.3 / 508.7e's
+-- cut on what that creature may attack, be it declared, put onto the
+-- battlefield attacking or reselected.
+withinControllerReach :: ObjectId -> GameState -> AttackTarget.AttackTarget -> Bool
+withinControllerReach oid gs target = all (\controller -> withinReach controller gs target) (Projection.controllerOf oid gs)
+
 -- CR 508.1b: what the active player may announce a chosen creature is attacking,
 -- for ONE defending player -- which player, planeswalker or battle. CR 506.2's
 -- second sentence is the same list scoped to a two-player game, and
@@ -803,7 +809,7 @@ barredAnnouncements candidates gs =
         RuleWaiver.CleanupDamage -> False
       -- CR 801.3 / 809.3c under CR 805.10a: a defending player only a
       -- teammate of the creature's controller may attack.
-      beyondController oid target = any (\controller -> not (withinReach controller gs target)) (Projection.controllerOf oid gs)
+      beyondController oid target = not (withinControllerReach oid gs target)
    in Set.fromList
         ( do
             oid <- candidates
@@ -3293,9 +3299,9 @@ handedTo chooser pid = if chooser == pid then Nothing else Just chooser
 -- the creature gets no key in Combat.blockers.
 --
 -- CR 508.4's CHOICE is prompted per permanent over CR 508.1b's candidates -- CR
--- 802.3's every defending player included, this being the same announcement --
--- which Hanweir Garrison's and Meandering Towershell's rulings both require;
--- elided at one candidate.
+-- 802.3's every defending player within its controller's reach (CR 801.3)
+-- included, this being the same announcement -- which Hanweir Garrison's and
+-- Meandering Towershell's rulings both require; elided at one candidate.
 --
 -- `choice` is rule 508.4's parenthetical and rule 702.116a's narrowing, over the
 -- one candidate list: `Specified` is an effect that says what the creature
@@ -3313,7 +3319,9 @@ putOntoBattlefieldAttacking choice oid = do
   State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.pendingEntryEffects = fmap (\pending -> if PendingEntryEffect.object pending == oid then pending {PendingEntryEffect.attacking = False} else pending) (StoredEffects.pendingEntryEffects (GameState.stored g))}})
   gs <- State.get
   let c = TurnRegisters.combat (GameState.turn gs)
-      targets = declarableTargets gs
+      -- CR 801.3 / 508.4: under shared team turns, only the targets within
+      -- the creature's own controller's reach.
+      targets = filter (withinControllerReach oid gs) (declarableTargets gs)
       -- CR 702.116a's "that player or a planeswalker they control", narrowing the
       -- CR 508.4 candidates above rather than the board: a planeswalker no
       -- defending player controls is not among them to begin with, and a battle
@@ -3424,12 +3432,12 @@ joinAttack chooser alongside oid = do
 -- CR 508.7: `chooser` may reselect what the attacking creature is attacking,
 -- among the kinds of target `kinds` allows: Capricopian's "which player" or
 -- Portal Mage's "which player or permanent". The candidates are CR 508.1b's
--- (declarableTargets), which already are CR 508.7c-e's: the defending players
--- are opponents of every attacking player (CR 506.2, 805.10a) within range of
--- influence (CR 801.3), and only the chosen one under any option but
--- attacking multiple players. Nothing else is asked of them, CR 508.7b
--- exempting the creature from the declaration's requirements and
--- restrictions, and nothing is paid. Its current target heads the offer as
+-- (declarableTargets) cut to its controller's reach (withinReach), which are
+-- CR 508.7c-e's: the defending players are opponents of every attacking
+-- player (CR 506.2, 805.10a) within range of influence (CR 801.3), and only
+-- the chosen one under any option but attacking multiple players. Nothing
+-- else is asked of them, CR 508.7b exempting the creature from the
+-- declaration's requirements and restrictions, and nothing is paid. Its current target heads the offer as
 -- the decline, which is indistinguishable from reselecting it (CR 508.7a);
 -- elided at one candidate, and a no-op for a creature not attacking.
 --
@@ -3446,7 +3454,9 @@ joinAttack chooser alongside oid = do
 reselectAttack :: Set AttackTargetKind.AttackTargetKind -> PlayerId -> ObjectId -> Game ()
 reselectAttack kinds chooser oid = do
   gs <- State.get
-  let allowed target = Set.member (Game.attackTargetKind target) kinds
+  -- CR 508.7e: under shared team turns, only the targets within the
+  -- creature's own controller's reach.
+  let allowed target = Set.member (Game.attackTargetKind target) kinds && withinControllerReach oid gs target
   Monad.forM_ (Map.lookup oid (Combat.attackers (TurnRegisters.combat (GameState.turn gs)))) $ \current -> do
     target <- announceAttackTarget chooser oid (current NonEmpty.:| List.delete current (filter allowed (declarableTargets gs)))
     Monad.when (target /= current) . State.modify' $ \g ->

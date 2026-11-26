@@ -1,0 +1,102 @@
+{
+  "board": {
+    "active": "bob",
+    "attackOption": null,
+    "deployCreatures": true,
+    "seats": [
+      {
+        "name": "alice",
+        "range": 1,
+        "team": 1
+      },
+      {
+        "emperor": true,
+        "name": "bob",
+        "range": 2,
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Preeminent Captain",
+            "label": "captain",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Elite Vanguard",
+            "label": "vanguard"
+          }
+        ],
+        "name": "carol",
+        "range": 1,
+        "team": 1
+      },
+      {
+        "name": "dave",
+        "range": 1,
+        "team": 2
+      },
+      {
+        "emperor": true,
+        "name": "erin",
+        "range": 2,
+        "team": 2
+      },
+      {
+        "name": "frank",
+        "range": 1,
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 508.4 / 801.3 under CR 805.10a: a Soldier a teammate's Preeminent Captain puts onto the battlefield attacking is offered only its controller's range of influence",
+  "note": "The Emperor board of cr-805-10a-an-emperor-team-s-shared-turn-attacks-from-each-general-s-seat: dave and frank are both defending players, but only dave is within carol's range. Her Captain attacks dave, and the Elite Vanguard it puts onto the battlefield attacking is never offered frank, so it attacks dave unasked. The -control file gives carol a range of 3.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$captain"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Attackers": {
+          "attackers": {
+            "$captain": "$dave",
+            "Elite Vanguard#1": "$dave"
+          }
+        }
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 16,
+          "player": "dave"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}
