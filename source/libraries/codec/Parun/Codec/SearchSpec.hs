@@ -47,16 +47,17 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.differentIn = Set.fromList [DifferentIn.Names, DifferentIn.Powers],
             Search.exactly = True,
             Search.andOr = True,
-            Search.top = Just (Quantity.Literal 3)
+            Search.top = Just (Quantity.Literal 3),
+            Search.atRandom = True
           }
       )
-      " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"InSlot\",\"value\":\"player\"},\"zones\":[\"Library\",\"Graveyard\"],\"outsideTheGame\":true,\"andOr\":true,\"quantity\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"descriptions\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HasCardType\",\"value\":\"Artifact\"}],\"upTo\":true,\"destination\":\"BattlefieldTapped\",\"counters\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"count\":{\"type\":\"Literal\",\"value\":2}}],\"slot\":\"found\",\"handSlot\":\"hand\",\"librarySlot\":\"library\",\"differentIn\":[\"Names\",\"Powers\"],\"exactly\":true,\"top\":{\"type\":\"Literal\",\"value\":3}} "
+      " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"InSlot\",\"value\":\"player\"},\"zones\":[\"Library\",\"Graveyard\"],\"outsideTheGame\":true,\"andOr\":true,\"quantity\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"descriptions\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HasCardType\",\"value\":\"Artifact\"}],\"upTo\":true,\"destination\":\"BattlefieldTapped\",\"counters\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"count\":{\"type\":\"Literal\",\"value\":2}}],\"slot\":\"found\",\"handSlot\":\"hand\",\"librarySlot\":\"library\",\"differentIn\":[\"Names\",\"Powers\"],\"exactly\":true,\"top\":{\"type\":\"Literal\",\"value\":3},\"atRandom\":true} "
   -- The other reading of the same count: no "upTo" key means the quantity is a
   -- quota. Paired with the case above so each key's absence is asserted, not
   -- just its presence -- a required key would have made every card file
   -- rewrite. "zones" is the same shape: absent means the library alone, which is
   -- what every card file written before Delivery Moogle says.
-  Spec.it s "an absent upTo, zones, outsideTheGame, andOr, descriptions, counters, differentIn and exactly take their defaults and are not written back" $
+  Spec.it s "an absent upTo, zones, outsideTheGame, andOr, descriptions, counters, differentIn, exactly and atRandom take their defaults and are not written back" $
     Common.assertCodec
       s
       Search.codec
@@ -78,7 +79,8 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.differentIn = Set.empty,
             Search.exactly = False,
             Search.andOr = False,
-            Search.top = Nothing
+            Search.top = Nothing,
+            Search.atRandom = False
           }
       )
       " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"destination\":\"BattlefieldTapped\"} "
@@ -108,7 +110,8 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.differentIn = Set.empty,
             Search.exactly = False,
             Search.andOr = False,
-            Search.top = Nothing
+            Search.top = Nothing,
+            Search.atRandom = False
           }
       )
       " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":null,\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"destination\":\"Exile\"} "

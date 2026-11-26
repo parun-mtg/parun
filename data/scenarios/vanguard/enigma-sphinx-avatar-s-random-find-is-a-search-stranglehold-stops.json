@@ -1,0 +1,139 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "command": [
+          {
+            "card": "Enigma Sphinx Avatar",
+            "label": "sphinx"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Esper Cormorants",
+            "label": "cast"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "top"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "thopter"
+          },
+          {
+            "card": "Tidehollow Strix",
+            "label": "strix"
+          },
+          {
+            "card": "Master of Etherium",
+            "label": "master"
+          },
+          {
+            "card": "Enigma Sphinx",
+            "label": "big"
+          },
+          {
+            "card": "Island",
+            "label": "last"
+          }
+        ],
+        "manaPool": "WUUU",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Stranglehold",
+            "label": "stranglehold"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Enigma Sphinx Avatar's random find is a search, so its owner finds nothing under an opponent's Stranglehold",
+  "note": "Two cards match, so a draw would ask randomness; none is asked and nothing is offered, and the library keeps its order.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$cast"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $sphinx",
+            "Esper Cormorants"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Esper Cormorants"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$top",
+            "$bears",
+            "$thopter",
+            "$strix",
+            "$master",
+            "$big",
+            "$last"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

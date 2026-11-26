@@ -1407,7 +1407,8 @@ searchLibrary who steps = case steps of
               Search.differentIn = Set.empty,
               Search.exactly = False,
               Search.andOr = False,
-              Search.top = Nothing
+              Search.top = Nothing,
+              Search.atRandom = False
             }
       )
   [] -> Left (Text.pack "_Action:SearchLibrary")
