@@ -1278,7 +1278,7 @@ form request texts picked focused typed = case Text.unpack (Question.kind questi
     | Just chooser <- picker request ->
         -- One box per screen: the first group too long for a button each
         -- filters through it, any later one shows them all.
-        let boxed = Maybe.listToMaybe [g | (g, group) <- zip [0 ..] (groups chooser), length (collapsed (const True) (options group)) > comboPast]
+        let boxed = Maybe.listToMaybe [g | (g, group) <- zip [0 :: Natural ..] (groups chooser), length (collapsed (const True) (options group)) > comboPast]
          in concat
               [ Html.element (Text.pack "h2") [] (Mana.rich $ title group <> (if Text.any Char.isDigit (title group) then Text.empty else Text.pack (" (choose " <> bounds group <> ")")))
                   : (if boxed == Just g then comboToggles else toggles Nothing) g (most group) [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
