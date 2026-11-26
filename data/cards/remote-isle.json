@@ -53,7 +53,6 @@
           }
         }
       ],
-      "manaCost": [],
       "name": "Remote Isle",
       "oracleText": "This land enters tapped.\n{T}: Add {U}.\nCycling {2} ({2}, Discard this card: Draw a card.)",
       "replacementEffects": [

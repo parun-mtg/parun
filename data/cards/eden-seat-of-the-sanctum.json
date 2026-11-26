@@ -186,7 +186,6 @@
           }
         }
       },
-      "manaCost": [],
       "name": "Eden, Seat of the Sanctum",
       "oracleText": "{T}: Add {C}.\n{5}, {T}: Mill two cards. Then you may sacrifice this land. When you do, return another target permanent card from your graveyard to your hand.",
       "typeLine": {

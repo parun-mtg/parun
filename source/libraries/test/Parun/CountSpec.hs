@@ -162,18 +162,18 @@ spec s registry = Spec.describe s "Parun.Engine.Count" $ do
     Spec.it s "CR 709.4b a split card's combined {1}{R}{1}{U} is {2}{U}{R}" $
       Spec.assertEq
         s
-        (Count.manaCostKey (cost [ManaSymbol.Generic 1, red, ManaSymbol.Generic 1, blue]))
-        (Count.manaCostKey (cost [ManaSymbol.Generic 2, blue, red]))
+        (Filter.manaCostKey (cost [ManaSymbol.Generic 1, red, ManaSymbol.Generic 1, blue]))
+        (Filter.manaCostKey (cost [ManaSymbol.Generic 2, blue, red]))
     Spec.it s "no symbols is {0}" $
       Spec.assertEq
         s
-        (Count.manaCostKey (cost []))
-        (Count.manaCostKey (cost [ManaSymbol.Generic 0]))
+        (Filter.manaCostKey (cost []))
+        (Filter.manaCostKey (cost [ManaSymbol.Generic 0]))
     Spec.it s "{X} is not {0}" $
       Spec.assertNe
         s
-        (Count.manaCostKey (cost [ManaSymbol.Variable]))
-        (Count.manaCostKey (cost [ManaSymbol.Generic 0]))
+        (Filter.manaCostKey (cost [ManaSymbol.Variable]))
+        (Filter.manaCostKey (cost [ManaSymbol.Generic 0]))
 
   -- A GRAVEYARD rather than the battlefield, here and in the three-seat case
   -- below, and CR 400.1 is why: a graveyard is one player's, so "whose copy" is

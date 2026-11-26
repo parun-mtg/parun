@@ -2195,6 +2195,12 @@ tapForManaRestrictionsDiffer faces = Set.size (Set.fromList (concatMap (Maybe.ca
 cardCostBasisStatesMana :: Face.Face Card.Type.Card -> Bool
 cardCostBasisStatesMana = any (any modeGateStatesMana . Modal.modes) . faceModals
 
+-- A land face whose mana cost is {0}, by Filter.manaCostKey.
+landCostsZero :: Face.Face Card.Type.Card -> Bool
+landCostsZero face =
+  Set.member CardType.Land (TypeLine.types (Face.typeLine face))
+    && maybe False ((== Filter.manaCostKey (ManaCost.MkManaCost [])) . Filter.manaCostKey) (Face.manaCost face)
+
 -- A clause's mana additions, in printed order.
 clauseAdditions :: Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [ManaAddition.ManaAddition]
 clauseAdditions = Maybe.mapMaybe ManaAbility.manaProduced . Foldable.toList . Clause.effects
@@ -7034,6 +7040,19 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cardCostBasisStatesMana face)) "Flash, whose gate states no mana of its own, is accepted"
     Spec.assertBool s (cardCostBasisStatesMana (overGate stated)) "a described cost stating a mana part of its own is rejected"
     Spec.assertBool s (not (cardCostBasisStatesMana (overGate (stated . undescribed)))) "and a gate stating mana and describing nothing is what every other card writes"
+  -- A land face writing {0} for CR 202.1b's absent mana cost: no printed land
+  -- costs {0} (MTGJSON, 2026-11-26), and Filter.HasManaCost would match it.
+  Spec.it s "CR 202.1b no land face writes the mana cost {0}" $ do
+    ps <- S.allPrintings s corpus
+    Spec.assertEqWith s "no land costing {0}" (fmap (S.nameOf . Printing.card) (filter (anyFace landCostsZero . Printing.card) ps)) []
+  -- And the rejecting direction, against Forgotten Cave misauthored on purpose.
+  Spec.it s "the lint itself catches a land face costing {0}" $ do
+    cave <- S.printingOf s registry "Forgotten Cave"
+    ornithopter <- S.printingOf s registry "Ornithopter"
+    let face = S.combinedFace cave
+    Spec.assertBool s (not (landCostsZero face)) "Forgotten Cave, with no mana cost, is accepted"
+    Spec.assertBool s (not (landCostsZero (S.combinedFace ornithopter))) "Ornithopter's {0}, not a land's, is accepted"
+    Spec.assertBool s (landCostsZero face {Face.manaCost = Just (ManaCost.MkManaCost [])}) "Forgotten Cave costing {0} is rejected"
   -- Unprinted: a life gain's doubler naming an entrant, which
   -- PlayerEffect.moveTriggerings never reads (CR 119.9): the corpus half.
   Spec.it s "CR 119.9 no card names an entrant for a life gain" $ do

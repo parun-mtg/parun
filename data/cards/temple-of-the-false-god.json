@@ -96,7 +96,6 @@
           ]
         }
       ],
-      "manaCost": [],
       "name": "Temple of the False God",
       "oracleText": "{T}: Add {C}{C}. Activate only if you control five or more lands.",
       "typeLine": {

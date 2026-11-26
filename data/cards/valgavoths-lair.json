@@ -38,7 +38,6 @@
           "type": "Hexproof"
         }
       ],
-      "manaCost": [],
       "name": "Valgavoth's Lair",
       "oracleText": "Hexproof\nThis land enters tapped. As it enters, choose a color.\n{T}: Add one mana of the chosen color.",
       "replacementEffects": [

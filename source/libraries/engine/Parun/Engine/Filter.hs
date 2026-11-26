@@ -78,6 +78,7 @@ import qualified Parun.Types.Lookback as Lookback
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.MatchScope as MatchScope
@@ -2620,12 +2621,11 @@ matches context view predicate = case predicate of
   -- ability with {X} in its activation cost".
   Filter.ManaCostHasSymbol kind ->
     any (ManaSymbolText.isOfKind kind) (foldMap ManaCost.unwrap (manaCost view) <> foldMap ManaCost.unwrap (activationCost view))
-  -- CR 202.1: the same symbols, the order they are printed in aside; CR
-  -- 709.4b's combined cost for a split card. An object with no mana cost (CR
-  -- 202.1b) has none to be the same, and {0} is a mana cost (CR 118.5a).
+  -- CR 202.1: the same cost by manaCostKey, CR 709.4b's combined cost for a
+  -- split card. An object with no mana cost (CR 202.1b) has none to be the
+  -- same, and {0} is a mana cost (CR 118.5a).
   Filter.HasManaCost wanted ->
-    let symbols = List.sort . ManaCost.unwrap
-     in maybe False ((== symbols wanted) . symbols) (manaCost view)
+    maybe False ((== manaCostKey wanted) . manaCostKey) (manaCost view)
   -- PlayerRelation.holds is what each arm MEANS, and its haddock carries the
   -- argument: an Opponent is CR 102.3's player not on your team, which is every
   -- other player in a free-for-all (CR 806.1) and at two seats (CR 102.2), and
@@ -4505,3 +4505,16 @@ differingOf axes view =
       DifferentIn.Toughnesses -> number axis (toughness view)
       DifferentIn.CardTypes -> Set.map ((,) axis . DifferingValue.MkCardType) (cardTypes view)
       DifferentIn.Controllers -> foldMap (Set.singleton . (,) axis . DifferingValue.MkPlayer) (controller view)
+
+-- What makes two mana costs the same cost: their generic symbols summed and
+-- the rest as a multiset, so a split card's {1}{R} and {1}{U} combine (CR
+-- 709.4b) to {2}{U}{R}, while {X} is not {0} and {B/R} is neither {B} nor {R}.
+-- No symbols at all is {0}, as data/cards writes Ornithopter's cost; a land's
+-- absent cost (CR 202.1b) is Nothing, as Parun.CardSpec's CR 202.1b lint keeps it.
+manaCostKey :: ManaCost.ManaCost -> (Natural.Natural, [ManaSymbol.ManaSymbol])
+manaCostKey cost =
+  let symbols = ManaCost.unwrap cost
+      generic symbol = case symbol of
+        ManaSymbol.Generic n -> Just n
+        _ -> Nothing
+   in (sum (Maybe.mapMaybe generic symbols), List.sort (filter (Maybe.isNothing . generic) symbols))
