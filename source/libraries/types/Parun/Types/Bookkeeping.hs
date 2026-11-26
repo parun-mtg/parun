@@ -46,6 +46,10 @@ data Bookkeeping = MkBookkeeping
     -- | CR 612.7 / 108.1: the face names the Oracle card reference answered each
     -- name grant's filter with (Prompt.ReferenceNames), asked once per filter.
     referenceNames :: !(Map.Map (Filter.Filter Keyword.Keyword) (Set.Set CardName.CardName)),
+    -- | CR 108.1: the cards, interned, the Oracle card reference answered each
+    -- play-as-copy permission's filter with (Prompt.ReferenceCards), asked
+    -- once per filter (Parun.Engine.Cast.learnPlayAsCopyCards).
+    referenceCards :: !(Map.Map (Filter.Filter Keyword.Keyword) (Map.Map CardName.CardName PrintingId.PrintingId)),
     -- | CR 104.4b: the timestamp as of the last optional action offered to a
     -- player, advanced by Parun.Engine.Game.choose (conceding excepted, CR
     -- 104.3a) and by CR 801.16's draw of a loop's players; its gap from

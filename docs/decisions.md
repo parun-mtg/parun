@@ -3509,3 +3509,22 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Setup.beginGame`; `Parun.VanguardSpec`'s "a
   vanguard's game-start Elf enters after the opening-hand Leylines".
 - **Issue**: none.
+
+## Which basic land Dakkon Blackblade Avatar draws when some can't be played
+
+- **Question**: Dakkon Blackblade Avatar plays a colored card "as a copy of a
+  basic land card chosen at random that can produce mana of one of the card's
+  colors". Where an effect stops some of those lands and not others (Conjurer's
+  Ban naming Plains, the card a Lightning Helix), does the draw range over
+  every such basic land card, the play refused when it lands on one that can't
+  be played, or only over those that can?
+- **Rules**: CR 101.2, 305.1, 707.2, 734.1; the card has no ruling; CR of
+  2026-11-06.
+- **Decision**: Only over those that can, each asked as the copy it would
+  make, timing included; with none, no play is offered.
+- **Rejected**: Drawing among all and refusing: CR 734.1 reverses the refused
+  play, and taking it again draws anew, which ends where the narrowed draw does
+  by a longer road.
+- **Site**: `Parun.Engine.Cast.playAsCopyCandidates`, proved by the scenario
+  `dakkon-blackblade-avatar-draws-only-among-basic-lands-that-can-be-played`.
+- **Issue**: #9910.

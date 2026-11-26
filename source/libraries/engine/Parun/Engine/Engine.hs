@@ -1751,6 +1751,8 @@ priorityDecision trail = do
                       -- CR 400.11: the cards outside the game a permission
                       -- lets `p` play stand in as objects while they choose.
                       State.modify' (Event.offerOutside p)
+                      -- CR 108.1: what the menu's play-as-copy offers read.
+                      Cast.learnPlayAsCopyCards p
                       offering <- State.get
                       let decider = Decide.deciderFor p gs
                           -- A host limit narrows the menu before anything

@@ -99,18 +99,25 @@ import qualified Parun.Types.Zone as Zone
 -- turned up first by CR 406.3a's Cast.turnedUpForPlay: a land exiled face down
 -- is face up by the time it is played.
 playableLands :: PlayerId -> GameState -> [(ObjectId, Maybe CardName.CardName)]
-playableLands pid gs =
+playableLands pid gs = [(oid, mName) | (oid, mName, _) <- landPlays pid gs]
+
+-- playableLands, each play saying whether it is made as a copy (True), whose
+-- timing Cast.playAsCopyCandidates has already asked.
+landPlays :: PlayerId -> GameState -> [(ObjectId, Maybe CardName.CardName, Bool)]
+landPlays pid gs =
   let playable oid = case (Game.lookupLayerOne oid gs, Game.cardOfHandMember oid gs) of
         (Just obj, Just card) ->
           let native =
                 if PlayerEffect.prohibitsPlayingLand pid oid (Cast.turnedUpForPlay oid Facing.FaceUp gs)
                   then []
-                  else [(oid, mName) | (mName, _) <- Game.landFacesOf obj card, Set.member oid open || permitted oid mName]
+                  else [(oid, mName, False) | (mName, _) <- Game.landFacesOf obj card, Set.member oid open || permitted oid mName]
               -- CR 305.1 / 707.2: a card a play-as-copy permission opens
-              -- (Dakkon Blackblade Avatar), played as no face of its own.
-              -- Where the card is playable as itself as well, Cast.playLand
-              -- asks the printed "may" instead.
-              asCopy = [(oid, Nothing) | null native, not (null (PlayerEffect.playAsCopyPermissions pid oid gs))]
+              -- (Dakkon Blackblade Avatar), played as no face of its own, and
+              -- only while some card it could be a copy of may be played now,
+              -- CR 101.2's prohibitions and the timing asked of each copy
+              -- (Cast.playAsCopyCandidates). Where the card is playable as
+              -- itself as well, Cast.playLand asks the printed "may" instead.
+              asCopy = [(oid, Nothing, True) | null native, not (null (Cast.playAsCopyCandidates pid oid gs))]
            in native <> asCopy
         _ -> []
       -- CR 305.1's own zone, which needs no permission.
@@ -193,33 +200,14 @@ legalActions pid gs =
       -- played during another player's turn", and the land plays remaining still
       -- gate it.
       canPlayLand = Cast.landDropOpen pid gs
-      -- CR 305.1 / 116.2a: the rest of the window is a main phase with the stack
-      -- empty, which together with the active-player conjunct above is CR 307.5's
-      -- "as a sorcery" window conjunct for conjunct -- so it is asked through the
-      -- one predicate rather than a near-copy that can drift (see
-      -- Turn.sorcerySpeedWindow).
-      --
-      -- Asked per CARD, because CR 702.8a's "you may play this card any time you
-      -- could cast an instant" lifts it for the card the keyword is on and for no
-      -- other -- CR 601.1a's "playing a card" being playing it as a land or
-      -- casting it, whichever is appropriate. Read through Cast.flashOn, the same
-      -- function Cast.instantSpeed reads for the cast half of that sentence, so
-      -- the two halves cannot disagree about where flash is read from. The face
-      -- is the one this play would put onto the battlefield (CR 712.9), resolved
-      -- the way Cast.proposedFace resolves the half being cast.
-      --
-      -- The CR 613.11 player axis's "as though it had flash" (CR 601.3b),
-      -- which Cast.timingOk reads beside Cast.instantSpeed for a cast:
-      -- PlayerEffect.mayPlayAsThoughItHadFlash is that axis's PLAY-scoped
-      -- reader, since a cast-scoped grant (Vedalken Orrery) says "cast" and
-      -- never widens a land play (CR 305.1). A printing whose permission says
-      -- PLAY rather than cast -- Scout's Warning -- moves this window too, by
-      -- CR 601.1a.
-      landTimingOk (oid, mName) =
-        Turn.sorcerySpeedWindow pid gs
-          || maybe False (\card -> Cast.flashOn oid (Game.resolveFace mName card) gs) (Game.cardOf oid gs)
-          || PlayerEffect.mayPlayAsThoughItHadFlash pid oid (Cast.asPlayed oid mName gs)
-      lands = if canPlayLand then fmap (uncurry Action.Play) (filter landTimingOk (playableLands pid gs)) else []
+      -- CR 305.1 / 116.2a: the rest of the window, per card (Cast.landTimingOk).
+      -- The face is the one this play would put onto the battlefield (CR
+      -- 712.9), resolved the way Cast.proposedFace resolves the half being
+      -- cast. A card played as a copy is played as none of its own, so its
+      -- timing is the copy's, asked by Cast.playAsCopyCandidates before
+      -- playableLands offers it.
+      landTimingOk (oid, mName, asCopy) = asCopy || Cast.landTimingOk pid oid (fmap (Game.resolveFace mName) (Game.cardOf oid gs)) (Cast.asPlayed oid mName gs)
+      lands = if canPlayLand then [Action.Play oid mName | play@(oid, mName, _) <- landPlays pid gs, landTimingOk play] else []
       -- CR 709.3: one action per castable HALF, so choosing a half is choosing
       -- an action and the engine never asks which one. CR 702.37d adds one more
       -- per half with morph, for the same reason: casting face down is a second

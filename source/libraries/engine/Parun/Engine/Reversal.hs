@@ -162,6 +162,7 @@ withoutAnnouncement before entry between closed = do
   printingIds <- newest (Bookkeeping.printingIds . GameState.bookkeeping)
   lookedUp <- newest (Bookkeeping.lookedUp . GameState.bookkeeping)
   referenceNames <- newest (Bookkeeping.referenceNames . GameState.bookkeeping)
+  referenceCards <- newest (Bookkeeping.referenceCards . GameState.bookkeeping)
   outsideCopies <- setOf GameState.outsideCopies
   outsideFinds <- mapOf GameState.outsideFinds
   copyStandIns <- mapOf GameState.copyStandIns
@@ -343,6 +344,7 @@ withoutAnnouncement before entry between closed = do
               Bookkeeping.printingIds = printingIds,
               Bookkeeping.lookedUp = lookedUp,
               Bookkeeping.referenceNames = referenceNames,
+              Bookkeeping.referenceCards = referenceCards,
               Bookkeeping.lastChoice = lastChoice,
               Bookkeeping.repeatPicks = repeatPicks,
               Bookkeeping.undone = undone,
