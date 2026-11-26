@@ -12,6 +12,10 @@
           {
             "card": "Ambush Viper",
             "label": "viper"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "thopter"
           }
         ],
         "library": [
@@ -25,7 +29,6 @@
             "card": "Island"
           }
         ],
-        "manaPool": "CG",
         "name": "alice"
       },
       {
@@ -43,7 +46,7 @@
         "name": "bob"
       }
     ],
-    "step": "BeginningOfCombat"
+    "step": "PrecombatMain"
   },
   "description": "Dakkon Blackblade Avatar plays a card with flash as a land only when a land could be played",
   "timeline": [
@@ -52,7 +55,66 @@
         "View": {
           "is": [
             "Pass",
-            "Cast $viper"
+            "PlayLand $viper",
+            "Cast $thopter"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$thopter"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "PlayLand": "$viper"
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass"
           ],
           "of": "Offered",
           "player": "alice"
