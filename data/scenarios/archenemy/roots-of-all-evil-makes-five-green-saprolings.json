@@ -1,0 +1,18 @@
+{
+  "description": "Roots of All Evil, set in motion, makes five 1/1 green Saproling tokens",
+  "board": {
+    "active": "alice",
+    "step": "Upkeep",
+    "seats": [
+      {"name": "alice", "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}], "sideDecks": [{"key": "Scheme", "value": [{"card": "Roots of All Evil", "label": "roots"}]}]},
+      {"name": "bob", "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $roots"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Saproling Token", "count": 5}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Saproling Token#5", "power": 1, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Saproling Token", "count": 0}}}
+  ]
+}

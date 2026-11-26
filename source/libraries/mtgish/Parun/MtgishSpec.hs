@@ -212,6 +212,17 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
         Spec.assertEq s Nothing (Face.vanguard face)
         Spec.assertEq s (Right ()) (Functor.void (Mtgish.accepted card {Card.faces = face {Face.vanguard = Just (Vanguard.MkVanguard (-1) 4)} NonEmpty.:| []}))
 
+  -- CR 314, CR 904.9: a scheme card is read as one face, its "When you set
+  -- this scheme in motion" the trigger on its own turning up.
+  Spec.it s "reads a scheme card as one face, setting it in motion its trigger" $ do
+    case accept rootsOfAllEvil of
+      Left reason -> Spec.assertFailure s (Text.unpack reason)
+      Right card -> do
+        let face = NonEmpty.head (Card.faces card)
+        Spec.assertEq s (Set.singleton CardType.Scheme) (TypeLine.types (Face.typeLine face))
+        Spec.assertEq s [TriggerCondition.TurnedUpOffDeck ActingPermanent.Self] (fmap TriggeredAbility.condition (Face.triggeredAbilities face))
+    Spec.assertEq s (Left (Text.pack "renders as: When you set Roots of All Evil in motion, create five 1/1 green Saproling creature tokens.")) (Functor.void (acceptFaces (fst rootsOfAllEvil) ["When you set this scheme in motion, create five 1/1 green Plant creature tokens."]))
+
   -- CR 614.1d: "This land enters tapped unless [condition]" applies while
   -- the condition fails, so it is held as the complement of what it names.
   Spec.it s "reads entering tapped unless a condition as entering tapped under its complement" $ do
@@ -456,6 +467,13 @@ ertai :: (String, String)
 ertai =
   ( "{\"_OracleCard\":\"Vanguard\",\"Name\":\"Ertai\",\"Typeline\":{\"Supertypes\":[],\"Cardtypes\":[\"Vanguard\"],\"Subtypes\":[]},\"Rules\":[{\"_Rule\":\"EachPermanentLayerEffect\",\"args\":[{\"_Permanents\":\"And\",\"args\":[{\"_Permanents\":\"IsCardtype\",\"args\":\"Creature\"},{\"_Permanents\":\"ControlledByAPlayer\",\"args\":{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"You\"}}}]},[{\"_StaticLayerEffect\":\"AddAbility\",\"args\":[{\"_Rule\":\"Hexproof\"}]}]]}],\"LifeModifier\":4,\"HandModifier\":-1}",
     "Creatures you control have hexproof. (They can't be the targets of spells or abilities your opponents control.)"
+  )
+
+-- | Roots of All Evil's AST, a scheme card's (CR 314), and its Oracle text.
+rootsOfAllEvil :: (String, String)
+rootsOfAllEvil =
+  ( "{\"_OracleCard\":\"Scheme\",\"Name\":\"Roots of All Evil\",\"Typeline\":{\"Supertypes\":[],\"Cardtypes\":[\"Scheme\"],\"Subtypes\":[]},\"Rules\":[{\"_Rule\":\"TriggerA\",\"args\":[{\"_Trigger\":\"WhenAPlayerSetsASchemeInMotion\",\"args\":[{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"You\"}},{\"_Schemes\":\"SingleScheme\",\"args\":{\"_SingleScheme\":\"ThisScheme\"}}]},{\"_Actions\":\"ActionList\",\"args\":[{\"_Action\":\"CreateTokens\",\"args\":[[{\"_CreatableToken\":\"NumberTokens\",\"args\":[{\"_GameNumber\":\"Integer\",\"args\":5},{\"_CreatableToken\":\"TokenWithPT\",\"args\":[{\"_PT\":\"PT\",\"args\":[1,1]},{\"_TokenColorList\":\"Colors\",\"args\":[\"Green\"]},[],[\"Creature\"],{\"_TokenSubtypes\":\"SubtypesList\",\"args\":[\"Saproling\"]},[]]}]}],[]]}]}]}]}",
+    "When you set this scheme in motion, create five 1/1 green Saproling creature tokens."
   )
 
 -- | Sizzle's AST, and its Oracle text.

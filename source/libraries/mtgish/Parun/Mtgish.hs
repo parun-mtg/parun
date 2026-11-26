@@ -222,14 +222,15 @@ accepted translated = translated <$ traverse said (Card.faces translated)
 
 -- | One line of mtgish's AST file as the card it means, or the node kind it
 -- stopped at. Only a card of one normal face is read, a vanguard card (CR
--- 313) as one, or a preparation card (CR 723), its own face first and its
--- prepare spell's after ('Layout.Preparation').
+-- 313) or a scheme card (CR 314) as one, or a preparation card (CR 723), its
+-- own face first and its prepare spell's after ('Layout.Preparation').
 card :: Value.Value -> Translated Card.Card
 card value = do
   pairs <- Common.asObject value
   oracleCard <- Common.field "_OracleCard" pairs >>= Common.asText
   case Text.unpack oracleCard of
-    "Card" -> do
+    -- A scheme card (CR 314) is one face too.
+    kind | kind `elem` ["Card", "Scheme"] -> do
       f <- readFace [] pairs
       pure Card.MkCard {Card.synthetic = False, Card.layout = Layout.Normal, Card.faces = f NonEmpty.:| []}
     -- Its modifiers are CANDIDATES' ('Ingest.reprint'), as its type line is.
@@ -824,6 +825,11 @@ trigger n = case Node.tag n of
     let caster = [Filter.HeldBy Holder.Controller (ControllerRelation.Related relation) | relation /= PlayerRelation.AnyPlayer]
         spellCast = SpellCast.matching (conjoined (foldMap conjuncts f <> caster))
     Right (TriggerCondition.SpellCast spellCast, bound [("Trigger_ThatPlayer", Oracle.Trigger.thatPlayer), ("Trigger_ThatSpell", Oracle.Trigger.castSpell)])
+  -- CR 904.9: "When you set this scheme in motion".
+  "WhenAPlayerSetsASchemeInMotion" -> do
+    (who, what) <- pair n
+    Monad.unless (singlePlayer who == Just "You" && singleScheme what == Just "ThisScheme") (Node.untranslated n)
+    Right (TriggerCondition.TurnedUpOffDeck ActingPermanent.Self, outermost)
   "AtTheBeginningOfTheEndStep" -> Right (TriggerCondition.StepBegins (StepBegins.MkStepBegins (Phase.Ending EndingStep.EndStep) Nothing (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))), outermost)
   _ -> Node.untranslated n
   where
@@ -958,6 +964,12 @@ conjoined fs = case fs of
 single :: Value.Value -> Maybe String
 single value = case Node.node value of
   Right n | Node.tag n == "SinglePermanent", Right p <- Node.child n -> Just (Node.tag p)
+  _ -> Nothing
+
+-- | The one scheme a description of schemes names, by its tag.
+singleScheme :: Value.Value -> Maybe String
+singleScheme value = case Node.node value of
+  Right n | Node.tag n == "SingleScheme", Right p <- Node.child n -> Just (Node.tag p)
   _ -> Nothing
 
 -- | The one player a description of players names, by its tag: 'single' for
