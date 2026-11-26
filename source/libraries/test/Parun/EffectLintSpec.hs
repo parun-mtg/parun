@@ -3109,6 +3109,43 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (any (anyFace (any (bounded (not . byColor)) . refs) . Printing.card) ps) "the pool has a card bounding a choice by card type"
     Spec.assertBool s (any (anyFace (any keptApart . refs) . Printing.card) ps) "the pool has a card keeping a choice's picks apart"
     Spec.assertEqWith s "a total beside a count that cannot read it" (fmap (S.nameOf . Printing.card) offenders) []
+  -- Unprinted: Parun.Engine.Resolve.Common.chosenPermanents' random pick asks
+  -- no seat and draws an "up to" count's whole ceiling, so a chooser other than
+  -- the resolving controller, or an up-to count, beside it is card data the
+  -- draw misreads. Karona, False God Avatar keeps the sweep from being vacuous
+  -- and, doctored, is the rejecting side.
+  Spec.it s "no random permanent pick names a chooser or an up-to count" $ do
+    ps <- S.allPrintings s corpus
+    let random chosen = ChosenPermanents.selection chosen == CardSelection.AtRandom
+        offends chosen =
+          random chosen
+            && ( ChosenPermanents.chooser chosen /= PlayerRef.Relative PlayerRelation.You
+                   || case ChosenPermanents.count chosen of
+                     HowMany.UpTo _ -> True
+                     HowMany.Exactly _ -> False
+               )
+        fromRef ref = case ref of
+          ObjectRef.ChosenPermanents chosen -> Just chosen
+          _ -> Nothing
+        fromEffect effect = case effect of
+          Effect.ChoosePermanents choice -> Just (ChoosePermanents.permanents choice)
+          _ -> Nothing
+        choices face = concatMap (Maybe.mapMaybe (fromRef . snd) . effectObjectRefs) (cardAuthoredEffects face) <> Maybe.mapMaybe fromEffect (cardAuthoredEffects face)
+        offenders = filter (anyFace (any offends . choices) . Printing.card) ps
+    Spec.assertBool s (any (anyFace (any random . choices) . Printing.card) ps) "the pool has a card choosing a permanent at random"
+    Spec.assertEqWith s "a random permanent pick beside a chooser or an up-to count" (fmap (S.nameOf . Printing.card) offenders) []
+    karona <- Printing.card <$> S.printingOf s registry "Karona, False God Avatar"
+    let picks = concatMap choices (Card.Type.faces karona)
+        doctored =
+          [ id,
+            \chosen -> chosen {ChosenPermanents.chooser = PlayerRef.Relative PlayerRelation.Opponent},
+            \chosen -> chosen {ChosenPermanents.count = HowMany.UpTo (Just (Quantity.Type.Literal 1))}
+          ]
+    Spec.assertEqWith
+      s
+      "Karona's random picks are refused exactly when doctored with a chooser or an up-to count"
+      (fmap (\doctor -> fmap (offends . doctor) picks) doctored)
+      [[False, False], [True, True], [True, True]]
   -- Parun.Types.Repeat's otherChooser is read only when a gate fails, so without
   -- a gate it is inert card data. Game of Chaos keeps the sweep from being vacuous.
   Spec.it s "no Repeat names another chooser without a gate" $ do

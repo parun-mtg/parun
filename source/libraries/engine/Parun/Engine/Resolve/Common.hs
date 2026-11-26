@@ -793,6 +793,11 @@ chosenPermanents purpose legal resolving controller source choice = do
   case ChosenPermanents.selection choice of
     -- Randomness asks no seat: chooseCardFromAmong's AtRandom, the count's
     -- picks distinct and a ceiling drawn in full.
+    --
+    -- Unprinted: a random pick beside a chooser other than the resolving
+    -- controller, or beside an "up to" count, would need a reading of who
+    -- draws and how many; Parun.EffectLintSpec's "no random permanent pick
+    -- names a chooser or an up-to count" keeps it out of card data.
     CardSelection.AtRandom -> (,) Nothing <$> Game.drawDistinct Prompt.RandomObject (maybe (List.genericLength candidates) amount (HowMany.quantity count)) candidates
     CardSelection.ByChoice ->
       pickByChooser
