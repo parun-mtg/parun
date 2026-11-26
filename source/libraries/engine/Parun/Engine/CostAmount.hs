@@ -42,6 +42,10 @@ substituteAnnounced slot n cost = cost {Cost.components = fmap (fixCriteria . Id
 -- control with mana value X"), as a traversal of the operand. Its own walk
 -- rather than one of `traverseAmount`'s amounts: the variable stands in a
 -- Filter there, as Operand.AmountInSlot, not as a CostAmount.
+--
+-- Unprinted: a cost criterion comparing a count of counters against the
+-- announced value (a Filter.HasCounters AmountInSlot operand) would need an arm
+-- here; no card prints one.
 traverseCriterionReads :: (Applicative f) => SlotName.SlotName -> (Measures.Measures -> f Operand.Operand) -> CostComponent.CostComponent keyword -> f (CostComponent.CostComponent keyword)
 traverseCriterionReads slot f = Children.costComponentChildren Children.costLeaves {Children.costFilter = filterReads}
   where

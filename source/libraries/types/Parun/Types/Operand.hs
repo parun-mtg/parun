@@ -7,7 +7,7 @@ import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.SlotName as SlotName
 
 -- | What a Parun.Types.Measures comparison compares the candidate's measure
--- against. Literal and Own need nothing beyond the candidate; every other arm is
+-- against, and a Filter.HasCounters one its count of counters. Literal and Own need nothing beyond the candidate; every other arm is
 -- answered off Parun.Engine.Filter.Context, so where it may be written is a
 -- position question (Parun.FilterPositionLintSpec).
 data Operand

@@ -712,7 +712,7 @@ filterChildren children predicate = case predicate of
   Filter.IsPairedWithSource -> pure predicate
   Filter.BlockPartnerOfSource _ -> pure predicate
   Filter.HasDesignation _ -> pure predicate
-  Filter.HasCounters n kind -> fmap (Filter.HasCounters n) (counterKindChildren children kind)
+  Filter.HasCounters comparison operand kind -> Filter.HasCounters comparison <$> operandChildren children operand <*> counterKindChildren children kind
   Filter.HasCountersOfAnyKind -> pure predicate
   Filter.HasSticker _ -> pure predicate
   Filter.Stickered -> pure predicate

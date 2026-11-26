@@ -51,7 +51,8 @@ data TargetSlot = MkTargetSlot
     -- card with mana value X or less ... where X is the amount of life you gained
     -- this turn". Filter.Measures' EnclosingAmount operand is what reads it --
     -- at equality too, Chthonian Nightmare's "with mana value X" -- and against a
-    -- candidate's POWER as well (Spawnbroker).
+    -- candidate's POWER as well (Spawnbroker), and Filter.HasCounters' against
+    -- a count of counters (Figure of Destiny Avatar).
     -- Parun.Engine.Target.slotContext is where it is evaluated and handed over.
     --
     -- HERE rather than in the Filter arm, which is where it belongs on the face of

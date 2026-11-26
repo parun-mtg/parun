@@ -2159,6 +2159,7 @@ amongCandidates context viewOf filter_ candidates
 comparesCandidates :: Filter.Filter keyword -> Bool
 comparesCandidates predicate = case predicate of
   Filter.Measures (Measures.MkMeasures _ _ (Operand.OfEachOtherCandidate _)) -> True
+  Filter.HasCounters _ (Operand.OfEachOtherCandidate _) _ -> True
   _ -> Monoid.getAny (Const.getConst (Children.filterChildren (Children.descending (Const.Const . Monoid.Any . comparesCandidates)) predicate))
 
 -- Does the Filter carry Filter.PaidWithManaFromSource anywhere, so that mana
@@ -2226,6 +2227,29 @@ operandValue context view operand = case operand of
   -- A perspective player absent from the map is an unfilled Context, not 0.
   Operand.YourCounters kind -> toInteger . Map.findWithDefault 0 kind <$> (perspective context >>= (`Map.lookup` playerCounters context))
   Operand.ChosenNumber -> toInteger <$> sourceChosenNumber context
+
+-- CR 208.1 / 202.3 / 122.1: the candidate's number `measured` relates thus to
+-- the operand -- the Measures and HasCounters atoms' one comparison (see their
+-- arms of `matches`). OfEachOtherCandidate compares against every other
+-- candidate's measure in scope; an unannounced EnclosingAmount narrows nothing
+-- (boundUnannounced); otherwise False unless both numbers are readable.
+relatesTo :: Context -> View -> Comparison.Comparison -> Operand.Operand -> Maybe Integer -> Bool
+relatesTo context view comparison operand measured = case (operand, measured) of
+  (Operand.OfEachOtherCandidate (OtherCandidates.MkOtherCandidates other scope), Just n) -> case candidateMeasures context of
+    Just pool -> all (compares comparison n) [t | (oid, peer) <- Map.toList pool, Just oid /= identity view, inScope peer, Just t <- [measureOf other peer]]
+      where
+        inScope peer = case scope of
+          CandidateScope.EveryCandidate -> True
+          CandidateScope.SameController -> Maybe.isJust (controller view) && controller peer == controller view
+    Nothing -> False
+  (_, Just n) -> case operandValue context view operand of
+    Just t -> compares comparison n t
+    Nothing -> operand == Operand.EnclosingAmount && boundUnannounced context
+  (_, Nothing) -> False
+
+-- CR 122.1: how many counters of the kind the view has, zero for none.
+countersOf :: CounterKind.CounterKind Keyword.Type.Keyword -> View -> Maybe Integer
+countersOf kind = Just . toInteger . Map.findWithDefault 0 kind . counters
 
 -- Does the measured number relate thus to the threshold? Parun.Types.Comparison's
 -- one reader.
@@ -2515,18 +2539,9 @@ matches context view predicate = case predicate of
   -- to the chooser (CR 608.2d); a candidate lacking the operand's measure is not
   -- compared against. CandidateScope.SameController compares only against
   -- candidates its controller controls ("among creatures that player
-  -- controls"), never one with no controller.
-  Filter.Measures (Measures.MkMeasures measure comparison (Operand.OfEachOtherCandidate (OtherCandidates.MkOtherCandidates other scope))) -> case (measureOf measure view, candidateMeasures context) of
-    (Just n, Just pool) -> all (compares comparison n) [t | (oid, peer) <- Map.toList pool, Just oid /= identity view, inScope peer, Just t <- [measureOf other peer]]
-      where
-        inScope peer = case scope of
-          CandidateScope.EveryCandidate -> True
-          CandidateScope.SameController -> Maybe.isJust (controller view) && controller peer == controller view
-    _ -> False
-  Filter.Measures m -> case (measureOf (Measures.measure m) view, operandValue context view (Measures.operand m)) of
-    (Just n, Just t) -> compares (Measures.comparison m) n t
-    (Just _, Nothing) | Measures.operand m == Operand.EnclosingAmount -> boundUnannounced context
-    _ -> False
+  -- controls"), never one with no controller. relatesTo is the comparison,
+  -- shared with HasCounters.
+  Filter.Measures m -> relatesTo context view (Measures.comparison m) (Measures.operand m) (measureOf (Measures.measure m) view)
   -- CR 202.3 again, read for parity. Void Winnower's reminder text is the
   -- boundary case in the rulebook's own words -- "(Zero is even.)" -- and `even
   -- 0` agrees, which is also CR 202.3a's answer for an object with no mana cost:
@@ -3237,10 +3252,11 @@ matches context view predicate = case predicate of
   -- 701.60c hangs off `Suspected` -- a permanent can have either from somewhere
   -- else.
   Filter.HasDesignation d -> Set.member d (designations view)
-  -- CR 122.1, asked of the CANDIDATE: has it at least n counters of the kind?
-  -- HasDesignation's live read, of counters instead of a designation: CR 400.7's new
-  -- incarnation arrives with none, so nothing is stamped on the candidate.
-  Filter.HasCounters n kind -> Map.findWithDefault 0 kind (counters view) >= n
+  -- CR 122.1, asked of the CANDIDATE: does its count of the kind relate thus to
+  -- the operand? Measures' comparison (relatesTo). HasDesignation's live read,
+  -- of counters instead of a designation: CR 400.7's new incarnation arrives
+  -- with none, so nothing is stamped on the candidate.
+  Filter.HasCounters comparison operand kind -> relatesTo context view comparison operand (countersOf kind view)
   -- CR 122.1 again, of the same field and without a kind to look up. `any (> 0)`
   -- and NOT `not (Map.null ...)`: the map is keyed per kind, so a key standing at
   -- zero is a permanent with no counters on it and a null test would answer True
@@ -3514,6 +3530,9 @@ bakeBound players objects controllers measures predicate = case predicate of
     | Operand.OfBound (BoundMeasure.MkBoundMeasure slot measure) <- Measures.operand m,
       Just n <- Map.lookup (slot, measure) measures ->
         Filter.Measures m {Measures.operand = Operand.Literal n}
+  Filter.HasCounters comparison (Operand.OfBound (BoundMeasure.MkBoundMeasure slot measure)) kind
+    | Just n <- Map.lookup (slot, measure) measures ->
+        Filter.HasCounters comparison (Operand.Literal n) kind
   _ -> Identity.runIdentity (Children.filterChildren (Children.descending (Identity.Identity . bakeBound players objects controllers measures)) predicate)
 
 -- CR 109.5: every HeldBy relation named outright, as the players `related`
@@ -3728,7 +3747,7 @@ manaValueThresholds predicate = case predicate of
   Filter.IsPairedWithSource -> []
   Filter.BlockPartnerOfSource _ -> []
   Filter.HasDesignation _ -> []
-  Filter.HasCounters _ _ -> []
+  Filter.HasCounters {} -> []
   Filter.HasCountersOfAnyKind -> []
   Filter.HasSticker _ -> []
   Filter.Stickered -> []
@@ -3932,7 +3951,7 @@ statesAQuality predicate = case predicate of
   Filter.IsPairedWithSource -> True
   Filter.BlockPartnerOfSource _ -> True
   Filter.HasDesignation _ -> True
-  Filter.HasCounters _ _ -> True
+  Filter.HasCounters {} -> True
   Filter.HasCountersOfAnyKind -> True
   Filter.HasSticker _ -> True
   Filter.Stickered -> True
@@ -3976,16 +3995,7 @@ readsSourceValues predicate = case predicate of
   Filter.Not f -> readsSourceValues f
   Filter.Unwritten f -> readsSourceValues f
   Filter.Controls _ f -> readsSourceValues f
-  Filter.Measures m -> case Measures.operand m of
-    Operand.OfSource _ -> True
-    Operand.Literal _ -> False
-    Operand.Own _ -> False
-    Operand.OfBound _ -> False
-    Operand.AmountInSlot _ -> False
-    Operand.EnclosingAmount -> False
-    Operand.OfEachOtherCandidate _ -> False
-    Operand.YourCounters _ -> False
-    Operand.ChosenNumber -> True
+  Filter.Measures m -> operandReadsSource (Measures.operand m)
   Filter.ManaValueParity operand -> case operand of
     ParityOperand.Printed _ -> False
     ParityOperand.ChosenParity -> True
@@ -4117,7 +4127,7 @@ readsSourceValues predicate = case predicate of
   Filter.IsPairedWithSource -> False
   Filter.BlockPartnerOfSource _ -> False
   Filter.HasDesignation _ -> False
-  Filter.HasCounters _ _ -> False
+  Filter.HasCounters _ operand _ -> operandReadsSource operand
   Filter.HasCountersOfAnyKind -> False
   Filter.HasSticker _ -> False
   Filter.Stickered -> False
@@ -4276,13 +4286,30 @@ talliesWhatHappened predicate = case predicate of
   Filter.IsModal {} -> False
   Filter.HasInsetFrame {} -> False
 
--- The comparisons a target slot's Filter makes against its computed bound
--- (Operand.EnclosingAmount), for Parun.Engine.Activatable.boundXs.
-enclosingReads :: Filter.Filter Keyword.Type.Keyword -> [Measures.Measures]
+-- Does the operand read a value of the source the Context carries?
+-- readsSourceValues' answer for an atom comparing against one.
+operandReadsSource :: Operand.Operand -> Bool
+operandReadsSource operand = case operand of
+  Operand.OfSource _ -> True
+  Operand.Literal _ -> False
+  Operand.Own _ -> False
+  Operand.OfBound _ -> False
+  Operand.AmountInSlot _ -> False
+  Operand.EnclosingAmount -> False
+  Operand.OfEachOtherCandidate _ -> False
+  Operand.YourCounters _ -> False
+  Operand.ChosenNumber -> True
+
+-- The numbers a target slot's Filter compares against its computed bound
+-- (Operand.EnclosingAmount), each as its reader off a candidate's view, for
+-- Parun.Engine.Activatable.boundXs: a Measures atom's measure and a HasCounters
+-- atom's count of its kind.
+enclosingReads :: Filter.Filter Keyword.Type.Keyword -> [View -> Maybe Integer]
 enclosingReads = Const.getConst . reads_
   where
     reads_ predicate = case predicate of
-      Filter.Measures measures | Measures.operand measures == Operand.EnclosingAmount -> Const.Const [measures]
+      Filter.Measures measures | Measures.operand measures == Operand.EnclosingAmount -> Const.Const [measureOf (Measures.measure measures)]
+      Filter.HasCounters _ Operand.EnclosingAmount kind -> Const.Const [countersOf kind]
       _ -> Children.filterChildren (Children.descending reads_) predicate
 
 -- The slots a Filter READS: `slotArities`' keys, which

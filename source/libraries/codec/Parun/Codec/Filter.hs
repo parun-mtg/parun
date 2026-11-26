@@ -15,6 +15,7 @@ import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.CardType as CardType
 import qualified Parun.Codec.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Codec.Color as Color
+import qualified Parun.Codec.Comparison as Comparison
 import qualified Parun.Codec.ControlMargin as ControlMargin
 import qualified Parun.Codec.ControllerRelation as ControllerRelation
 import qualified Parun.Codec.CounterKind as CounterKind
@@ -38,6 +39,7 @@ import qualified Parun.Codec.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Codec.Measures as Measures
 import qualified Parun.Codec.NameChooser as NameChooser
 import qualified Parun.Codec.ObjectId as ObjectId
+import qualified Parun.Codec.Operand as Operand
 import qualified Parun.Codec.ParityOperand as ParityOperand
 import qualified Parun.Codec.PermanentAction as PermanentAction
 import qualified Parun.Codec.PlayerId as PlayerId
@@ -58,6 +60,7 @@ import qualified Parun.Types.ActivationCriteria as ActivationCriteria.Type
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
+import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CounterKind as CounterKind
@@ -66,6 +69,7 @@ import qualified Parun.Types.DamageKind as DamageKind.Type
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
+import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.SlotName as SlotName
@@ -220,7 +224,7 @@ codec keywordCodec =
       Arm.nullary "IsPairedWithSource" Filter.IsPairedWithSource,
       Arm.payload "BlockPartnerOfSource" BlockRole.codec Filter.BlockPartnerOfSource (\x -> case x of Filter.BlockPartnerOfSource y -> Just y; _ -> Nothing),
       Arm.payload "HasDesignation" Designation.codec Filter.HasDesignation (\x -> case x of Filter.HasDesignation y -> Just y; _ -> Nothing),
-      Arm.payload "HasCounters" (hasCounters keywordCodec) (uncurry Filter.HasCounters) (\x -> case x of Filter.HasCounters n k -> Just (n, k); _ -> Nothing),
+      Arm.payload "HasCounters" (hasCounters keywordCodec) (\(c, o, k) -> Filter.HasCounters c o k) (\x -> case x of Filter.HasCounters c o k -> Just (c, o, k); _ -> Nothing),
       Arm.nullary "HasCountersOfAnyKind" Filter.HasCountersOfAnyKind,
       Arm.payload "HasSticker" StickerKind.codec Filter.HasSticker (\x -> case x of Filter.HasSticker y -> Just y; _ -> Nothing),
       Arm.nullary "Stickered" Filter.Stickered,
@@ -285,13 +289,14 @@ cardsInZone =
       <$> Fields.required "zone" Zone.codec fst
       <*> Fields.required "atLeast" Common.natural snd
 
--- | The counters' kind, and how many at least; one when unsaid.
-hasCounters :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (Natural.Natural, CounterKind.CounterKind keyword)
+-- | The counters' kind, and how their count compares; at least one when unsaid.
+hasCounters :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (Comparison.Comparison, Operand.Operand, CounterKind.CounterKind keyword)
 hasCounters keywordCodec =
   Fields.object $
-    (,)
-      <$> Fields.defaulted "atLeast" 1 Common.natural fst
-      <*> Fields.required "kind" (CounterKind.codec keywordCodec) snd
+    (,,)
+      <$> Fields.defaulted "comparison" Comparison.AtLeast Comparison.codec (\(c, _, _) -> c)
+      <*> Fields.defaulted "operand" (Operand.Literal 1) Operand.codec (\(_, o, _) -> o)
+      <*> Fields.required "kind" (CounterKind.codec keywordCodec) (\(_, _, k) -> k)
 
 -- | Which way the counters moved, a put's putter related to the perspective,
 -- and their kind.

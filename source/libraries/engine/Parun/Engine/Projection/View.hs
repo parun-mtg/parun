@@ -438,7 +438,7 @@ printedAbilitiesOf face =
 -- holds, match the filter a conjure picks over it by
 -- (Parun.Types.ConjureCards.Reference)? Read off the printed card through
 -- viewOfCard, Parun.Engine.Event.eligible's posture for a card outside the game.
--- The amount is the bound Filter.Measures' EnclosingAmount operand reads.
+-- The amount is the bound an EnclosingAmount operand reads.
 --
 -- The one judgement both sides make: Parun.Interpreter.lookingUpCards narrows the
 -- reference by it, and the conjure filters the card it is handed back through
