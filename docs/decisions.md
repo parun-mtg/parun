@@ -3502,16 +3502,22 @@ Entries are ordered by the first rule each cites.
 ## Whether a vanguard's draw prohibition reaches the opening hand
 
 - **Question**: Maralen of the Mornsong Avatar's "You can't draw cards"
-  functions from the command zone (CR 902.7), where the card is before the
-  game begins (CR 902.3). Does it stop CR 103.5's opening-hand draws and a
-  mulligan's redraw, leaving its owner no hand?
-- **Rules**: CR 103.5, 121.2b, 313.4, 902.3, 902.5, 902.7; the card has no
-  ruling; CR of 2026-11-06.
-- **Decision**: No: an opening hand's draws pass no draw prohibition, and the
-  owner draws CR 902.5's starting hand. Every later draw is barred.
-- **Rejected**: Barring them: the printed hand modifier (CR 313.6) would then
-  size nothing, and the card's only cards would come from its draw-step
-  trigger.
+  affects the game from the command zone (CR 313.4, 902.7), where the card is
+  placed before the game begins (CR 902.3). Does it stop CR 103.5's
+  opening-hand draws and a mulligan's redraw, leaving its owner no hand?
+- **Rules**: CR 101.2, 103.5, 313.4, 313.6, 902.3, 902.5, 902.5b, 902.7; the
+  card has no ruling; CR of 2026-11-06.
+- **Decision**: No, on the card's evident intent (owner, 2026-11-26): the
+  opening hand's and a mulligan's draws are taken, and the owner draws CR
+  902.5's starting hand. Every later draw is barred. Magic Online, the only
+  place the card was played, has not applied avatar rules text since Zendikar
+  (2009), so its behaviour cannot be observed.
+- **Rejected**: Barring them, the literal reading: the prohibition already
+  applies at CR 103.5 (CR 902.3, 313.4), and "can't" beats the rule directing
+  the draw (CR 101.2). Not chosen because the owner's first card would come
+  only from the first draw step's look, and paying 0 life would leave them no
+  cards all game. The hand modifier does not decide it: it sets maximum hand
+  size too (CR 313.6, 902.5b), and Maralen's is +0.
 - **Site**: `Parun.Engine.Event.drawCardSpentReturning`'s
   `DrawKind.OpeningHand`; `Parun.VanguardSpec`'s "a vanguard's
   at-the-beginning-of-the-game life payment sets how many cards Maralen looks
