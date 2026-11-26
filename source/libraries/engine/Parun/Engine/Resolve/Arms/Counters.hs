@@ -123,6 +123,8 @@ import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.ObjectRef (ObjectRef)
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.PaidResource as PaidResource
+import qualified Parun.Types.PayAny as PayAny
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseGrant as PhaseGrant
@@ -1721,39 +1723,53 @@ removePlayerCounters resolving source controller legal (RemovePlayerCounters.MkR
   -- per kind.
   Monad.forM_ mTally $ \slot -> State.modify' (Common.bindAmountSlot resolving source slot (sum lost))
 
--- CR 107.14: "you may pay any amount of {E}". The payer is the resolving
--- controller (CR 109.5's "you"), the amount is theirs to name, and CR 118.3
--- caps it at the energy they actually have -- so unlike CR 601.2b's
--- announcement the bound is ENFORCED, and an answer above it is clamped rather
--- than trusted. Paying 0 is how the printed "may" is declined.
+-- CR 107.14 / 119.4: "you may pay any amount of {E}" or "of life". The payer
+-- is the resolving controller (CR 109.5's "you") and the amount is theirs to
+-- name, capped at what they can pay (CR 118.3; CR 119.4 for life, through
+-- Event.mostLifePayable, as EntryRewrite.PayAnyLife caps it), so unlike CR
+-- 601.2b's announcement the bound is ENFORCED, and an answer above it is
+-- clamped rather than trusted. Paying 0 is how the printed "may" is declined.
 --
--- Through Parun.Engine.Cost's own reader and writer, so CR 107.14 has one
--- meaning here and in a CostComponent.PayEnergy payment.
+-- Energy goes through Parun.Engine.Cost's own reader and writer, so CR 107.14
+-- has one meaning here and in a CostComponent.PayEnergy payment; life through
+-- Event.payLife, CR 119.4's one funnel.
 --
 -- The offer is skipped at a bound of 0, where CR 118.3 leaves 0 as the only
 -- payable amount and there is nothing to decide. Proven by
 -- data/scenarios/counter-keyword-trigger/cr-118-3-a-payer-with-no-e-is-not-asked-how-much-to-pay.json,
 -- whose twin cr-107-14-two-e-makes-it-a-real-choice-and-the-aetherjet-is-a-2-2.json
 -- is asked.
-payAnyEnergy :: ObjectId -> ObjectId -> PlayerId -> SlotName -> Game ()
-payAnyEnergy resolving source controller slot = do
+--
+-- A linked payment (CR 607.2d) records the amount PAID on the source, as
+-- Effect.ChooseQuality's linked number is recorded, for Quantity.ChosenNumber
+-- to read; even at zero, so a later reading finds 0 rather than an earlier
+-- payment. Parun.VanguardSpec's Maralen of the Mornsong Avatar cases prove it.
+payAny :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> PayAny.PayAny -> Game ()
+payAny settle resolving source controller (PayAny.MkPayAny resource slot linked) = do
   gs <- State.get
-  let have = Game.energyOf controller gs
+  let have = case resource of
+        PaidResource.Energy -> Game.energyOf controller gs
+        PaidResource.Life -> Event.mostLifePayable controller gs
+      ask = case resource of
+        PaidResource.Energy -> Prompt.ChoosePaidEnergy (Decide.deciderFor controller gs) controller resolving have
+        PaidResource.Life -> Prompt.ChooseNumber (Decide.deciderFor controller gs) controller resolving 0 NumberFloor.Least (Just have)
   paid <-
     if have == 0
       then pure 0
-      else do
-        answer <- Game.choose (Prompt.ChoosePaidEnergy (Decide.deciderFor controller gs) controller resolving have)
-        pure (min answer have)
-  Cost.spendEnergy controller paid
+      else fmap (min have) (Game.choose ask)
+  case resource of
+    PaidResource.Energy -> Cost.spendEnergy controller paid
+    PaidResource.Life -> Event.payLife settle controller paid
   -- Bound onto this effect's SOURCE even when nothing was paid, Effect.Destroy's
   -- count for its reason: zero is an answer, where an unbound slot would leave a
   -- later clause's quantity unevaluable instead.
   State.modify' (Common.bindAmountSlot resolving source slot paid)
+  Monad.when linked $
+    State.modify' (\g -> Game.recordChoice Chosen.Number (Game.readingAcquisition resolving source g source) (const (Just paid)) source g)
 
 -- CR 107.1c: "any number" is any natural, so the answer is taken as given. A
 -- number past what a later instruction can act on is that instruction's CR
--- 609.3 shortfall, not this prompt's. Bound even at zero, PayAnyEnergy's
+-- 609.3 shortfall, not this prompt's. Bound even at zero, PayAny's
 -- reason.
 -- CR 608.2d: a player "can't choose an option that's illegal", so an answer
 -- past the bound is clamped to it. A bound of zero leaves nothing to ask, and one
@@ -1794,7 +1810,7 @@ chooseNumber resolving source controller legal (ChooseNumber.MkChooseNumber slot
 -- CR 608.2h: the quantity is read once, here, against the source -- its last
 -- known information when it has left, as Ratchet Bomb has after CR 601.2h's
 -- sacrifice -- and a later instruction reads the number off the slot. Bound
--- even at zero, PayAnyEnergy's reason; a quantity that cannot be evaluated
+-- even at zero, PayAny's reason; a quantity that cannot be evaluated
 -- binds nothing, Bolster's posture. A negative quantity binds 0 (CR 107.1b),
 -- so a token's power and toughness, which CR 107.1b leaves negative, reads its
 -- quantity in the token's face (Common.bakeTokenCharacteristics), never a

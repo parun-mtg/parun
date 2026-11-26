@@ -605,6 +605,7 @@ objectWith before entry between closed = do
   castFrom <- field Object.castFrom
   castBy <- field Object.castBy
   castUsing <- field Object.castUsing
+  enteredUsing <- field Object.enteredUsing
   castGrants <- field Object.castGrants
   castCostChanges <- field Object.castCostChanges
   detainedUntil <- field Object.detainedUntil
@@ -682,6 +683,7 @@ objectWith before entry between closed = do
         Object.castFrom = castFrom,
         Object.castBy = castBy,
         Object.castUsing = castUsing,
+        Object.enteredUsing = enteredUsing,
         Object.castGrants = castGrants,
         Object.castCostChanges = castCostChanges,
         Object.detainedUntil = detainedUntil,

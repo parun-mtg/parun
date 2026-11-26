@@ -130,6 +130,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       s
       (Codec.encode codec (Filter.HasKeywordFamily KeywordFamily.Toxic) /= Codec.encode codec (Filter.HasKeyword (Keyword.Toxic 2)))
       "the toxic family filter is not the toxic 2 filter"
+  Spec.it s "HasProtectionFrom" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.HasProtectionFrom Color.Red)
+      " {\"type\":\"HasProtectionFrom\",\"value\":\"Red\"} "
   Spec.it s "Shares Sector Source" $
     Common.assertCodec
       s
@@ -941,6 +947,13 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.Paid (KeywordDesignator.OfFamily KeywordFamily.Kicker))
       " {\"type\":\"Paid\",\"value\":{\"type\":\"OfFamily\",\"value\":\"Kicker\"}} "
+  -- Malfegor Avatar's "if it was unearthed".
+  Spec.it s "EnteredUsing" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.EnteredUsing (KeywordDesignator.OfFamily KeywordFamily.Unearth))
+      " {\"type\":\"EnteredUsing\",\"value\":{\"type\":\"OfFamily\",\"value\":\"Unearth\"}} "
   -- Synthetic Prototype Audit's "target prototyped spell".
   Spec.it s "IsPrototyped" $
     Common.assertCodec

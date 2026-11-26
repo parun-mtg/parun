@@ -930,7 +930,7 @@ playerRefPositions =
    in [ ("add-mana", Effect.AddMana (ManaAddition.MkManaAddition (plantedPlayer "am") (ManaProduction.AnyColor ColorSpread.OneColor) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False), [plantedPlayer "am"]),
         ("add-mana-pooled", Effect.AddMana (ManaAddition.MkManaAddition (plantedPlayer "amp") (ManaProduction.Pooled (ManaCount.MkManaCount (plantedPlayer "amp-pool") ManaFilter.Any)) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False), [plantedPlayer "amp", plantedPlayer "amp-pool"]),
         ("firebend", Effect.Firebend (ManaAddition.MkManaAddition (plantedPlayer "fb") (ManaProduction.AnyColor ColorSpread.OneColor) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False), [plantedPlayer "fb"]),
-        ("search", Effect.Search (Search.MkSearch (plantedPlayer "se-searcher") (plantedPlayer "se-owner") Set.empty False Nothing (Filter.Type.And []) Seq.empty False SearchDestination.Battlefield Map.empty Nothing Nothing Nothing Nothing Set.empty False False Nothing False), [plantedPlayer "se-searcher", plantedPlayer "se-owner"]),
+        ("search", Effect.Search (Search.MkSearch (plantedPlayer "se-searcher") (plantedPlayer "se-owner") Set.empty False Nothing (Filter.Type.And []) Seq.empty False SearchDestination.Battlefield Map.empty Nothing Nothing Nothing Nothing Set.empty False False Nothing CardSelection.ByChoice), [plantedPlayer "se-searcher", plantedPlayer "se-owner"]),
         ("draw", Effect.Draw (Draw.MkDraw (plantedPlayer "dr") one Nothing Nothing), [plantedPlayer "dr"]),
         ("put-counters-putter", Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne [] one (ObjectRef.EachMatching (Filter.Type.And [])) Nothing Nothing (Just (plantedPlayer "pp"))), [plantedPlayer "pp"]),
         ("mill", Effect.Mill (Mill.MkMill (plantedPlayer "mi") one Nothing Nothing), [plantedPlayer "mi"]),
@@ -2770,9 +2770,10 @@ protectionFromEach = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Irid
 -- CR 702.16g's "protection from [A] and from [B]": the cards printing a list,
 -- which any subset of the domain satisfies. Council Guardian's per-colour
 -- grants, each gated on that colour's votes, are listed the same way, and so
--- are Akroma, Angel of Wrath Avatar's, two branches of a random group.
+-- are Akroma, Angel of Wrath Avatar's, two branches of a random group, and
+-- Eight-and-a-Half-Tails Avatar's five, one drawn at random.
 protectionListed :: Set.Set CardName.CardName
-protectionListed = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Akroma, Angel of Fury", "Akroma, Angel of Wrath Avatar", "Akroma's Memorial", "Animar, Soul of Elements", "Council Guardian", "Great Sable Stag", "Paladin en-Vec", "Sword of Forge and Frontier", "Sword of Light and Shadow", "Sword of Once and Future", "Sword of Wealth and Power", "Ureni, the Song Unending"])
+protectionListed = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Akroma, Angel of Fury", "Akroma, Angel of Wrath Avatar", "Akroma's Memorial", "Animar, Soul of Elements", "Council Guardian", "Eight-and-a-Half-Tails Avatar", "Great Sable Stag", "Paladin en-Vec", "Sword of Forge and Frontier", "Sword of Light and Shadow", "Sword of Once and Future", "Sword of Wealth and Power", "Ureni, the Song Unending"])
 
 -- The qualities of each protection group a face prints: its own keywords, each
 -- static ability's grants, and every grant its resolution effects make.
@@ -5774,7 +5775,7 @@ effectFilters effect = case effect of
   Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong count from which _) -> frame Unframed (whichCountersFilters which <> foldMap quantityFilters (RemovalCount.quantityOf count)) <> frame SourceHostFramed (objectRefFilters from)
   Effect.GainPlayerCounters (PlayerCounters.MkPlayerCounters _ _ quantity) -> frame Unframed (quantityFilters quantity)
   Effect.RemovePlayerCounters removal -> frame Unframed (quantityFilters (RemovePlayerCounters.quantity removal))
-  Effect.PayAnyEnergy _ -> []
+  Effect.PayAny _ -> []
   Effect.ChooseNumber number -> frame Unframed (foldMap quantityFilters (ChooseNumber.upTo number))
   Effect.BindAmount payload -> frame Unframed (quantityFilters (BindAmount.quantity payload))
   Effect.BindPlayers _ -> []

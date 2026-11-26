@@ -308,8 +308,9 @@ data Object = MkObject
     -- spell becomes.
     chosenPlayers :: Map.Map Acquisition.Acquisition (Map.Map PlayerChoice.PlayerChoice PlayerId.PlayerId),
     -- | CR 607.2d: the last number chosen for this object, assigned by each choice
-    -- (Shapeshifter's as it enters and each upkeep), and CR 607.2g's life paid as
-    -- it entered (Phyrexian Processor). Read by Quantity.ChosenNumber
+    -- (Shapeshifter's as it enters and each upkeep), CR 607.2g's life paid as
+    -- it entered (Phyrexian Processor), and a linked Effect.PayAny's amount
+    -- (Maralen of the Mornsong Avatar). Read by Quantity.ChosenNumber
     -- off the effect's SOURCE. Not a copiable value and per-incarnation, for
     -- chosenColors's reasons.
     chosenNumber :: Map.Map Acquisition.Acquisition Natural.Natural,
@@ -867,6 +868,13 @@ data Object = MkObject
     -- and blitz's record and drops escape's (CR 702.138b) and web-slinging's --
     -- Parun.Engine.Keyword.copiedCastUsing.
     castUsing :: Maybe Keyword.Keyword,
+    -- | CR 400.7: the rule-702 keyword whose ability's effect put this
+    -- permanent onto the battlefield -- Malfegor Avatar's "if it was unearthed"
+    -- (CR 702.84a). Stamped by Parun.Engine.Resolve.Arms.Zones's
+    -- Effect.MoveToZone arm off the resolving ability's own `keyword`; Nothing
+    -- for a spell that resolved or a printed ability's move. Per-incarnation and
+    -- NOT a copiable value (CR 707.2). Read by Filter.EnteredUsing.
+    enteredUsing :: Maybe Keyword.Keyword,
     -- | CR 400.7g: the ability an EFFECT granted this card that ALLOWED it to be
     -- cast -- "that ability will continue to apply to the new object that card
     -- became after it moved to the stack as a result of being cast this way".
@@ -1138,6 +1146,7 @@ new o s z t =
       -- CR 400.7d's exception is written back by
       -- Parun.Engine.Event.changeZoneAttaching's mkObj.
       castUsing = Nothing,
+      enteredUsing = Nothing,
       -- CR 400.7g's carry ends with the spell: the rule names the object the
       -- card became ON THE STACK, and nothing writes it back.
       castGrants = [],

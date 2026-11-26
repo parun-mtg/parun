@@ -75,7 +75,6 @@ import qualified Parun.Types.PlayerSlot as PlayerSlot
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
-import qualified Parun.Types.Protection as Protection
 import Parun.Types.Quantity (Quantity)
 import qualified Parun.Types.Quantity as Quantity.Type
 import Parun.Types.Recipient (Recipient)
@@ -775,7 +774,7 @@ targetable pcs rowsOf perspective source sourceView gs recipient =
                        && any stops hexproofs
                        && not (any (\you -> PlayerEffect.ignoresHexproofOf exemptions you oid gs) perspective)
                    )
-                || any protects (Maybe.mapMaybe protectionQuality (Map.keys keywords))
+                || any protects (Maybe.mapMaybe Filter.protectionQuality (Map.keys keywords))
          in not (Set.member oid (GameState.battlefield gs) && restricted)
    in case recipient of
         -- CR 702.18a's and CR 702.11c's player halves, then CR 702.16b's. Two
@@ -836,23 +835,6 @@ opponentOf teams perspective controller = case (perspective, controller) of
 hexproofQuality :: Keyword.Keyword -> Maybe (Maybe (Filter.Type.Filter Keyword.Keyword))
 hexproofQuality keyword = case keyword of
   Keyword.Hexproof quality -> Just quality
-  _ -> Nothing
-
--- CR 702.16b: the quality one keyword is a protection ability from, and Nothing
--- for a keyword that is not one at all. hexproofQuality above without the inner
--- Maybe: rule 702.16a states a quality on every protection ability, where rule
--- 702.11b's plain hexproof states none. Rule 702.16j's "protection from
--- everything" is not that variant either: Filter.And [] is a quality like any
--- other here, and matches every object.
---
--- The quality alone: rule 702.16n's exception is about what an ATTACHED
--- permanent stops doing (CR 702.16c's second sentence), and rule 702.16b names
--- no attachment, so an Aura the effect spares still may not target its host.
--- Spectra Ward's Gatherer ruling says as much -- the enchanted creature can't be
--- the target of further coloured Aura spells.
-protectionQuality :: Keyword.Keyword -> Maybe (Filter.Type.Filter Keyword.Keyword)
-protectionQuality keyword = case keyword of
-  Keyword.Protection protection -> Just (Protection.quality protection)
   _ -> Nothing
 
 -- Every base pool that is a function of the GAME STATE alone, taken once and

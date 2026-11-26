@@ -280,11 +280,13 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
             State.modify' (\g -> g {GameState.movedUntil = Map.insert newId watch (GameState.movedUntil g)})
           -- CR 400.7 / 607.5: which object's effect put this permanent onto
           -- the battlefield, and with which of its abilities, for
-          -- Filter.EnteredWithSource. Read off where the incarnation landed, so
-          -- a redirected move records nothing.
+          -- Filter.EnteredWithSource, and which keyword minted that ability, for
+          -- Filter.EnteredUsing. Read off where the incarnation landed, so a
+          -- redirected move records nothing.
           landed <- State.gets (fmap Object.zone . Game.lookupObject newId)
           Monad.when (landed == Just Zone.Battlefield) $ do
             State.modify' (Common.linkEntrant resolving source newId)
+            State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.enteredUsing = Common.resolvingKeyword resolving g}) newId (GameState.objects g)})
             State.modify' (Common.linkCraftMaterials resolving newId)
         -- CR 614.1c with CR 616.1g's Voice of All example: the member's
         -- as-enters effects run before the next member's entry applies, in the

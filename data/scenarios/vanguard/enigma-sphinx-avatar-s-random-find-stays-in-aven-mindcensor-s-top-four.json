@@ -1,0 +1,178 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "command": [
+          {
+            "card": "Enigma Sphinx Avatar",
+            "label": "sphinx"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Esper Cormorants",
+            "label": "cast"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "top"
+          },
+          {
+            "card": "Tidehollow Strix",
+            "label": "strix"
+          },
+          {
+            "card": "Tidehollow Strix",
+            "label": "other"
+          },
+          {
+            "card": "Island",
+            "label": "fourth"
+          },
+          {
+            "card": "Master of Etherium",
+            "label": "deep"
+          },
+          {
+            "card": "Island",
+            "label": "last"
+          }
+        ],
+        "manaPool": "WUUU",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Aven Mindcensor",
+            "label": "mindcensor"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Enigma Sphinx Avatar's random find under an opponent's Aven Mindcensor draws only from the top four cards of the library",
+  "note": "Aven Mindcensor replaces the search with one of the top four cards, so randomness is asked between the two Strixes there and the Master of Etherium fifth from the top is refused. The drawn Strix goes to the bottom when Alice declines to play it.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$cast"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $sphinx",
+            "Esper Cormorants"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseNumber",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "RandomObject",
+          "with": "$deep"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RandomObject",
+          "with": "$strix"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OfferedCast",
+          "with": "Declines"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Esper Cormorants"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$top",
+            "$other",
+            "$fourth",
+            "$deep",
+            "$last",
+            "Tidehollow Strix#2"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

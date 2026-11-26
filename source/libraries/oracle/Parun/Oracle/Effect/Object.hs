@@ -20,6 +20,7 @@ import qualified Parun.Oracle.Target as Target
 import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.AmassKind as AmassKind
 import qualified Parun.Types.Card as Card
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.Counter as Counter
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Create as Create
@@ -463,7 +464,7 @@ searched context s
         && not (Search.exactly s)
         && not (Search.andOr s)
         && Maybe.isNothing (Search.top s)
-        && not (Search.atRandom s)
+        && Search.selection s == CardSelection.ByChoice
     card f =
       described f <> case f of
         -- Free: "card" after each description, with an article on the later

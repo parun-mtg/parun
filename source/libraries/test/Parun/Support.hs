@@ -697,17 +697,29 @@ identityAnswer p = case p of
 -- A match set up and played to the end of turn `final`, or to its result if
 -- that comes first: a game's opening, for a case that needs no ending.
 playedThrough :: (Monad m) => Natural -> [Observer.Observer m] -> Answerer.Answerer (Asked.Asked GameState.GameState) m -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m GameState.GameState
-playedThrough final observers answerer matchup = do
+playedThrough final = playedUntil (pastTurn final)
+
+-- Whether the game is past turn `final`, playedThrough's stop.
+pastTurn :: Natural -> GameState.GameState -> Bool
+pastTurn final gs = TurnRegisters.turnNumber (GameState.turn gs) > final
+
+-- playedThrough, stopping at the first ask on a board the predicate holds of.
+playedUntil :: (Monad m) => (GameState.GameState -> Bool) -> [Observer.Observer m] -> Answerer.Answerer (Asked.Asked GameState.GameState) m -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m GameState.GameState
+playedUntil stop observers answerer matchup = do
   (_, begun) <- Engine.runGameAsked (Driver.ask observers answerer) (Setup.gameWith GameSettings.plain (fmap fst matchup)) (Setup.newGame (Resolve.performHandAction Engine.playSubgame) matchup)
-  Driver.drive observers answerer 100000 (\gs -> pure (TurnRegisters.turnNumber (GameState.turn gs) > final)) begun
+  Driver.drive observers answerer 100000 (pure . stop) begun
 
 -- playedThrough for seats that answer without a monad, each library shuffled
 -- from `seed`: unshuffled, a deck's lands can sit under everything else and
 -- its first turns hold no play at all.
 opening :: Natural -> Word.Word32 -> (forall r. Prompt.Prompt r -> r) -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> GameState.GameState
-opening final seed answer matchup =
+opening final = openingUntil (pastTurn final)
+
+-- opening, stopping where playedUntil does.
+openingUntil :: (GameState.GameState -> Bool) -> Word.Word32 -> (forall r. Prompt.Prompt r -> r) -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> GameState.GameState
+openingUntil stop seed answer matchup =
   let seat = Answerer.MkAnswerer (pure . answer . Asked.prompt)
-   in State.evalState (playedThrough final [] (Driver.bySeat (Map.fromList (NonEmpty.toList (fmap (\(pid, _) -> (pid, seat)) matchup))) Chance.chance) matchup) (seeded seed)
+   in State.evalState (playedUntil stop [] (Driver.bySeat (Map.fromList (NonEmpty.toList (fmap (\(pid, _) -> (pid, seat)) matchup))) Chance.chance) matchup) (seeded seed)
 
 -- Casts when legal, otherwise plays a land, otherwise passes.
 castAnswer :: Prompt.Prompt r -> r
@@ -2080,6 +2092,7 @@ stubView table oid =
                 Filter.paidCosts = Map.empty,
                 Filter.tributePaid = False,
                 Filter.castUsing = Nothing,
+                Filter.enteredUsing = Nothing,
                 Filter.foretold = False,
                 Filter.prototyped = False,
                 Filter.preparedSpell = False,

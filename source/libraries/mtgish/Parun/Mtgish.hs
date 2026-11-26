@@ -1408,7 +1408,7 @@ searchLibrary who steps = case steps of
               Search.exactly = False,
               Search.andOr = False,
               Search.top = Nothing,
-              Search.atRandom = False
+              Search.selection = CardSelection.ByChoice
             }
       )
   [] -> Left (Text.pack "_Action:SearchLibrary")

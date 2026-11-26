@@ -116,6 +116,8 @@ data Filter keyword
     -- HasKeyword above rather than a widening of it, and answered off the
     -- projection for that atom's reason.
     HasKeywordFamily KeywordFamily.KeywordFamily
+  | -- | CR 702.16a: the object has protection from this colour (Eight-and-a-Half-Tails Avatar).
+    HasProtectionFrom Color.Color
   | -- | CR 208.1 / 202.3: the candidate's measure relates thus to the operand;
     -- see Parun.Engine.Filter.matches for an absent number.
     Measures Measures.Measures
@@ -701,6 +703,11 @@ data Filter keyword
     -- Avatar's "fewer than X"). Uncharacteristic: CR 109.3's list has no
     -- counters in it, and the P/T a +1/+1 counter grants is CR 613.4c's, applied
     -- over the top of this.
+    --
+    -- Unprinted: an operand other than Literal or EnclosingAmount; a
+    -- Measure-taking one compares the count against that Measure, never
+    -- another object's counters. Parun.FilterPositionLintSpec's "no card writes
+    -- HasCounters against a measure" keeps it out of card data.
     HasCounters Comparison.Comparison Operand.Operand (CounterKind.CounterKind keyword)
   | -- | CR 122.1 again, kind-agnostic: does the CANDIDATE have one or more
     -- counters on it of ANY kind? Not spellable as an Or over the kinds, CR
@@ -763,6 +770,10 @@ data Filter keyword
     -- -- Hallar's "if that spell was kicked", Henzie "Toolbox" Torre's "blitz
     -- costs you pay".
     Paid (KeywordDesignator.KeywordDesignator keyword)
+  | -- | CR 400.7: the candidate, as this object, was put onto the battlefield by
+    -- an ability of a keyword the designator names -- Malfegor Avatar's "if it
+    -- was unearthed" (CR 702.84a). Read off Object.enteredUsing.
+    EnteredUsing (KeywordDesignator.KeywordDesignator keyword)
   | -- | CR 719.3c / 719.3d: the candidate is a prototyped spell or a permanent
     -- that was one, a copy of either included. Not Paid above: a Clone of a
     -- kicked permanent was not kicked (CR 707.2), where CR 719.3d makes a copy

@@ -106,6 +106,7 @@ codec keywordCodec =
       Arm.payload "NameWordsAtLeast" Common.natural Filter.NameWordsAtLeast (\x -> case x of Filter.NameWordsAtLeast y -> Just y; _ -> Nothing),
       Arm.payload "HasKeyword" keywordCodec Filter.HasKeyword (\x -> case x of Filter.HasKeyword y -> Just y; _ -> Nothing),
       Arm.payload "HasKeywordFamily" KeywordFamily.codec Filter.HasKeywordFamily (\x -> case x of Filter.HasKeywordFamily y -> Just y; _ -> Nothing),
+      Arm.payload "HasProtectionFrom" Color.codec Filter.HasProtectionFrom (\x -> case x of Filter.HasProtectionFrom y -> Just y; _ -> Nothing),
       Arm.payload "Measures" Measures.codec Filter.Measures (\x -> case x of Filter.Measures y -> Just y; _ -> Nothing),
       Arm.payload "ControlledByRole" TurnRole.codec Filter.ControlledByRole (\x -> case x of Filter.ControlledByRole y -> Just y; _ -> Nothing),
       Arm.payload "HeldByBound" heldByBound (uncurry Filter.HeldByBound) (\x -> case x of Filter.HeldByBound h y -> Just (h, y); _ -> Nothing),
@@ -238,6 +239,7 @@ codec keywordCodec =
       Arm.payload "TagWasSpent" ProductionTag.codec Filter.TagWasSpent (\x -> case x of Filter.TagWasSpent y -> Just y; _ -> Nothing),
       Arm.nullary "PaidWithManaFromSource" Filter.PaidWithManaFromSource,
       Arm.payload "Paid" (KeywordDesignator.codec keywordCodec) Filter.Paid (\x -> case x of Filter.Paid y -> Just y; _ -> Nothing),
+      Arm.payload "EnteredUsing" (KeywordDesignator.codec keywordCodec) Filter.EnteredUsing (\x -> case x of Filter.EnteredUsing y -> Just y; _ -> Nothing),
       Arm.nullary "IsPrototyped" Filter.IsPrototyped,
       Arm.nullary "IsPreparedSpell" Filter.IsPreparedSpell,
       Arm.nullary "IsModal" Filter.IsModal,
@@ -367,6 +369,7 @@ tagOf x = case x of
   Filter.NameWordsAtLeast {} -> "NameWordsAtLeast"
   Filter.HasKeyword {} -> "HasKeyword"
   Filter.HasKeywordFamily {} -> "HasKeywordFamily"
+  Filter.HasProtectionFrom {} -> "HasProtectionFrom"
   Filter.Measures {} -> "Measures"
   Filter.ControlledByRole {} -> "ControlledByRole"
   Filter.HeldByBound {} -> "HeldByBound"
@@ -479,6 +482,7 @@ tagOf x = case x of
   Filter.TagWasSpent {} -> "TagWasSpent"
   Filter.PaidWithManaFromSource {} -> "PaidWithManaFromSource"
   Filter.Paid {} -> "Paid"
+  Filter.EnteredUsing {} -> "EnteredUsing"
   Filter.IsPrototyped {} -> "IsPrototyped"
   Filter.IsPreparedSpell {} -> "IsPreparedSpell"
   Filter.IsModal {} -> "IsModal"

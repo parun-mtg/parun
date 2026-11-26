@@ -1414,6 +1414,7 @@ library codec
     Parun.Codec.OwnedZoneSpec
     Parun.Codec.PaidExpiry
     Parun.Codec.PaidExpirySpec
+    Parun.Codec.PaidResource
     Parun.Codec.Pairing
     Parun.Codec.PairingSpec
     Parun.Codec.PairwiseFrame
@@ -1430,6 +1431,7 @@ library codec
     Parun.Codec.PastRollSpec
     Parun.Codec.PastTurn
     Parun.Codec.PastTurnSpec
+    Parun.Codec.PayAny
     Parun.Codec.PayBranch
     Parun.Codec.PayBranchSpec
     Parun.Codec.PayGate
@@ -3753,6 +3755,7 @@ library types
     Parun.Types.OwnedZone
     Parun.Types.OwnershipChange
     Parun.Types.PaidExpiry
+    Parun.Types.PaidResource
     Parun.Types.Pairing
     Parun.Types.PairwiseFrame
     Parun.Types.Parity
@@ -3761,6 +3764,7 @@ library types
     Parun.Types.PastActivation
     Parun.Types.PastRoll
     Parun.Types.PastTurn
+    Parun.Types.PayAny
     Parun.Types.PayBranch
     Parun.Types.PayerAnswer
     Parun.Types.PayGate

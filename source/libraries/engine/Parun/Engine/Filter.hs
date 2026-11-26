@@ -97,6 +97,7 @@ import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProductionTag as ProductionTag
+import qualified Parun.Types.Protection as Protection
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RoomHalf as RoomHalf
@@ -895,6 +896,10 @@ data View = MkView
     -- that has left its zone (CR 608.2h).
     -- Parun.Engine.Quantity's CastUsing arm and Filter.Paid are the readers.
     castUsing :: Maybe Keyword.Type.Keyword,
+    -- CR 400.7 / 608.2h: the keyword whose ability put this candidate onto the
+    -- battlefield, read off Object.enteredUsing, or LastKnown.enteredUsing for
+    -- an object that has left it. Filter.EnteredUsing is the reader.
+    enteredUsing :: Maybe Keyword.Type.Keyword,
     -- CR 702.143c: is this candidate a foretold card, or a spell that was one
     -- before it was cast? Read off Object.foretold, which Parun.Engine.Cast
     -- carries onto the stack, and False where there is no live object, as
@@ -1305,6 +1310,7 @@ nobodyView =
       -- one -- `designations` above, same sentence.
       tributePaid = False,
       castUsing = Nothing,
+      enteredUsing = Nothing,
       foretold = False,
       prototyped = False,
       preparedSpell = False,
@@ -2485,6 +2491,35 @@ attachedAnchored anchor = case anchor of
 cardTypesAmong :: Maybe (Set.Set CardType.CardType) -> View -> Set.Set CardType.CardType
 cardTypesAmong among = maybe id Set.intersection among . cardTypes
 
+-- CR 702.16b: the quality one keyword is a protection ability from, and Nothing
+-- for a keyword that is not one at all. Parun.Engine.Target.hexproofQuality
+-- without the inner Maybe: rule 702.16a states a quality on every protection
+-- ability, where rule 702.11b's plain hexproof states none. Rule 702.16j's
+-- "protection from everything" is not that variant either: Filter.And [] is a
+-- quality like any other here, and matches every object.
+--
+-- The quality alone: rule 702.16n's exception is about what an ATTACHED
+-- permanent stops doing (CR 702.16c's second sentence), and rule 702.16b names
+-- no attachment, so an Aura the effect spares still may not target its host.
+-- Spectra Ward's Gatherer ruling says as much -- the enchanted creature can't be
+-- the target of further coloured Aura spells.
+protectionQuality :: Keyword.Type.Keyword -> Maybe (Filter.Filter Keyword.Type.Keyword)
+protectionQuality keyword = case keyword of
+  Keyword.Type.Protection protection -> Just (Protection.quality protection)
+  _ -> Nothing
+
+-- CR 702.16a: whether a protection quality is protection from colour `c`: the
+-- literal colour, a chosen one Parun.Engine.Keyword.withChoices baked to it
+-- (Voice of All), or one of CR 702.16h's "each color" (Unwritten, Spectra
+-- Ward). Multicolored (Argentum Masticore) is a quality of its own, no colour
+-- (CR 105.4). CR 702.16j's "everything" is no colour either, unobservably:
+-- such a permanent is never a legal target at resolution (CR 608.2b).
+protectsFromColor :: Color.Color -> Filter.Filter keyword -> Bool
+protectsFromColor c quality = case quality of
+  Filter.HasColor c' -> c == c'
+  Filter.Unwritten q -> protectsFromColor c q
+  _ -> False
+
 -- The one generic matcher. A pure fold over the Filter tree; it never inspects
 -- which effect produced the Filter. Identity checks like IsSource consult the
 -- supplied Context, not information baked into the predicate.
@@ -2533,6 +2568,10 @@ matches context view predicate = case predicate of
   -- abilities, never the board.
   Filter.HasKeywordFamily f ->
     any ((== Just f) . Keyword.familyOf) (Map.keys (keywords view))
+  -- CR 702.16a: some protection ability's quality is the colour
+  -- (protectsFromColor), read off the projection for HasKeyword's reason.
+  Filter.HasProtectionFrom c ->
+    any (protectsFromColor c) (Maybe.mapMaybe protectionQuality (Map.keys (keywords view)))
   -- CR 208.1 / 202.3: one comparison, whatever is measured and whatever it is
   -- measured against. False unless BOTH numbers are readable: an object with no
   -- power (CR 208.3) is not "a creature with power 2 or less", and an operand
@@ -3232,6 +3271,9 @@ matches context view predicate = case predicate of
   -- alternative cost the candidate was cast for (Henzie "Toolbox" Torre's
   -- "blitz costs you pay").
   Filter.Paid designator -> Keyword.timesPaid designator (paidCosts view) > 0 || any (Keyword.designates designator) (castUsing view)
+  -- CR 400.7: a stamp written as the object arrived, so it answers the same way
+  -- for as long as the object lasts, and off LastKnown once it has left.
+  Filter.EnteredUsing designator -> any (Keyword.designates designator) (enteredUsing view)
   Filter.IsPrototyped -> prototyped view
   Filter.IsPreparedSpell -> preparedSpell view
   Filter.IsModal -> Maybe.isJust (modesChosen view)
@@ -3362,6 +3404,7 @@ rewrite pairs predicate = case predicate of
   Filter.Unwritten _ -> predicate
   -- Untouched for Quantity.TimesPaid's reason (Parun.Engine.Projection.Rewrite).
   Filter.Paid _ -> predicate
+  Filter.EnteredUsing _ -> predicate
   _ ->
     Identity.runIdentity $
       Children.filterChildren
@@ -3674,6 +3717,7 @@ manaValueThresholds predicate = case predicate of
   Filter.HasNameOriginallyPrintedIn _ -> []
   Filter.HasKeyword _ -> []
   Filter.HasKeywordFamily _ -> []
+  Filter.HasProtectionFrom _ -> []
   Filter.ControllerIsOwner -> []
   Filter.HeldBy _ _ -> []
   Filter.ControlledByRole _ -> []
@@ -3792,6 +3836,7 @@ manaValueThresholds predicate = case predicate of
   Filter.WasCastFrom _ -> []
   Filter.TagWasSpent _ -> []
   Filter.Paid _ -> []
+  Filter.EnteredUsing _ -> []
   Filter.IsPrototyped -> []
   Filter.IsPreparedSpell -> []
   Filter.IsModal -> []
@@ -3862,6 +3907,7 @@ statesAQuality predicate = case predicate of
   Filter.HasNameOriginallyPrintedIn _ -> True
   Filter.HasKeyword _ -> True
   Filter.HasKeywordFamily _ -> True
+  Filter.HasProtectionFrom _ -> True
   Filter.ControllerIsOwner -> True
   Filter.HeldBy _ _ -> True
   Filter.ControlledByRole _ -> True
@@ -4008,6 +4054,7 @@ statesAQuality predicate = case predicate of
   -- never paid for.
   Filter.TagWasSpent _ -> True
   Filter.Paid _ -> True
+  Filter.EnteredUsing _ -> True
   Filter.IsPrototyped -> True
   Filter.IsPreparedSpell -> True
   Filter.IsModal -> True
@@ -4069,6 +4116,7 @@ readsSourceValues predicate = case predicate of
   -- HasKeyword arm), so nothing inside it reads the context.
   Filter.HasKeyword _ -> False
   Filter.HasKeywordFamily _ -> False
+  Filter.HasProtectionFrom _ -> False
   Filter.ControllerIsOwner -> False
   Filter.HeldBy _ _ -> False
   Filter.ControlledByRole _ -> False
@@ -4176,6 +4224,7 @@ readsSourceValues predicate = case predicate of
   Filter.WasCastFrom _ -> False
   Filter.TagWasSpent _ -> False
   Filter.Paid _ -> False
+  Filter.EnteredUsing _ -> False
   Filter.IsPrototyped -> False
   Filter.IsPreparedSpell -> False
   Filter.IsModal -> False
@@ -4215,6 +4264,7 @@ talliesWhatHappened predicate = case predicate of
   Filter.HasNameOriginallyPrintedIn {} -> False
   Filter.HasKeyword {} -> False
   Filter.HasKeywordFamily {} -> False
+  Filter.HasProtectionFrom {} -> False
   Filter.ControllerIsOwner {} -> False
   Filter.HeldBy {} -> False
   Filter.ControlledByRole {} -> False
@@ -4322,6 +4372,7 @@ talliesWhatHappened predicate = case predicate of
   Filter.WasCastFrom {} -> False
   Filter.TagWasSpent {} -> False
   Filter.Paid {} -> False
+  Filter.EnteredUsing {} -> False
   Filter.IsPrototyped {} -> False
   Filter.IsPreparedSpell {} -> False
   Filter.IsModal {} -> False

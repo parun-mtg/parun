@@ -3525,7 +3525,7 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
 -- The typed question Parun.Engine.Target.targetable, Parun.Engine.Attach and
 -- Parun.Engine.Sba ask, so none of those modules sees a PlayerEffect constructor.
 -- It answers the PLAYER half of rule 702.16; the permanent half is a keyword and
--- stays where the other keyword reads are (Parun.Engine.Target.protectionQuality,
+-- stays where the other keyword reads are (Parun.Engine.Filter.protectionQuality,
 -- Parun.Engine.Keyword.mintedAttachRestrictionsFor).
 --
 -- ONE predicate for both consequences rather than one per rule, because rule

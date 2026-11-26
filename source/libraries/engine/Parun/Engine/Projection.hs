@@ -4621,6 +4621,7 @@ filterReads f = case f of
   Filter.Type.HasKeyword _ -> Set.singleton Keywords
   -- The same aspect, read one step coarser.
   Filter.Type.HasKeywordFamily _ -> Set.singleton Keywords
+  Filter.Type.HasProtectionFrom _ -> Set.singleton Keywords
   -- The candidate's measure, and the source's or its own other one where the
   -- operand reads a projection: Aspect names an aspect of one object's
   -- projection, with no way to say "the source's". A bound object's number
@@ -4894,6 +4895,7 @@ filterReads f = case f of
   -- on this atom.
   Filter.Type.TagWasSpent _ -> Set.empty
   Filter.Type.Paid _ -> Set.empty
+  Filter.Type.EnteredUsing _ -> Set.empty
   -- CR 719.2a: a copiable value, which only layer 1 writes and no Aspect names,
   -- HasName's reason.
   Filter.Type.IsPrototyped -> Set.empty
@@ -5021,6 +5023,7 @@ filterReadsPeers f = case f of
   Filter.Type.HasNameOriginallyPrintedIn _ -> False
   Filter.Type.HasKeyword _ -> False
   Filter.Type.HasKeywordFamily _ -> False
+  Filter.Type.HasProtectionFrom _ -> False
   -- The SOURCE's and a bound object's numbers arrive on the Context, which
   -- affectsGiven builds with Filter.contextFor -- no projection of a second
   -- object is read -- except OfEachOtherCandidate's, which are the other
@@ -5121,6 +5124,7 @@ filterReadsPeers f = case f of
   Filter.Type.WasCastFrom _ -> False
   Filter.Type.TagWasSpent _ -> False
   Filter.Type.Paid _ -> False
+  Filter.Type.EnteredUsing _ -> False
   Filter.Type.IsPrototyped -> False
   Filter.Type.IsPreparedSpell -> False
   Filter.Type.IsModal -> False
