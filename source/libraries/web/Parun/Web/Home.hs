@@ -7,7 +7,6 @@ module Parun.Web.Home where
 
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
-import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -28,8 +27,6 @@ import qualified Parun.Web.Replay as Replay
 data Home = MkHome
   { -- | The game left for here, to resume.
     paused :: Maybe Paused,
-    -- | A new game chosen while one is paused, asked about first.
-    confirming :: Maybe Choice,
     -- | Why something the screen waits on did not load.
     problem :: Maybe Text.Text,
     -- | The decks saved in this browser, as read so far.
@@ -75,9 +72,6 @@ data Choice
   | MkReplays
   | -- | This replay, from its start.
     MkWatch Replay.Source
-  | -- | Plays on from this position of this replay, each seat filled so
-    -- (Replay.MkBranch).
-    MkPlayOn Replay.Source Natural (Map.Map PlayerId.PlayerId Replay.Filling)
   | -- | The lobby, on these decks: yours, then each bot's.
     MkPlayAgain (NonEmpty.NonEmpty Text.Text)
   deriving (Eq, Show)
@@ -86,16 +80,16 @@ data Choice
 data Event
   = MkChoose Choice
   | MkResume
-  | -- | Abandons the paused game for the choice asked about.
-    MkConfirm
-  | MkCancel
+  | -- | Stays on the home screen.
+    MkCancel
   deriving (Eq, Show)
 
 -- | What the home screen does after an event.
 data Outcome
   = -- | Shows this home screen.
     MkStay Home
-  | -- | Leaves for this choice, abandoning any paused game for a new one.
+  | -- | Leaves for this choice; a paused game is asked about where a new
+    -- one starts (Lobby.abandons).
     MkGo Choice
   | -- | Returns to the paused game.
     MkBack
@@ -103,7 +97,7 @@ data Outcome
 
 -- | Nothing loaded, no game paused.
 new :: Home
-new = MkHome Nothing Nothing Nothing [] []
+new = MkHome Nothing Nothing [] []
 
 -- | A game between these decks, in seat order (DeckBrowser.label), paused
 -- at the board the question waiting showed, if any.
@@ -118,19 +112,6 @@ pausedOn decks board = case board of
         let p = SeatView.player s
       ]
 
--- | Whether a choice starts a game at once, and so abandons a paused one;
--- the lobby asks at its Start instead (Lobby.abandons).
-starts :: Choice -> Bool
-starts choice = case choice of
-  MkNewGame _ -> False
-  MkBuildDeck -> False
-  MkEditDeck _ -> False
-  MkBrowseDecks _ -> False
-  MkReplays -> False
-  MkWatch _ -> False
-  MkPlayOn {} -> True
-  MkPlayAgain _ -> False
-
 -- | What a tap on the top bar's section means here.
 navigate :: Bar.Section -> Event
 navigate section = case section of
@@ -141,52 +122,28 @@ navigate section = case section of
 
 update :: Event -> Home -> Outcome
 update event home = case event of
-  MkChoose choice
-    | Maybe.isJust (paused home) && starts choice -> MkStay home {confirming = Just choice}
-    | otherwise -> MkGo choice
+  MkChoose choice -> MkGo choice
   MkResume -> MkBack
-  MkConfirm -> maybe (MkStay home) MkGo (confirming home)
-  MkCancel -> MkStay home {confirming = Nothing}
+  MkCancel -> MkStay home
 
 view :: Home -> Html.Html Event
 view home =
   Element.el "main" ["home"] [] $
     [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p] | p <- Maybe.maybeToList (problem home)]
-      <> case confirming home of
-        Just choice ->
-          [ Element.el
-              "section"
-              ["panel", "confirm"]
-              [Element.attr "role" (Text.pack "alertdialog"), Element.attr "aria-label" (Text.pack "Abandon the game in progress?")]
-              [ Element.el "p" [] [] [Element.string "Starting a new game abandons the one in progress, which Replays won't keep."],
-                Element.el
-                  "div"
-                  ["choices"]
-                  []
-                  [ Element.button ["primary", "resume"] MkResume [Element.string "Resume"],
-                    Element.button [] MkConfirm [Element.string (confirmLabel choice)],
-                    Element.button [] MkCancel [Element.string "Cancel"]
-                  ]
-              ]
-          ]
-        Nothing ->
-          foldMap (pure . pausedView) (paused home)
-            <> [ Element.el
-                   "nav"
-                   ["tiles"]
-                   [Element.attr "aria-label" (Text.pack "What to do")]
-                   [ tile ["lead" | Maybe.isNothing (paused home)] (MkNewGame Nothing) "New game" "Pick your deck, then add a seat for each bot or player, or play alone.",
-                     tile [] MkBuildDeck "Build a deck" "Start from a blank list, then save it to play.",
-                     tile [] MkReplays "Replays" "Watch your games again, or the scenarios the rules are tested on."
-                   ]
-               ]
-            <> [recentView (take recentCount (finished home)) | not (null (finished home))]
-            <> [decksView (saved home) | not (null (saved home))]
+      <> foldMap (pure . pausedView) (paused home)
+      <> [ Element.el
+             "nav"
+             ["tiles"]
+             [Element.attr "aria-label" (Text.pack "What to do")]
+             [ tile ["lead" | Maybe.isNothing (paused home)] (MkNewGame Nothing) "New game" "Pick your deck, then add a seat for each bot or player, or play alone.",
+               tile [] MkBuildDeck "Build a deck" "Start from a blank list, then save it to play.",
+               tile [] MkReplays "Replays" "Watch your games again, or the scenarios the rules are tested on."
+             ]
+         ]
+      <> [recentView (take recentCount (finished home)) | not (null (finished home))]
+      <> [decksView (saved home) | not (null (saved home))]
       <> [legal]
   where
-    confirmLabel choice = case choice of
-      MkPlayOn {} -> "Abandon and play on"
-      _ -> "Abandon and play"
     tile classes choice title said =
       Element.button
         ("tile" : classes)

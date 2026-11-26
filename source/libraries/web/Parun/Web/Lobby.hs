@@ -2,7 +2,9 @@
 -- where the variant has teams, the seat being chosen for, which a tap on a
 -- seat or a seat added changes, the game's options, and Start at their foot;
 -- the decks that seat may play, filtered by what is typed, by colour, by set
--- and by whether they are saved; and the chosen deck's detail.
+-- and by whether they are saved; and the chosen deck's detail. Or a game to
+-- play on from a replay's position (PlayOn): its seats, how each is filled
+-- and the clock.
 --
 -- WHAT IS NOT IMPLEMENTED:
 --
@@ -116,9 +118,82 @@ data Lobby = MkLobby
     emperors :: Map.Map Natural Int,
     -- | Why Start last refused the seats' lists ('planarDealt',
     -- 'schemeDealt'), until the match-up changes.
-    refusal :: Maybe Text.Text
+    refusal :: Maybe Text.Text,
+    -- | The game to play on from a replay's position, which seats as the
+    -- replay does; Nothing for a new game.
+    playingOn :: Maybe PlayOn
   }
   deriving (Eq, Show)
+
+-- | A game to play on from a replay's position: its seats as the
+-- replay has them, each seat's deck fixed and its options the replay's
+-- (Parun.Scenario.branch), and how it is seated, every seat a person plays
+-- given the lobby's clock ('playedOn').
+data PlayOn = MkPlayOn
+  { begun :: Link.PlayedOn,
+    -- | Each seat's deck as the replay names it, in seating order.
+    places :: [Text.Text]
+  }
+  deriving (Eq, Show)
+
+-- | A lobby to play on from a replay's position, seated so, each seat's
+-- deck as `named` names it.
+playingOnFrom :: Link.PlayedOn -> [Text.Text] -> Lobby
+playingOnFrom seated named = new {playingOn = Just (MkPlayOn seated named)}
+
+-- | The game to play on, with the lobby's clock; Nothing for a new game.
+playedOn :: Lobby -> Maybe Link.PlayedOn
+playedOn lobby = (\table -> (begun table) {Link.minutes = clock (options lobby)}) <$> playingOn lobby
+
+-- | The ways a seat but the host's of a game played on may be filled, each
+-- with its value and its label, a bot as the lobby's default one.
+fillingChoices :: [(Link.Filling, (String, String))]
+fillingChoices =
+  [ (Link.defaultFilling, ("bot", "Bot")),
+    (Link.MkFilledHere Link.MkHandedOver, ("here", "Player here")),
+    (Link.MkFilledHere Link.MkYours, ("yours", "Yourself")),
+    (Link.MkFilledByGoldfish, ("goldfish", "Goldfish (only passes)"))
+  ]
+
+-- | Whether two fillings are of one kind, whatever a bot's settings.
+sameKind :: Link.Filling -> Link.Filling -> Bool
+sameKind one two = case (one, two) of
+  (Link.MkFilledByBot {}, Link.MkFilledByBot {}) -> True
+  _ -> one == two
+
+-- | The game to play on after an event; any other than these changes
+-- nothing: a seat but the host's filled as the value chosen names, its
+-- bot's difficulty or persona chosen, or the host taking it, the seat the
+-- host leaves filled as that one was.
+seatedOn :: Event -> Text.Text -> PlayOn -> PlayOn
+seatedOn event typed table =
+  let game = begun table
+      seat place = PlayerId.MkPlayerId (Int.toNaturalSaturating place)
+      filled place f = table {begun = game {Link.fillings = Map.insert (seat place) f (Link.fillings game)}}
+      other place = place >= 0 && place < length (places table) && seat place /= Link.host game
+      named nameOf = Opponent.named nameOf (Text.unpack typed)
+      picked = Maybe.listToMaybe [f | (f, (value, _)) <- fillingChoices, value == Text.unpack typed]
+   in case event of
+        MkFill place
+          | other place,
+            Just f <- picked,
+            not (sameKind f (Link.fillingAt game (seat place))) ->
+              filled place f
+        MkDifficulty place
+          | other place,
+            Link.MkFilledByBot _ style <- Link.fillingAt game (seat place),
+            Just level <- named Opponent.difficultyName ->
+              filled place (Link.MkFilledByBot level style)
+        MkPersona place
+          | other place,
+            Link.MkFilledByBot level _ <- Link.fillingAt game (seat place),
+            Just style <- named Opponent.personaName ->
+              filled place (Link.MkFilledByBot level style)
+        MkTakeSeat place
+          | other place ->
+              let taken = seat place
+               in table {begun = game {Link.host = taken, Link.fillings = Map.insert (Link.host game) (Link.fillingAt game taken) (Map.delete taken (Link.fillings game))}}
+        _ -> table
 
 -- | The options of CR 800.2, and the variants' (CR 407, 901, 904), a game started
 -- here is played with ('settings').
@@ -399,12 +474,20 @@ data Event
     MkConnect Int
   | -- | Toggles whether you are ready to start with the players invited.
     MkReady
-  | -- | Sets the difficulty of the bot at this place in 'theirs' to the one
-    -- whose name is chosen.
+  | -- | Sets the difficulty of the bot at this place in 'theirs', or in a
+    -- game played on at this place at the table, to the one whose name is
+    -- chosen.
     MkDifficulty Int
-  | -- | Sets the persona of the bot at this place in 'theirs' to the one
-    -- whose name is chosen.
+  | -- | Sets the persona of the bot at this place in 'theirs', or in a game
+    -- played on at this place at the table, to the one whose name is
+    -- chosen.
     MkPersona Int
+  | -- | In a game played on, fills the seat at this place at the table as
+    -- the value chosen names ('fillingChoices').
+    MkFill Int
+  | -- | In a game played on, the host takes the seat at this place at the
+    -- table.
+    MkTakeSeat Int
   | -- | Abandons the game in progress for what was asked about; the shell
     -- does it.
     MkAbandon
@@ -464,7 +547,8 @@ new =
       options = noOptions,
       teams = Map.empty,
       emperors = Map.empty,
-      refusal = Nothing
+      refusal = Nothing,
+      playingOn = Nothing
     }
 
 -- | A new lobby with this deck yours, on the shelf it is on.
@@ -749,7 +833,7 @@ update event typed lobby
 -- aside holds (Parun.Browser.aside).
 abandons :: Event -> Lobby -> Bool
 abandons event lobby = case event of
-  MkStart -> Either.isRight (startable lobby)
+  MkStart -> Maybe.isJust (playingOn lobby) || Either.isRight (startable lobby)
   MkAdd MkInvited -> length (theirs lobby) < mostOthers
   _ -> False
 
@@ -758,9 +842,21 @@ abandons event lobby = case event of
 abandoned :: Lobby -> Maybe (Lobby, Event)
 abandoned lobby = (,) lobby {paused = False, abandoning = Nothing} <$> abandoning lobby
 
--- | 'update' before any ready flag is cleared.
+-- | 'update' before any ready flag is cleared; a game played on changes
+-- only as 'seatedOn' has it, and by its clock.
 updated :: Event -> Text.Text -> Lobby -> Lobby
-updated event typed lobby = case event of
+updated event typed lobby
+  | Just table <- playingOn lobby = case event of
+      MkClock -> fresh
+      MkCancel -> fresh
+      _ -> lobby {playingOn = Just (seatedOn event typed table)}
+  | otherwise = fresh
+  where
+    fresh = newGameUpdated event typed lobby
+
+-- | 'updated' for a new game.
+newGameUpdated :: Event -> Text.Text -> Lobby -> Lobby
+newGameUpdated event typed lobby = case event of
   MkPick name
     | Foldable.notElem name (decks lobby) -> lobby
     | MkTheirs i <- choosing lobby ->
@@ -806,6 +902,8 @@ updated event typed lobby = case event of
   MkReplyCode i -> lobby {invites = Map.adjust (\invite -> invite {replyCode = typed}) i (invites lobby)}
   MkConnect _ -> lobby
   MkReady -> lobby {ready = not (ready lobby)}
+  MkFill _ -> lobby
+  MkTakeSeat _ -> lobby
   MkDifficulty i -> maybe lobby (\d -> styled i (\(_, p) -> (d, p))) (Opponent.named Opponent.difficultyName (Text.unpack typed))
   MkPersona i -> maybe lobby (\p -> styled i (\(d, _) -> (d, p))) (Opponent.named Opponent.personaName (Text.unpack typed))
   MkAbandon -> lobby
@@ -862,7 +960,7 @@ settled before after
   | matchupOf before == matchupOf after = after
   | otherwise = (unready after) {refusal = Nothing}
   where
-    matchupOf l = (mine l, theirs l, locals l, options l, teams l, emperors l, fmap (\invite -> (connected invite, fmap fst (guestDeck invite), fmap snd (guestDeck invite))) (invites l))
+    matchupOf l = (mine l, theirs l, locals l, options l, teams l, emperors l, playingOn l, fmap (\invite -> (connected invite, fmap fst (guestDeck invite), fmap snd (guestDeck invite))) (invites l))
 
 -- | The lobby with every ready flag cleared.
 unready :: Lobby -> Lobby
@@ -968,10 +1066,11 @@ seatName slot = case slot of
 
 -- | What stops Start, or Ready with players invited: the decks unread, your
 -- deck unchosen or breaking its format, or a table the variant refuses
--- ('settings'). A bot always has a deck to
--- draw, since your deck is among its 'opponents'.
+-- ('settings'); nothing for a game played on, its decks the replay's. A bot
+-- always has a deck to draw, since your deck is among its 'opponents'.
 blocking :: Lobby -> Maybe String
 blocking lobby
+  | Maybe.isJust (playingOn lobby) = Nothing
   | DeckBrowser.reading (browser lobby) = Just "Reading the decks\x2026"
   | Maybe.isNothing (mine lobby) = Just "Choose your deck to start."
   | Left (_ : _) <- startable lobby = Just "Your deck breaks its format:"
@@ -995,7 +1094,11 @@ pressable :: Lobby -> Bool
 pressable = Maybe.isNothing . blocking
 
 view :: Lobby -> Html.Html Event
-view lobby =
+view lobby = maybe (newGameView lobby) (playOnView lobby) (playingOn lobby)
+
+-- | The lobby of a new game: the seats, the decks and the deck chosen.
+newGameView :: Lobby -> Html.Html Event
+newGameView lobby =
   Element.keyed
     "main"
     ["lobby", "new-game"]
@@ -1003,6 +1106,86 @@ view lobby =
     [ (Text.pack "seats", seatsView lobby),
       (Text.pack "browser", browserView lobby),
       (Text.pack "detail", detailView lobby)
+    ]
+
+-- | The lobby of a game played on: each seat the replay has, by its
+-- number, with its deck; yours marked, and each other's filling, a bot's
+-- difficulty and persona, and the way to take it; the clock, its only
+-- option, the others being the replay's; and Start at the foot.
+playOnView :: Lobby -> PlayOn -> Html.Html Event
+playOnView lobby table =
+  Element.el "main" ["lobby", "new-game", "play-on"] [] . pure . Element.el "section" ["seats"] [Element.attr "aria-label" (Text.pack "Seats")] $
+    [ Element.el "h1" [] [] [Element.string "Play on"],
+      Element.el "p" ["muted"] [] [Element.string "From the replay's position, each seat with the deck it had there."],
+      Element.el "span" ["eyebrow"] [] [Element.string "At the table"]
+    ]
+      <> List.intersperse (Element.el "span" ["eyebrow", "versus"] [] [Element.string "versus"]) (zipWith seat [0 ..] (places table))
+      <> [ Element.el "fieldset" ["game-options"] [] [Element.el "legend" ["eyebrow"] [] [Element.string "Game options"], clockMenu lobby],
+           startView lobby
+         ]
+  where
+    game = begun table
+    seat :: Int -> Text.Text -> Html.Html Event
+    seat place deck =
+      let pid = PlayerId.MkPlayerId (Int.toNaturalSaturating place)
+          yours = pid == Link.host game
+          filling = Link.fillingAt game pid
+          field = Text.pack ("play-on-" <> show place)
+          avatar
+            | yours = Element.string "Y"
+            | otherwise = case filling of
+                Link.MkFilledByBot {} -> Icon.icon [] Icon.MkBot
+                Link.MkFilledHere Link.MkYours -> Element.string "Y"
+                Link.MkFilledHere Link.MkHandedOver -> Element.string "P"
+                Link.MkFilledByGoldfish -> Element.string "G"
+       in Element.el "div" (["lobby-seat", "play-on-seat"] <> ["on" | yours]) [] $
+            Element.el
+              "div"
+              ["seat-pick"]
+              []
+              [ Element.el
+                  "span"
+                  ["seat-head"]
+                  []
+                  ([Element.el "span" ["avatar"] [] [avatar], Element.el "strong" ["seat-name"] [] [Element.text (Wording.player pid)]] <> [Element.el "span" ["chip", "choosing"] [] [Element.string "You"] | yours]),
+                Element.el "span" ["seat-deck"] [] [Element.el "span" ["seat-deck-name"] [] [Element.text deck]]
+              ]
+              : if yours
+                then []
+                else
+                  [ Element.el
+                      "div"
+                      ["seat-filling"]
+                      []
+                      [ Element.el "label" [] [Element.attr "for" field] [Element.string "Played by"],
+                        Element.el
+                          "select"
+                          ["deck-menu"]
+                          [Element.attr "id" field, Element.on "change" (MkFill place)]
+                          [Element.el "option" [] ([Element.attr "value" (Text.pack value)] <> [Element.attr "selected" Text.empty | sameKind kind filling]) [Element.string label] | (kind, (value, label)) <- fillingChoices]
+                      ]
+                  ]
+                    <> [BotSettings.botView ("play-on-" <> show place) (MkDifficulty place) (MkPersona place) (level, style) | Link.MkFilledByBot level style <- [filling]]
+                    <> [Element.el "div" ["seat-actions"] [] [Element.el "button" ["quiet", "take-seat"] [Element.attr "type" (Text.pack "button"), Element.on "click" (MkTakeSeat place), Element.attr "aria-label" (Text.pack "Take " <> Wording.player pid)] [Element.string "Take this seat"]]]
+
+-- | The menu of each seat's time on its clock (Clock.choices).
+clockMenu :: Lobby -> Html.Html Event
+clockMenu lobby = optionMenu "option-clock" MkClock "Clock" [(value, label, option == clock (options lobby)) | (option, (value, label)) <- Clock.choices]
+
+-- | A game option's menu: its field's id, the event its change sends, its
+-- label, and each choice's value, label and whether it is chosen.
+optionMenu :: String -> Event -> String -> [(String, String, Bool)] -> Html.Html Event
+optionMenu field event label choices =
+  Element.el
+    "div"
+    ["game-option"]
+    []
+    [ Element.el "label" [] [Element.attr "for" (Text.pack field)] [Element.string label],
+      Element.el
+        "select"
+        ["deck-menu"]
+        [Element.attr "id" (Text.pack field), Element.on "change" event]
+        [Element.el "option" [] ([Element.attr "value" (Text.pack value)] <> [Element.attr "selected" Text.empty | on]) [Element.string text] | (value, text, on) <- choices]
     ]
 
 -- | The seats: yours, then each bot's with how it plays, invited player's,
@@ -1097,8 +1280,8 @@ optionsView :: Lobby -> Html.Html Event
 optionsView lobby =
   Element.el "fieldset" ["game-options"] [] $
     [Element.el "legend" ["eyebrow"] [] [Element.string "Game options"]]
-      <> [menu "option-variant" MkVariant "Variant" [(value, label, option == variant chosen') | (option, (value, label)) <- variants] | multiplayer (seatCount lobby), not (archenemyGame lobby)]
-      <> [ menu ("emperor-" <> show team) (MkEmperorSeat team) (Text.unpack (Wording.team (TeamId.MkTeamId team)) <> "'s emperor") [(show place, seatName (if place == 0 then MkMine else MkTheirs (place - 1)), Just place == emperorOf lobby team) | place <- membersOf lobby team]
+      <> [optionMenu "option-variant" MkVariant "Variant" [(value, label, option == variant chosen') | (option, (value, label)) <- variants] | multiplayer (seatCount lobby), not (archenemyGame lobby)]
+      <> [ optionMenu ("emperor-" <> show team) (MkEmperorSeat team) (Text.unpack (Wording.team (TeamId.MkTeamId team)) <> "'s emperor") [(show place, seatName (if place == 0 then MkMine else MkTheirs (place - 1)), Just place == emperorOf lobby team) | place <- membersOf lobby team]
          | variantOf lobby == MkEmperor,
            team <- teamsSeated lobby
          ]
@@ -1107,14 +1290,14 @@ optionsView lobby =
          ]
       <> [toggle "option-single-planar-deck" MkSinglePlanarDeck (singlePlanarDeck chosen') "Single planar deck" "Every seat's planar deck is shuffled into one." | planechase chosen']
       <> [toggle "option-archenemy" MkArchenemy (archenemyGame lobby) "Archenemy" "One seat, the archenemy, plays its list's scheme deck, or one dealt from the schemes, against every other."]
-      <> [ menu "option-archenemy-seat" MkArchenemySeat "The archenemy" [(show place, seatName (if place == 0 then MkMine else MkTheirs (place - 1)), Just place == archenemy chosen') | place <- [0 .. Natural.toIntSaturating (seatCount lobby) - 1]]
+      <> [ optionMenu "option-archenemy-seat" MkArchenemySeat "The archenemy" [(show place, seatName (if place == 0 then MkMine else MkTheirs (place - 1)), Just place == archenemy chosen') | place <- [0 .. Natural.toIntSaturating (seatCount lobby) - 1]]
          | archenemyGame lobby
          ]
-      <> [menu "option-clock" MkClock "Clock" [(value, label, option == clock chosen') | (option, (value, label)) <- Clock.choices]]
+      <> [clockMenu lobby]
       <> ( if chosesAttacks lobby
              then
-               [ menu "option-attack" MkAttackOption "Attacks" [(value, label, option == attackOption chosen') | (option, (value, label)) <- attackOptions],
-                 menu "option-range" MkRangeOfInfluence "Range of influence" [(value, label, option == rangeOfInfluence chosen') | (option, (value, label)) <- ranges]
+               [ optionMenu "option-attack" MkAttackOption "Attacks" [(value, label, option == attackOption chosen') | (option, (value, label)) <- attackOptions],
+                 optionMenu "option-range" MkRangeOfInfluence "Range of influence" [(value, label, option == rangeOfInfluence chosen') | (option, (value, label)) <- ranges]
                ]
              else []
          )
@@ -1129,19 +1312,6 @@ optionsView lobby =
         [ Element.el "input" [] ([Element.attr "id" (Text.pack field), Element.attr "type" (Text.pack "checkbox"), Element.attr "aria-describedby" (Text.pack (field <> "-note")), Element.on "change" event] <> [Element.attr "checked" Text.empty | on]) [],
           Element.el "label" [] [Element.attr "for" (Text.pack field)] [Element.string label],
           Element.el "p" ["muted"] [Element.attr "id" (Text.pack (field <> "-note"))] [Element.string note]
-        ]
-    menu :: String -> Event -> String -> [(String, String, Bool)] -> Html.Html Event
-    menu field event label choices =
-      Element.el
-        "div"
-        ["game-option"]
-        []
-        [ Element.el "label" [] [Element.attr "for" (Text.pack field)] [Element.string label],
-          Element.el
-            "select"
-            ["deck-menu"]
-            [Element.attr "id" (Text.pack field), Element.on "change" event]
-            [Element.el "option" [] ([Element.attr "value" (Text.pack value)] <> [Element.attr "selected" Text.empty | on]) [Element.string text] | (value, text, on) <- choices]
         ]
 
 -- | Start, or Ready with players invited, and what it waits on; else,
@@ -1168,25 +1338,29 @@ startView lobby = case abandoning lobby of
 -- | Start, or Ready with players invited, and what it waits on.
 starting :: Lobby -> Html.Html Event
 starting lobby =
-  Element.el "div" ["lobby-start"] [] $
-    [ if Map.null (invites lobby)
-        then
-          Element.el
-            "button"
-            ["primary", "start"]
-            ([Element.attr "type" (Text.pack "button"), Element.on "click" MkStart, Element.attr "aria-describedby" (Text.pack "start-note")] <> [Element.attr "disabled" Text.empty | not (pressable lobby)])
-            [Element.string "Start game", Element.el "kbd" ["keys-only"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.string "\x21b5"]]
-        else
-          -- The game starts once every player is ready.
-          Element.el
-            "button"
-            (["primary", "start", "ready"] <> ["is-ready" | ready lobby])
-            ([Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if ready lobby then "true" else "false")), Element.on "click" MkReady, Element.attr "aria-describedby" (Text.pack "start-note")] <> [Element.attr "disabled" Text.empty | not (pressable lobby)])
-            [Element.string (if ready lobby then "Ready \x2713 \x00b7 waiting for every player" else if guestsReady lobby then "Start game" else "Ready")],
-      Element.el "p" ["start-note", "muted"] [Element.attr "id" (Text.pack "start-note"), Element.attr "aria-live" (Text.pack "polite")] [Element.string (Maybe.fromMaybe (if null (theirs lobby) then "Just you: a goldfish game. Ready to start." else "Every seat has a deck. Ready to start.") (waiting lobby))]
-    ]
-      <> [Element.el "ul" ["problems", "refusal"] [] [Element.el "li" [] [] [Element.text p] | p <- problems] | Left problems@(_ : _) <- [startable lobby]]
-      <> [Element.el "p" ["problem", "deal-refusal"] [Element.attr "role" (Text.pack "alert")] [Element.text why] | why <- Maybe.maybeToList (refusal lobby)]
+  let ready'
+        | Maybe.isJust (playingOn lobby) = "Every seat is filled. Ready to play on."
+        | null (theirs lobby) = "Just you: a goldfish game. Ready to start."
+        | otherwise = "Every seat has a deck. Ready to start."
+   in Element.el "div" ["lobby-start"] [] $
+        [ if Map.null (invites lobby)
+            then
+              Element.el
+                "button"
+                ["primary", "start"]
+                ([Element.attr "type" (Text.pack "button"), Element.on "click" MkStart, Element.attr "aria-describedby" (Text.pack "start-note")] <> [Element.attr "disabled" Text.empty | not (pressable lobby)])
+                [Element.string "Start game", Element.el "kbd" ["keys-only"] [Element.attr "aria-hidden" (Text.pack "true")] [Element.string "\x21b5"]]
+            else
+              -- The game starts once every player is ready.
+              Element.el
+                "button"
+                (["primary", "start", "ready"] <> ["is-ready" | ready lobby])
+                ([Element.attr "type" (Text.pack "button"), Element.attr "aria-pressed" (Text.pack (if ready lobby then "true" else "false")), Element.on "click" MkReady, Element.attr "aria-describedby" (Text.pack "start-note")] <> [Element.attr "disabled" Text.empty | not (pressable lobby)])
+                [Element.string (if ready lobby then "Ready \x2713 \x00b7 waiting for every player" else if guestsReady lobby then "Start game" else "Ready")],
+          Element.el "p" ["start-note", "muted"] [Element.attr "id" (Text.pack "start-note"), Element.attr "aria-live" (Text.pack "polite")] [Element.string (Maybe.fromMaybe ready' (waiting lobby))]
+        ]
+          <> [Element.el "ul" ["problems", "refusal"] [] [Element.el "li" [] [] [Element.text p] | p <- problems] | Left problems@(_ : _) <- [startable lobby]]
+          <> [Element.el "p" ["problem", "deal-refusal"] [Element.attr "role" (Text.pack "alert")] [Element.text why] | why <- Maybe.maybeToList (refusal lobby)]
 
 -- | The decks the seat being chosen for may play: the ways to add one, the
 -- shelves, the filters, and the decks shown as tiles.
