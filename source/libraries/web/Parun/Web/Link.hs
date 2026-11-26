@@ -77,7 +77,7 @@ data Message
     MkAnswer R.Reply
   | -- | The guest's seat concedes at once: ending a game of two
     -- (Parun.Web.Question.decisive), whoever is asked, or leaving a game of
-    -- more at its priority (Parun.Web.Question.atPriority).
+    -- more, or a subgame, at a priority (Parun.Web.Question.atPriority).
     MkConcede
   | -- | The game ended: the guest's ending, its log and life trail built
     -- from what the host sent its seat (seeing), which a page that reloaded

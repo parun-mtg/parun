@@ -2,7 +2,7 @@
 -- invites and players here: games whose guests' seats are played from other
 -- pages, each over its own channel held in memory, the agreement that starts
 -- them, a game whose seats share the host's page, and a game on the
--- clocks (Parun.Web.Clock).
+-- clocks (Parun.Web.Clock), and a seat leaving a subgame at once.
 module Parun.RemoteSeatSpec where
 
 import qualified Control.Monad as Monad
@@ -17,8 +17,13 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import Numeric.Natural (Natural)
 import qualified Parun.BotSpec as BotSpec
+import qualified Parun.Engine.Driver as Driver
+import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.PlayerView as PlayerView.Engine
+import qualified Parun.Engine.Setup as Setup
+import qualified Parun.GameSpec as GameSpec
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Protocol as Protocol
@@ -35,12 +40,15 @@ import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Limits as Limits
+import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.Persona as Persona
+import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Playout as Playout
+import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Program as Program
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
@@ -49,6 +57,7 @@ import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.SearchMethod as SearchMethod
 import qualified Parun.Types.Status as Status
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Weights as Weights
 import qualified Parun.Web.Clock as Clock
 import qualified Parun.Web.Ending as Ending
@@ -241,6 +250,53 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     Spec.assertEqWith s "Player 3 is asked its concession question again, and nothing after" [(seat, kind) | (seat, kind, _) <- after, seat == S.carol] [(S.carol, "Concede")]
     Spec.assertEqWith s "Player 1's priority is asked again, in the turn Player 3 left in" (take 1 actions) (fmap ((,) S.alice) (Maybe.maybeToList left))
     Spec.assertBool s (S.bob `elem` fmap fst actions) "Player 2 plays on"
+
+  Spec.it s "CR 104.3a / 730.1a in a Shahrazad subgame of a game of two, the seat without priority conceding leaves the subgame at once, losing it, and the main game resumes with both seats" $ do
+    printings <- traverse (S.printingOf s registry) ["Plains", "Mountain", "Shahrazad"]
+    let seatOf = Question.seat . Request.question
+        other seat = if seat == S.alice then S.bob else S.alice
+        -- At the subgame's first priority, the seat not holding it concedes,
+        -- that exchange given up (Command.MkLeaving), and answers its
+        -- concession question, asked again (Command.rewinding), yes.
+        exchange request = do
+          (leaving, _) <- Trans.lift State.get
+          case leaving of
+            Nothing
+              | Question.Web.atPriority request -> do
+                  Trans.lift (State.modify' (\(_, entries) -> (Just (other (seatOf request)), entries)))
+                  Except.throwE (other (seatOf request))
+            Just leaver
+              | seatOf request == leaver,
+                Question.kind (Request.question request) == Text.pack "Concede" ->
+                  pure (Just (Right (R.Text (Text.pack "Concedes"))))
+            _ -> pure (Just (Right (answer request)))
+        (outcome, (gone, logged)) = shahrazadSubgame printings exchange Nothing
+    case (outcome, gone) of
+      (Right (Right gs), Just leaver) -> leftTheSubgame s leaver gs logged
+      _ -> Spec.assertBool s False ("the main game's step plays out after a seat left the subgame: " <> show (fmap Monad.void outcome, gone))
+
+  Spec.it s "CR 730.1a in a Shahrazad subgame of a game of two, a seat out of time at its priority leaves the subgame at once, losing it, and the main game resumes with both seats" $ do
+    printings <- traverse (S.printingOf s registry) ["Plains", "Mountain", "Shahrazad"]
+    let seatOf = Question.seat . Request.question
+        -- Player 2 takes half a minute over each priority, Player 1 none; a
+        -- seat out of time answers its concession question, asked again
+        -- (Command.rewinding), yes, off the clock.
+        onScreen request = do
+          Monad.when (seatOf request == S.bob && Question.Web.atPriority request) (Trans.lift (State.modify' (\((at, banks), entries) -> ((at + 30, banks), entries))))
+          pure (Just (Right (answer request)))
+        within deadline decide = decide >>= \answered -> Trans.lift (State.gets (fst . fst)) >>= \at -> pure (if at >= deadline then Nothing else Just answered)
+        -- Out of time at its priority, the seat leaves (Command.MkLeaving).
+        expire request = Monad.when (Question.Web.atPriority request) (Except.throwE (seatOf request))
+        exchange request = do
+          out <- (== Just 0) . Map.lookup (seatOf request) . Clock.left <$> Trans.lift (State.gets (snd . fst))
+          if out && Question.kind (Request.question request) == Text.pack "Concede"
+            then pure (Just (Right (R.Text (Text.pack "Concedes"))))
+            else Clock.timed (Trans.lift (State.gets (fst . fst))) within (Trans.lift (State.gets (snd . fst))) (\f -> Trans.lift (State.modify' (\((at, banks), entries) -> ((at, f banks), entries)))) expire (seatOf request) onScreen request
+        (outcome, ((_, clocks), logged)) = shahrazadSubgame printings exchange (0 :: Double, Clock.starting (Just 1) (Set.fromList [S.alice, S.bob]))
+    case outcome of
+      Right (Right gs) -> leftTheSubgame s S.bob gs logged
+      _ -> Spec.assertBool s False ("the main game's step plays out after a seat left the subgame: " <> show (fmap Monad.void outcome))
+    Spec.assertEqWith s "Player 2's time spent, and no seat kept as out of time" (Map.lookup S.bob (Clock.left clocks), Clock.out clocks) (Just 0, Nothing)
 
   Spec.it s "a guest whose connection drops mid-game rejoins, is sent the match-up, its seat and the request again, and the game finishes" $ do
     matchup <- BotSpec.bears s registry
@@ -521,3 +577,45 @@ nextStored :: (Monad m) => State.StateT Resumed m (Maybe R.Reply)
 nextStored = State.state $ \r -> case stored r of
   reply : rest -> (Just reply, r {stored = rest})
   [] -> (Nothing, r)
+
+-- | CR 730.1a: alice casts Shahrazad off two Plains in a game of two, each
+-- library twenty Mountains, and the main game's step played out
+-- (Engine.priorityLoop): each main-game question answered as GameSpec's
+-- subgameAnswer does, each subgame question a seat is asked through
+-- `exchange` (Game.wired), a seat leaving (Except.throwE) taken back to its
+-- concession question (Command.rewinding), and every request, at every
+-- depth, logged after `start`'s first part as seat, kind and depth.
+shahrazadSubgame :: [Printing.Printing] -> Protocol.Exchange (Except.ExceptT PlayerId.PlayerId (State.State (c, [(PlayerId.PlayerId, String, Natural)]))) -> c -> (Either PlayerId.PlayerId (Either Text.Text GameState.GameState), (c, [(PlayerId.PlayerId, String, Natural)]))
+shahrazadSubgame printings exchange start =
+  let (plains, mountain, shahrazad) = case printings of
+        [p, m, sh] -> (p, m, sh)
+        _ -> error "shahrazadSubgame: Plains, Mountain and Shahrazad"
+      g0 = GameSpec.addManyG mountain 20 S.alice (GameSpec.addManyG mountain 20 S.bob (Setup.emptyGame S.bothPlayers))
+      g1 = S.landsFor plains S.alice 2 (GameSpec.poolToLibraryG S.bob (GameSpec.poolToLibraryG S.alice g0))
+      (_, g2) = S.addHandCard shahrazad S.alice g1
+      gStart = g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.activePlayer = S.alice, TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.alice}}
+      seat = Answerer.MkAnswerer $ \prompted ->
+        if null (Asked.enclosing prompted)
+          then pure (GameSpec.subgameAnswer (Asked.prompt prompted))
+          else Answerer.unwrap (Game.wired (S.fixtureRegistry []) exchange) prompted
+      logging request =
+        let question = Request.question request
+         in Game.underneath (Trans.lift (State.modify' (fmap (<> [(Question.seat question, Text.unpack (Question.kind question), Request.depth request)]))))
+      answered = Driver.ask [Observer.MkObserver {Observer.before = \prompted -> Monad.forM_ (Protocol.requestFor prompted) logging, Observer.after = \_ _ -> pure ()}] (Game.consulting (S.fixtureRegistry []) (Map.fromList [(S.alice, seat), (S.bob, seat)]))
+   in State.runState (Except.runExceptT (Game.playing (S.seeded 1) (fmap snd (Command.rewinding Except.catchE answered (State.runStateT Engine.priorityLoop gStart))))) (start, [])
+
+-- | The checks the two Shahrazad cases share: `leaver` left the subgame at
+-- once, asked its concession question again and nothing after in the
+-- subgame, lost it and half its life (Shahrazad), and the main game resumed
+-- with both seats still in it, each given priority.
+leftTheSubgame :: (Monad m) => Spec.Spec m n -> PlayerId.PlayerId -> GameState.GameState -> [(PlayerId.PlayerId, String, Natural)] -> m ()
+leftTheSubgame s leaver gs logged = do
+  let inSubgame (_, _, depth) = depth > 0
+      priorities = [i | (i, (_, "ChooseAction", depth)) <- zip [1 :: Int ..] logged, depth > 0]
+      afterLast = drop (maybe 0 NonEmpty.last (NonEmpty.nonEmpty priorities)) logged
+      winner = if leaver == S.alice then S.bob else S.alice
+  Spec.assertBool s (not (null priorities)) "setup: the subgame reached a priority"
+  Spec.assertEqWith s "after the last subgame priority asked, the leaver is asked its concession question again, then the subgame ends" (takeWhile inSubgame afterLast) [(leaver, "Concede", 1)]
+  Spec.assertEqWith s "Shahrazad: the leaver lost the subgame, and half its life" (S.lifeOf leaver gs, S.lifeOf winner gs) (Just 10, Just 20)
+  Spec.assertEqWith s "CR 730.1a: both seats are still in the main game" (fmap Player.status (Map.lookup S.alice (GameState.players gs)), fmap Player.status (Map.lookup S.bob (GameState.players gs))) (Just Status.Playing, Just Status.Playing)
+  Spec.assertEqWith s "the main game resumed, each seat given priority" (Set.fromList [seat | (seat, "ChooseAction", 0) <- dropWhile inSubgame afterLast]) (Set.fromList [S.alice, S.bob])
