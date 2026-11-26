@@ -11,6 +11,7 @@ spec s = Spec.describe s "Parun.Web.Route" $ do
         [ Route.MkHome,
           Route.MkPlay,
           Route.MkJoin Route.MkGathering,
+          Route.MkJoin Route.MkSeated,
           Route.MkJoin Route.MkUnderWay,
           Route.MkDecks Nothing,
           Route.MkDecks (Just (Text.pack "saved/My deck")),
@@ -35,6 +36,9 @@ spec s = Spec.describe s "Parun.Web.Route" $ do
 
     Spec.it s "names the join screen by join, the offer left to the fragment" $ do
       Spec.assertEq s (Route.render (Route.MkJoin Route.MkGathering)) (Text.pack "?join")
+
+    Spec.it s "names a seated game's join screen by seated" $ do
+      Spec.assertEq s (Route.render (Route.MkJoin Route.MkSeated)) (Text.pack "?seated")
 
     Spec.it s "names a game under way's join screen by rejoin" $ do
       Spec.assertEq s (Route.render (Route.MkJoin Route.MkUnderWay)) (Text.pack "?rejoin")

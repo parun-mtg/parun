@@ -2,7 +2,7 @@
 -- deck in the browser the lobby shares (Parun.Web.DeckBrowser), sends back
 -- the reply code it makes, and once connected sees the whole match-up and
 -- the game's options and says when they are ready. A link to a game under
--- way skips the deck, the game's decks already set.
+-- way, or to one whose decks are fixed (Route.MkSeated), skips the deck.
 module Parun.Web.Join where
 
 import qualified Data.Foldable as Foldable
@@ -54,10 +54,15 @@ data Event
 new :: Route.Stage -> Join
 new = MkJoin DeckBrowser.new Nothing Nothing False [] [] Nothing
 
+-- | Whether the guest brings no deck: the game is under way, or its decks
+-- are fixed.
+decksSet :: Join -> Bool
+decksSet screen = stage screen /= Route.MkGathering
+
 -- | Whether the reply code may be made: once a deck is chosen, or at once
--- for a game under way.
+-- where the guest brings none ('decksSet').
 canReply :: Join -> Bool
-canReply screen = stage screen == Route.MkUnderWay || Maybe.isJust (picked screen)
+canReply screen = decksSet screen || Maybe.isJust (picked screen)
 
 -- | The screen after an event, the value typed being `typed`.
 update :: Event -> Text.Text -> Join -> Join
@@ -117,7 +122,7 @@ view screen =
                   then [Element.el "p" [] [] [Element.string "Connected to the host."], Element.el "ul" ["places"] [] (fmap place (places screen))] <> optionsList <> [readyButton]
                   else case reply screen of
                     Nothing ->
-                      [ Element.el "p" [] [] [Element.string (if underWay then "This game is under way: make the code to send back to the host, and it picks up where it stopped." else "Choose your deck and make the code to send back to the host.")],
+                      [ Element.el "p" [] [] [Element.string (prompt (stage screen))],
                         Element.el "button" ["primary", "make-reply"] ([Element.attr "type" (Text.pack "button"), Element.on "click" MkMakeReply] <> [Element.attr "disabled" Text.empty | not (canReply screen)]) [Element.string "Make my reply code"]
                       ]
                     Just code ->
@@ -131,9 +136,12 @@ view screen =
           <> picker
   where
     browsing = browser screen
-    underWay = stage screen == Route.MkUnderWay
+    prompt stage' = case stage' of
+      Route.MkGathering -> "Choose your deck and make the code to send back to the host."
+      Route.MkSeated -> "This game plays on from a replay's position, each seat's deck set: make the code to send back to the host."
+      Route.MkUnderWay -> "This game is under way: make the code to send back to the host, and it picks up where it stopped."
     picker
-      | underWay = []
+      | decksSet screen = []
       | otherwise =
           [ ( Text.pack "picker",
               Element.el

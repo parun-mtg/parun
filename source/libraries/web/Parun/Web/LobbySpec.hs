@@ -36,6 +36,7 @@ import qualified Parun.Web.Link as Link
 import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Patch as Patch
 import qualified Parun.Web.Replay as Replay
+import qualified Parun.Web.Route as Route
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Web.Lobby" $ do
@@ -151,7 +152,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "seat-tools") (Html.toText (Lobby.view four))) "a sixth seat to add"
       Spec.assertEqWith s "the last seats, a player here and an invite" (length (Lobby.theirs full), Map.keys (Lobby.invites full), Map.lookup 9 (Lobby.locals full)) (11, [1, 10], Just Link.MkHandedOver)
       Spec.assertEqWith s "no twelfth" (add Lobby.MkBot full) full
-      Spec.assertBool s (not (Lobby.abandons (Lobby.MkAdd Lobby.MkInvited) full {Lobby.paused = True})) "no invite past the last abandons a game"
+      Spec.assertBool s (not (Lobby.abandons (Lobby.MkAdd Lobby.MkInvited) Text.empty full {Lobby.paused = True})) "no invite past the last abandons a game"
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "seat-tools") (Html.toText (Lobby.view full)))) "nothing to add once full"
       Spec.assertBool s (not (any (Text.isInfixOf (Text.pack "instead") . Html.toText . Lobby.view) [lobby, full])) "no seat switched in place"
 
@@ -535,16 +536,16 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
           asked = Lobby.update Lobby.MkStart Text.empty chosen
           page = Lobby.view asked
           tapping label = Html.labelled (Text.pack "button") (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
-      Spec.assertEqWith s "asks" (Lobby.abandoning asked) (Just Lobby.MkStart)
+      Spec.assertEqWith s "asks" (Lobby.abandoning asked) (Just (Lobby.MkStart, Text.empty))
       Spec.assertBool s (Text.isInfixOf (Text.pack "Starting a new game abandons the one in progress, which Replays won't keep.") (Html.toText page)) "the question shows"
       Spec.assertEqWith s "the game offered back" (tapping "Resume") (Just Lobby.MkResume)
       Spec.assertEqWith s "abandoned" (tapping "Abandon and play") (Just Lobby.MkAbandon)
-      Spec.assertEqWith s "abandoned, then started" (Lobby.abandoned asked) (Just (chosen {Lobby.paused = False}, Lobby.MkStart))
+      Spec.assertEqWith s "abandoned, then started" (Lobby.abandoned asked) (Just (chosen {Lobby.paused = False}, (Lobby.MkStart, Text.empty)))
       Spec.assertEqWith s "cancelled" (Lobby.update Lobby.MkCancel Text.empty asked) chosen
 
     Spec.it s "asks before inviting a player, whose link the game holds" $ do
       let asked = Lobby.update (Lobby.MkAdd Lobby.MkInvited) Text.empty lobby {Lobby.paused = True}
-      Spec.assertEq s (Lobby.abandoning asked, Lobby.invites asked) (Just (Lobby.MkAdd Lobby.MkInvited), Map.empty)
+      Spec.assertEq s (Lobby.abandoning asked, Lobby.invites asked) (Just (Lobby.MkAdd Lobby.MkInvited, Text.empty), Map.empty)
 
     Spec.it s "picks decks and seats bots without asking" $ do
       let picked = Lobby.update (Lobby.MkAdd Lobby.MkBot) Text.empty (Lobby.update (Lobby.MkPick a) Text.empty lobby {Lobby.paused = True})
@@ -597,8 +598,46 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
 
     Spec.it s "asks at Start before abandoning a game paused" $ do
       let asked = Lobby.update Lobby.MkStart Text.empty three {Lobby.paused = True}
-      Spec.assertEqWith s "asks" (Lobby.abandoning asked) (Just Lobby.MkStart)
-      Spec.assertEqWith s "abandoned, then started" (Lobby.abandoned asked) (Just (three, Lobby.MkStart))
+      Spec.assertEqWith s "asks" (Lobby.abandoning asked) (Just (Lobby.MkStart, Text.empty))
+      Spec.assertEqWith s "abandoned, then started" (Lobby.abandoned asked) (Just (three, (Lobby.MkStart, Text.empty)))
+
+    Spec.it s "asks before inviting a player to a seat, keeping the value chosen, and seats bots without asking" $ do
+      let paused = three {Lobby.paused = True}
+          asked = set (Lobby.MkFill 1) "invited" paused
+      Spec.assertEqWith s "asks, the value kept" (Lobby.abandoning asked, Lobby.invites asked) (Just (Lobby.MkFill 1, Text.pack "invited"), Map.empty)
+      Spec.assertEqWith s "abandoned, then invited" (fmap (\(l, (event, value)) -> Map.keys (Lobby.invites (Lobby.update event value l))) (Lobby.abandoned asked)) (Just [1])
+      Spec.assertEqWith s "a goldfish not asked about" (Lobby.abandoning (set (Lobby.MkFill 1) "goldfish" paused)) Nothing
+
+    Spec.it s "invites a player to a seat, its link its own, dropped once the seat is filled otherwise" $ do
+      let invited = set (Lobby.MkFill 2) "invited" (set (Lobby.MkFill 1) "invited" three)
+          again = set (Lobby.MkFill 1) "invited" (set (Lobby.MkFill 1) "bot" invited)
+      Spec.assertEqWith s "the seat's filling" (filled 1 invited) (Just Link.MkFilledByInvite)
+      Spec.assertEqWith s "each seat's invite, by its place at the table, a link each" (fmap Lobby.linkNumber (Lobby.invites invited)) (Map.fromList [(1, 0), (2, 1)])
+      Spec.assertEqWith s "a bot again drops it, and an invite again takes a new link" (fmap Lobby.linkNumber (Lobby.invites again)) (Map.fromList [(1, 2), (2, 1)])
+      let linkedTo = Lobby.linked 1 (\invite -> invite {Lobby.link = Just (Text.pack "https://example.com/#offer")}) invited
+      Spec.assertEqWith s "the link and the reply code's box in the seat, the other's link still making" (fmap (`has` linkedTo) ["invite-link-1", "id=\"invite-reply-1\"", "Making the link", "invite only friends"]) [True, True, True, True]
+      Spec.assertEqWith s "the reply code typed" (Lobby.replyCode <$> Map.lookup 1 (Lobby.invites (set (Lobby.MkReplyCode 1) "code" invited))) (Just (Text.pack "code"))
+      Spec.assertEqWith s "an invited seat not taken, nor offered" (at (set (Lobby.MkTakeSeat 1) "" invited) == at invited, tapping "Take Player 2" invited, tapping "Take Player 3" (set (Lobby.MkFill 2) "bot" invited)) (True, Nothing, Just (Lobby.MkTakeSeat 2))
+      Spec.assertEqWith s "each link naming the decks fixed" (Lobby.inviteStage invited, Lobby.inviteStage lobby) (Route.MkSeated, Route.MkGathering)
+      Spec.assertEqWith s "kept by a game played on again" (Map.keys . Lobby.invites <$> (Lobby.playingOnFrom <$> at invited <*> pure [Text.pack "Elves", Text.pack "Goblins", Text.pack "Merfolk"])) (Just [1, 2])
+
+    Spec.it s "starts once every player invited is connected and ready, waiting on no deck of theirs" $ do
+      let invited = set (Lobby.MkFill 1) "invited" three
+          joined = Lobby.linked 1 (\invite -> invite {Lobby.connected = True}) invited
+          readied = Lobby.heard 1 (Link.MkReady True) joined
+      Spec.assertEqWith s "Ready, not Start" (tapping "Ready" invited, tapping "Start game" invited) (Just Lobby.MkReady, Nothing)
+      Spec.assertEqWith s "waits on the connection, then the player being ready" (Lobby.waiting invited, Lobby.waiting joined) (Just "Player 2 is still to connect.", Just "Player 2 is not ready yet.")
+      Spec.assertEqWith s "the players invited ready, with no deck sent" (Lobby.guestsReady readied, Lobby.starts readied) (True, False)
+      Spec.assertEqWith s "starts once you are ready too" (Lobby.starts (set Lobby.MkReady "" readied)) True
+      Spec.assertEqWith s "a deck sent is ignored" (Lobby.heard 1 (Link.MkHello (Text.pack "mine") (Text.pack "20 Forest")) readied) readied
+
+    Spec.it s "shows a player invited the seats, their own as You, and the clock alone" $ do
+      let invited = set (Lobby.MkFill 2) "invited" (set (Lobby.MkFill 1) "here" (set Lobby.MkClock "10" three))
+          joined = Lobby.heard 2 (Link.MkReady True) (Lobby.linked 2 (\invite -> invite {Lobby.connected = True}) invited)
+          seats = Lobby.placesFor (const Set.empty) (const Set.empty) 2 joined
+      Spec.assertEqWith s "each seat" (fmap (\p -> (Link.who p, Link.deck p, Link.ready p, Link.bot p)) seats) [(Text.pack "Player 1", Text.pack "Elves", Just False, False), (Text.pack "Player 2", Text.pack "Goblins", Nothing, False), (Text.pack "You", Text.pack "Merfolk", Just True, False)]
+      Spec.assertEqWith s "a bot's seat" (fmap Link.bot (Lobby.placesFor (const Set.empty) (const Set.empty) 2 (set (Lobby.MkFill 1) "goldfish" joined))) [False, True, False]
+      Spec.assertEqWith s "the clock alone" (Lobby.told joined) [(Text.pack "Clock", Text.pack "10 minutes")]
 
   Spec.describe s "edit" $ do
     Spec.it s "offers Edit under a saved deck shown" $ do

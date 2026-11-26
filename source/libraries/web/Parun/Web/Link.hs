@@ -376,9 +376,6 @@ playedOn :: Web.Replay.Source -> Natural -> PlayerId.PlayerId -> PlayedOn
 playedOn source at seat = MkPlayedOn source at seat Map.empty Nothing
 
 -- | How a seat but the host's of a game played on is filled.
---
--- Not implemented: a seat filled by a player invited from another browser
--- (#9777).
 data Filling
   = -- | By the search bot at this difficulty and persona (Parun.Play.Opponent).
     MkFilledByBot Difficulty.Difficulty Persona.Persona
@@ -386,6 +383,8 @@ data Filling
     MkFilledHere Sitting
   | -- | By a goldfish that only passes (Parun.Play.Game.goldfish).
     MkFilledByGoldfish
+  | -- | By a player invited from another browser (Parun.Web.Lobby.invites).
+    MkFilledByInvite
   deriving (Eq, Show)
 
 -- | A seat not chosen for: the lobby's default bot (Parun.Web.BotSettings.defaultBot).
@@ -396,13 +395,19 @@ defaultFilling = uncurry MkFilledByBot BotSettings.defaultBot
 fillingAt :: PlayedOn -> PlayerId.PlayerId -> Filling
 fillingAt game seat = Map.findWithDefault defaultFilling seat (fillings game)
 
--- | A filling as a saved game names it: here, yours, goldfish, or a bot as
+-- | The game with each seat an invited player fills filled by
+-- 'defaultFilling' instead.
+uninvited :: PlayedOn -> PlayedOn
+uninvited game = game {fillings = Map.filter (/= MkFilledByInvite) (fillings game)}
+
+-- | A filling as a saved game names it: here, yours, goldfish, invited, or a bot as
 -- bot, its difficulty and its persona (Parun.Play.Opponent), dash-separated.
 fillingToken :: Filling -> Text.Text
 fillingToken filling = Text.pack $ case filling of
   MkFilledHere MkHandedOver -> "here"
   MkFilledHere MkYours -> "yours"
   MkFilledByGoldfish -> "goldfish"
+  MkFilledByInvite -> "invited"
   MkFilledByBot level style -> List.intercalate "-" ["bot", fst (Opponent.difficultyName level), fst (Opponent.personaName style)]
 
 -- | The filling a saved game's token names ('fillingToken').
@@ -411,6 +416,7 @@ fillingFromToken token = case Text.unpack <$> Text.splitOn (Text.pack "-") token
   ["here"] -> Just (MkFilledHere MkHandedOver)
   ["yours"] -> Just (MkFilledHere MkYours)
   ["goldfish"] -> Just MkFilledByGoldfish
+  ["invited"] -> Just MkFilledByInvite
   ["bot", level, style] -> MkFilledByBot <$> Opponent.named Opponent.difficultyName level <*> Opponent.named Opponent.personaName style
   _ -> Nothing
 
