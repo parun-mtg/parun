@@ -969,7 +969,7 @@ playerRefPositions =
         ("cloak", Effect.Cloak (Cloak.MkCloak (plantedPlayer "ck") (Just (plantedRef "ck-cards")) False Nothing), [plantedPlayer "ck"]),
         ("manifestDread", Effect.ManifestDread (ManifestDread.MkManifestDread (plantedPlayer "md") one Nothing), [plantedPlayer "md"]),
         ("choose-group", Effect.ChooseGroup (ChooseGroup.MkChooseGroup Grouping.Sectors (SlotName.MkSlotName (Text.pack "cgp")) Nothing (plantedPlayer "cgp")), [plantedPlayer "cgp"]),
-        ("choose-permanents", Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty) (SlotName.MkSlotName (Text.pack "cp")) (Just (plantedPlayer "cp-piles")) Nothing False), [plantedPlayer "cp", plantedPlayer "cp-piles"]),
+        ("choose-permanents", Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty CardSelection.ByChoice) (SlotName.MkSlotName (Text.pack "cp")) (Just (plantedPlayer "cp-piles")) Nothing False), [plantedPlayer "cp", plantedPlayer "cp-piles"]),
         ("discard-counted", Effect.Discard (Discard.Counted (CountedDiscard.MkCountedDiscard (plantedPlayer "dc") one Nothing)), [plantedPlayer "dc"]),
         ("discard-any-number", Effect.Discard (Discard.AnyNumber (AnyNumberDiscard.MkAnyNumberDiscard (plantedPlayer "da") (AnyNumberMatching.MkAnyNumberMatching (Filter.Type.And []) Nothing) Nothing)), [plantedPlayer "da"]),
         ("player-sacrifices", Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices (plantedPlayer "ps") Nothing (Filter.Type.And []) one Nothing), [plantedPlayer "ps"]),
@@ -1018,7 +1018,7 @@ objectRefPlayerRefPositions =
     ("chosen-card-from-among", ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong (SlotName.MkSlotName (Text.pack "group")) (Filter.Type.And []) HowMany.one Nothing Nothing Set.empty (plantedPlayer "cfa") Nothing False CardSelection.ByChoice), [plantedPlayer "cfa"]),
     -- And Fact or Fiction's pile chooser beside the separating one (CR 700.3).
     ("chosen-card-from-among-pile", ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong (SlotName.MkSlotName (Text.pack "group")) (Filter.Type.And []) (HowMany.UpTo Nothing) Nothing Nothing Set.empty (plantedPlayer "cfa-split") (Just (plantedPlayer "cfa-pile")) False CardSelection.ByChoice), [plantedPlayer "cfa-split", plantedPlayer "cfa-pile"]),
-    ("chosen-permanents", ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") HowMany.one Nothing Zone.Battlefield Set.empty), [plantedPlayer "cp"])
+    ("chosen-permanents", ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") HowMany.one Nothing Zone.Battlefield Set.empty CardSelection.ByChoice), [plantedPlayer "cp"])
   ]
 
 -- plantedRef's player half, named for its position for that function's reason.
@@ -3691,7 +3691,7 @@ objectRefFilters ref = case ref of
   -- so it is framed the same way. The ownership and control the card prints are
   -- conjuncts of that Filter, which is what this traversal hands to the Filter
   -- lints; the ceiling is reached through refFilters beside it.
-  ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents f _ _ _ _ _) -> unframed [f] <> refFilters ref
+  ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents f _ _ _ _ _ _) -> unframed [f] <> refFilters ref
   -- Rhuk's "all Equipment attached to that creature".
   ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound _ f _) -> unframed [f]
   ObjectRef.AttackedBy _ -> []

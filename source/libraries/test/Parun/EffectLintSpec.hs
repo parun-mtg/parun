@@ -2780,8 +2780,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         atRandom = ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Hand (PlayerRef.Relative PlayerRelation.You) anyCard (Quantity.Type.Literal 1))
         atRandomInGraveyard = ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)) anyCard (Quantity.Type.Literal 1))
         sought = ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Library (PlayerRef.Relative PlayerRelation.You) anyCard (Quantity.Type.Literal 1))
-        anyNumber = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty)
-        onePermanent = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) HowMany.one Nothing Zone.Battlefield Set.empty)
+        anyNumber = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty CardSelection.ByChoice)
+        onePermanent = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) HowMany.one Nothing Zone.Battlefield Set.empty CardSelection.ByChoice)
         sourceAndOne = ObjectRef.AllOf (onePermanent NonEmpty.:| [ObjectRef.EachMatching Filter.Type.IsSource])
         moves ref = Effect.MoveToZone (MoveToZone.MkMoveToZone ref Zone.Battlefield EntryRiders.defaultValue Nothing Nothing LibraryPlacement.defaultValue Nothing)
         reveals ref = Effect.Reveal (Reveal.MkReveal ref Nothing Nothing)
@@ -2835,11 +2835,11 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let tokenCopies ref = Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) ref EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False Nothing)
     Spec.assertEqWith s "a copy allows one card from among them and no other chosen arm" (inert (fmap tokenCopies [inGraveyard, inHand, fromAmong, atRandom, anyFromAmong])) [True, True, False, True, True]
     -- An exact count other than one: only a move's test (Split the Party) reaches it.
-    let exactlyTwo = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.Exactly (Quantity.Type.Literal 2)) Nothing Zone.Battlefield Set.empty)
+    let exactlyTwo = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.Exactly (Quantity.Type.Literal 2)) Nothing Zone.Battlefield Set.empty CardSelection.ByChoice)
     Spec.assertEqWith s "two exactly chosen permanents are allowed by a move alone" (inert [moves exactlyTwo, Effect.Transform exactlyTwo, Effect.Untap exactlyTwo]) [False, True, True]
     -- A choice out of exile is not a battlefield question at any count, so the
     -- permanent opcodes refuse it and a move alone allows it.
-    let exiled count = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) count Nothing Zone.Exile Set.empty)
+    let exiled count = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) count Nothing Zone.Exile Set.empty CardSelection.ByChoice)
     Spec.assertEqWith
       s
       "an exile choice is allowed by a move alone"
@@ -3016,11 +3016,12 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 HowMany.Exactly _ -> True
           ObjectRef.ChosenPermanents chosen -> misreads chosen
           _ -> False
-        -- Parun.Types.ChosenPermanents' total, read the same way; Destined
-        -- Confrontation keeps this half from being vacuous.
+        -- Parun.Types.ChosenPermanents' total, read the same way, and by a pick
+        -- ByChoice only; Destined Confrontation keeps this half from being
+        -- vacuous.
         misreads chosen =
           Maybe.isJust (ChosenPermanents.total chosen) && case ChosenPermanents.count chosen of
-            HowMany.UpTo _ -> False
+            HowMany.UpTo _ -> ChosenPermanents.selection chosen /= CardSelection.ByChoice
             HowMany.Exactly _ -> True
         choosing effect = case effect of
           Effect.ChoosePermanents choice -> Just (ChoosePermanents.permanents choice)
@@ -4584,7 +4585,7 @@ movesAtMostOne ref = case ref of
   -- TRUE for one permanent however many match, and for a printed ceiling
   -- of one, TopOfLibrary's answer; FALSE, EachCardFromAmong's answer
   -- over the battlefield, where "any number" states no bound.
-  ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents _ _ count _ _ _) -> atMostOne count
+  ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents _ _ count _ _ _ _) -> atMostOne count
   -- FALSE: every attachment to a host moves, however many there are.
   ObjectRef.AttachedToBound _ -> False
   -- TRUE, InSlot's answer: what the slot's creature attacks.
