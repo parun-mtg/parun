@@ -173,6 +173,12 @@ data Search = MkSearch
     -- the library divided and rounded (CR 107.1a), which Parun.Types.Quotient
     -- already says. Only the library is narrowed, as
     -- Parun.Types.PlayerEffect.SearchesTopOfLibraries narrows it from outside.
-    top :: Maybe Quantity.Quantity
+    top :: Maybe Quantity.Quantity,
+    -- | Whether the found cards are chosen at random from the matches rather
+    -- than by the searcher -- Enigma Sphinx Avatar's "a colored artifact card
+    -- chosen at random" -- still a search (CR 701.23a), so what replaces or
+    -- forbids one (Aven Mindcensor, Stranglehold) reaches it. Nobody chooses,
+    -- so CR 701.23b's permission to find fewer is nobody's to take.
+    atRandom :: Bool
   }
   deriving (Eq, Ord, Show)

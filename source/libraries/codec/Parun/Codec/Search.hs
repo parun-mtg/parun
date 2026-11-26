@@ -71,6 +71,9 @@ codec = Fields.object $ do
   -- Defaulted: an absent key is a search of the whole library, which is
   -- nearly every card file.
   top <- Fields.defaulted "top" Nothing (Common.maybe Quantity.codec) Search.top
+  -- Defaulted: an absent key is a search whose searcher chooses the find,
+  -- which is every card file but one.
+  atRandom <- Fields.defaulted "atRandom" False Common.boolean Search.atRandom
   pure
     Search.MkSearch
       { Search.searcher = searcher,
@@ -90,5 +93,6 @@ codec = Fields.object $ do
         Search.differentIn = differentIn,
         Search.exactly = exactly,
         Search.andOr = andOr,
-        Search.top = top
+        Search.top = top,
+        Search.atRandom = atRandom
       }

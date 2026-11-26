@@ -760,7 +760,7 @@ moveMana settle resolving source controller legal (MoveMana.MkMoveMana fromRef t
   Mana.moveMana settle (Common.apnapPlayersOf fromRef legal resolving source controller gs) (foldMap (\ref -> Common.apnapPlayersOf ref legal resolving source controller gs) toRef)
 
 search :: Settle.Settle -> (Game Result -> ManaAbilityPerformer.ManaAbilityPerformer) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Search.Search -> Game ()
-search settle performManaAbility runSubgame resolving source controller legal (Search.MkSearch searcherRef ownerRef zones outside quantity filter_ descriptions upTo destination counters subject foundSlot handSlot librarySlot differentIn exactly andOr top) =
+search settle performManaAbility runSubgame resolving source controller legal (Search.MkSearch searcherRef ownerRef zones outside quantity filter_ descriptions upTo destination counters subject foundSlot handSlot librarySlot differentIn exactly andOr top atRandom) =
   -- CR 701.23a: match each candidate through its own CR 613 projection --
   -- rule 613.1 names no zone, so a card in any of the searched zones is folded
   -- exactly as a permanent is, and CR 208.2a's characteristic-defining power
@@ -1085,7 +1085,16 @@ search settle performManaAbility runSubgame resolving source controller legal (S
                     ask rejected = do
                       given <- ListUtils.nubOrd . filter (`List.elem` matches) <$> Game.choose (Prompt.Search decider searcher matches capHere)
                       if admissible given || Set.member given rejected then pure given else ask (Set.insert given rejected)
-                answer <- if Set.null searchedZones then pure [] else ask Set.empty
+                -- Search.atRandom: the interpreter names the find among
+                -- every match, as Common.randomCards does, and nobody is
+                -- asked. Over the matches the look above already narrowed,
+                -- so a replaced search (Aven Mindcensor) draws from its
+                -- portion. The scenarios enigma-sphinx-avatar-* are the proof.
+                -- Drawing up to the cap leaves the completion below nothing.
+                answer <-
+                  if Set.null searchedZones
+                    then pure []
+                    else if atRandom then Game.drawDistinct Prompt.RandomObject capHere matches else ask Set.empty
                 -- CR 701.23a: every card found is one the filter admits.
                 -- Filtered, not trusted, deduplicated, and truncated to the cap:
                 -- an inadmissible answer is still taken when repeated.

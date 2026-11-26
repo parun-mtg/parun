@@ -1436,6 +1436,7 @@ searched context s
         && not (Search.exactly s)
         && not (Search.andOr s)
         && Maybe.isNothing (Search.top s)
+        && not (Search.atRandom s)
     card f =
       described f <> case f of
         -- Free: "card" after each description, with an article on the later
