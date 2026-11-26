@@ -5,10 +5,6 @@
 -- and by whether they are saved; and the chosen deck's detail. Or a game to
 -- play on from a replay's position (PlayOn): its seats, how each is filled
 -- and the clock.
---
--- WHAT IS NOT IMPLEMENTED:
---
---   * Shared team turns (CR 805) in an Emperor game (#9806).
 module Parun.Web.Lobby where
 
 import qualified Control.Applicative as Applicative
@@ -237,8 +233,8 @@ data Options = MkOptions
     -- | CR 804.1: whether a game between teams uses the deploy creatures
     -- option ('deployOffered').
     deployCreatures :: Bool,
-    -- | CR 805.1: whether a Team vs. Team game uses the shared team turns
-    -- option ('sharedTurnsOffered').
+    -- | CR 805.1: whether a Team vs. Team or Emperor game uses the shared
+    -- team turns option ('sharedTurnsOffered').
     sharedTeamTurns :: Bool,
     -- | The minutes each seat a person plays has on its clock
     -- (Parun.Web.Clock), which no rule sets; untimed where absent.
@@ -300,11 +296,11 @@ deployOffered :: Lobby -> Bool
 deployOffered lobby = teamed lobby && variantOf lobby /= MkEmperor
 
 -- | Whether the game may choose the shared team turns option: it is Team vs.
--- Team, whose teams sit together (CR 805.1, 808.2). Two-Headed Giant always
--- uses it (CR 810.2), and Alternating Teams seats no teammates together (CR
--- 811.3).
+-- Team or Emperor, whose teams sit together (CR 805.1, 808.2, 809.2).
+-- Two-Headed Giant always uses it (CR 810.2), and Alternating Teams seats no
+-- teammates together (CR 811.3).
 sharedTurnsOffered :: Lobby -> Bool
-sharedTurnsOffered lobby = variantOf lobby == MkTeamVsTeam
+sharedTurnsOffered lobby = variantOf lobby `elem` [MkTeamVsTeam, MkEmperor]
 
 -- | Whether the game uses the shared team turns option ('sharedTurnsOffered').
 sharesTurns :: Lobby -> Bool
@@ -440,7 +436,7 @@ settings lobby =
           MkAlternatingTeams -> maybe (Left "Alternating Teams is teams of equal size, no one beside a teammate.") (Right . MatchScope.settings . GameState.match) (AlternatingTeams.setUp teams' (Setup.gameWith free seats))
           MkEmperor
             | length sizes < 2 -> Left "Put the seats on two teams or more."
-            | otherwise -> maybe (Left "Emperor is teams of equal size, each sitting together with its emperor in the middle, no emperor within another's reach.") (Right . MatchScope.settings . GameState.match) (Emperor.setUp teams' (seatEmperors lobby) (Setup.gameWith plain seats))
+            | otherwise -> maybe (Left "Emperor is teams of equal size, each sitting together with its emperor in the middle, no emperor within another's reach.") (Right . MatchScope.settings . GameState.match) (Emperor.setUp teams' (seatEmperors lobby) (Setup.gameWith plain {GameSettings.sharedTeamTurns = sharesTurns lobby} seats))
           MkGrandMelee -> Right (MatchScope.settings (GameState.match (GrandMelee.setUp (Setup.gameWith plain seats))))
 
 -- | A slot a player from another browser takes.
@@ -567,8 +563,8 @@ data Event
   | -- | Toggles whether a game between teams uses the deploy creatures
     -- option (CR 804.1).
     MkDeployCreatures
-  | -- | Toggles whether a Team vs. Team game uses the shared team turns
-    -- option (CR 805.1).
+  | -- | Toggles whether a Team vs. Team or Emperor game uses the shared
+    -- team turns option (CR 805.1).
     MkSharedTeamTurns
   | -- | Sets each seat's time to the one whose value is chosen
     -- (Clock.choices).

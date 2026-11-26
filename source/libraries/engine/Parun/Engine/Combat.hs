@@ -199,7 +199,7 @@ skipEmptyCombat gs =
 -- turns too: docs/decisions.md, "Whether attack left closes up over a seat that
 -- emptied".
 --
--- CR 801.3 cuts the same list to the opponents within the active player's range
+-- CR 801.3 cuts the same list to the opponents within the attacking player's range
 -- of influence, and so needs no clause for planeswalkers and battles either; no
 -- opponent in range leaves the list empty, which is its "can't attack".
 --
@@ -209,18 +209,33 @@ skipEmptyCombat gs =
 -- leaves left and right where they sit; not Game.apnapOrder, which also
 -- regroups the seats by team under CR 805.6.
 attackableOpponents :: GameState -> [PlayerId]
-attackableOpponents gs =
+attackableOpponents = gathered attackableBy
+
+-- CR 805.10a: under the shared team turns option every player on the active
+-- team is an attacking player, so the turn's list gathers each one's own
+-- (`perSeat`), still in APNAP order from the active seat. Just the active
+-- seat's otherwise ('sideOf').
+gathered :: (PlayerId -> GameState -> [PlayerId]) -> GameState -> [PlayerId]
+gathered perSeat gs =
   let active = TurnRegisters.activePlayer (GameState.turn gs)
-      others = drop 1 (Game.seatsFrom active gs)
-      opponents = opponentsInRange gs
-      seatedAt neighbour = filter (\pid -> Just pid == neighbour) opponents
-      beside = filter (\pid -> List.elem pid (Game.neighbours active gs))
+      reach = concatMap (`perSeat` gs) (sideOf active gs)
+   in filter (`List.elem` reach) (Game.turnOrderFrom active gs)
+
+-- attackableOpponents for one attacking player, `pid`.
+attackableBy :: PlayerId -> GameState -> [PlayerId]
+attackableBy pid gs =
+  let others = drop 1 (Game.seatsFrom pid gs)
+      opponents = opponentsInRangeOf pid gs
+      seatedAt neighbour = filter (\p -> Just p == neighbour) opponents
+      beside = filter (\p -> List.elem p (Game.neighbours pid gs))
       allowed = case GameSettings.attackOption (MatchScope.settings (GameState.match gs)) of
         Just AttackOption.Leftward -> seatedAt (Maybe.listToMaybe others)
         Just AttackOption.Rightward -> seatedAt (Maybe.listToMaybe (reverse others))
         -- CR 809.3c: either neighbour, over CR 801.2c's seats rather than the
         -- roster (Game.neighbours), so a seat emptied before this turn has
-        -- closed up.
+        -- closed up. Under shared team turns each attacking player's own
+        -- neighbours: docs/decisions.md, "Whether an Emperor game's shared
+        -- team turns keep the adjacent attack".
         Just AttackOption.Adjacent -> beside opponents
         -- Exhaustive rather than a wildcard, so a further attack option is named
         -- by -Werror here instead of silently inheriting CR 507.1's
@@ -237,16 +252,29 @@ attackableOpponents gs =
       -- designateDefenders files them as Combat.barred.
       if GameSettings.alternatingTeams (MatchScope.settings (GameState.match gs)) then beside allowed else allowed
 
--- CR 801.3: the active player's opponents still playing and within their range
--- of influence, in APNAP order -- attackableOpponents before any attack option
--- or CR 811.4 cuts it. Under CR 802.2 these are the defending players: CR 802.2
--- names every opponent, but CR 801.2's range covers attacking and making
--- choices, so an opponent outside it is not designated.
+-- CR 801.3: the attacking players' opponents still playing and within the
+-- range of influence of one of them, in APNAP order -- attackableOpponents
+-- before any attack option or CR 811.4 cuts it. Under CR 802.2 these are the
+-- defending players: CR 802.2 names every opponent, but CR 801.2's range
+-- covers attacking and making choices, so an opponent outside it is not
+-- designated.
 opponentsInRange :: GameState -> [PlayerId]
-opponentsInRange gs =
+opponentsInRange = gathered opponentsInRangeOf
+
+-- opponentsInRange for one attacking player, `pid`.
+opponentsInRangeOf :: PlayerId -> GameState -> [PlayerId]
+opponentsInRangeOf pid gs =
   let playing = Game.stillPlaying gs
-      active = TurnRegisters.activePlayer (GameState.turn gs)
-   in filter (\pid -> Game.areOpponents gs active pid && List.elem pid playing && Game.inRangeOf active pid gs) (Game.turnOrderFrom active gs)
+   in filter (\p -> Game.areOpponents gs pid p && List.elem p playing && Game.inRangeOf pid p gs) (Game.turnOrderFrom pid gs)
+
+-- CR 801.3 / 809.3c under CR 805.10a: whether a creature `pid` controls may
+-- attack `target`, whose defending player the gathered list holds for some
+-- attacking player, perhaps not `pid`. Only shared team turns gather more than
+-- one seat's list, so every target passes otherwise.
+withinReach :: PlayerId -> GameState -> AttackTarget.AttackTarget -> Bool
+withinReach pid gs target
+  | GameSettings.sharedTeamTurns (MatchScope.settings (GameState.match gs)) = all (`List.elem` attackableBy pid gs) (targetDefender target gs)
+  | otherwise = True
 
 -- CR 508.1b: what the active player may announce a chosen creature is attacking,
 -- for ONE defending player -- which player, planeswalker or battle. CR 506.2's
@@ -773,11 +801,14 @@ barredAnnouncements candidates gs =
         RuleWaiver.Defender -> Projection.hasKeyword Keyword.Defender oid gs
         RuleWaiver.ActivationSickness -> False
         RuleWaiver.CleanupDamage -> False
+      -- CR 801.3 / 809.3c under CR 805.10a: a defending player only a
+      -- teammate of the creature's controller may attack.
+      beyondController oid target = any (\controller -> not (withinReach controller gs target)) (Projection.controllerOf oid gs)
    in Set.fromList
         ( do
             oid <- candidates
             target <- targets
-            Monad.guard (aimedAt oid target || aimedPermanentAt oid target || gatedAt oid target || unattackableAt target || outOfReach oid target)
+            Monad.guard (aimedAt oid target || aimedPermanentAt oid target || gatedAt oid target || unattackableAt target || outOfReach oid target || beyondController oid target)
             pure (oid, target)
         )
 

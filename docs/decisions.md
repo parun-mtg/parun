@@ -3426,3 +3426,32 @@ Entries are ordered by the first rule each cites.
   the act, and a player who could choose no dungeon did not perform it.
 - **Site**: `Parun.Engine.PlayerEffect.prohibitsMore`'s Venture count.
 - **Issue**: none.
+
+## Whether an Emperor game's shared team turns keep the adjacent attack
+
+- **Question**: CR 805.10 gives the shared team turns option its own combat
+  rules, the active team attacking the defending team as a group. Does an
+  Emperor game using it still apply CR 809.3c's attack on a neighbour only,
+  and if so, whose neighbour?
+- **Rules**: CR 801.2, 801.3, 805.1, 805.10, 805.10a-c, 809.2, 809.3a,
+  809.3c; CR of 2026-11-06.
+- **Decision**: It keeps CR 809.3c, read per attacking player: each player on
+  the active team is an attacking player (CR 805.10a), and each creature may
+  attack only an opponent seated next to its controller, within its
+  controller's range (CR 801.3). The defending team is every opponent one of
+  the attacking players may attack. An emperor's creatures attack no one
+  until a general's seat empties beside them.
+- **Rejected**: Dropping CR 809.3c for attacking multiple players, as the Team
+  vs. Team lobby drops CR 803's attack left or right: CR 809.3c is the
+  variant's own default, not one of the attack options CR 805.10 contrasts
+  itself with, and dropping it lets an emperor attack from the middle of
+  their team on the first turn, against CR 809.2's generals protecting the
+  emperor. Reading CR 809.3c off the one active seat: CR 805.10a makes every
+  teammate an attacking player, and CR 805.10b announces a defending player
+  for each creature.
+- **Site**: `Parun.Engine.Combat.attackableBy`, gathered by
+  `attackableOpponents` and cut per creature by `withinReach`, proved by the
+  scenario
+  `cr-805-10a-an-emperor-team-s-shared-turn-attacks-from-each-general-s-seat`
+  and its `-unrestricted` control.
+- **Issue**: #9806.

@@ -305,7 +305,7 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "not told without teams" (told three) Nothing
       Spec.assertEqWith s "not played without teams, switched on before" (deploys (set Lobby.MkVariant "free-for-all" (set Lobby.MkDeployCreatures "" versus))) (Right False)
 
-    Spec.it s "CR 805.1 offers the shared team turns option in Team vs. Team only" $ do
+    Spec.it s "CR 805.1 offers the shared team turns option in Team vs. Team and Emperor only" $ do
       let set event value = Lobby.update event (Text.pack value)
           four = withBots 3
           versus = set (Lobby.MkTeam 3) "1" (set (Lobby.MkTeam 2) "1" (set Lobby.MkVariant "team-vs-team" four))
@@ -328,6 +328,13 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "no switch in Free-for-All" (handled "<input id=\"option-shared-team-turns\"" four) Nothing
       Spec.assertEqWith s "not told without it offered" (told four) Nothing
       Spec.assertEqWith s "not played in another variant, switched on before" (fmap GameSettings.sharedTeamTurns (Lobby.settings (set Lobby.MkVariant "alternating-teams" (shared versus)))) (Right False)
+      let six = set Lobby.MkVariant "emperor" (withBots 5)
+          emperorShares = fmap (\g -> Turn.sharesTurnUnder g (PlayerId.MkPlayerId 0) (PlayerId.MkPlayerId 1)) . Lobby.settings
+      Spec.assertEqWith s "CR 809.2: the switch in Emperor" (handled "<input id=\"option-shared-team-turns\"" six) (Just Lobby.MkSharedTeamTurns)
+      Spec.assertEqWith s "Emperor off unless told otherwise" (emperorShares six) (Right False)
+      Spec.assertEqWith s "CR 805.4: an Emperor team takes one turn" (emperorShares (shared six)) (Right True)
+      Spec.assertEqWith s "CR 809.3c: an Emperor game keeps the adjacent attack" (fmap GameSettings.attackOption (Lobby.settings (shared six))) (Right (Just AttackOption.Adjacent))
+      Spec.assertEqWith s "CR 809.3a: and its ranges" (fmap GameSettings.rangeOfInfluence (Lobby.settings (shared six))) (fmap GameSettings.rangeOfInfluence (Lobby.settings six))
 
     Spec.it s "CR 807 plays Grand Melee, on no teams, with its own options" $ do
       let set event value = Lobby.update event (Text.pack value)
