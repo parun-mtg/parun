@@ -10,11 +10,9 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.Answer as Answer
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.CombatStep as CombatStep
-import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.Entry as Entry
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Move as Move
-import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Question as Question
@@ -104,31 +102,13 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
       let line viewed = Replay.lineOf (Replay.tableNames (PlayerId.MkPlayerId viewed) labelled) True Nothing (Timed.MkTimed (When.MkWhen 3 Phase.PrecombatMain (Label.MkLabel (Text.pack "alice")) 0) Nothing (Entry.Do Move.Pass))
       Spec.assertEqWith s "in a line, to the seat viewed as" (line 0, line 1) (Text.pack "Turn 3 \x00b7 Precombat main \x00b7 You pass", Text.pack "Turn 3 \x00b7 Precombat main \x00b7 Player 1 passes")
 
-    Spec.it s "offers to play on from the position as the seat viewed, the bot at every other, and to go back to the list" $ do
+    Spec.it s "offers to play on from the position, its seats filled in the lobby, and to go back to the list" $ do
       let page = Replay.view frame {Replay.position = 1, Replay.viewer = PlayerId.MkPlayerId 1}
           tapped label = Html.labelled (Text.pack "button") (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
-      Spec.assertEqWith s "play on" (tapped "Play on from here") (Just (Replay.MkBranch (Map.fromList [(PlayerId.MkPlayerId 0, Replay.MkBot Difficulty.MkHard Persona.MkBalanced), (PlayerId.MkPlayerId 1, Replay.MkHere)])))
+      Spec.assertEqWith s "play on" (tapped "Play on from here") (Just Replay.MkBranch)
       Spec.assertEqWith s "back" (tapped "All replays") (Just Replay.MkBack)
       Spec.assertBool s (not (Text.isInfixOf (Text.pack "&amp;branch") (Html.toText page))) "no branch link"
-
-    Spec.it s "fills each seat as its menus choose, a bot at the difficulty and persona chosen" $ do
-      let p1 = PlayerId.MkPlayerId 0
-          p2 = PlayerId.MkPlayerId 1
-          chose f (event, value) = f {Replay.chosenFillings = Replay.refilled event (Text.pack value) f}
-          chosen = Foldable.foldl' chose frame [(Replay.MkFill p1, "goldfish"), (Replay.MkLevel p2, "easy"), (Replay.MkStyle p2, "aggro"), (Replay.MkFill p2, "bot"), (Replay.MkFill p2, "nothing")]
-          page = Replay.view chosen
-          changed prefix = Html.search (Text.isPrefixOf (Text.pack prefix) . Html.toText) page >>= \path -> Html.handler (Text.pack "change") path page
-          tapped = Html.labelled (Text.pack "button") (Text.pack "Play on from here") page >>= \path -> Html.handler (Text.pack "click") path page
-      Spec.assertEqWith s "each seat's filling" (Replay.plan chosen) (Map.fromList [(p1, Replay.MkGoldfish), (p2, Replay.MkBot Difficulty.MkEasy Persona.MkAggro)])
-      Spec.assertEqWith s "each menu" (fmap changed ["<select class=\"play-on-filling deck-menu\" id=\"play-on-1\"", "<select class=\"play-on-filling deck-menu\" id=\"play-on-2\"", "<select class=\"bot-difficulty deck-menu\" id=\"bot-difficulty-seat-2\"", "<select class=\"bot-persona deck-menu\" id=\"bot-persona-seat-2\""]) [Just (Replay.MkFill p1), Just (Replay.MkFill p2), Just (Replay.MkLevel p2), Just (Replay.MkStyle p2)]
-      Spec.assertEqWith s "no bot menus for the goldfish" (Text.isInfixOf (Text.pack "bot-difficulty-seat-1") (Html.toText page)) False
-      Spec.assertEqWith s "played on so" tapped (Just (Replay.MkBranch (Replay.plan chosen)))
-      Spec.assertEqWith s "a bot chosen again keeps its settings" (Replay.plan (chose chosen (Replay.MkFill p2, "bot"))) (Replay.plan chosen)
-
-    Spec.it s "plays on only with a seat at this screen" $ do
-      let none = frame {Replay.chosenFillings = Map.singleton (PlayerId.MkPlayerId 0) Replay.MkGoldfish}
-          off f = Text.isInfixOf (Text.pack "disabled=\"\"") . Text.takeWhile (/= '>') . snd . Text.breakOn (Text.pack "<button class=\"branch\"") . Html.toText $ Replay.view f
-      Spec.assertEq s (off frame, off none) (False, True)
+      Spec.assertBool s (not (Text.isInfixOf (Text.pack "Play on with") (Html.toText page))) "no seats to fill"
 
     Spec.it s "offers a game finished here to download, and no scenario" $ do
       let tapped f = let page = Replay.view f in Html.labelled (Text.pack "button") (Text.pack "Download") page >>= \path -> Html.handler (Text.pack "click") path page
@@ -249,11 +229,10 @@ spec s = Spec.describe s "Parun.Web.Replay" $ do
 
   Spec.describe s "ended" $ do
     Spec.it s "goes back to the position and plays on from it again" $ do
-      let filled = Map.fromList [(PlayerId.MkPlayerId 0, Replay.MkGoldfish), (PlayerId.MkPlayerId 1, Replay.MkHere)]
-          view = Replay.ended filled [Text.pack "Alice wins."]
+      let view = Replay.ended [Text.pack "Alice wins."]
           tapped label = Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
       Spec.assertEqWith s "back" (tapped "Back to the replay") (Just Replay.MkResumeReplay)
-      Spec.assertEqWith s "again" (tapped "Play on again") (Just (Replay.MkBranch filled))
+      Spec.assertEqWith s "again" (tapped "Play on again") (Just Replay.MkBranch)
 
 -- | The path to the step button a screen reader names this.
 step :: String -> Html.Html msg -> Maybe (Seq.Seq Natural)
@@ -289,6 +268,5 @@ frame =
       Replay.failure = Nothing,
       Replay.reading = Nothing,
       Replay.written = Map.empty,
-      Replay.kept = Nothing,
-      Replay.chosenFillings = Map.empty
+      Replay.kept = Nothing
     }

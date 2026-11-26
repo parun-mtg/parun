@@ -18,6 +18,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Browser as Browser
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.PlayerView as PlayerView.Engine
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Interpreter as Interpreter
@@ -28,11 +29,13 @@ import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Load as Load
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Entrant as Entrant
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.ScenarioFailure as ScenarioFailure
+import qualified Parun.Types.Start as Start
 import qualified Parun.Types.Stop as Stop
 import qualified Parun.Web.Card as Web.Card
 import qualified Parun.Web.History as History
@@ -71,9 +74,9 @@ decode name = do
 -- | Where the replay was left for.
 data Exit
   = MkToList
-  | -- | Plays on from this position, each seat filled so
+  | -- | Plays on from this position, the host at the seat viewed as
     -- (Web.Replay.MkBranch).
-    MkPlayOn Natural (Map.Map PlayerId.PlayerId Web.Replay.Filling)
+    MkPlayOn Natural PlayerId.PlayerId
 
 -- | The scenario at a position as a seat sees it (the player's of a game
 -- finished here, `played`, else the first), replayed afresh at each
@@ -87,8 +90,7 @@ data Exit
 -- resume from (Scenario.replay).
 -- While no tap waits, the runs go on ahead a position at a time, so a
 -- later position is kept before it is asked for; a step's taps
--- queued while the engine works add up to one move. How each seat is to be
--- filled to play on is kept as its menus choose (Web.Replay.refilled).
+-- queued while the engine works add up to one move.
 viewer :: Browser.Page Screen.Event -> (Natural -> IO ()) -> Registry.Registry Identity.Identity -> Text.Text -> Maybe History.Game -> Scenario.Type.Scenario -> Natural -> IO Exit
 viewer page moved registry name played scenario given = do
   kept <- IORef.newIORef Map.empty
@@ -135,12 +137,12 @@ viewer page moved registry name played scenario given = do
       earlierOf at = fmap Maybe.catMaybes . Monad.forM (filter (< at) starts) $ \s -> do
         known <- Map.lookup s <$> IORef.readIORef kept
         maybe (fmap (either (const Nothing) (Just . Stop.state)) (run s)) (pure . Just) known
-      go playing at stop viewing reading fills = do
+      go playing at stop viewing reading = do
         earlier <- earlierOf at
-        let frame = (frameOf lookUp (lineNames viewing) name scenario seats count playing at stop viewing reading) {Web.Replay.earlier = fmap (PlayerView.Engine.viewFor viewing) earlier, Web.Replay.outcome = outcome, Web.Replay.kept = fmap History.key played, Web.Replay.chosenFillings = fills}
+        let frame = (frameOf lookUp (lineNames viewing) name scenario seats count playing at stop viewing reading) {Web.Replay.earlier = fmap (PlayerView.Engine.viewFor viewing) earlier, Web.Replay.outcome = outcome, Web.Replay.kept = fmap History.key played}
         Browser.display page . fmap Screen.MkReplay $ Web.Replay.view frame
         (tapped, value) <- awaiting
-        let moveTo target = if target == at then go playing at stop viewing Nothing fills else reach target >>= \next -> go (playing && target < count) target next viewing Nothing fills
+        let moveTo target = if target == at then go playing at stop viewing Nothing else reach target >>= \next -> go (playing && target < count) target next viewing Nothing
             readingOf object pinned = do
               board <- Web.Replay.board frame
               o <- Wording.recalled board object
@@ -151,27 +153,37 @@ viewer page moved registry name played scenario given = do
             Web.Replay.MkStep way -> do
               queued <- Browser.takeQueued page stepOf
               moveTo (Foldable.foldl' (Web.Replay.stepTo starts count) at (way : queued))
-            Web.Replay.MkScrub -> maybe (go playing at stop viewing reading fills) (moveTo . min count) (Read.readMaybe (Text.unpack value))
-            Web.Replay.MkPlay on -> go (on && at < count) at stop viewing reading fills
-            Web.Replay.MkSeat pid -> go playing at stop pid reading fills
-            Web.Replay.MkTable (Web.Question.MkRead object) -> go playing at stop viewing (readingOf object True <|> reading) fills
-            Web.Replay.MkTable (Web.Question.MkPeek object) | not held -> go playing at stop viewing (readingOf object False <|> reading) fills
-            Web.Replay.MkTable Web.Question.MkUnpeek | not held -> go playing at stop viewing Nothing fills
-            Web.Replay.MkTable Web.Question.MkClose -> go playing at stop viewing Nothing fills
-            Web.Replay.MkDownload k -> mapM_ (downloadPlayed k) played >> go playing at stop viewing reading fills
-            Web.Replay.MkBranch filled -> pure (MkPlayOn at filled)
+            Web.Replay.MkScrub -> maybe (go playing at stop viewing reading) (moveTo . min count) (Read.readMaybe (Text.unpack value))
+            Web.Replay.MkPlay on -> go (on && at < count) at stop viewing reading
+            Web.Replay.MkSeat pid -> go playing at stop pid reading
+            Web.Replay.MkTable (Web.Question.MkRead object) -> go playing at stop viewing (readingOf object True <|> reading)
+            Web.Replay.MkTable (Web.Question.MkPeek object) | not held -> go playing at stop viewing (readingOf object False <|> reading)
+            Web.Replay.MkTable Web.Question.MkUnpeek | not held -> go playing at stop viewing Nothing
+            Web.Replay.MkTable Web.Question.MkClose -> go playing at stop viewing Nothing
+            Web.Replay.MkDownload k -> mapM_ (downloadPlayed k) played >> go playing at stop viewing reading
+            Web.Replay.MkBranch -> pure (MkPlayOn at viewing)
             Web.Replay.MkBack -> pure MkToList
-            -- A seat's filling, or its bot's settings, chosen.
-            _ -> go playing at stop viewing reading (Web.Replay.refilled event value frame)
-          _ -> go playing at stop viewing reading fills
+            _ -> go playing at stop viewing reading
+          _ -> go playing at stop viewing reading
       first = min count given
   stop <- reach first
-  go False first stop (maybe (PlayerId.MkPlayerId 0) fst (Maybe.listToMaybe (filter ((`elem` seen) . snd) labelled <> labelled))) Nothing Map.empty
+  go False first stop (maybe (PlayerId.MkPlayerId 0) fst (Maybe.listToMaybe (filter ((`elem` seen) . snd) labelled <> labelled))) Nothing
 
 -- | Saves the scenario file of the game finished here of this key to the
 -- player's device, named by when it ended (History.fileName).
 downloadPlayed :: Text.Text -> History.Game -> IO ()
 downloadPlayed k game = Browser.download (History.fileName game) =<< Browser.playedScenario k
+
+-- | Each seat's deck as a replay names it, in seating order: a game
+-- finished here's as its match-up did (History.deck), a scenario's by the
+-- name its list gives it (DeckList.nameOf), else by the seat's label.
+placesOf :: Maybe History.Game -> Scenario.Type.Scenario -> [Text.Text]
+placesOf played scenario = case (played, Scenario.Type.start scenario) of
+  (Just game, _) | length (History.seats game) == length labels -> fmap History.deck (History.seats game)
+  (_, Start.FromDecks _ entrants _) -> [Maybe.fromMaybe (Label.unwrap (Entrant.name entrant)) (DeckList.nameOf (Text.unlines (Entrant.deck entrant))) | entrant <- Foldable.toList entrants]
+  _ -> fmap (\label -> Label.unwrap label <> Text.pack ", as the board stands") labels
+  where
+    labels = Scenario.seatsOf scenario
 
 -- | Each seat and the name the scenario gives it, in seating order.
 seatsOf :: Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)]
@@ -181,7 +193,7 @@ seatsOf = zip (fmap PlayerId.MkPlayerId [0 ..]) . fmap Label.unwrap . Scenario.s
 -- `names` names it by its label, stepping on by itself where `playing`.
 frameOf :: (CardName.CardName -> Either e (Maybe Card.Card)) -> Map.Map Text.Text Text.Text -> Text.Text -> Scenario.Type.Scenario -> [(PlayerId.PlayerId, Text.Text)] -> Natural -> Bool -> Natural -> Either ScenarioFailure.ScenarioFailure Stop.Stop -> PlayerId.PlayerId -> Maybe Web.Card.Reading -> Web.Replay.Frame
 frameOf lookUp names name scenario seats count playing at stop seen reading =
-  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count (Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))) playing Nothing [] Text.empty 0 Nothing Nothing Nothing reading Map.empty Nothing Map.empty
+  let base = Web.Replay.MkFrame name (Scenario.Type.description scenario) seats seen at count (Web.Replay.turnStarts (Foldable.toList (Scenario.Type.timeline scenario))) playing Nothing [] Text.empty 0 Nothing Nothing Nothing reading Map.empty Nothing
       shown board = base {Web.Replay.board = Just board, Web.Replay.written = Web.Card.written lookUp board}
    in case stop of
         Left failure -> base {Web.Replay.failure = Just (Scenario.render failure)}

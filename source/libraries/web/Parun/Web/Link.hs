@@ -43,6 +43,7 @@ import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
+import qualified Parun.Web.BotSettings as BotSettings
 import qualified Parun.Web.Clock as Clock
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.Log as Log
@@ -349,10 +350,68 @@ data Saved = MkSaved
 data Origin
   = -- | Dealt from the lobby.
     MkLobby Dealt
-  | -- | Played on from this position of this replay, each seat filled so
-    -- (Parun.Browser.Hotseat.MkBranched).
-    MkReplayed Web.Replay.Source Natural (Map.Map PlayerId.PlayerId Web.Replay.Filling)
+  | -- | Played on from a replay's position (Parun.Browser.Hotseat.MkBranched).
+    MkReplayed PlayedOn
   deriving (Eq, Show)
+
+-- | A game played on from a replay's position, as its lobby seats it
+-- (Parun.Web.Lobby.PlayOn): the seat the host takes, how each other seat
+-- is filled, and the minutes each seat a person plays has on its clock
+-- (Parun.Web.Clock), if timed.
+data PlayedOn = MkPlayedOn
+  { replayed :: Web.Replay.Source,
+    position :: Natural,
+    host :: PlayerId.PlayerId,
+    -- | Each seat but the host's; 'defaultFilling' where absent
+    -- ('fillingAt').
+    fillings :: Map.Map PlayerId.PlayerId Filling,
+    minutes :: Maybe Natural
+  }
+  deriving (Eq, Show)
+
+-- | A game played on from this position of this replay, the host at this
+-- seat, every other filled by 'defaultFilling', untimed.
+playedOn :: Web.Replay.Source -> Natural -> PlayerId.PlayerId -> PlayedOn
+playedOn source at seat = MkPlayedOn source at seat Map.empty Nothing
+
+-- | How a seat but the host's of a game played on is filled.
+--
+-- Not implemented: a seat filled by a player invited from another browser
+-- (#9777).
+data Filling
+  = -- | By the search bot at this difficulty and persona (Parun.Play.Opponent).
+    MkFilledByBot Difficulty.Difficulty Persona.Persona
+  | -- | On the host's screen, as it sits there.
+    MkFilledHere Sitting
+  | -- | By a goldfish that only passes (Parun.Play.Game.goldfish).
+    MkFilledByGoldfish
+  deriving (Eq, Show)
+
+-- | A seat not chosen for: the lobby's default bot (Parun.Web.BotSettings.defaultBot).
+defaultFilling :: Filling
+defaultFilling = uncurry MkFilledByBot BotSettings.defaultBot
+
+-- | How this seat of a game played on is filled, but the host's.
+fillingAt :: PlayedOn -> PlayerId.PlayerId -> Filling
+fillingAt game seat = Map.findWithDefault defaultFilling seat (fillings game)
+
+-- | A filling as a saved game names it: here, yours, goldfish, or a bot as
+-- bot, its difficulty and its persona (Parun.Play.Opponent), dash-separated.
+fillingToken :: Filling -> Text.Text
+fillingToken filling = Text.pack $ case filling of
+  MkFilledHere MkHandedOver -> "here"
+  MkFilledHere MkYours -> "yours"
+  MkFilledByGoldfish -> "goldfish"
+  MkFilledByBot level style -> List.intercalate "-" ["bot", fst (Opponent.difficultyName level), fst (Opponent.personaName style)]
+
+-- | The filling a saved game's token names ('fillingToken').
+fillingFromToken :: Text.Text -> Maybe Filling
+fillingFromToken token = case Text.unpack <$> Text.splitOn (Text.pack "-") token of
+  ["here"] -> Just (MkFilledHere MkHandedOver)
+  ["yours"] -> Just (MkFilledHere MkYours)
+  ["goldfish"] -> Just MkFilledByGoldfish
+  ["bot", level, style] -> MkFilledByBot <$> Opponent.named Opponent.difficultyName level <*> Opponent.named Opponent.personaName style
+  _ -> Nothing
 
 -- | A game dealt from the lobby: each seat's deck as a label and its list's
 -- text (the host's first), the bots' slots players were invited to, those
@@ -382,7 +441,8 @@ data Sitting
 -- | A saved game as the page keeps it, stamped with the build that played
 -- it: a line for the game, then one per reply (savedReply), so a reply is
 -- kept by adding its line, and last the clock running (savedRunning), if
--- any. A replay played on is kept as its route (Parun.Web.Route).
+-- any. A replay played on is kept by its route (Parun.Web.Route) and its
+-- seating.
 saved :: Text.Text -> Saved -> Text.Text
 saved build game =
   let seat (name, contents) = Value.object [Value.pair "deck" (Value.text name), Value.pair "list" (Value.text contents)]
@@ -396,7 +456,12 @@ saved build game =
                 Value.pair "settings" (Codec.encode Codec.GameSettings.codec (settings dealt)),
                 Value.pair "clock" (Codec.encode (Common.maybe Common.natural) (clock dealt))
               ]
-        MkReplayed source at chosen -> [Value.pair "replay" (Value.text (Route.render (Route.MkReplay (Route.MkPlayingOn chosen) source at)))]
+        MkReplayed game' ->
+          [ Value.pair "replay" (Value.text (Route.render (Route.MkReplay Route.MkPlayingOn (replayed game') (position game')))),
+            Value.pair "host" (Codec.encode Codec.PlayerId.codec (host game')),
+            Value.pair "fillings" (Value.array [Value.object [Value.pair "seat" (Codec.encode Codec.PlayerId.codec seat'), Value.pair "filling" (Value.text (fillingToken filling))] | (seat', filling) <- Map.toList (fillings game')]),
+            Value.pair "clock" (Codec.encode (Common.maybe Common.natural) (minutes game'))
+          ]
       header =
         Value.object
           ( [ Value.pair "build" (Value.text build),
@@ -433,7 +498,7 @@ unsaved build kept = case Text.lines kept of
     theirs <- Common.field "build" pairs >>= Common.asText
     Monad.unless (theirs == build) . Left $ Text.pack "the game was played on another build of Parun"
     key <- Common.field "seed" pairs >>= Common.asText >>= maybe (Left (Text.pack "not a seed")) Right . Key.fromHex
-    begun <- maybe (dealt pairs) replayed (Common.optionalField "replay" pairs)
+    begun <- maybe (dealt pairs) (replayedFrom pairs) (Common.optionalField "replay" pairs)
     styles <- Common.field "bots" pairs >>= Common.asArray >>= traverse styleOf
     lines' <- traverse (Common.parse Monad.>=> Common.asObject) (filter (not . Text.null) rest)
     let (answered, final) = case List.unsnoc lines' of
@@ -462,11 +527,21 @@ unsaved build kept = case Text.lines kept of
       level <- Common.field "difficulty" fields >>= Common.asText >>= named "a difficulty" Opponent.difficultyName
       style <- Common.field "persona" fields >>= Common.asText >>= named "a persona" Opponent.personaName
       pure (i, (level, style))
-    replayed value = do
+    replayedFrom header value = do
       route <- Common.asText value
       case Route.parse route of
-        Route.MkReplay (Route.MkPlayingOn chosen) source at -> Right (MkReplayed source at chosen)
+        Route.MkReplay Route.MkPlayingOn source at -> do
+          seat' <- Common.field "host" header >>= Codec.decode Codec.PlayerId.codec
+          filled <- Common.field "fillings" header >>= Common.asArray >>= traverse fillingOf
+          timed <- Common.field "clock" header >>= Codec.decode (Common.maybe Common.natural)
+          pure (MkReplayed (MkPlayedOn source at seat' (Map.fromList filled) timed))
         _ -> Left (Text.pack "not a replay played on: " <> route)
+    fillingOf value = do
+      fields <- Common.asObject value
+      seat' <- Common.field "seat" fields >>= Codec.decode Codec.PlayerId.codec
+      token <- Common.field "filling" fields >>= Common.asText
+      filling <- maybe (Left (Text.pack "not a filling: " <> token)) Right (fillingFromToken token)
+      pure (seat', filling)
     dealt header = do
       listed <- Common.field "seats" header >>= Common.asArray >>= traverse seat
       decks <- maybe (Left (Text.pack "no seats")) Right (NonEmpty.nonEmpty listed)
@@ -475,5 +550,5 @@ unsaved build kept = case Text.lines kept of
       handed <- slotsAt "locals"
       yours <- slotsAt "yours"
       options <- Common.field "settings" header >>= Codec.decode Codec.GameSettings.codec
-      minutes <- Common.field "clock" header >>= Codec.decode (Common.maybe Common.natural)
-      pure (MkLobby (MkDealt decks slots (Map.fromList (fmap (\i -> (i, MkHandedOver)) handed <> fmap (\i -> (i, MkYours)) yours)) options minutes))
+      timed <- Common.field "clock" header >>= Codec.decode (Common.maybe Common.natural)
+      pure (MkLobby (MkDealt decks slots (Map.fromList (fmap (\i -> (i, MkHandedOver)) handed <> fmap (\i -> (i, MkYours)) yours)) options timed))

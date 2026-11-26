@@ -79,10 +79,11 @@ spec s = Spec.describe s "Parun.Web.Link" $ do
           build = Text.pack "b"
       Spec.assertEq s (Link.unsaved build (Link.saved build game <> Text.pack "\n" <> Link.savedReply more)) (Right game {Link.replies = Link.replies game <> [more]})
 
-    Spec.it s "reads back a replay played on, by its source, position and seats' fillings, a reply added as a line" $ do
+    Spec.it s "reads back a replay played on, by its source, position, host, seats' fillings and clock, a reply added as a line" $ do
       let build = Text.pack "b"
           more = (R.Text (Text.pack "Pass"), Map.empty)
-      Monad.forM_ [Link.MkReplayed (Replay.MkScenario (Text.pack "rules/601 cast")) 7 (Map.fromList [(PlayerId.MkPlayerId 0, Replay.MkBot Difficulty.MkEasy Persona.MkControl), (PlayerId.MkPlayerId 1, Replay.MkHere)]), Link.MkReplayed (Replay.MkPlayed (Text.pack "abc")) 0 (Map.fromList [(PlayerId.MkPlayerId 0, Replay.MkHere), (PlayerId.MkPlayerId 1, Replay.MkGoldfish)])] $ \begun -> do
+          fillings = Map.fromList [(PlayerId.MkPlayerId 0, Link.MkFilledByBot Difficulty.MkEasy Persona.MkControl), (PlayerId.MkPlayerId 2, Link.MkFilledHere Link.MkHandedOver), (PlayerId.MkPlayerId 3, Link.MkFilledHere Link.MkYours), (PlayerId.MkPlayerId 4, Link.MkFilledByGoldfish)]
+      Monad.forM_ [Link.MkReplayed (Link.MkPlayedOn (Replay.MkScenario (Text.pack "rules/601 cast")) 7 (PlayerId.MkPlayerId 1) fillings (Just 10)), Link.MkReplayed (Link.playedOn (Replay.MkPlayed (Text.pack "abc")) 0 (PlayerId.MkPlayerId 0))] $ \begun -> do
         let game = Link.MkSaved key begun (Map.fromList [(0, (Difficulty.MkHard, Persona.MkAggro))]) [(R.Text (Text.pack "Keep"), Map.empty)] Nothing
         Spec.assertEq s (Link.unsaved build (Link.saved build game <> Text.pack "\n" <> Link.savedReply more)) (Right game {Link.replies = Link.replies game <> [more]})
 

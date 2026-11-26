@@ -1395,6 +1395,35 @@ main.lobby.new-game {
   width: 100%;
 }
 
+/* A game played on (Lobby.playOnView): the seats alone, one column. */
+main.lobby.new-game.play-on {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "seats";
+  grid-template-rows: auto;
+}
+
+@media (min-width: 760px) {
+  main.lobby.new-game.play-on {
+    grid-template-columns: minmax(0, 520px);
+    justify-content: center;
+  }
+
+  .new-game.play-on .seats {
+    border-left: 1px solid var(--line);
+  }
+}
+
+/* A seat's filling: its menu under its label. */
+.seat-filling {
+  margin: -6px 16px 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.seat-filling select {
+  width: 100%;
+}
+
 /* An invited player's seat: the link to send, the box their code goes in. */
 .lobby-seat.invite {
   border-style: dashed;
@@ -4836,26 +4865,6 @@ body:has(main.game, #app [data-settings], #app .splash, #app main.loading) #sett
   background: var(--act-soft);
   border-color: var(--act-line);
   color: var(--act-text);
-}
-
-/* How each seat is filled to play on (Parun.Web.Replay.fillingsView): its
-   name above its menu, a bot's level and style beneath. */
-.play-on-seats {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.play-on-seat {
-  display: grid;
-  gap: 4px;
-}
-
-.play-on-seats .bot-settings {
-  margin: 0;
 }
 
 .replay-description:empty {
