@@ -101,6 +101,8 @@ data Event
     MkFocus Natural
   | -- | Passes now, and the priorities after it until this stop (passesFor).
     MkSkip Until
+  | -- | Narrows a long choice to the options matching the text typed (combo).
+    MkFilter
   deriving (Eq, Show)
 
 -- | Where an answer stands after an event.
@@ -345,13 +347,15 @@ data Screen = MkScreen
     -- between people (handsOver).
     naming :: Bool,
     -- | Every timed seat's clock, on the turn bar (Parun.Web.Clock).
-    clocks :: [Clock.Face]
+    clocks :: [Clock.Face],
+    -- | What is typed into a long choice's filter (MkFilter).
+    query :: Text.Text
   }
   deriving (Eq, Show)
 
 -- | A screen with nothing picked, read or logged.
 blank :: Screen
-blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard Map.empty False []
+blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard Map.empty False [] Text.empty
 
 -- | The page for a request: the turn bar, the table with each tile marked
 -- for what tapping it does, and beside it the question with its answers,
@@ -364,7 +368,7 @@ view request screen =
       <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] (Mana.rich problem) | problem <- Maybe.maybeToList (Request.problem request)]
       <> [Element.el "p" ["playing"] [Element.attr "role" (Text.pack "note")] [Html.text (Text.pack "You're playing " <> Wording.player (Question.seat (Request.question request)) <> Text.pack ".")] | naming screen]
       <> [Element.el "p" ["controlling"] [Element.attr "role" (Text.pack "note")] [Html.text (Text.pack "You're deciding for " <> Wording.player p <> Text.pack ", whom you control.")] | p <- Maybe.maybeToList (Question.for (Request.question request))]
-      <> form request (written screen) (selected screen) (focus screen)
+      <> form request (written screen) (selected screen) (focus screen) (query screen)
 
 -- | The newest turn begun since the seat last decided, unless it never has:
 -- passing for the seat can carry it into the next turn, which this says
@@ -766,6 +770,8 @@ step request picked event typed = case event of
   MkConcede
     | decisive request || atPriority request -> MkConceded
     | otherwise -> maybe (MkRefused $ Text.pack "Concede when you have priority.") (MkReplied . R.Number) $ passIndex request
+  -- The seat keeps what is typed (query).
+  MkFilter -> MkPicking picked
   MkSkip _ -> maybe (MkRefused $ Text.pack "There is no pass to make.") (MkReplied . R.Number) $ passIndex request
   MkAuto -> maybe (MkRefused $ Text.pack "Auto can't pay the rest of this cost. Choose a source.") MkReplied $ auto request
 
@@ -995,7 +1001,7 @@ capitalized kind = case Text.uncons (Wording.spaced kind) of
 -- | Whether the request has no form of its own, and is answered by a reply
 -- typed as JSON.
 answersTyped :: Request.Request -> Bool
-answersTyped request = fmap Html.toText (form request Map.empty Set.empty Nothing) == fmap Html.toText (typedReply request)
+answersTyped request = fmap Html.toText (form request Map.empty Set.empty Nothing Text.empty) == fmap Html.toText (typedReply request)
 
 -- | The offer shown as it is sent, and a field for a reply typed as JSON.
 typedReply :: Request.Request -> [Html.Html Event]
@@ -1007,8 +1013,8 @@ typedReply request =
   where
     question = Request.question request
 
-form :: Request.Request -> Map.Map ObjectId.ObjectId [Text.Text] -> Set.Set (Natural, Natural) -> Maybe Natural -> [Html.Html Event]
-form request texts picked focused = case Text.unpack (Question.kind question) of
+form :: Request.Request -> Map.Map ObjectId.ObjectId [Text.Text] -> Set.Set (Natural, Natural) -> Maybe Natural -> Text.Text -> [Html.Html Event]
+form request texts picked focused typed = case Text.unpack (Question.kind question) of
   "PlayOrDraw" -> heading "Play first or draw?" : [button (MkAnswer option) (Offer.tagName word) | option@(R.Text word) <- Foldable.fold (Protocol.arrayOf offer)]
   -- CR 103.1: among three or more seats, the seat to take the first turn.
   "ChooseStarter" -> heading "Who takes the first turn?" : [button (MkAnswer option) (if option == R.Text (Text.pack (show (PlayerId.unwrap (Question.seat question)))) then Text.pack "You" else Offer.playerName option) | option <- Foldable.fold (Protocol.arrayOf offer)]
@@ -1190,7 +1196,8 @@ form request texts picked focused = case Text.unpack (Question.kind question) of
          in Html.element (Text.pack "h2") [] (Mana.rich $ Maybe.fromMaybe (capitalized (Question.kind question) <> foldMap (\source -> Text.pack " for " <> Offer.objectName shown source) (Protocol.field "source" offer) <> Text.pack ".") (headingOf shown request))
               : foldMap (\among -> [looking shown among (`lookup` [(oid, option) | option <- options', Just oid <- [Offer.objectOf option]])]) (amongCards shown options')
                 -- Cards the seat can't tell apart share a button, for the first.
-                <> [button (MkAnswer option) (named' <> many count) | (option : _, named', count) <- collapsed (Maybe.isJust . Offer.objectOf) labelled]
+                <> let choices = [(MkAnswer option, named' <> many count) | (option : _, named', count) <- collapsed (Maybe.isJust . Offer.objectOf) labelled]
+                    in if length choices > comboPast then combo typed choices else fmap (uncurry button) choices
   "DeclareAttackers"
     | Just attackers <- Protocol.arrayOf offer,
       Just shown <- Request.view request ->
@@ -1316,6 +1323,44 @@ form request texts picked focused = case Text.unpack (Question.kind question) of
     fits (g, group) = let n = Natural.length (filter ((== g) . fst) (Set.toList picked)) in least group <= n && n <= most group
     makes yields = if null yields then Text.empty else Text.pack " (makes " <> Text.intercalate (Text.pack " or ") (fmap (foldMap (\m -> Text.pack "{" <> Wording.manaType m <> Text.pack "}")) yields) <> Text.pack ")"
     heading t = Html.element (Text.pack "h2") [] (Mana.rich $ Text.pack t)
+
+-- | How many options a choice shows as a button each; past it, a combo box
+-- (combo).
+comboPast :: Int
+comboPast = 24
+
+-- | A long choice as a combo box: a box filtering the options, case blind,
+-- to those whose label holds what is typed, an exact match first, then those
+-- it begins; at most comboPast show, and Enter takes the first.
+combo :: Text.Text -> [(Event, Text.Text)] -> [Html.Html Event]
+combo typed choices =
+  let needle = Text.toCaseFold (Text.strip typed)
+      rank (_, label) = let folded = Text.toCaseFold label in (folded /= needle, not (Text.isPrefixOf needle folded))
+      matching = List.sortOn rank (filter (Text.isInfixOf needle . Text.toCaseFold . snd) choices)
+      shown = take comboPast matching
+      unshown = length matching - length shown
+      first = Text.pack "combo-first"
+   in [ Element.el
+          "input"
+          ["combo"]
+          ( [ Element.attr "id" (Text.pack "combo-filter"),
+              Element.attr "type" (Text.pack "search"),
+              Element.attr "aria-controls" (Text.pack "combo-options"),
+              Element.attr "aria-label" (Text.pack "Filter the options"),
+              Element.attr "placeholder" (Text.pack ("Type to find one of " <> show (length choices))),
+              Element.attr "autocomplete" (Text.pack "off"),
+              Element.attr "spellcheck" (Text.pack "false"),
+              Element.attr "value" typed,
+              Element.attr "data-focus" Text.empty,
+              Element.on "input" MkFilter
+            ]
+              <> [Element.attr "data-enter" first | not (null shown)]
+          )
+          [],
+        Element.el "div" ["actions"] [Element.attr "id" (Text.pack "combo-options")] [Element.el "button" [] ([Element.attr "type" (Text.pack "button")] <> [Element.attr "id" first | i == 0] <> [Element.on "click" event]) (Mana.rich label) | (i, (event, label)) <- zip [0 :: Int ..] shown]
+      ]
+        <> [nudge (Text.pack "Nothing matches.") | null matching]
+        <> [nudge (Text.pack (show unshown <> " more match. Keep typing to narrow them.")) | unshown > 0]
 
 -- | A field to type a number into, answering with it.
 numberInput :: Html.Html Event

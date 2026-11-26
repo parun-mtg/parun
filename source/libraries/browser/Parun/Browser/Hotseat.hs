@@ -323,34 +323,34 @@ exchange lookUp page seatRef leave concede request = do
       Monad.forM_ (Maybe.listToMaybe (reverse [l | Screen.MkQuestion (Web.Question.MkLevel l) <- dropped])) $ \l ->
         IORef.modifyIORef' seatRef $ \st -> st {level = l, watched = Nothing}
     untilReady = Browser.next page >>= \(event, _) -> Monad.unless (event == Screen.MkQuestion Web.Question.MkReady) untilReady
-    answer pending picked = asking pending picked Nothing Nothing
-    asking pending picked reading focus = do
+    answer pending picked = asking pending picked Nothing Nothing Text.empty
+    asking pending picked reading focus typed = do
       state <- IORef.readIORef seatRef
       shownClocks <- facesOf state
       let asked = Question.seat (Request.question pending)
-          screen = Web.Question.MkScreen picked reading (loggedFor asked state) (freshOf asked state) focus (level state) (foldMap (Web.Card.written lookUp) (Request.view pending)) (naming asked state) shownClocks
+          screen = Web.Question.MkScreen picked reading (loggedFor asked state) (freshOf asked state) focus (level state) (foldMap (Web.Card.written lookUp) (Request.view pending)) (naming asked state) shownClocks typed
       Browser.display page . fmap Screen.MkQuestion $ Web.Question.view pending screen
       (event, value) <- Browser.next page
       case event of
         Screen.MkQuestion (Web.Question.MkRead object)
-          | Just r <- readingOf lookUp pending object True -> asking pending picked (Just r) focus
+          | Just r <- readingOf lookUp pending object True -> asking pending picked (Just r) focus typed
         -- A preview shows only while no tapped sheet is open, and ends only
         -- itself, never the tapped sheet (the pointer leaving the tile for
         -- that sheet's scrim ends a preview).
         Screen.MkQuestion (Web.Question.MkPeek object)
           | maybe True (not . Web.Card.pinned) reading,
             Just r <- readingOf lookUp pending object False ->
-              asking pending picked (Just r) focus
-          | otherwise -> asking pending picked reading focus
+              asking pending picked (Just r) focus typed
+          | otherwise -> asking pending picked reading focus typed
         Screen.MkQuestion Web.Question.MkUnpeek
-          | maybe False (not . Web.Card.pinned) reading -> asking pending picked Nothing focus
-          | otherwise -> asking pending picked reading focus
+          | maybe False (not . Web.Card.pinned) reading -> asking pending picked Nothing focus typed
+          | otherwise -> asking pending picked reading focus typed
         -- The home screen runs here, the question waiting; giving the game
         -- up unwinds it (game).
         Screen.MkQuestion Web.Question.MkHome -> do
           left <- leave (Request.view pending)
           case left of
-            MkResume -> asking pending picked reading focus
+            MkResume -> asking pending picked reading focus typed
             MkAbandon -> Exception.throwIO MkAbandonedGame
         Screen.MkQuestion e -> case Web.Question.step pending picked e value of
           Web.Question.MkReplied answered -> do
@@ -370,9 +370,9 @@ exchange lookUp page seatRef leave concede request = do
             case e of
               Web.Question.MkLevel l -> IORef.modifyIORef' seatRef $ \st -> st {level = l}
               _ -> pure ()
-            asking pending now (if isToggle e then reading else Nothing) (focusAfter e focus)
-          Web.Question.MkRefused problem -> asking pending {Request.problem = Just problem} picked Nothing focus
-        _ -> asking pending picked reading focus
+            asking pending now (if isToggle e then reading else Nothing) (focusAfter e focus) (if e == Web.Question.MkFilter then value else typed)
+          Web.Question.MkRefused problem -> asking pending {Request.problem = Just problem} picked Nothing focus typed
+        _ -> asking pending picked reading focus typed
     focusAfter e focus = case e of
       Web.Question.MkFocus g -> if focus == Just g then Nothing else Just g
       Web.Question.MkClear -> Nothing
