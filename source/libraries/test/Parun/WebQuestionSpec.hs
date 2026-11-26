@@ -707,6 +707,15 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         tap picked label = let view = Question.Web.view request Question.Web.blank {Question.Web.selected = picked} in Html.labelled (Text.pack "button") (Text.pack label) view >>= \path -> Html.handler (Text.pack "click") path view
     Spec.assertEqWith s "first" (tap Set.empty "Your Grizzly Bears 2/2 \x00d7\&2") (Just (Question.Web.MkToggle 0 0))
     Spec.assertEqWith s "then the next" (tap (Set.singleton (0, 0)) "1 of Your Grizzly Bears 2/2 \x00d7\&2") (Just (Question.Web.MkToggle 0 1))
+    -- The minus reaches none from either count, every attacker being room.
+    let fewer picked = let view = Question.Web.view request Question.Web.blank {Question.Web.selected = picked} in Html.search (\node -> Html.spoken node == Text.pack "One fewer Your Grizzly Bears 2/2 \x00d7\&2") view >>= \path -> Html.handler (Text.pack "click") path view
+        down picked =
+          fewer picked >>= \event -> case Question.Web.step request picked event Text.empty of
+            Question.Web.MkPicking now -> Just now
+            _ -> Nothing
+    Spec.assertEqWith s "no minus before a pick" (fewer Set.empty) Nothing
+    Spec.assertEqWith s "from one, none" (down (Set.singleton (0, 0))) (Just Set.empty)
+    Spec.assertEqWith s "from two, one, then none" (down (Set.fromList [(0, 0), (0, 1)]) >>= down) (Just Set.empty)
     Spec.assertBool s (Text.pack "aria-keyshortcuts=\"A\">Attack with all</button>" `Text.isInfixOf` Html.toText (Question.Web.view request Question.Web.blank)) "A attacks with all"
     let alone = request {Request.question = (Request.question request) {Question.offer = R.Array [PromptOffer.object Protocol.namer one]}}
         attackAll = Html.labelled (Text.pack "button") (Text.pack "Attack with all") (Question.Web.view alone Question.Web.blank)
