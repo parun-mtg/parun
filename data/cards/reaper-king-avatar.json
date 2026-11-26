@@ -1,0 +1,55 @@
+{
+  "faces": [
+    {
+      "name": "Reaper King Avatar",
+      "oracleText": "Each creature you control gets +1/+1 for each of its colors.",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Measure",
+                  "value": "ColorCount"
+                },
+                "toughness": {
+                  "type": "Measure",
+                  "value": "ColorCount"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": -2,
+        "lifeModifier": -5
+      }
+    }
+  ]
+}
