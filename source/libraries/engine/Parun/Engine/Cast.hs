@@ -3277,8 +3277,7 @@ playedAsCopy offered pid oid = do
 -- make: CR 101.2's land-play prohibitions, and landTimingOk with no face of
 -- its own (CR 707.2). Empty withholds the play (Action.legalActions).
 --
--- Narrowed rather than drawn among all and refused (docs/decisions.md, "Which
--- basic land Dakkon Blackblade Avatar draws when some can't be played").
+-- Narrowed rather than drawn among all and refused (CR 101.2, 734.1).
 playAsCopyCandidates :: PlayerId -> ObjectId -> GameState -> [(CardName.CardName, PC.ProjectedCharacteristics)]
 playAsCopyCandidates pid oid gs =
   let known predicate = Map.toList (Map.findWithDefault Map.empty predicate (Bookkeeping.referenceCards (GameState.bookkeeping gs)))
