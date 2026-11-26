@@ -222,18 +222,15 @@ accepted translated = translated <$ traverse said (Card.faces translated)
 
 -- | One line of mtgish's AST file as the card it means, or the node kind it
 -- stopped at. Only a card of one normal face is read, a vanguard card (CR
--- 313) or a scheme card (CR 314) as one, or a preparation card (CR 723), its own face first and its
--- prepare spell's after ('Layout.Preparation').
+-- 313) or a scheme card (CR 314) as one, or a preparation card (CR 723), its
+-- own face first and its prepare spell's after ('Layout.Preparation').
 card :: Value.Value -> Translated Card.Card
 card value = do
   pairs <- Common.asObject value
   oracleCard <- Common.field "_OracleCard" pairs >>= Common.asText
   case Text.unpack oracleCard of
-    "Card" -> do
-      f <- readFace [] pairs
-      pure Card.MkCard {Card.synthetic = False, Card.layout = Layout.Normal, Card.faces = f NonEmpty.:| []}
-    -- CR 314: a scheme card is one face.
-    "Scheme" -> do
+    -- A scheme card (CR 314) is one face too.
+    kind | kind `elem` ["Card", "Scheme"] -> do
       f <- readFace [] pairs
       pure Card.MkCard {Card.synthetic = False, Card.layout = Layout.Normal, Card.faces = f NonEmpty.:| []}
     -- Its modifiers are CANDIDATES' ('Ingest.reprint'), as its type line is.
