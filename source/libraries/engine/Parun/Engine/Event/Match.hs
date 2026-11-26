@@ -2305,9 +2305,13 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   --
   -- Nothing is a permanent that is gone AND filed no last known information, about
   -- which no Filter can honestly answer.
-  TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn relation f) _) -> case event of
+  --
+  -- A narrowed cause is CR 702.82b's "is devoured" (Kresh the Bloodbraided
+  -- Avatar): only the sacrifices a devour row made, which the event carries.
+  TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn relation f) _ cause) -> case event of
     GameEvent.PermanentSacrificed ev
-      | PlayerRelation.holds (Game.teams gs) relation you (PermanentWasSacrificed.player ev) ->
+      | PlayerRelation.holds (Game.teams gs) relation you (PermanentWasSacrificed.player ev),
+        all (== PermanentWasSacrificed.cause ev) cause ->
           let victim = PermanentWasSacrificed.permanent ev
            in case Projection.viewWithLastKnown victim gs victim of
                 Nothing -> False

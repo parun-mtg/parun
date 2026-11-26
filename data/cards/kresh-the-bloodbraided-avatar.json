@@ -1,0 +1,91 @@
+{
+  "faces": [
+    {
+      "name": "Kresh the Bloodbraided Avatar",
+      "oracleText": "Whenever a creature you control is devoured, create an X/X green Ooze creature token, where X is the devoured creature's power.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "PermanentSacrificed",
+            "value": {
+              "cause": "Devour",
+              "filter": {
+                "type": "HasCardType",
+                "value": "Creature"
+              },
+              "player": "You"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Green"
+                                ],
+                                "name": "Ooze Token",
+                                "power": {
+                                  "type": "AgainstSlot",
+                                  "value": {
+                                    "quantity": {
+                                      "type": "Measure",
+                                      "value": "Power"
+                                    },
+                                    "slot": "thatDepartedPermanent"
+                                  }
+                                },
+                                "toughness": {
+                                  "type": "AgainstSlot",
+                                  "value": {
+                                    "quantity": {
+                                      "type": "Measure",
+                                      "value": "Power"
+                                    },
+                                    "slot": "thatDepartedPermanent"
+                                  }
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Ooze"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 1,
+        "lifeModifier": -3
+      }
+    }
+  ]
+}

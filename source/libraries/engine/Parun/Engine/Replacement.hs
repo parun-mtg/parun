@@ -3220,7 +3220,7 @@ entryAccess gs seat oid = row asEntering
       EntryRewrite.WithCounters counters -> countsFrom (Just counters)
       EntryRewrite.EntersWith with -> countsFrom (EntersWith.counters with)
       EntryRewrite.UnderControlOf _ -> mempty
-      EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber criterion _ _) -> sacrificing criterion
+      EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber criterion _ _ _) -> sacrificing criterion
       EntryRewrite.SacrificeToEnter sacrifice -> sacrificing (SacrificeToEnter.filter sacrifice)
       EntryRewrite.ExileFromGraveyard _ -> spending [InGraveyards] [InExile]
       EntryRewrite.EntersAttachedTo _ -> reading [OnBattlefield]

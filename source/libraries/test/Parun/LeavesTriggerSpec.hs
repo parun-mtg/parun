@@ -2507,7 +2507,7 @@ bystanderSpec s registry =
     Spec.it s "CR 603.10a the look-back families are the ones that rule lists" $ do
       Spec.assertBool s (Event.looksBack (TriggerCondition.Leaves (LeavesTrigger.dies (LeavingPermanent.Matching (Filter.Type.And []))))) "a dies trigger is a leaves-the-battlefield ability"
       Spec.assertBool s (Event.looksBack (TriggerCondition.Leaves LeavesTrigger.defaultValue)) "and so is the wider written form"
-      Spec.assertBool s (Event.looksBack (TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.AnyPlayer (Filter.Type.And [])) Batching.EachOccurrence))) "a sacrifice trigger is named outright"
+      Spec.assertBool s (Event.looksBack (TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.AnyPlayer (Filter.Type.And [])) Batching.EachOccurrence Nothing))) "a sacrifice trigger is named outright"
       Spec.assertBool s (not (Event.looksBack (TriggerCondition.PutIntoZone (PutIntoZoneTrigger.self Zone.Graveyard)))) "CR 603.6c says put-into-a-graveyard-from-anywhere is not one"
       Spec.assertBool s (Event.looksBack (TriggerCondition.PutIntoZone (PutIntoZoneTrigger.self Zone.Exile) {PutIntoZoneTrigger.from = Set.singleton Zone.Battlefield})) "but CR 603.6c makes put-into-a-zone-from-the-battlefield one"
       Spec.assertBool s (not (Event.looksBack (TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.matching (Filter.Type.And []))))) "and CR 708.8 leaves a turned-up permanent on the battlefield"

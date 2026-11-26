@@ -93,6 +93,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReturnEnding as ReturnEnding
 import qualified Parun.Types.ReturnWatch as ReturnWatch
+import qualified Parun.Types.SacrificeCause as SacrificeCause
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StoredEffects as StoredEffects
@@ -167,7 +168,7 @@ spec s registry = Spec.describe s "a fragmented loop (CR 733.3)" $ do
     let lap reader =
           let (bearsId, gs1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
               gs2 = maybe gs1 (\printing -> snd (S.addLibraryCard printing S.alice gs1)) reader
-              sacrificed = PermanentWasSacrificed.MkPermanentWasSacrificed S.alice bearsId
+              sacrificed = PermanentWasSacrificed.MkPermanentWasSacrificed S.alice bearsId SacrificeCause.Ordinary
            in Fragmented.lapIsRead (Fragmented.digest gs2) (S.withEvents [GameEvent.PermanentSacrificed sacrificed] gs2)
     Spec.assertEqWith s "CR 733.3 Dargo reads the lap's sacrifice" (lap (Just dargo)) True
     Spec.assertEqWith s "CR 733.3 with no reader the lap's sacrifice is unread" (lap Nothing) False

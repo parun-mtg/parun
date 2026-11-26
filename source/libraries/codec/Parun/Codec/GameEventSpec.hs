@@ -103,6 +103,7 @@ import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.RoomIndex as RoomIndex
+import qualified Parun.Types.SacrificeCause as SacrificeCause
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.SecretChoice as SecretChoice
 import qualified Parun.Types.SideDeck as SideDeck
@@ -540,7 +541,7 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.PermanentSacrificed (PermanentWasSacrificed.MkPermanentWasSacrificed (PlayerId.MkPlayerId 0) (ObjectId.MkObjectId 6)))
+      (GameEvent.PermanentSacrificed (PermanentWasSacrificed.MkPermanentWasSacrificed (PlayerId.MkPlayerId 0) (ObjectId.MkObjectId 6) SacrificeCause.Ordinary))
       " {\"type\":\"PermanentSacrificed\",\"value\":{\"player\":0,\"permanent\":6}} "
   -- CR 603.3b: the ability's source (CR 113.7), its controller as it triggered
   -- (CR 603.3a) and the condition that says which ability it was.

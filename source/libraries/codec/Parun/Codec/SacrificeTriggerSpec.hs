@@ -7,6 +7,7 @@ import qualified Parun.Types.Batching as Batching
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.SacrificeCause as SacrificeCause
 import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -16,13 +17,21 @@ spec s = Spec.describe s "Parun.Codec.SacrificeTrigger" $ do
     Common.assertCodec
       s
       SacrificeTrigger.codec
-      (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.AnyPlayer (Filter.And [])) Batching.EachOccurrence)
+      (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.AnyPlayer (Filter.And [])) Batching.EachOccurrence Nothing)
       " {\"player\":\"AnyPlayer\",\"filter\":{\"type\":\"And\",\"value\":[]}} "
   -- Camellia, the Seedmiser's "whenever you sacrifice one or more Foods".
   Spec.it s "OneOrMore writes its key" $
     Common.assertCodec
       s
       SacrificeTrigger.codec
-      (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.And [])) Batching.OneOrMore)
+      (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.And [])) Batching.OneOrMore Nothing)
       " {\"player\":\"You\",\"filter\":{\"type\":\"And\",\"value\":[]},\"batching\":\"OneOrMore\"} "
+  -- Kresh the Bloodbraided Avatar's "whenever a creature you control is
+  -- devoured" (CR 702.82b).
+  Spec.it s "a narrowed cause writes its key" $
+    Common.assertCodec
+      s
+      SacrificeTrigger.codec
+      (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.And [])) Batching.EachOccurrence (Just SacrificeCause.Devour))
+      " {\"player\":\"You\",\"filter\":{\"type\":\"And\",\"value\":[]},\"cause\":\"Devour\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s SacrificeTrigger.codec

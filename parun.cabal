@@ -1746,6 +1746,8 @@ library codec
     Parun.Codec.Sacrifice
     Parun.Codec.SacrificeAnyNumber
     Parun.Codec.SacrificeAnyNumberSpec
+    Parun.Codec.SacrificeCause
+    Parun.Codec.SacrificeCauseSpec
     Parun.Codec.SacrificeEffect
     Parun.Codec.SacrificeEffectSpec
     Parun.Codec.Sacrificer
@@ -3935,6 +3937,7 @@ library types
     Parun.Types.RuleWaiver
     Parun.Types.Sacrifice
     Parun.Types.SacrificeAnyNumber
+    Parun.Types.SacrificeCause
     Parun.Types.SacrificeEffect
     Parun.Types.Sacrificer
     Parun.Types.SacrificeToEnter

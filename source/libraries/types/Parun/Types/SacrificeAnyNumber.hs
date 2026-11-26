@@ -4,6 +4,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.SacrificeCause as SacrificeCause
 
 -- | CR 614.1c's as-enters sacrifice: which permanents may be sacrificed, and how
 -- many counters of which kind the entering permanent takes per sacrifice.
@@ -23,6 +24,10 @@ data SacrificeAnyNumber = MkSacrificeAnyNumber
     -- the number of creatures devoured this way", which Parun.ReplacementSpec's
     -- "CR 702.82b sixteen +1/+1 counters" proves. Parun.Engine.Event multiplies by
     -- the count, so 0 places nothing.
-    each :: Quantity.Quantity
+    each :: Quantity.Quantity,
+    -- | Devour for the row Parun.Engine.Keyword mints for CR 702.82a / 702.82c,
+    -- whose sacrifices CR 702.82b calls devoured; Ordinary for a card's own
+    -- as-enters sacrifice (Shimatsu the Bloodcloaked).
+    cause :: SacrificeCause.SacrificeCause
   }
   deriving (Eq, Ord, Show)
