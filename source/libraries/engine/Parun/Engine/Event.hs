@@ -1785,6 +1785,24 @@ mintOutside pid printingId gs =
           }
       )
 
+-- CR 707.2: the copiable values of this printing, read off a counterfactual
+-- board holding a copy of it minted outside the game (mintOutside), which is
+-- thrown away with the read: what a copy of a reference card copies.
+outsideSnapshot :: PlayerId -> PrintingId.PrintingId -> GameState.GameState -> PC.ProjectedCharacteristics
+outsideSnapshot pid printingId gs = let (oid, board) = mintOutside pid printingId gs in copiedSnapshot oid board
+
+-- | CR 108.1: the reference card of this name, interned, provided the filter
+-- admits it -- an answer outside what the filter admits is not taken.
+admittedReferenceCard :: Filter.Type.Filter Keyword.Type.Keyword -> Maybe Integer -> CardName.CardName -> Game (Maybe PrintingId.PrintingId)
+admittedReferenceCard predicate amount answer = do
+  found <- Game.lookUpCard answer
+  g <- State.get
+  pure $ do
+    printingId <- found
+    card <- Game.cardOfPrinting printingId g
+    Monad.guard (Projection.referenceAdmits (Game.teams g) amount predicate card)
+    Just printingId
+
 -- Alchemy's conjure keyword action: create the given card out of nothing and put
 -- it into the conjuring player's zone.
 --

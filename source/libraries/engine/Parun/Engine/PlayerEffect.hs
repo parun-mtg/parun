@@ -890,8 +890,8 @@ prohibitsPlayingLand pid oid gs =
         -- No CR 601.3a lookahead beside it, where the cast side has one: a land
         -- play announces no choice that could move a characteristic, CR 305.1
         -- being a special action with no proposal to make. A play-as-copy's
-        -- random card is no choice either, and Cast.playedAsCopy asks this of
-        -- each candidate.
+        -- random card is no choice either, and Cast.playAsCopyCandidates asks
+        -- this of each candidate.
         PlayerEffect.CantPlayLands criterion -> matchesObjectFor pid source criterion oid gs
         -- A permission, prohibiting nothing.
         PlayerEffect.PlayAsCopy _ -> False

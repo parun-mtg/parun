@@ -258,6 +258,7 @@ inheritedBookkeeping from =
       Bookkeeping.printingIds = Bookkeeping.printingIds from,
       Bookkeeping.lookedUp = Bookkeeping.lookedUp from,
       Bookkeeping.referenceNames = Bookkeeping.referenceNames from,
+      Bookkeeping.referenceCards = Bookkeeping.referenceCards from,
       Bookkeeping.fellShort = Bookkeeping.fellShort from,
       Bookkeeping.lastChoice = Bookkeeping.nextTimestamp from
     }
@@ -1872,6 +1873,7 @@ funnelBack finalSub parent =
                 Bookkeeping.printingIds = Map.union (Bookkeeping.printingIds (GameState.bookkeeping finalSub)) (Bookkeeping.printingIds (GameState.bookkeeping parent)),
                 Bookkeeping.lookedUp = Set.union (Bookkeeping.lookedUp (GameState.bookkeeping finalSub)) (Bookkeeping.lookedUp (GameState.bookkeeping parent)),
                 Bookkeeping.referenceNames = Map.union (Bookkeeping.referenceNames (GameState.bookkeeping finalSub)) (Bookkeeping.referenceNames (GameState.bookkeeping parent)),
+                Bookkeeping.referenceCards = Map.union (Bookkeeping.referenceCards (GameState.bookkeeping finalSub)) (Bookkeeping.referenceCards (GameState.bookkeeping parent)),
                 Bookkeeping.nextPrintingId = max (Bookkeeping.nextPrintingId (GameState.bookkeeping parent)) (Bookkeeping.nextPrintingId (GameState.bookkeeping finalSub)),
                 Bookkeeping.nextTimestamp = max (Bookkeeping.nextTimestamp (GameState.bookkeeping parent)) (Bookkeeping.nextTimestamp (GameState.bookkeeping finalSub)),
                 -- CR 104.4b: the subgame's events are not a stretch during which the
