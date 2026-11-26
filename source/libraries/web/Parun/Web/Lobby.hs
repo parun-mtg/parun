@@ -215,6 +215,9 @@ data Options = MkOptions
     -- | CR 806.2a: every player's range of influence in a game of three or
     -- more seats, in seats; unlimited where absent (CR 801.1).
     rangeOfInfluence :: Maybe Natural,
+    -- | CR 804.1: whether a game between teams uses the deploy creatures
+    -- option ('deployOffered').
+    deployCreatures :: Bool,
     -- | The minutes each seat a person plays has on its clock
     -- (Parun.Web.Clock), which no rule sets; untimed where absent.
     clock :: Maybe Natural
@@ -224,7 +227,7 @@ data Options = MkOptions
 -- | No option in use: CR 802's attack multiple players, which needs no
 -- seating agreed ('GameSettings.plain').
 noOptions :: Options
-noOptions = MkOptions {variant = MkFreeForAll, ante = False, planechase = False, singlePlanarDeck = False, archenemy = Nothing, attackOption = AttackOption.MultiplePlayers, rangeOfInfluence = Nothing, clock = Nothing}
+noOptions = MkOptions {variant = MkFreeForAll, ante = False, planechase = False, singlePlanarDeck = False, archenemy = Nothing, attackOption = AttackOption.MultiplePlayers, rangeOfInfluence = Nothing, deployCreatures = False, clock = Nothing}
 
 -- | A multiplayer variant a game started here may use (CR 800.2).
 data Variant
@@ -268,6 +271,11 @@ archenemyGame = Maybe.isJust . archenemy . options
 -- chooses one: every variant but Free-for-All and Grand Melee (CR 807.1).
 teamed :: Lobby -> Bool
 teamed lobby = variantOf lobby `notElem` [MkFreeForAll, MkGrandMelee]
+
+-- | Whether the game may choose the deploy creatures option: it is played
+-- between teams, and not as Emperor, which always uses it (CR 804.1).
+deployOffered :: Lobby -> Bool
+deployOffered lobby = teamed lobby && variantOf lobby /= MkEmperor
 
 -- | How many teams a seat may choose among: CR 810.1's two, else as many
 -- as there are seats.
@@ -369,7 +377,8 @@ settings lobby =
       plain =
         GameSettings.plain
           { GameSettings.ante = ante chosen',
-            GameSettings.singlePlanarDeck = planechase chosen' && singlePlanarDeck chosen'
+            GameSettings.singlePlanarDeck = planechase chosen' && singlePlanarDeck chosen',
+            GameSettings.deployCreatures = deployOffered lobby && deployCreatures chosen'
           }
       free =
         plain
@@ -513,6 +522,9 @@ data Event
   | -- | Sets the range of influence to the one whose value is chosen
     -- ('ranges').
     MkRangeOfInfluence
+  | -- | Toggles whether a game between teams uses the deploy creatures
+    -- option (CR 804.1).
+    MkDeployCreatures
   | -- | Sets each seat's time to the one whose value is chosen
     -- (Clock.choices).
     MkClock
@@ -918,6 +930,7 @@ newGameUpdated event typed lobby = case event of
     | otherwise -> lobby
   MkAttackOption -> maybe lobby (\a -> optioned (\o -> o {attackOption = a})) (valued attackOptions)
   MkRangeOfInfluence -> maybe lobby (\r -> optioned (\o -> o {rangeOfInfluence = r})) (valued ranges)
+  MkDeployCreatures -> optioned (\o -> o {deployCreatures = not (deployCreatures o)})
   MkClock -> maybe lobby (\c -> optioned (\o -> o {clock = c})) (valued Clock.choices)
   MkVariant -> maybe lobby (\v -> (optioned (\o -> o {variant = v})) {teams = Map.empty, emperors = Map.empty}) (valued variants)
   MkTeam place
@@ -1025,6 +1038,7 @@ told lobby =
     <> [(Text.pack "Single planar deck", yesNo (singlePlanarDeck chosen')) | planechase chosen']
     <> [(Text.pack "Archenemy", maybe (Text.pack "No") (\place -> Text.pack ("Player " <> show (place + 1))) (archenemy chosen'))]
     <> [(Text.pack "Clock", labelIn Clock.choices (clock chosen'))]
+    <> [(Text.pack "Deploy creatures", yesNo (deployCreatures chosen')) | deployOffered lobby]
     <> ( if chosesAttacks lobby
            then [(Text.pack "Attacks", labelIn attackOptions (attackOption chosen')), (Text.pack "Range of influence", labelIn ranges (rangeOfInfluence chosen'))]
            else []
@@ -1274,8 +1288,10 @@ seatsView lobby =
 -- | The game's options: at three seats or more the variant, but in an
 -- Archenemy game, and in Emperor each team's emperor; ante, Planechase
 -- and, while it is on, the single planar deck, Archenemy and, while it is
--- on, the archenemy's seat, each seat's clock, and where the game chooses
--- them ('chosesAttacks') CR 806.2's attack option and range of influence.
+-- on, the archenemy's seat, each seat's clock, where it may choose it
+-- ('deployOffered') CR 804's deploy creatures option, and where the game
+-- chooses them ('chosesAttacks') CR 806.2's attack option and range of
+-- influence.
 optionsView :: Lobby -> Html.Html Event
 optionsView lobby =
   Element.el "fieldset" ["game-options"] [] $
@@ -1294,6 +1310,7 @@ optionsView lobby =
          | archenemyGame lobby
          ]
       <> [clockMenu lobby]
+      <> [toggle "option-deploy-creatures" MkDeployCreatures (deployCreatures chosen') "Deploy creatures" "Each creature can tap to give itself to a teammate, as a sorcery." | deployOffered lobby]
       <> ( if chosesAttacks lobby
              then
                [ optionMenu "option-attack" MkAttackOption "Attacks" [(value, label, option == attackOption chosen') | (option, (value, label)) <- attackOptions],
