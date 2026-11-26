@@ -29,8 +29,6 @@ import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.CountedAgainst as CountedAgainst
 import qualified Parun.Types.Duration as Duration
-import qualified Parun.Types.EntryR as EntryR
-import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
@@ -47,13 +45,10 @@ import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Power as Power
-import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.Quantity as Quantity
-import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.Subtype as Subtype
-import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Times as Times
 import qualified Parun.Types.Toughness as Toughness
@@ -498,21 +493,3 @@ enchant context slot = do
   Monad.guard (case TargetSlot.pool slot of Pool.CardsInGraveyard _ -> False; _ -> True)
   (one, _) <- Target.described context slot
   [Text.pack "Enchant " <> one]
-
--- | A static ability's replacement effect (CR 614.1): "This land enters
--- tapped." (CR 614.1d), or "... unless [condition]." when it applies only
--- while a condition fails ('Trigger.unless'); "This creature enters
--- prepared." (CR 723.3a). Any other replacement effect, or one with a zone
--- it functions from or a name, is not spelled out here.
-replacement :: Target.Context -> PrintedReplacement.PrintedReplacement card ability effect -> [Text.Text]
-replacement context r = case r of
-  PrintedReplacement.MkPrintedReplacement condition (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.EntersTapState TapState.Tapped))) zones Nothing
-    | Set.null zones -> case condition of
-        Nothing -> [Target.self context <> Text.pack " enters tapped."]
-        Just c -> do
-          holding <- foldMap pure (Trigger.unless c)
-          words' <- Trigger.condition context holding
-          [Target.self context <> Text.pack " enters tapped unless " <> words' <> Text.pack "."]
-  PrintedReplacement.MkPrintedReplacement Nothing (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource EntryRewrite.Prepared)) zones Nothing
-    | Set.null zones -> [Target.self context <> Text.pack " enters prepared."]
-  _ -> []

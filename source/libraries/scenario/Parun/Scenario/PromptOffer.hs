@@ -55,8 +55,8 @@ import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.Visibility as Visibility
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Oracle as Oracle
-import qualified Parun.Oracle.Continuous as Oracle.Continuous
 import qualified Parun.Oracle.Effect as Oracle.Effect
+import qualified Parun.Oracle.Replacement as Oracle.Replacement
 import qualified Parun.Oracle.Target as Oracle.Target
 import qualified Parun.Scenario.Offer as Offer
 import qualified Parun.Scenario.Reply as Reply
@@ -611,7 +611,7 @@ replacementEntry namer gs entry =
   let source = ReplacementEntry.source entry
       self = snapshotName (Projection.project source gs)
       printed = PrintedReplacement.MkPrintedReplacement Nothing (ReplacementEntry.effect entry) Set.empty Nothing
-   in fields (("source", object namer source) : [("text", R.Text text) | text <- take 1 (Oracle.Continuous.replacement (Oracle.contextOf self []) printed)])
+   in fields (("source", object namer source) : [("text", R.Text text) | text <- take 1 (Oracle.Replacement.replacement (Oracle.contextOf self []) printed)])
 
 -- | CR 700.2a: a mode as its Oracle text, as it reads now
 -- (Resolve.resolvingMode) or, for a spell whose modes are not yet chosen, as

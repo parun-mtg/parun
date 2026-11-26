@@ -26,6 +26,7 @@ import qualified Parun.Oracle.Face as Face.Oracle
 import qualified Parun.Oracle.Keyword as Keyword
 import qualified Parun.Oracle.Normalise as Normalise
 import qualified Parun.Oracle.Prose as Prose
+import qualified Parun.Oracle.Replacement as Replacement
 import qualified Parun.Oracle.Target as Target
 import qualified Parun.Oracle.Trigger as Trigger
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
@@ -200,7 +201,7 @@ described face =
         <> each DefiningColors (colorDefining self) (Maybe.maybeToList (Face.characteristicColors face))
         <> grouped Static (filter (`notElem` statics) (Face.staticAbilities face), filter (`notElem` combat) (Face.combatRestrictions face)) joint
         <> each Static (Continuous.static context attached (Face.enchant face)) statics
-        <> each Replacement (Continuous.replacement context) (Face.replacementEffects face)
+        <> each Replacement (Replacement.replacement context) (Face.replacementEffects face)
         <> grouped CombatRestriction combat (Continuous.combatRestrictions context attached (Face.enchant face) combat)
         <> each PlayerRule (Continuous.playerRule context) (Face.playerAbilities face)
         <> grouped Spell (Face.spell face) spell
