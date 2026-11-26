@@ -108,9 +108,9 @@ printedFaces value = do
 
 -- | The card with each face's printed characteristics taken from the record
 -- of the same name ('printedFaces'): mana cost, colour indicator, type line,
--- vanguard modifiers, and a power or toughness printed as a plain number, a star's left as the
--- card has it. mtgish's ASTs are a snapshot that drifts from MTGJSON's
--- current Oracle (#5478). A face no record names is left as it is.
+-- vanguard modifiers, and a power or toughness printed as a plain number, a
+-- star's left as the card has it. mtgish's ASTs are a snapshot that drifts
+-- from MTGJSON's current Oracle (#5478). A face no record names is left as it is.
 reprint :: [(Face.Face Card.Card, Maybe Text.Text, Maybe Text.Text)] -> Card.Card -> Card.Card
 reprint records card = card {Card.faces = fmap (\face -> maybe face (set face) (lookup (Face.name face) byName)) (Card.faces card)}
   where
