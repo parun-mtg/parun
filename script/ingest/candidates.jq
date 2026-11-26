@@ -1,7 +1,8 @@
 # Reduces MTGJSON's AtomicCards.json to what `parun ingest` reads (#9): every
 # single-faced card as a record it may build, and every preparation card (CR
-# 723) as a record of its faces' records, which it leaves out; each with the
-# sets it was printed in for `parun translate --set`; every face's Oracle
+# 723) as a record of its faces' records, which it leaves out, and every
+# vanguard card (CR 313) with its hand and life modifiers; each with the sets
+# it was printed in for `parun translate --set`; every face's Oracle
 # text by card and face name, which both stamp on the cards they write; and
 # every card's legalities by its faces' names, as Parun.Ingest.cardKey joins
 # them, which `parun ingest` writes to data/legalities.json for the pool,
@@ -17,6 +18,8 @@ def printed: {manaCost, colorIndicator, supertypes, types, subtypes, power, toug
     | select(all(.[]; (.isFunny // false) == false))
     | if length == 1 and .[0].layout == "normal" then
         .[0] | {name} + printed + {printings}
+      elif length == 1 and .[0].layout == "vanguard" then
+        .[0] | {name} + printed + {hand, life, printings}
       elif length > 1 and all(.[]; .layout == "prepare") then
         {name: .[0].name, faces: [sort_by(.side)[] | {name: .faceName} + printed], printings: .[0].printings}
       else

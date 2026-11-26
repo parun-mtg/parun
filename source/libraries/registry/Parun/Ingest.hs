@@ -43,6 +43,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TypeLine as TypeLine
+import qualified Parun.Types.Vanguard as Vanguard
 import qualified Text.Read as Read
 
 -- | The card a candidate record means, its Oracle text verbatim (empty where
@@ -59,9 +60,9 @@ candidate value = do
   pure Card.MkCard {Card.synthetic = False, Card.layout = Layout.Normal, Card.faces = keyworded NonEmpty.:| []}
 
 -- | The face a candidate record prints, no rules text read: its name, Oracle
--- text verbatim (empty where MTGJSON has none), mana cost, colour indicator
--- and type line; with its power and toughness as printed, which it leaves
--- off the face.
+-- text verbatim (empty where MTGJSON has none), mana cost, colour indicator,
+-- type line and a vanguard's two modifiers (CR 313.6, CR 313.7); with its
+-- power and toughness as printed, which it leaves off the face.
 printed :: Value.Value -> Either Text.Text (Face.Face Card.Card, Maybe Text.Text, Maybe Text.Text)
 printed value = do
   fields <- Common.asObject value
@@ -82,13 +83,19 @@ printed value = do
   power <- nullable "power"
   toughness <- nullable "toughness"
   text <- fmap (Maybe.fromMaybe Text.empty) (nullable "text")
+  hand <- nullable "hand" >>= traverse modifier
+  life <- nullable "life" >>= traverse modifier
+  vanguard <- case (hand, life) of
+    (Nothing, Nothing) -> Right Nothing
+    (Just h, Just l) -> Right (Just Vanguard.MkVanguard {Vanguard.handModifier = h, Vanguard.lifeModifier = l})
+    _ -> Left (Text.pack "vanguard: one modifier without the other")
   let typeLine =
         TypeLine.MkTypeLine
           { TypeLine.supertypes = Set.fromList (supertypes :: [Supertype.Supertype]),
             TypeLine.types = Set.fromList (types :: [CardType.CardType]),
             TypeLine.subtypes = ListUtils.nubOrd (subtypes :: [Subtype.Subtype])
           }
-  pure (Oracle.Face.bare (CardName.MkCardName name) (Just text) cost (Set.fromList indicator) typeLine Nothing Nothing Map.empty, power, toughness)
+  pure ((Oracle.Face.bare (CardName.MkCardName name) (Just text) cost (Set.fromList indicator) typeLine Nothing Nothing Map.empty) {Face.vanguard = vanguard}, power, toughness)
 
 -- | Each face a record prints ('printed'): those of its @faces@, a card of
 -- more than one face (CR 723's preparation card), or the record's own.
@@ -101,9 +108,9 @@ printedFaces value = do
 
 -- | The card with each face's printed characteristics taken from the record
 -- of the same name ('printedFaces'): mana cost, colour indicator, type line,
--- and a power or toughness printed as a plain number, a star's left as the
--- card has it. mtgish's ASTs are a snapshot that drifts from MTGJSON's
--- current Oracle (#5478). A face no record names is left as it is.
+-- vanguard modifiers, and a power or toughness printed as a plain number, a
+-- star's left as the card has it. mtgish's ASTs are a snapshot that drifts
+-- from MTGJSON's current Oracle (#5478). A face no record names is left as it is.
 reprint :: [(Face.Face Card.Card, Maybe Text.Text, Maybe Text.Text)] -> Card.Card -> Card.Card
 reprint records card = card {Card.faces = fmap (\face -> maybe face (set face) (lookup (Face.name face) byName)) (Card.faces card)}
   where
@@ -114,6 +121,7 @@ reprint records card = card {Card.faces = fmap (\face -> maybe face (set face) (
         { Face.manaCost = Face.manaCost record,
           Face.colorIndicator = Face.colorIndicator record,
           Face.typeLine = Face.typeLine record,
+          Face.vanguard = Face.vanguard record,
           Face.power = number Power.MkPower (Face.power face) printedPower,
           Face.toughness = number Toughness.MkToughness (Face.toughness face) printedToughness
         }
@@ -216,6 +224,11 @@ literal t =
   if not (Text.null t) && Text.all Char.isDigit t
     then maybe (Left (Text.pack "power/toughness: " <> t)) (Right . Quantity.Literal) (Read.readMaybe (Text.unpack t))
     else Left (Text.pack "power/toughness: " <> t)
+
+-- | A vanguard modifier as MTGJSON prints it, signed (CR 313.6, CR 313.7):
+-- @+3@, @-8@ or @0@.
+modifier :: Text.Text -> Either Text.Text Integer
+modifier t = maybe (Left (Text.pack "modifier: " <> t)) Right (Read.readMaybe (Text.unpack (Maybe.fromMaybe t (Text.stripPrefix (Text.pack "+") t))))
 
 -- | A mana cost in MTGJSON's spelling, "{2}{W}{W}" (CR 202.1, CR 107.4). The
 -- pool writes {0} as a cost of no symbols, which is still a cost, unlike a
