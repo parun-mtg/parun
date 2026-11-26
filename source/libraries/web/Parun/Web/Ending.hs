@@ -91,16 +91,18 @@ verdictOf told outcome = case outcome of
 -- particular, as seat `leaver` left it before it was over, for the reason
 -- `why` gives (a clock run out, Parun.Web.Clock; a concession that decides
 -- the game, Parun.Web.Question.decisive): lost for that seat, won for the
--- other of two, and stopped for the rest; and what is said of it.
+-- other of two, and stopped for the rest; and what is said of it, a won or
+-- lost game's result first, as `said` holds it.
 leftEarly :: Natural -> Text.Text -> PlayerId.PlayerId -> Maybe PlayerId.PlayerId -> (Verdict, [Text.Text])
 leftEarly count why leaver told =
   let others = [p | n <- [1 .. count], let p = Command.idOf n, p /= leaver]
       left = Wording.player leaver <> Text.pack " " <> why <> Text.pack "."
-   in case (others, told) of
-        (_, Just r) | r == leaver -> (MkLost, [if count == 2 then left else Text.pack "The game stopped: " <> left])
-        ([winner], Nothing) -> (MkWonBy winner, [left])
-        ([_], Just _) -> (MkWon, [left])
-        _ -> (MkStopped, [Text.pack "The game stopped: " <> left])
+      stopped = Text.pack "The game stopped: " <> left
+   in case others of
+        [winner] -> (maybe (MkWonBy winner) (\r -> if r == winner then MkWon else MkLost) told, [Wording.result told (Result.Won winner), left])
+        _
+          | told == Just leaver -> (MkLost, [Wording.acts told leaver "loses" <> Text.pack ".", stopped])
+          | otherwise -> (MkStopped, [stopped])
 
 -- | How a game the page played came out.
 data Played
