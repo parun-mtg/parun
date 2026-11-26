@@ -3352,7 +3352,8 @@ details.pile[open] {
   color: var(--on-good);
 }
 
-.badge.marked {
+.badge.marked,
+.badge.chosen-value {
   background: color-mix(in srgb, var(--band-multi) 28%, var(--surface));
   border-color: var(--band-multi);
   color: var(--text);

@@ -1491,6 +1491,33 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
     Spec.assertEqWith s "alice" (copies S.alice) [(planet, ["Copy"])]
     Spec.assertEqWith s "bob" (copies S.bob) [(planet, ["Copy"])]
 
+  Spec.it s "CR 607.2d a permanent's choice shows on its tile and sheet to every seat" $ do
+    -- Each stop follows the choice's answer.
+    let cases :: [(String, Natural, String, String, String)]
+        cases =
+          [ ("heralds-horn-discounts-and-finds-creatures-of-the-chosen-type", 4, "Herald's Horn", "Goblin", "Chosen type: Goblin"),
+            ("voice-of-all-has-protection-from-the-chosen-color", 3, "Voice of All", "Red", "Chosen color: Red"),
+            ("pithing-needle-stops-the-named-cards-non-mana-abilities", 3, "Pithing Needle", "Named Prodigal Sorcerer", "Named Prodigal Sorcerer"),
+            ("entry-replacement/cr-120-1-the-doll-s-own-t-ability-feeds-its-own-trigger", 3, "Stuffy Doll", "Player 2", "Chosen player: Player 2"),
+            ("arachne-psionic-weaver-makes-every-players-spells-of-a-noncreature-chosen-type-cost-one-more", 4, "Arachne, Psionic Weaver", "Artifact", "Chosen card type: Artifact"),
+            ("talion-the-kindly-lord-drains-an-opponent-casting-the-chosen-mana-value-power-or-toughness", 3, "Talion, the Kindly Lord", "4", "Chosen number: 4")
+          ]
+        badge = Text.pack "class=\"badge state chosen-value\""
+    Monad.forM_ cases $ \(scenario, at, name, label, tip) -> do
+      stop <- replayed s registry scenario at
+      Monad.forM_ [S.alice, S.bob] $ \seat -> do
+        let board = PlayerView.viewFor seat (Stop.state stop)
+            cue = Card.MkCue [] () Nothing
+            (picked, others) = List.partition (\o -> Wording.nameOf board o == Text.pack name) (PlayerView.Type.battlefield board)
+        case picked of
+          [o] -> do
+            let tile = Html.toText (Card.tile board cue o)
+                sheet = Html.toText (Card.sheet Map.empty board o (Card.MkReading (ObjectView.object o) [] True) [] ())
+            Spec.assertBool s (Text.isInfixOf (badge <> Text.pack (" title=\"" <> tip <> "\">" <> label <> "</span>")) tile) (name <> "'s tile: " <> Text.unpack tile)
+            Spec.assertBool s (Text.isInfixOf (Text.pack (tip <> "</p>")) sheet) (name <> "'s sheet: " <> Text.unpack sheet)
+            Spec.assertBool s (not (any (Text.isInfixOf badge . Html.toText . Card.tile board cue) others)) "no badge on a permanent with no choice"
+          found -> Spec.assertFailure s ("expected one " <> name <> ": " <> show (length found))
+
   Spec.it s "CR 709.3b a Room spell's sheet checks the half cast" $ do
     -- Entry 1 has Bottomless Pool cast, its half alone on the stack.
     stop <- replayed s registry "bottomless-pool-returns-up-to-one-creature-to-its-owners-hand-and-locker-room-draws-on-combat" 1
