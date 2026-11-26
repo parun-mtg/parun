@@ -3,6 +3,7 @@ module Parun.Types.Search where
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.Filter as Filter
@@ -174,11 +175,15 @@ data Search = MkSearch
     -- already says. Only the library is narrowed, as
     -- Parun.Types.PlayerEffect.SearchesTopOfLibraries narrows it from outside.
     top :: Maybe Quantity.Quantity,
-    -- | Whether the found cards are chosen at random from the matches rather
-    -- than by the searcher -- Enigma Sphinx Avatar's "a colored artifact card
-    -- chosen at random" -- still a search (CR 701.23a), so what replaces or
-    -- forbids one (Aven Mindcensor, Stranglehold) reaches it. Nobody chooses,
-    -- so CR 701.23b's permission to find fewer is nobody's to take.
-    atRandom :: Bool
+    -- | Who picks the found cards among the matches: the searcher, or chance,
+    -- for Enigma Sphinx Avatar's "a colored artifact card chosen at random",
+    -- still a search (CR 701.23a), so what replaces or forbids one (Aven
+    -- Mindcensor, Stranglehold) reaches it. At random, CR 701.23b's permission
+    -- to find fewer is still the searcher's: they say how many, chance says
+    -- which.
+    --
+    -- Unprinted: a random find beside descriptions, differentIn, exactly or
+    -- outsideTheGame. Parun.Codec.Search refuses it.
+    selection :: CardSelection.CardSelection
   }
   deriving (Eq, Ord, Show)

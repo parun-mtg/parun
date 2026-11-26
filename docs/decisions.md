@@ -98,6 +98,25 @@ Entries are ordered by the first rule each cites.
   and `cr-509-1a-false-orders-never-has-a-tapped-target-block.json`.
 - **Issue**: #5005.
 
+## Which basic land Dakkon Blackblade Avatar draws when some can't be played
+
+- **Question**: Dakkon Blackblade Avatar plays a colored card "as a copy of a
+  basic land card chosen at random that can produce mana of one of the card's
+  colors". Where an effect stops some of those lands and not others (Conjurer's
+  Ban naming Plains, the card a Lightning Helix), does the draw range over
+  every such basic land card, the play refused when it lands on one that can't
+  be played, or only over those that can?
+- **Rules**: CR 101.2, 305.1, 707.2, 734.1; the card has no ruling; CR of
+  2026-11-06.
+- **Decision**: Only over those that can, each asked as the copy it would
+  make, timing included; with none, no play is offered.
+- **Rejected**: Drawing among all and refusing: CR 734.1 reverses the refused
+  play, and taking it again draws anew, which ends where the narrowed draw does
+  by a longer road.
+- **Site**: `Parun.Engine.Cast.playAsCopyCandidates`, proved by the scenario
+  `dakkon-blackblade-avatar-draws-only-among-basic-lands-that-can-be-played`.
+- **Issue**: #9910.
+
 ## Where a player's event team comes from
 
 - **Question**: Now THIS Is Aether Racing does one thing for a player on Team
@@ -1966,19 +1985,6 @@ Entries are ordered by the first rule each cites.
   and "CR 807.5b a player with priority for several stacks chooses one".
 - **Issue**: #6117.
 
-## Which Grand Melee turn is the first turn of the game
-
-- **Question**: CR 807.4b starts every marker's turn at once. Is each of those
-  "the first turn of the game" (Necropotence Avatar)?
-- **Rules**: CR 103.8, 807.4b; CR of 2026-11-06.
-- **Decision**: Only the starting player's, the turn numbered 1.
-- **Rejected**: Every opening marker's turn. CR 103.8 names the starting
-  player's turn as the one the game begins with; the others are their
-  takers' first turns, which `Quantity.TurnsBegun` already reads.
-- **Site**: `Parun.Engine.Turn.isFirstTurnOfGame`. `Parun.GrandMeleeSpec`'s
-  "CR 103.8 only the starting player's opening turn is the game's first".
-- **Issue**: #9846.
-
 ## Which turn a Grand Melee read of the active player means
 
 - **Question**: CR 102.1's active player is "the player whose turn it is",
@@ -3471,24 +3477,6 @@ Entries are ordered by the first rule each cites.
   and its `-unrestricted` control.
 - **Issue**: #9806.
 
-## Whether a search for a card chosen at random may find nothing
-
-- **Question**: Enigma Sphinx Avatar searches a library "for a colored
-  artifact card chosen at random". CR 701.23b lets a searcher of a hidden zone
-  for a stated quality fail to find. May the searcher decline the find, so a
-  matching card stays where it was rather than being drawn?
-- **Rules**: CR 701.23a, 701.23b, 609.3; the card has no ruling; CR of
-  2026-11-06.
-- **Decision**: No: randomness draws among every match, up to the count, and
-  nobody is asked. The card names who picks the card, and it is not the
-  searcher.
-- **Rejected**: Asking the searcher whether to find before the draw: CR
-  701.23b's permission is a choice of WHICH cards to find, the choice the card
-  hands to randomness.
-- **Site**: `Parun.Engine.Resolve.Arms.Damage.search`'s `Search.atRandom`
-  draw, proved by the scenarios `enigma-sphinx-avatar-*`.
-- **Issue**: none.
-
 ## When a vanguard's game-start actions are taken
 
 - **Question**: Elvish Champion Avatar's "You begin the game with a 1/1 green
@@ -3510,21 +3498,21 @@ Entries are ordered by the first rule each cites.
   vanguard's game-start Elf enters after the opening-hand Leylines".
 - **Issue**: none.
 
-## Which basic land Dakkon Blackblade Avatar draws when some can't be played
+## Whether a vanguard's draw prohibition reaches the opening hand
 
-- **Question**: Dakkon Blackblade Avatar plays a colored card "as a copy of a
-  basic land card chosen at random that can produce mana of one of the card's
-  colors". Where an effect stops some of those lands and not others (Conjurer's
-  Ban naming Plains, the card a Lightning Helix), does the draw range over
-  every such basic land card, the play refused when it lands on one that can't
-  be played, or only over those that can?
-- **Rules**: CR 101.2, 305.1, 707.2, 734.1; the card has no ruling; CR of
-  2026-11-06.
-- **Decision**: Only over those that can, each asked as the copy it would
-  make, timing included; with none, no play is offered.
-- **Rejected**: Drawing among all and refusing: CR 734.1 reverses the refused
-  play, and taking it again draws anew, which ends where the narrowed draw does
-  by a longer road.
-- **Site**: `Parun.Engine.Cast.playAsCopyCandidates`, proved by the scenario
-  `dakkon-blackblade-avatar-draws-only-among-basic-lands-that-can-be-played`.
-- **Issue**: #9910.
+- **Question**: Maralen of the Mornsong Avatar's "You can't draw cards"
+  functions from the command zone (CR 902.7), where the card is before the
+  game begins (CR 902.3). Does it stop CR 103.5's opening-hand draws and a
+  mulligan's redraw, leaving its owner no hand?
+- **Rules**: CR 103.5, 121.2b, 313.4, 902.3, 902.5, 902.7; the card has no
+  ruling; CR of 2026-11-06.
+- **Decision**: No: an opening hand's draws pass no draw prohibition, and the
+  owner draws CR 902.5's starting hand. Every later draw is barred.
+- **Rejected**: Barring them: the printed hand modifier (CR 313.6) would then
+  size nothing, and the card's only cards would come from its draw-step
+  trigger.
+- **Site**: `Parun.Engine.Event.drawCardSpentReturning`'s
+  `DrawKind.OpeningHand`; `Parun.VanguardSpec`'s "a vanguard's
+  at-the-beginning-of-the-game life payment sets how many cards Maralen looks
+  at".
+- **Issue**: none.

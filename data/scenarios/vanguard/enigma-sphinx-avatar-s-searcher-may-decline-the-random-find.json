@@ -1,0 +1,148 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "command": [
+          {
+            "card": "Enigma Sphinx Avatar",
+            "label": "sphinx"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Esper Cormorants",
+            "label": "cast"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "top"
+          },
+          {
+            "card": "Tidehollow Strix",
+            "label": "strix"
+          },
+          {
+            "card": "Island",
+            "label": "last"
+          }
+        ],
+        "manaPool": "WUUU",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Ob Nixilis, Unshackled",
+            "label": "ob"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Enigma Sphinx Avatar's searcher may find no card, leaving the matching card where it was, and the search is still one Ob Nixilis, Unshackled sees",
+  "note": "CR 701.23b: the searcher of a hidden zone for a stated quality need not find a match, and the card hands only which card to chance. Alice finds none, so randomness is never asked and nothing is offered; the Strix stays second from the top. Ob Nixilis's trigger costs her 10 life: a search that finds nothing is still a search.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$cast"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $sphinx",
+            "Esper Cormorants"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseNumber",
+          "with": 0
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $ob",
+            "Esper Cormorants"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 10,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$top",
+            "$strix",
+            "$last"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

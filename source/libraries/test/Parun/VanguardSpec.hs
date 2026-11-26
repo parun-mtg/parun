@@ -14,6 +14,7 @@
 -- no scenario board is, so it is here.
 module Parun.VanguardSpec where
 
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -50,6 +51,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.Looked as Looked
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MulliganOffer as MulliganOffer
 import qualified Parun.Types.Object as Object
@@ -376,6 +378,32 @@ spec s registry = Spec.describe s "Vanguard" $ do
     Spec.assertEqWith s "a 1/1 green Elf she controls" (fmap (\oid -> (Projection.controllerOf oid begun, Projection.powerOf oid begun, Projection.toughnessOf oid begun, Projection.colorsOf oid begun, Set.member Subtype.Elf (Projection.subtypesOf oid begun))) (tokens S.alice)) [(Just S.alice, Just 1, Just 1, Set.singleton Color.Green, True)]
     Spec.assertEqWith s "bob begins with none" (tokens S.bob) []
     Spec.assertEqWith s "CR 902.4: alice's life is twenty less five" (S.lifeOf S.alice begun) (Just 15)
+
+  -- Maralen's game-start payment is remembered on the vanguard (CR 607.2d) and
+  -- read by its draw-step trigger two turns later: on alice's third turn she
+  -- looks at as many cards as she paid life and puts one into her hand, and
+  -- draws none (CR 504.1 under "You can't draw cards"). The leg paying 0 looks
+  -- at nothing and so gains no card; bob, under no vanguard, draws as usual.
+  Spec.it s "a vanguard's at-the-beginning-of-the-game life payment sets how many cards Maralen looks at" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    maralen <- S.printingOf s registry "Maralen of the Mornsong Avatar"
+    let paying :: Natural -> Prompt.Prompt r -> r
+        paying n p = case p of
+          Prompt.ChooseNumber _ pid _ _ _ _ | pid == S.alice -> n
+          _ -> keepAnswer p
+        drawn gs = TurnRegisters.turnNumber (GameState.turn gs) == 3 && TurnRegisters.phase (GameState.turn gs) == Phase.PrecombatMain
+        begunPaying n = S.openingUntil drawn 1 (paying n) ((S.alice, deckOf mountain (Just maralen)) NonEmpty.:| [(S.bob, deckOf mountain Nothing)])
+        five = begunPaying 5
+        none = begunPaying 0
+        looked gs = length [() | GameEvent.Looked l <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs))), Looked.player l == S.alice]
+        handOf pid gs = length (Game.zoneMembers Zone.Hand pid gs)
+    Spec.assertEqWith s "CR 902.4's seventeen, less the five she paid" (S.lifeOf S.alice five) (Just 12)
+    Spec.assertEqWith s "her third turn's draw step looked at five cards" (looked five) 5
+    Spec.assertEqWith s "and put one of them into her hand, which paying nothing does not" (handOf S.alice five) (handOf S.alice none + 1)
+    Spec.assertEqWith s "paying nothing keeps seventeen life" (S.lifeOf S.alice none) (Just 17)
+    Spec.assertEqWith s "and looks at no card" (looked none) 0
+    Spec.assertEqWith s "so she drew no card on that turn, holding the seven she kept" (handOf S.alice none) 7
+    Spec.assertEqWith s "bob, under no vanguard, drew on his turn" (length (Game.zoneMembers Zone.Library S.bob none)) 22
 
   -- docs/decisions.md, "When a vanguard's game-start actions are taken": after
   -- CR 103.6's opening-hand actions, so each Leyline of Vitality alice began the

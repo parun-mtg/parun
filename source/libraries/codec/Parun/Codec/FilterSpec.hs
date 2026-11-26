@@ -128,6 +128,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       s
       (Codec.encode codec (Filter.HasKeywordFamily KeywordFamily.Toxic) /= Codec.encode codec (Filter.HasKeyword (Keyword.Toxic 2)))
       "the toxic family filter is not the toxic 2 filter"
+  Spec.it s "HasProtectionFrom" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.HasProtectionFrom Color.Red)
+      " {\"type\":\"HasProtectionFrom\",\"value\":\"Red\"} "
   Spec.it s "Shares Sector Source" $
     Common.assertCodec
       s

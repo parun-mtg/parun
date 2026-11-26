@@ -115,6 +115,8 @@ data Filter keyword
     -- HasKeyword above rather than a widening of it, and answered off the
     -- projection for that atom's reason.
     HasKeywordFamily KeywordFamily.KeywordFamily
+  | -- | CR 702.16a: the object has protection from this colour (Eight-and-a-Half-Tails Avatar).
+    HasProtectionFrom Color.Color
   | -- | CR 208.1 / 202.3: the candidate's measure relates thus to the operand;
     -- see Parun.Engine.Filter.matches for an absent number.
     Measures Measures.Measures
@@ -695,6 +697,11 @@ data Filter keyword
     -- Avatar's "fewer than X"). Uncharacteristic: CR 109.3's list has no
     -- counters in it, and the P/T a +1/+1 counter grants is CR 613.4c's, applied
     -- over the top of this.
+    --
+    -- Unprinted: an operand other than Literal or EnclosingAmount; a
+    -- Measure-taking one compares the count against that Measure, never
+    -- another object's counters. Parun.FilterPositionLintSpec's "no card writes
+    -- HasCounters against a measure" keeps it out of card data.
     HasCounters Comparison.Comparison Operand.Operand (CounterKind.CounterKind keyword)
   | -- | CR 122.1 again, kind-agnostic: does the CANDIDATE have one or more
     -- counters on it of ANY kind? Not spellable as an Or over the kinds, CR

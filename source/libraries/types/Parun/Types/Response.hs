@@ -275,7 +275,7 @@ data Response
     -- object choices above.
     ChoseVote (Maybe (BallotChoice.BallotChoice ObjectId.ObjectId))
   | -- | CR 107.14: how much {E} a player chose to pay to an
-    -- Effect.PayAnyEnergy.
+    -- energy Effect.PayAny.
     --
     -- Its own constructor and not ChoseX below, though both carry one Natural:
     -- that one is CR 601.2b's announcement, made while CASTING, and this one is

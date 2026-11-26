@@ -1,12 +1,15 @@
 module Parun.Codec.SearchSpec where
 
+import qualified Data.Either as Either
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.Search as Search
+import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DifferentIn as DifferentIn
@@ -25,7 +28,7 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
   -- CONTROLLER looks and the TARGET owns the library, so the two PlayerRefs
   -- differ. Every other producer in the pool says the same ref twice, and a
   -- codec that swapped them would round-trip those unnoticed.
-  Spec.it s "MkSearch, every key" $
+  Spec.it s "MkSearch, every key but selection" $
     Common.assertCodec
       s
       Search.codec
@@ -48,16 +51,16 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.exactly = True,
             Search.andOr = True,
             Search.top = Just (Quantity.Literal 3),
-            Search.atRandom = True
+            Search.selection = CardSelection.ByChoice
           }
       )
-      " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"InSlot\",\"value\":\"player\"},\"zones\":[\"Library\",\"Graveyard\"],\"outsideTheGame\":true,\"andOr\":true,\"quantity\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"descriptions\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HasCardType\",\"value\":\"Artifact\"}],\"upTo\":true,\"destination\":\"BattlefieldTapped\",\"counters\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"count\":{\"type\":\"Literal\",\"value\":2}}],\"slot\":\"found\",\"handSlot\":\"hand\",\"librarySlot\":\"library\",\"differentIn\":[\"Names\",\"Powers\"],\"exactly\":true,\"top\":{\"type\":\"Literal\",\"value\":3},\"atRandom\":true} "
+      " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"InSlot\",\"value\":\"player\"},\"zones\":[\"Library\",\"Graveyard\"],\"outsideTheGame\":true,\"andOr\":true,\"quantity\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"descriptions\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HasCardType\",\"value\":\"Artifact\"}],\"upTo\":true,\"destination\":\"BattlefieldTapped\",\"counters\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"count\":{\"type\":\"Literal\",\"value\":2}}],\"slot\":\"found\",\"handSlot\":\"hand\",\"librarySlot\":\"library\",\"differentIn\":[\"Names\",\"Powers\"],\"exactly\":true,\"top\":{\"type\":\"Literal\",\"value\":3}} "
   -- The other reading of the same count: no "upTo" key means the quantity is a
   -- quota. Paired with the case above so each key's absence is asserted, not
   -- just its presence -- a required key would have made every card file
   -- rewrite. "zones" is the same shape: absent means the library alone, which is
   -- what every card file written before Delivery Moogle says.
-  Spec.it s "an absent upTo, zones, outsideTheGame, andOr, descriptions, counters, differentIn, exactly and atRandom take their defaults and are not written back" $
+  Spec.it s "an absent upTo, zones, outsideTheGame, andOr, descriptions, counters, differentIn, exactly and selection take their defaults and are not written back" $
     Common.assertCodec
       s
       Search.codec
@@ -80,7 +83,7 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.exactly = False,
             Search.andOr = False,
             Search.top = Nothing,
-            Search.atRandom = False
+            Search.selection = CardSelection.ByChoice
           }
       )
       " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"destination\":\"BattlefieldTapped\"} "
@@ -111,8 +114,42 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.exactly = False,
             Search.andOr = False,
             Search.top = Nothing,
-            Search.atRandom = False
+            Search.selection = CardSelection.ByChoice
           }
       )
       " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":null,\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"destination\":\"Exile\"} "
+  -- Enigma Sphinx Avatar's "chosen at random", the one non-default selection.
+  Spec.it s "a random selection round-trips" $
+    Common.assertCodec
+      s
+      Search.codec
+      ( Search.MkSearch
+          { Search.searcher = PlayerRef.Relative PlayerRelation.You,
+            Search.owner = PlayerRef.Relative PlayerRelation.You,
+            Search.zones = Set.singleton Zone.Library,
+            Search.outsideTheGame = False,
+            Search.quantity = Just (Quantity.Literal 1),
+            Search.filter = Filter.HasCardType CardType.Artifact,
+            Search.descriptions = Seq.empty,
+            Search.upTo = False,
+            Search.destination = SearchDestination.Stay,
+            Search.counters = Map.empty,
+            Search.subject = Nothing,
+            Search.slot = Nothing,
+            Search.handSlot = Nothing,
+            Search.librarySlot = Nothing,
+            Search.differentIn = Set.empty,
+            Search.exactly = False,
+            Search.andOr = False,
+            Search.top = Nothing,
+            Search.selection = CardSelection.AtRandom
+          }
+      )
+      " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Artifact\"},\"destination\":\"Stay\",\"selection\":\"AtRandom\"} "
+  Spec.it s "rejects a random find beside descriptions, differentIn, exactly or outsideTheGame" $
+    Spec.assertEqWith
+      s
+      "each doctored search is refused"
+      (fmap (\extra -> Either.isLeft (Codec.decode Search.codec =<< Common.parse (Text.pack ("{\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Artifact\"},\"destination\":\"Stay\",\"selection\":\"AtRandom\"," <> extra <> "}")))) ["\"descriptions\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"}]", "\"differentIn\":[\"Names\"]", "\"exactly\":true", "\"outsideTheGame\":true"])
+      [True, True, True, True]
   Spec.it s "has a schema" $ Common.assertHasSchema s Search.codec

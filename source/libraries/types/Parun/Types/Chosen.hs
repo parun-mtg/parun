@@ -30,7 +30,7 @@ data Chosen a where
   Names :: Chosen (Map.Map PlayerId.PlayerId (Set.Set CardName.CardName))
   -- | CR 614.1c / 702.174a: the chosen players, by choice (Object.chosenPlayers).
   Players :: Chosen (Map.Map PlayerChoice.PlayerChoice PlayerId.PlayerId)
-  -- | CR 607.2d / 607.2g: the last chosen number, or the life paid as it entered (Object.chosenNumber).
+  -- | CR 607.2d / 607.2g: the last chosen number, or the life paid as it entered or with it (Object.chosenNumber).
   Number :: Chosen Natural.Natural
   -- | CR 607.2d: the last chosen objects (Object.chosenObjects).
   Objects :: Chosen (Set.Set ObjectId.ObjectId)

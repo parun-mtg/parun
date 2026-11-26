@@ -37,6 +37,10 @@
             "label": "master"
           },
           {
+            "card": "Architects of Will",
+            "label": "architects"
+          },
+          {
             "card": "Enigma Sphinx",
             "label": "big"
           },
@@ -63,7 +67,7 @@
     "step": "PrecombatMain"
   },
   "description": "Enigma Sphinx Avatar draws a colored artifact card cheaper than the spell from its owner's library at random, and its owner plays it free",
-  "note": "Paired with enigma-sphinx-avatar-puts-the-unplayed-find-on-the-bottom; the runs differ only in the answer to the offer. Randomness is asked among the Strix and the Master alone: the colorless Ornithopter, the costlier Enigma Sphinx and the nonartifact Bears are refused. The pool pays for the cast Cormorants only, so the Strix is cast free. Nothing is shuffled (an unscheduled shuffle would fail the run).",
+  "note": "Paired with enigma-sphinx-avatar-puts-the-unplayed-find-on-the-bottom; the runs differ only in the answer to the offer. Alice finds one card; randomness is then asked among the Strix and the Master alone: the colorless Ornithopter, the costlier Enigma Sphinx, the Architects of Will at the Cormorants' own mana value and the nonartifact Bears are refused. The pool pays for the cast Cormorants only, so the Strix is cast free. Nothing is shuffled (an unscheduled shuffle would fail the run).",
   "timeline": [
     {
       "do": {
@@ -96,6 +100,17 @@
       "turn": 1
     },
     {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseNumber",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -123,6 +138,17 @@
         "Answer": {
           "prompt": "RandomObject",
           "with": "$bears"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "RandomObject",
+          "with": "$architects"
         }
       },
       "step": "PrecombatMain",
@@ -191,6 +217,7 @@
             "$bears",
             "$thopter",
             "$master",
+            "$architects",
             "$big",
             "$last"
           ],

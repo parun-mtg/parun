@@ -274,7 +274,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   Effect.MoveCounters {} -> Set.empty
   Effect.GainPlayerCounters {} -> Set.empty
   Effect.RemovePlayerCounters {} -> Set.empty
-  Effect.PayAnyEnergy _ -> Set.empty
+  Effect.PayAny _ -> Set.empty
   Effect.ChooseNumber _ -> Set.empty
   Effect.BindAmount _ -> Set.empty
   Effect.BindPlayers _ -> Set.empty

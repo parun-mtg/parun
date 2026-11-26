@@ -8823,7 +8823,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
 -- player, through Game.removePlayerCounters. Every caller has already measured
 -- against Game.energyOf, and the floor keeps this total anyway.
 --
--- The one writer, so Parun.Engine.Resolve's Effect.PayAnyEnergy spends through
+-- The one writer, so Parun.Engine.Resolve's Effect.PayAny spends through
 -- exactly the same edit CostComponent.PayEnergy does.
 spendEnergy :: PlayerId -> Natural -> Game ()
 spendEnergy pid n = State.modify' (snd . Game.removePlayerCounters PlayerCounterKind.Energy pid n)

@@ -100,6 +100,7 @@ import qualified Parun.Codec.NoteKind as NoteKind
 import qualified Parun.Codec.ObjectRef as ObjectRef
 import qualified Parun.Codec.OfferCast as OfferCast
 import qualified Parun.Codec.OfferNamedCopy as OfferNamedCopy
+import qualified Parun.Codec.PayAny as PayAny
 import qualified Parun.Codec.PermanentActed as PermanentActed
 import qualified Parun.Codec.Phase as Phase
 import qualified Parun.Codec.PhaseOut as PhaseOut
@@ -276,7 +277,7 @@ codec cardCodec abilityCodec =
           Arm.payload "RemoveCountersAmong" RemoveCountersAmong.codec Effect.RemoveCountersAmong (\x -> case x of Effect.RemoveCountersAmong y -> Just y; _ -> Nothing),
           Arm.payload "GainPlayerCounters" PlayerCounters.codec Effect.GainPlayerCounters (\x -> case x of Effect.GainPlayerCounters y -> Just y; _ -> Nothing),
           Arm.payload "RemovePlayerCounters" RemovePlayerCounters.codec Effect.RemovePlayerCounters (\x -> case x of Effect.RemovePlayerCounters y -> Just y; _ -> Nothing),
-          Arm.payload "PayAnyEnergy" SlotName.codec Effect.PayAnyEnergy (\x -> case x of Effect.PayAnyEnergy y -> Just y; _ -> Nothing),
+          Arm.payload "PayAny" PayAny.codec Effect.PayAny (\x -> case x of Effect.PayAny y -> Just y; _ -> Nothing),
           Arm.payload "ChooseNumber" ChooseNumber.codec Effect.ChooseNumber (\x -> case x of Effect.ChooseNumber y -> Just y; _ -> Nothing),
           Arm.payload "BindAmount" BindAmount.codec Effect.BindAmount (\x -> case x of Effect.BindAmount y -> Just y; _ -> Nothing),
           Arm.payload "BindPlayers" BindPlayers.codec Effect.BindPlayers (\x -> case x of Effect.BindPlayers y -> Just y; _ -> Nothing),
@@ -474,7 +475,7 @@ tagOf x = case x of
   Effect.RemoveCountersAmong {} -> "RemoveCountersAmong"
   Effect.GainPlayerCounters {} -> "GainPlayerCounters"
   Effect.RemovePlayerCounters {} -> "RemovePlayerCounters"
-  Effect.PayAnyEnergy {} -> "PayAnyEnergy"
+  Effect.PayAny {} -> "PayAny"
   Effect.ChooseNumber {} -> "ChooseNumber"
   Effect.BindAmount {} -> "BindAmount"
   Effect.BindPlayers {} -> "BindPlayers"

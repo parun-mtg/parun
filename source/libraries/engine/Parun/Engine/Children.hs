@@ -370,6 +370,7 @@ import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.OrTapped as OrTapped
 import qualified Parun.Types.PaidExpiry as PaidExpiry
+import qualified Parun.Types.PayAny as PayAny
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
@@ -606,6 +607,7 @@ filterChildren children predicate = case predicate of
   Filter.NameWordsAtLeast _ -> pure predicate
   Filter.HasKeyword k -> fmap Filter.HasKeyword (keyword children k)
   Filter.HasKeywordFamily _ -> pure predicate
+  Filter.HasProtectionFrom _ -> pure predicate
   Filter.Measures measures -> fmap Filter.Measures (measuresChildren children measures)
   Filter.ManaValueParity _ -> pure predicate
   Filter.ManaCostRepeatsSymbol -> pure predicate
@@ -1091,7 +1093,7 @@ effectChildren c effect = case effect of
   Effect.AddMana addition -> fmap Effect.AddMana (onManaAddition c addition)
   Effect.ActivateManaAbilities (ActivateManaAbilities.MkActivateManaAbilities who filter_) -> fmap Effect.ActivateManaAbilities (ActivateManaAbilities.MkActivateManaAbilities <$> onPlayer c who <*> onFilter c filter_)
   Effect.MoveMana (MoveMana.MkMoveMana from to) -> fmap Effect.MoveMana (MoveMana.MkMoveMana <$> onPlayer c from <*> traverse (onPlayer c) to)
-  Effect.Search (Search.MkSearch searcher owner zones outside quantity filter_ descriptions upTo destination counters subject named handSlot librarySlot differentIn exactly andOr top atRandom) ->
+  Effect.Search (Search.MkSearch searcher owner zones outside quantity filter_ descriptions upTo destination counters subject named handSlot librarySlot differentIn exactly andOr top selection) ->
     fmap
       Effect.Search
       ( Search.MkSearch
@@ -1113,7 +1115,7 @@ effectChildren c effect = case effect of
           <*> pure exactly
           <*> pure andOr
           <*> traverse (onQuantity c) top
-          <*> pure atRandom
+          <*> pure selection
       )
   Effect.ExileAllGraveyards -> pure effect
   Effect.RestartGame exempt -> fmap Effect.RestartGame (traverse (onObjectRef c) exempt)
@@ -1256,7 +1258,7 @@ effectChildren c effect = case effect of
     fmap Effect.GainPlayerCounters (PlayerCounters.MkPlayerCounters <$> onPlayer c who <*> pure kind <*> onQuantity c quantity)
   Effect.RemovePlayerCounters (RemovePlayerCounters.MkRemovePlayerCounters who kind quantity tally) ->
     fmap Effect.RemovePlayerCounters (RemovePlayerCounters.MkRemovePlayerCounters <$> onPlayer c who <*> pure kind <*> onQuantity c quantity <*> traverse (onSlot c) tally)
-  Effect.PayAnyEnergy named -> fmap Effect.PayAnyEnergy (onSlot c named)
+  Effect.PayAny (PayAny.MkPayAny resource named linked) -> fmap (\s -> Effect.PayAny (PayAny.MkPayAny resource s linked)) (onSlot c named)
   Effect.ChooseNumber (ChooseNumber.MkChooseNumber named upTo chooser selection) ->
     fmap Effect.ChooseNumber (ChooseNumber.MkChooseNumber <$> onSlot c named <*> traverse (onQuantity c) upTo <*> onPlayer c chooser <*> pure selection)
   Effect.BindAmount (BindAmount.MkBindAmount quantity named) -> fmap Effect.BindAmount (BindAmount.MkBindAmount <$> onQuantity c quantity <*> onSlot c named)
