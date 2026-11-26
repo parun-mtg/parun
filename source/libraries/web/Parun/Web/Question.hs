@@ -1293,18 +1293,25 @@ form request texts picked focused = case Text.unpack (Question.kind question) of
        in pressable [] [] (pressedIf on) (MkToggle g i) ([Element.el "span" [] [Element.attr "aria-hidden" (Text.pack "true")] [Element.string "\x2713 "] | on] <> Mana.rich label)
     -- Options the seat can't tell apart share a button: a tap picks the
     -- first unpicked while the group has room, else drops the last picked.
+    -- Once it holds a pick, a minus beside it drops the last picked, so
+    -- every count down to none is reachable.
     toggles g room labelled =
-      [ case indices of
-          [i] -> toggle g i label
-          _ ->
-            let chosen = filter (\i -> Set.member (g, i) picked) indices
-                full = Natural.length (filter ((== g) . fst) (Set.toList picked)) >= room
-                next = case filter (\i -> not (Set.member (g, i) picked)) indices of
-                  i : _ | null chosen || not full -> i
-                  _ -> List.last chosen
-             in pressable [] [] (if null chosen then "false" else if length chosen == length indices then "true" else "mixed") (MkToggle g next) $ Mana.rich ((if null chosen then Text.empty else Text.pack (show (length chosen) <> " of ")) <> label <> many (length indices))
-      | (indices, label, _) <- collapsed (const True) labelled
-      ]
+      concat
+        [ case indices of
+            [i] -> [toggle g i label]
+            _ ->
+              let chosen = filter (\i -> Set.member (g, i) picked) indices
+                  full = Natural.length (filter ((== g) . fst) (Set.toList picked)) >= room
+                  next = case filter (\i -> not (Set.member (g, i) picked)) indices of
+                    i : _ | null chosen || not full -> i
+                    _ -> List.last chosen
+                  named = label <> many (length indices)
+               in pressable [] [] (if null chosen then "false" else if length chosen == length indices then "true" else "mixed") (MkToggle g next) (Mana.rich ((if null chosen then Text.empty else Text.pack (show (length chosen) <> " of ")) <> named))
+                    : [ Element.el "button" [] [Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (Text.pack "One fewer " <> foldMap Html.spoken (Mana.rich named)), Element.on "click" (MkToggle g (List.last chosen))] [Element.string "\x2212"]
+                      | not (null chosen)
+                      ]
+        | (indices, label, _) <- collapsed (const True) labelled
+        ]
     many n = if n > 1 then Text.pack (" \x00d7" <> show n) else Text.empty
     fits (g, group) = let n = Natural.length (filter ((== g) . fst) (Set.toList picked)) in least group <= n && n <= most group
     makes yields = if null yields then Text.empty else Text.pack " (makes " <> Text.intercalate (Text.pack " or ") (fmap (foldMap (\m -> Text.pack "{" <> Wording.manaType m <> Text.pack "}")) yields) <> Text.pack ")"
