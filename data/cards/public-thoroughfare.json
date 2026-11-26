@@ -33,7 +33,6 @@
           }
         }
       ],
-      "manaCost": [],
       "name": "Public Thoroughfare",
       "oracleText": "This land enters tapped.\nWhen this land enters, sacrifice it unless you tap an untapped artifact or land you control.\n{T}: Add one mana of any color.",
       "replacementEffects": [

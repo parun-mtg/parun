@@ -184,7 +184,6 @@
           ]
         }
       ],
-      "manaCost": [],
       "name": "Lilypad Village",
       "oracleText": "{T}: Add {C}.\n{T}: Add {U}. Spend this mana only to cast a creature spell.\n{U}, {T}: Surveil 2. Activate only if a Bird, Frog, Otter, or Rat entered the battlefield under your control this turn.",
       "typeLine": {

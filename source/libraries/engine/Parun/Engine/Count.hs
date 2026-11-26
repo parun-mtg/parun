@@ -82,8 +82,6 @@ import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana
-import qualified Parun.Types.ManaCost as ManaCost
-import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Milled as Milled
 import qualified Parun.Types.Modal as Modal
@@ -609,18 +607,6 @@ attachersOfPlayer gs candidate =
     (\attacher -> (Game.lookupObject attacher gs >>= Object.attachedTo >>= Recipient.playerOf) == Just candidate)
     (Set.toList (GameState.battlefield gs))
 
--- What makes two mana costs the same cost: their generic symbols summed and
--- the rest as a multiset, so a split card's {1}{R} and {1}{U} combine (CR
--- 709.4b) to {2}{U}{R}, while {X} is not {0} and {B/R} is neither {B} nor {R}.
--- No symbols at all is {0}, as data/cards writes Ornithopter's cost.
-manaCostKey :: ManaCost.ManaCost -> (Natural.Natural, [ManaSymbol.ManaSymbol])
-manaCostKey cost =
-  let symbols = ManaCost.unwrap cost
-      generic symbol = case symbol of
-        ManaSymbol.Generic n -> Just n
-        _ -> Nothing
-   in (sum (Maybe.mapMaybe generic symbols), List.sort (filter (Maybe.isNothing . generic) symbols))
-
 keep :: Filter.Type.Filter Keyword.Type.Keyword -> Filter.Context -> Maybe Filter.View -> Maybe Filter.View
 keep predicate context mv = case mv of
   Nothing -> Nothing
@@ -660,7 +646,7 @@ aggregate quantityOf evaluated aggregation members = case aggregation of
   -- CR 202.3a: a member with no mana cost still has mana value 0.
   Aggregation.Distinct DistinctOf.ManaValues -> toInteger (Set.size (Set.fromList (Maybe.mapMaybe (Filter.manaValue . snd) members)))
   -- CR 202.1b: a member with no mana cost adds nothing; {0} is a cost.
-  Aggregation.Distinct DistinctOf.ManaCosts -> toInteger (Set.size (Set.fromList (Maybe.mapMaybe (fmap manaCostKey . Filter.manaCost . snd) members)))
+  Aggregation.Distinct DistinctOf.ManaCosts -> toInteger (Set.size (Set.fromList (Maybe.mapMaybe (fmap Filter.manaCostKey . Filter.manaCost . snd) members)))
   Aggregation.Distinct DistinctOf.Powers -> toInteger (Set.size (Set.fromList (Maybe.mapMaybe (Filter.power . snd) members)))
   -- CR 205.3j: a member's creature or other subtypes add nothing.
   Aggregation.Distinct DistinctOf.PlaneswalkerTypes -> toInteger (Set.size (Set.filter Subtype.isPlaneswalkerType (Set.unions (fmap (Filter.subtypes . snd) members))))

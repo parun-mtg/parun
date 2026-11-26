@@ -56,7 +56,6 @@
           }
         }
       ],
-      "manaCost": [],
       "name": "Lonely Sandbar",
       "oracleText": "This land enters tapped.\n{T}: Add {U}.\nCycling {U} ({U}, Discard this card: Draw a card.)",
       "replacementEffects": [

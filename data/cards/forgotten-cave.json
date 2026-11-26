@@ -56,7 +56,6 @@
           }
         }
       ],
-      "manaCost": [],
       "name": "Forgotten Cave",
       "oracleText": "This land enters tapped.\n{T}: Add {R}.\nCycling {R} ({R}, Discard this card: Draw a card.)",
       "replacementEffects": [

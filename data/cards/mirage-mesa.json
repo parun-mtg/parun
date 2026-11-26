@@ -33,7 +33,6 @@
           }
         }
       ],
-      "manaCost": [],
       "name": "Mirage Mesa",
       "oracleText": "This land enters tapped. As it enters, choose a color.\n{T}: Add one mana of the chosen color.",
       "replacementEffects": [
