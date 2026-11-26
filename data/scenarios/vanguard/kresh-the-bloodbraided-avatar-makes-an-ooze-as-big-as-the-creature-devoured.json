@@ -5,8 +5,16 @@
       {
         "battlefield": [
           {
-            "card": "Hill Giant",
-            "label": "giant"
+            "card": "Giant Spider",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 2
+              }
+            ],
+            "label": "spider"
           }
         ],
         "command": [
@@ -51,8 +59,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 702.82b: Kresh the Bloodbraided Avatar makes an Ooze as big as the creature its owner's devour sacrificed",
-  "note": "alice's Gluttonous Slime devours her Hill Giant, so Kresh creates a 3/3 green Ooze. The control's Shimatsu the Bloodcloaked sacrifices the Giant as it enters without devour, and no Ooze is made.",
+  "description": "CR 702.82b, 603.10a: Kresh the Bloodbraided Avatar makes an Ooze as big as the creature its owner's devour sacrificed",
+  "note": "alice's Gluttonous Slime devours her Giant Spider (printed 2/4, two +1/+1 counters), so Kresh creates a 4/4 green Ooze: the Spider's last-known power, not its printed power, its toughness or the Slime's power. The control's Shimatsu the Bloodcloaked sacrifices a Hill Giant as it enters without devour, and no Ooze is made.",
   "timeline": [
     {
       "do": {
@@ -81,7 +89,7 @@
         "Answer": {
           "prompt": "ChooseAnyNumberToSacrifice",
           "with": [
-            "$giant"
+            "$spider"
           ]
         }
       },
@@ -105,8 +113,8 @@
       "check": {
         "PowerToughness": {
           "object": "Ooze Token",
-          "power": 3,
-          "toughness": 3
+          "power": 4,
+          "toughness": 4
         }
       },
       "player": "alice",
@@ -116,7 +124,7 @@
     {
       "check": {
         "Count": {
-          "card": "Hill Giant",
+          "card": "Giant Spider",
           "count": 1,
           "player": "alice",
           "zone": "Graveyard"
