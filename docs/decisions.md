@@ -3481,19 +3481,24 @@ Entries are ordered by the first rule each cites.
 
 ## Whether a vanguard's draw prohibition reaches the opening hand
 
-- **Question**: Maralen of the Mornsong Avatar's "You can't draw cards"
-  functions from the command zone (CR 902.7), where the card is before the
-  game begins (CR 902.3). Does it stop CR 103.5's opening-hand draws and a
-  mulligan's redraw, leaving its owner no hand?
-- **Rules**: CR 103.5, 121.2b, 313.4, 902.3, 902.5, 902.7; the card has no
-  ruling; CR of 2026-11-06.
-- **Decision**: No: an opening hand's draws pass no draw prohibition, and the
-  owner draws CR 902.5's starting hand. Every later draw is barred.
-- **Rejected**: Barring them: the printed hand modifier (CR 313.6) would then
-  size nothing, and the card's only cards would come from its draw-step
-  trigger.
+- **Question**: Maralen of the Mornsong Avatar's "You can't draw cards" is a
+  static ability of a card placed before the game begins. Does it stop
+  CR 103.5's opening-hand draws and a mulligan's redraw?
+- **Rules**: CR 101.2, 103.5, 313.4, 313.6, 902.3, 902.5, 902.5b, 902.7; the
+  card has no ruling; CR of 2026-11-06.
+- **Decision**: No, on the card's evident intent (owner decision of
+  2026-11-26): the owner draws CR 902.5's starting hand and any mulligan's
+  redraw; every later draw is barred. Magic Online, the only place the card
+  was played, has not applied avatar rules text since Zendikar (2009), so its
+  behaviour cannot be observed.
+- **Rejected**: Barring them, the literal reading: the card is in the command
+  zone before the game begins (CR 902.3), its static abilities apply there
+  (CR 313.4, 902.7), and "can't" beats CR 103.5's direction to draw
+  (CR 101.2). Its owner's first card would then come from the first draw
+  step's look, and paying 0 life would leave them none all game. The hand
+  modifier still sets maximum hand size (CR 313.6, 902.5b); Maralen's is +0.
 - **Site**: `Parun.Engine.Event.drawCardSpentReturning`'s
   `DrawKind.OpeningHand`; `Parun.VanguardSpec`'s "a vanguard's
   at-the-beginning-of-the-game life payment sets how many cards Maralen looks
   at".
-- **Issue**: none.
+- **Issue**: #9920.
