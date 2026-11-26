@@ -696,10 +696,10 @@ data Filter keyword
     -- counters in it, and the P/T a +1/+1 counter grants is CR 613.4c's, applied
     -- over the top of this.
     --
-    -- Unprinted: an operand other than Literal or EnclosingAmount, which would
-    -- compare the count against a Measure, never another object's counters;
-    -- Parun.FilterPositionLintSpec's "no card writes HasCounters against a
-    -- measure" keeps it out of card data.
+    -- Unprinted: an operand other than Literal or EnclosingAmount; a
+    -- Measure-taking one compares the count against that Measure, never
+    -- another object's counters. Parun.FilterPositionLintSpec's "no card writes
+    -- HasCounters against a measure" keeps it out of card data.
     HasCounters Comparison.Comparison Operand.Operand (CounterKind.CounterKind keyword)
   | -- | CR 122.1 again, kind-agnostic: does the CANDIDATE have one or more
     -- counters on it of ANY kind? Not spellable as an Or over the kinds, CR

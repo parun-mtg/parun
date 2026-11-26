@@ -742,10 +742,11 @@ enclosingAmountOffends :: Face.Face Card.Type.Card -> Bool
 enclosingAmountOffends card = snd (enclosingAmountCounts card) /= 0
 
 -- How many Filter.HasCounters atoms a face's encoding carries whose operand is
--- neither a printed number nor the enclosing amount. Every other Operand arm is
--- answered as a Measure of some object (Parun.Engine.Filter.relatesTo), so a
--- counter-to-counter comparison ("the most +1/+1 counters") written with one
--- would compare counters against power or mana value without error.
+-- neither a printed number nor the enclosing amount, the only two the pool
+-- writes. The Measure-taking arms are answered off some object's Measure
+-- (Parun.Engine.Filter.relatesTo), so a counter-to-counter comparison ("the
+-- most +1/+1 counters") written with one would compare counters against power
+-- or mana value without error.
 measuredCounterAtoms :: Face.Face Card.Type.Card -> Int
 measuredCounterAtoms = walk . Codec.encode (Face.Codec.codec Card.codec)
   where
