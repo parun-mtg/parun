@@ -42,6 +42,7 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
+import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
@@ -106,7 +107,8 @@ sickNow view o =
       not (null (Subtype.intrinsicManaOf c))
         || any (any (`elem` [CostComponent.TapThis, CostComponent.UntapThis]) . Cost.components . ActivatedAbility.cost) (ProjectedCharacteristics.activatedAbilities c)
 
--- | The states a tile spells out: attacking, blocking, summoning sick.
+-- | The states a tile spells out: attacking, blocking, summoning sick, its
+-- designations (marked) and its choices (chosen).
 states :: PlayerView.PlayerView -> ObjectView.ObjectView -> [Html.Html msg]
 states view o =
   let shown cls label tip = Element.el "span" ["badge", "state", cls] [Element.attr "title" (Text.pack tip)] [Element.string label]
@@ -117,6 +119,7 @@ states view o =
         <> [shown "block" "Blocking" "Blocking" | elem "blocking" kinds]
         <> [shown "sick" "Sick" "Summoning sick: can't attack or tap yet (CR 302.6)" | sickNow view o]
         <> [shown "marked" label tip | (label, tip) <- marked o]
+        <> [shown "chosen-value" label tip | (label, tip) <- chosen view o]
 
 -- | The designations an object has, short and spelled out: the
 -- Ring-bearer (CR 701.54b), a Class's level (CR 717.2b), a Room's unlocked
@@ -140,6 +143,41 @@ marked o =
     <> [(designationWord d, designationWord d) | d <- Set.toList (ObjectView.designations o)]
     <> [("Copy", "A copy: beneath the copy effect, it is " <> Text.unpack (CardName.unwrap n) <> " (CR 707.2)") | Just n <- [ObjectView.beneathCopy o]]
     <> [("Tax +" <> show n, "Costs {" <> show n <> "} more to cast from the command zone (CR 903.8)") | let n = ObjectView.commanderTax o, n > 0]
+
+-- | The choices an object holds (CR 607.2d), short and spelled out: a
+-- creature type, colour, card type, name, player, number or objects, each
+-- acquisition's (CR 607.5) alike.
+chosen :: PlayerView.PlayerView -> ObjectView.ObjectView -> [(String, String)]
+chosen view o =
+  ListUtils.nubOrd $
+    each ObjectView.chosenSubtype (\ts -> let w = joined (fmap typeWord (NonEmpty.toList ts)) in [(w, "Chosen type: " <> w)])
+      <> each ObjectView.chosenColors (\cs -> let w = joined (fmap show (Set.toList cs)) in [(w, "Chosen color: " <> w) | not (Set.null cs)])
+      <> each ObjectView.chosenColorless (const [("Colorless", "Chosen: colorless")])
+      <> each ObjectView.chosenCardType (\t -> [(show t, "Chosen card type: " <> show t)])
+      <> each ObjectView.chosenNames named
+      <> each ObjectView.chosenPlayers (fmap (uncurry picked) . Map.toList)
+      <> each ObjectView.chosenNumber (\n -> [(show n, "Chosen number: " <> show n)])
+      <> each ObjectView.chosenObjects (\ids -> [("Chose " <> objects ids, "Chosen: " <> objects ids) | not (Set.null ids)])
+  where
+    -- Every acquisition's choice of one kind.
+    each :: (ObjectView.ObjectView -> Map.Map k a) -> (a -> [(String, String)]) -> [(String, String)]
+    each field f = concatMap f (Map.elems (field o))
+    joined = List.intercalate ", "
+    typeWord t = maybe (show t) Text.unpack (Subtype.creatureTypeWord t)
+    seat = Text.unpack . Wording.player
+    objects = Text.unpack . Wording.listing . fmap (Wording.named view) . Set.toList
+    -- Each player's names, "Player 2 named" where more than one player named.
+    named byPlayer =
+      [ (label, if Map.size byPlayer > 1 then seat p <> " named " <> list else label)
+      | (p, ns) <- Map.toList byPlayer,
+        not (Set.null ns),
+        let list = joined (fmap (Text.unpack . CardName.unwrap) (Set.toList ns)),
+        let label = "Named " <> list
+      ]
+    picked which p = case which of
+      PlayerChoice.AsEntersOrTransforms -> (seat p, "Chosen player: " <> seat p)
+      PlayerChoice.Promised _ _ -> ("Gift: " <> seat p, "Gift promised to " <> seat p <> " (CR 702.174a)")
+      PlayerChoice.SecretChooser -> ("Chosen secretly", seat p <> " chose secretly")
 
 designationWord :: Designation.Designation -> String
 designationWord d = case d of
@@ -530,15 +568,16 @@ fullType o = case (ObjectView.ability o, ObjectView.characteristics o) of
      in -- An object with no types is an emblem (CR 114.3).
         if null (supertypes <> types <> subtypes) then Text.pack "Emblem" else Text.unwords (supertypes <> types <> if null subtypes then [] else Text.pack "\8212" : subtypes)
 
--- | What the tile cannot fit: tapped, what it is attached to, what an
--- ability says and what it targets, and the card behind a face-down one.
+-- | What the tile cannot fit: tapped, its designations and choices spelled
+-- out, what it is attached to, what an ability says and what it targets, and
+-- the card behind a face-down one.
 status :: Map.Map ObjectId.ObjectId [Text.Text] -> PlayerView.PlayerView -> ObjectView.ObjectView -> [Text.Text]
 status texts view o =
   [Text.pack "Tapped" | ObjectView.tapped o == TapState.Tapped]
     <> [Text.pack "Attacking" | Map.member (ObjectView.object o) (PlayerView.attackers view)]
     <> [Text.pack "Blocking" | any (Set.member (ObjectView.object o)) (PlayerView.blockers view)]
     <> [Text.pack "Summoning sick: it can't attack or use {T} abilities until its controller's next turn" | ObjectView.summoningSick o]
-    <> [Text.pack tip | (_, tip) <- marked o]
+    <> [Text.pack tip | (_, tip) <- marked o <> chosen view o]
     <> [Text.pack "Keyword abilities: " <> Text.intercalate (Text.pack ", ") (keywords o) | not (null (keywords o))]
     <> [Text.pack "Attached to " <> Wording.recipientName view r | r <- Maybe.maybeToList (ObjectView.attachedTo o)]
     <> quoted texts view o
