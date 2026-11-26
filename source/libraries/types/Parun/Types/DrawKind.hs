@@ -10,8 +10,8 @@ data DrawKind
     -- Plagiarize hands the draw to another player (CR 614.10).
     TurnBased PlayerId.PlayerId
   | -- | CR 103.5: a draw for an opening hand, a mulligan's redraw included,
-    -- which no draw prohibition reaches (docs/decisions.md, "Whether a vanguard's
-    -- draw prohibition reaches the opening hand").
+    -- which a draw prohibition does not reach by decision (docs/decisions.md,
+    -- "Whether a vanguard's draw prohibition reaches the opening hand").
     OpeningHand
   | -- | CR 121.1: any other draw, a replacement's new draws included.
     Other
