@@ -5,6 +5,8 @@ module Parun.Codec.Search where
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Data.Text as Text
+import qualified Parun.Codec.CardSelection as CardSelection
 import qualified Parun.Codec.DifferentIn as DifferentIn
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
@@ -17,14 +19,19 @@ import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.CardSelection as CardSelection.Type
 import qualified Parun.Types.Search as Search
 import qualified Parun.Types.Zone as Zone.Type
 
 -- | A bare object keyed by the record's field names. Naming them is the point:
 -- 'Search.searcher' and 'Search.owner' are both a PlayerRef, so a positional
 -- payload let a card file swap who looks with whose zones are looked at.
+--
+-- Unprinted: a random @selection@ beside @descriptions@, @differentIn@,
+-- @exactly@ or @outsideTheGame@. It is refused, and Parun.Codec.SearchSpec's
+-- "rejects a random find beside" cases prove the refusal.
 codec :: Codec.Codec Search.Search
-codec = Fields.object $ do
+codec = Fields.objectWith randomFindIsPrinted $ do
   searcher <- Fields.required "searcher" PlayerRef.codec Search.searcher
   owner <- Fields.required "owner" PlayerRef.codec Search.owner
   -- Defaulted rather than required, for upTo's reason: an absent key is a card
@@ -73,7 +80,7 @@ codec = Fields.object $ do
   top <- Fields.defaulted "top" Nothing (Common.maybe Quantity.codec) Search.top
   -- Defaulted: an absent key is a search whose searcher chooses the find,
   -- which is every card file but one.
-  atRandom <- Fields.defaulted "atRandom" False Common.boolean Search.atRandom
+  selection <- Fields.defaulted "selection" CardSelection.Type.ByChoice CardSelection.codec Search.selection
   pure
     Search.MkSearch
       { Search.searcher = searcher,
@@ -94,5 +101,12 @@ codec = Fields.object $ do
         Search.exactly = exactly,
         Search.andOr = andOr,
         Search.top = top,
-        Search.atRandom = atRandom
+        Search.selection = selection
       }
+
+randomFindIsPrinted :: Search.Search -> Either Text.Text Search.Search
+randomFindIsPrinted search
+  | Search.selection search == CardSelection.Type.AtRandom
+      && (not (Seq.null (Search.descriptions search)) || not (Set.null (Search.differentIn search)) || Search.exactly search || Search.outsideTheGame search) =
+      Left (Text.pack "Search: a random selection beside descriptions, differentIn, exactly or outsideTheGame is unprinted and not supported")
+  | otherwise = Right search

@@ -3455,21 +3455,3 @@ Entries are ordered by the first rule each cites.
   `cr-805-10a-an-emperor-team-s-shared-turn-attacks-from-each-general-s-seat`
   and its `-unrestricted` control.
 - **Issue**: #9806.
-
-## Whether a search for a card chosen at random may find nothing
-
-- **Question**: Enigma Sphinx Avatar searches a library "for a colored
-  artifact card chosen at random". CR 701.23b lets a searcher of a hidden zone
-  for a stated quality fail to find. May the searcher decline the find, so a
-  matching card stays where it was rather than being drawn?
-- **Rules**: CR 701.23a, 701.23b, 609.3; the card has no ruling; CR of
-  2026-11-06.
-- **Decision**: No: randomness draws among every match, up to the count, and
-  nobody is asked. The card names who picks the card, and it is not the
-  searcher.
-- **Rejected**: Asking the searcher whether to find before the draw: CR
-  701.23b's permission is a choice of WHICH cards to find, the choice the card
-  hands to randomness.
-- **Site**: `Parun.Engine.Resolve.Arms.Damage.search`'s `Search.atRandom`
-  draw, proved by the scenarios `enigma-sphinx-avatar-*`.
-- **Issue**: none.
