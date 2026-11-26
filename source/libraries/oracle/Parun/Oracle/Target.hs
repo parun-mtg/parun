@@ -14,6 +14,7 @@ import qualified Parun.Oracle.Prose as Prose
 import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.Arithmetic as Arithmetic
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Count as Count
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
@@ -433,7 +434,7 @@ object context determiner ref = case ref of
             jointly = [Text.replace orWord (Text.pack " and ") text | Text.isInfixOf orWord text]
         [MkReference (Text.pack "all " <> t) [] Filter.Plural [] | t <- text : jointly]
   ObjectRef.ChosenPermanents c
-    | ChosenPermanents.chooser c == PlayerRef.Relative PlayerRelation.You && ChosenPermanents.zone c == Zone.Battlefield && Set.null (ChosenPermanents.ownZones c) && Maybe.isNothing (ChosenPermanents.total c) -> do
+    | ChosenPermanents.chooser c == PlayerRef.Relative PlayerRelation.You && ChosenPermanents.zone c == Zone.Battlefield && Set.null (ChosenPermanents.ownZones c) && Maybe.isNothing (ChosenPermanents.total c) && ChosenPermanents.selection c == CardSelection.ByChoice -> do
         p <- Filter.phrase (ChosenPermanents.filter c) (keyword context)
         one <- Filter.describe Filter.Singular permanent p
         many <- Filter.describe Filter.Plural permanent p

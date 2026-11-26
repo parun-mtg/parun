@@ -2784,7 +2784,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         choosing zone =
           (S.combinedFace piker)
             { Face.spell =
-                Mint.oneMode (Seq.singleton (Effect.Destroy (Destroy.MkDestroy (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents atom (PlayerRef.InSlot Binding.you) HowMany.one Nothing zone Set.empty)) Regenerability.Regenerable Nothing Nothing Nothing)))
+                Mint.oneMode (Seq.singleton (Effect.Destroy (Destroy.MkDestroy (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents atom (PlayerRef.InSlot Binding.you) HowMany.one Nothing zone Set.empty CardSelection.ByChoice)) Regenerability.Regenerable Nothing Nothing Nothing)))
             }
     Spec.assertEqWith s "the atom in a target slot's filter is accepted" (otherCandidateCounts targeting) (1, 0)
     Spec.assertEqWith s "and in a battlefield choice's filter" (otherCandidateCounts (choosing Zone.Battlefield)) (1, 0)

@@ -2285,10 +2285,11 @@ gainControl resolving source controller legal (GainControl.MkGainControl duratio
 exchangeControl :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ControlSides.ControlSides -> Game ()
 exchangeControl resolving source controller legal sides =
   State.modify' $ \gs ->
-    let twoSides = case sides of
-          -- A target slot's CR 608.2b-legal recipients, or the group earlier
-          -- instructions of this resolution bound (CR 608.2c).
-          ControlSides.WithinSlot slot -> case Set.toList (Map.findWithDefault Set.empty slot (Binding.objectsBySlot legal (slotBindings resolving gs))) of
+    let -- A target slot's CR 608.2b-legal recipients, or the group earlier
+        -- instructions of this resolution bound (CR 608.2c).
+        named slot = Set.toList (Map.findWithDefault Set.empty slot (Binding.objectsBySlot legal (slotBindings resolving gs)))
+        twoSides = case sides of
+          ControlSides.WithinSlot slot -> case named slot of
             [one, two] -> [one, two]
             _ -> []
           -- CR 113.7's source object, found through the funnel
@@ -2304,9 +2305,11 @@ exchangeControl resolving source controller legal sides =
             case (battlefieldMatching legal resolving controller source gs Filter.Type.IsSource, legalOne slot legal >>= Recipient.objectOf) of
               ([self], Just other) -> [self, other]
               _ -> []
+          -- One permanent out of each slot: Karona, False God Avatar's two
+          -- random picks are bound by ChoosePermanents rather than targeted.
           ControlSides.BetweenSlots (ControlSlots.MkControlSlots one two) ->
-            case (legalOne one legal >>= Recipient.objectOf, legalOne two legal >>= Recipient.objectOf) of
-              (Just this, Just that) -> [this, that]
+            case (named one, named two) of
+              ([this], [that]) -> [this, that]
               _ -> []
      in case twoSides of
           [one, two] -> case (sideController one gs, sideController two gs) of

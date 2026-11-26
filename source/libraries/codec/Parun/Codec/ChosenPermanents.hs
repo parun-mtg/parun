@@ -5,6 +5,7 @@ module Parun.Codec.ChosenPermanents where
 import qualified Data.List as List
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Parun.Codec.CardSelection as CardSelection
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.HowMany as HowMany
 import qualified Parun.Codec.Keyword as Keyword
@@ -14,6 +15,7 @@ import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.CardSelection as CardSelection.Type
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -23,9 +25,9 @@ import qualified Parun.Types.Zone as Zone
 -- | A bare object keyed by the record's field names, the shape every other
 -- 'Parun.Types.ObjectRef' payload record takes.
 --
--- @chooser@, @count@, @zone@ and @ownZones@ are defaulted, so the printed
--- choice of one permanent addressed to the resolving controller writes none of
--- those keys.
+-- @chooser@, @count@, @zone@, @ownZones@ and @selection@ are defaulted, so the
+-- printed choice of one permanent addressed to the resolving controller writes
+-- none of those keys.
 --
 -- The zone must be one CR 400.1 shares: a per-player zone's choice is
 -- Parun.Types.ChosenCardInGraveyard's or ChosenCardInHand's, which say whose,
@@ -40,6 +42,7 @@ codec = Fields.objectWith validZones $ do
   total <- Fields.defaulted "total" Nothing (Common.maybe TotalCap.codec) ChosenPermanents.total
   zone <- Fields.defaulted "zone" Zone.Battlefield Zone.codec ChosenPermanents.zone
   ownZones <- Fields.defaulted "ownZones" Set.empty (Common.set Zone.codec) ChosenPermanents.ownZones
+  selection <- Fields.defaulted "selection" CardSelection.Type.ByChoice CardSelection.codec ChosenPermanents.selection
   pure
     ChosenPermanents.MkChosenPermanents
       { ChosenPermanents.filter = filter_,
@@ -47,7 +50,8 @@ codec = Fields.objectWith validZones $ do
         ChosenPermanents.count = count,
         ChosenPermanents.total = total,
         ChosenPermanents.zone = zone,
-        ChosenPermanents.ownZones = ownZones
+        ChosenPermanents.ownZones = ownZones,
+        ChosenPermanents.selection = selection
       }
 
 validZones :: ChosenPermanents.ChosenPermanents -> Either Text.Text ChosenPermanents.ChosenPermanents

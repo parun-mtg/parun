@@ -754,12 +754,15 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s [[Text.pack "{G}: Put a +1/+1 counter on each of up to two target creatures."]] (Oracle.abilities (ability (upTo 2 Nothing)))
 
   -- CR 701.26a: tapping and untapping; "another target" for one other object.
+  -- A permanent picked at random is not a chosen one, so it renders nothing.
   Spec.it s "render taps and untaps" $ do
     Spec.assertEq s (Just (Text.pack "Tap another target creature.")) (Oracle.render (spell [clause [Effect.Tap (Tap.plain (ObjectRef.InSlot target))]] [(target, TargetSlot.required Pool.Creatures (Just (Filter.Not Filter.IsSource)))]))
     let untapYours = spell [clause [Effect.Untap (ObjectRef.EachMatching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)]))]] []
     Spec.assertEq s [[Text.pack "Untap all creatures you control.", Text.pack "Untap each creature you control."]] (Oracle.abilities untapYours)
-    let lands = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Land) (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo (Just (Quantity.Literal 4))) Nothing Zone.Battlefield Set.empty)
+    let lands = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Land) (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo (Just (Quantity.Literal 4))) Nothing Zone.Battlefield Set.empty CardSelection.ByChoice)
     Spec.assertEq s (Just (Text.pack "Untap up to four lands.")) (Oracle.render (spell [clause [Effect.Untap lands]] []))
+    let randomLands = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Land) (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo (Just (Quantity.Literal 4))) Nothing Zone.Battlefield Set.empty CardSelection.AtRandom)
+    Spec.assertEq s Nothing (Oracle.render (spell [clause [Effect.Untap randomLands]] []))
 
   -- CR 701.9: a player discards cards of their choice or at random; "you"
   -- discards in the imperative.
@@ -1027,7 +1030,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   -- toughness reaches again get "an additional" one (Wild Might, Rhystic
   -- Shield).
   Spec.it s "render strings three instructions and names an object again" $ do
-    let lands = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Land) (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo (Just (Quantity.Literal 3))) Nothing Zone.Battlefield Set.empty)
+    let lands = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Land) (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo (Just (Quantity.Literal 3))) Nothing Zone.Battlefield Set.empty CardSelection.ByChoice)
         search = spell [clause [draw (PlayerRef.Relative PlayerRelation.You) 2, discard (PlayerRef.Relative PlayerRelation.You) 2, Effect.Untap lands]] []
     Spec.assertBool s (Oracle.says search spark (Text.pack "Draw two cards, then discard two cards. Untap up to three lands.")) "Frantic Search's wording unsaid"
     let creature = [(target, TargetSlot.required Pool.Creatures Nothing)]

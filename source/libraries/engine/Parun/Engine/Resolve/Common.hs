@@ -777,7 +777,7 @@ oneSeat legal resolving source controller gs ref = case playerRefPlayers legal r
 -- two lands".
 --
 -- Each prompt carries Scratch.loopPicks (CR 101.4b). Beside the picks, the
--- seat that was asked, pickCounted's.
+-- seat that was asked, pickCounted's; nobody for a pick made at random.
 chosenPermanents :: AnyNumberOf.AnyNumberOf -> Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> ChosenPermanents.ChosenPermanents -> Game (Maybe PlayerId, [ObjectId])
 chosenPermanents purpose legal resolving controller source choice = do
   gs <- State.get
@@ -789,18 +789,23 @@ chosenPermanents purpose legal resolving controller source choice = do
       amount = maybe 0 Integer.toNaturalSaturating . Quantity.evaluateFor viewOf context gs resolving source
       weighs = Quantity.evaluateFor viewOf context gs resolving
       earlier = Maybe.fromMaybe Seq.empty (Scratch.loopPicks (GameState.scratch gs))
-  pickByChooser
-    resolving
-    source
-    controller
-    legal
-    chooser
-    (\decider who pool -> Prompt.ChoosePermanent decider who source pool earlier Nothing)
-    (\decider who pool ceiling_ -> Prompt.ChooseAnyNumber decider who source purpose pool ceiling_ earlier)
-    amount
-    count
-    (fmap (withinTotal weighs amount) (ChosenPermanents.total choice))
-    candidates
+  case ChosenPermanents.selection choice of
+    -- Randomness asks no seat: chooseCardFromAmong's AtRandom, the count's
+    -- picks distinct and a ceiling drawn in full.
+    CardSelection.AtRandom -> (,) Nothing <$> Game.drawDistinct Prompt.RandomObject (maybe (List.genericLength candidates) amount (HowMany.quantity count)) candidates
+    CardSelection.ByChoice ->
+      pickByChooser
+        resolving
+        source
+        controller
+        legal
+        chooser
+        (\decider who pool -> Prompt.ChoosePermanent decider who source pool earlier Nothing)
+        (\decider who pool ceiling_ -> Prompt.ChooseAnyNumber decider who source purpose pool ceiling_ earlier)
+        amount
+        count
+        (fmap (withinTotal weighs amount) (ChosenPermanents.total choice))
+        candidates
 
 -- CR 608.2d: may a candidate join the picks so far under a TotalCap? Each is
 -- weighed against its own projection, a negative weight counting as it is (CR
