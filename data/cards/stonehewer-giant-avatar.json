@@ -1,0 +1,108 @@
+{
+  "faces": [
+    {
+      "name": "Stonehewer Giant Avatar",
+      "oracleText": "Whenever a creature you control enters, create a token that's a copy of a random Equipment card with mana value less than that creature's mana value. Attach that Equipment to that creature.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "CreateCopy",
+                        "value": {
+                          "original": {
+                            "type": "AtRandom",
+                            "value": {
+                              "amount": {
+                                "type": "AgainstSlot",
+                                "value": {
+                                  "quantity": {
+                                    "type": "Measure",
+                                    "value": "ManaValue"
+                                  },
+                                  "slot": "became"
+                                }
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "HasSubtype",
+                                    "value": "Equipment"
+                                  },
+                                  {
+                                    "type": "Measures",
+                                    "value": {
+                                      "comparison": "LessThan",
+                                      "measure": "ManaValue",
+                                      "operand": {
+                                        "type": "EnclosingAmount"
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "slot": "equipment"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "AttachBound",
+                        "value": {
+                          "destination": "became",
+                          "subject": "equipment"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 1,
+        "lifeModifier": -5
+      }
+    }
+  ]
+}

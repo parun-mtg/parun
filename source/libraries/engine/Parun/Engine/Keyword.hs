@@ -79,6 +79,7 @@ import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ControlWindow as ControlWindow
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyException as CopyException
+import qualified Parun.Types.CopyOriginal as CopyOriginal
 import qualified Parun.Types.CopyPowerToughness as CopyPowerToughness
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
@@ -2383,7 +2384,7 @@ graveyardTokenCopy exceptions cost =
         Effect.CreateCopy
           CreateCopy.MkCreateCopy
             { CreateCopy.quantity = CreateCopy.defaultQuantity,
-              CreateCopy.ref = ObjectRef.InSlot Binding.triggerSource,
+              CreateCopy.original = CopyOriginal.OfObject (ObjectRef.InSlot Binding.triggerSource),
               CreateCopy.riders =
                 EntryRiders.defaultValue,
               -- Nothing looks back at the token, so it binds no slot.
@@ -2504,7 +2505,7 @@ encore cost =
         Effect.CreateCopy
           CreateCopy.MkCreateCopy
             { CreateCopy.quantity = CreateCopy.defaultQuantity,
-              CreateCopy.ref = ObjectRef.InSlot Binding.triggerSource,
+              CreateCopy.original = CopyOriginal.OfObject (ObjectRef.InSlot Binding.triggerSource),
               -- Not attacking: rule 702.141a's token is created during a main
               -- phase (CR 602.5d) and REQUIRED to attack later, where myriad's
               -- arrives already attacking mid-combat.
@@ -5724,7 +5725,7 @@ myriad =
         Effect.CreateCopy
           CreateCopy.MkCreateCopy
             { CreateCopy.quantity = CreateCopy.defaultQuantity,
-              CreateCopy.ref = ObjectRef.EachMatching Filter.IsSource,
+              CreateCopy.original = CopyOriginal.OfObject (ObjectRef.EachMatching Filter.IsSource),
               CreateCopy.riders =
                 EntryRiders.defaultValue {EntryRiders.tapped = TapState.Tapped, EntryRiders.attacking = Just (EntryAttack.UnderPlayer myriadOpponentSlot)},
               CreateCopy.slot = Just myriadTokenSlot,
@@ -6966,7 +6967,7 @@ paidTokenCopies keyword quantity exceptions ordinal =
         Effect.CreateCopy
           CreateCopy.MkCreateCopy
             { CreateCopy.quantity = quantity,
-              CreateCopy.ref = ObjectRef.InSlot Binding.triggerSource,
+              CreateCopy.original = CopyOriginal.OfObject (ObjectRef.InSlot Binding.triggerSource),
               CreateCopy.riders =
                 EntryRiders.defaultValue,
               CreateCopy.slot = Nothing,

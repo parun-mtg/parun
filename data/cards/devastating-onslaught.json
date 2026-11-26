@@ -27,13 +27,16 @@
                   {
                     "type": "CreateCopy",
                     "value": {
+                      "original": {
+                        "type": "OfObject",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "target"
+                        }
+                      },
                       "quantity": {
                         "type": "InSlot",
                         "value": "X"
-                      },
-                      "ref": {
-                        "type": "InSlot",
-                        "value": "target"
                       },
                       "slot": "token"
                     }

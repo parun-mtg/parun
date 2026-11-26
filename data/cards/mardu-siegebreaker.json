@@ -170,11 +170,14 @@
                             {
                               "type": "CreateCopy",
                               "value": {
-                                "ref": {
-                                  "type": "EachCardInExiledPile",
+                                "original": {
+                                  "type": "OfObject",
                                   "value": {
-                                    "pile": {
-                                      "type": "OwnAbilities"
+                                    "type": "EachCardInExiledPile",
+                                    "value": {
+                                      "pile": {
+                                        "type": "OwnAbilities"
+                                      }
                                     }
                                   }
                                 },

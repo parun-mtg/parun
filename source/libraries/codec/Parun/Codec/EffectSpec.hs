@@ -1023,14 +1023,14 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False Nothing))
-      " {\"type\":\"CreateCopy\",\"value\":{\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}}} "
+      (Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Literal 1) (CopyOriginal.OfObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")))) EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False Nothing))
+      " {\"type\":\"CreateCopy\",\"value\":{\"original\":{\"type\":\"OfObject\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}}}} "
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Literal 1) (ObjectRef.EachMatching (Filter.HasKeyword Keyword.Flying)) EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False Nothing))
-      " {\"type\":\"CreateCopy\",\"value\":{\"ref\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HasKeyword\",\"value\":{\"type\":\"Flying\"}}}}} "
+      (Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Literal 1) (CopyOriginal.OfObject (ObjectRef.EachMatching (Filter.HasKeyword Keyword.Flying))) EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False Nothing))
+      " {\"type\":\"CreateCopy\",\"value\":{\"original\":{\"type\":\"OfObject\",\"value\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HasKeyword\",\"value\":{\"type\":\"Flying\"}}}}}} "
   -- Kicked Rite of Replication's five. Before #1305 this was a second payload
   -- SHAPE told apart by length; it is now the same shape with the defaulted key
   -- present.
@@ -1039,8 +1039,8 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Literal 5) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False Nothing))
-      " {\"type\":\"CreateCopy\",\"value\":{\"quantity\":{\"type\":\"Literal\",\"value\":5},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}}} "
+      (Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Literal 5) (CopyOriginal.OfObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")))) EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False Nothing))
+      " {\"type\":\"CreateCopy\",\"value\":{\"quantity\":{\"type\":\"Literal\",\"value\":5},\"original\":{\"type\":\"OfObject\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}}}} "
   -- Twincast's second sentence and Zada, Hedron Grinder's, against CR 707.10
   -- alone. The three fixtures differ in exactly the key that carries the
   -- answer, which is elided when the card prints none.

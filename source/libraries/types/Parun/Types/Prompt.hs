@@ -128,8 +128,8 @@ data Prompt r where
   -- RandomObject's reasons for carrying neither Decider nor PlayerId.
   RandomStickerSheet :: NonEmpty.NonEmpty Natural.Natural -> Prompt Natural.Natural
   -- | Which card randomness named out of a printed spellbook
-  -- (Parun.Types.Conjure's card list) or the reference cards a conjure's filter
-  -- admits (Prompt.ReferenceCards). RandomObject's shape and its reasons for
+  -- (Parun.Types.Conjure's card list) or the reference cards a conjure's or a
+  -- copy's filter admits (Prompt.ReferenceCards). RandomObject's shape and its reasons for
   -- carrying neither Decider nor PlayerId, over NAMES rather than object ids
   -- because a conjure's candidates are card data and no object exists yet; the
   -- caller filters the answer back to a candidate.
@@ -172,8 +172,9 @@ data Prompt r where
   LookUpCard :: CardName.CardName -> Prompt (Maybe Card.Card)
   -- | CR 108.1: the names of the cards in the Oracle card reference the filter
   -- admits, the Integer being the bound Filter.Measures' EnclosingAmount reads.
-  -- Asked of the interpreter by a conjure that picks from the reference
-  -- (Parun.Types.ConjureCards.Reference), since the engine holds no reference;
+  -- Asked of the interpreter by a conjure or a copy that picks from the
+  -- reference (Parun.Types.ConjureCards.Reference,
+  -- Parun.Types.CopyOriginal.AtRandom), since the engine holds no reference;
   -- the pick is then RandomCard's. LookUpCard's reasons for carrying neither
   -- Decider nor PlayerId.
   ReferenceCards :: Filter.Filter Keyword.Keyword -> Maybe Integer -> Prompt [CardName.CardName]

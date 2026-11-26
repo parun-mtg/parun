@@ -32,22 +32,25 @@
                   {
                     "type": "CreateCopy",
                     "value": {
-                      "ref": {
-                        "type": "EachMatching",
+                      "original": {
+                        "type": "OfObject",
                         "value": {
-                          "type": "And",
-                          "value": [
-                            {
-                              "type": "IsToken"
-                            },
-                            {
-                              "type": "HeldBy",
-                              "value": {
-                                "holder": "Controller",
-                                "relation": "You"
+                          "type": "EachMatching",
+                          "value": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "IsToken"
+                              },
+                              {
+                                "type": "HeldBy",
+                                "value": {
+                                  "holder": "Controller",
+                                  "relation": "You"
+                                }
                               }
-                            }
-                          ]
+                            ]
+                          }
                         }
                       }
                     }

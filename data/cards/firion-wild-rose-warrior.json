@@ -144,9 +144,12 @@
                               }
                             }
                           ],
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "became"
+                          "original": {
+                            "type": "OfObject",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "became"
+                            }
                           },
                           "slot": "token"
                         }

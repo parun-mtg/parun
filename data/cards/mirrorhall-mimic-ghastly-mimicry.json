@@ -166,22 +166,25 @@
                               ]
                             }
                           ],
-                          "ref": {
-                            "type": "EachMatching",
+                          "original": {
+                            "type": "OfObject",
                             "value": {
-                              "type": "And",
-                              "value": [
-                                {
-                                  "type": "HasCardType",
-                                  "value": "Creature"
-                                },
-                                {
-                                  "type": "HasAttached",
-                                  "value": {
-                                    "type": "IsSource"
+                              "type": "EachMatching",
+                              "value": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  {
+                                    "type": "HasAttached",
+                                    "value": {
+                                      "type": "IsSource"
+                                    }
                                   }
-                                }
-                              ]
+                                ]
+                              }
                             }
                           }
                         }

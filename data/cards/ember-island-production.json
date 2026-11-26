@@ -56,9 +56,12 @@
                           ]
                         }
                       ],
-                      "ref": {
-                        "type": "InSlot",
-                        "value": "yours"
+                      "original": {
+                        "type": "OfObject",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "yours"
+                        }
                       }
                     }
                   }
@@ -111,9 +114,12 @@
                           ]
                         }
                       ],
-                      "ref": {
-                        "type": "InSlot",
-                        "value": "theirs"
+                      "original": {
+                        "type": "OfObject",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "theirs"
+                        }
                       }
                     }
                   }

@@ -675,7 +675,8 @@ cantPayKeywordCostTag = Text.pack "CantPayKeywordCost"
 -- the second names no "filter" -- and "amount" beside it is the slot
 -- naming its bound. The other positions that fill the bound are a conjure's
 -- reference pick (Parun.Types.FromReference), the "Reference" arm of
--- Parun.Codec.ConjureCards, whose value carries the same two keys, and a combat
+-- Parun.Codec.ConjureCards and the "AtRandom" arm of Parun.Codec.CopyOriginal,
+-- whose values carry the same two keys, and a combat
 -- restriction's affected set beside its "amount" (Parun.Types.AffectedUnless,
 -- Ensnaring Bridge), and an enter-as-copy offer's eligible filter beside its
 -- (Parun.Types.AsCopy, Mockingbird). Only that position's own subtree is
@@ -688,7 +689,7 @@ amountedSlotAtoms value = case value of
     let pairs = Object.unwrap o
         keyed k = fmap Pair.value (filter (\pair -> String.unwrap (Pair.name pair) == Text.pack k) pairs)
         tagged names = any (\v -> case v of Value.String t -> String.unwrap t `elem` fmap Text.pack names; _ -> False) (keyed "type")
-        referenceAtoms = sum (fmap (amountedAtoms "filter") (if tagged ["Reference"] then keyed "value" else []))
+        referenceAtoms = sum (fmap (amountedAtoms "filter") (if tagged ["Reference", "AtRandom"] then keyed "value" else []))
         restrictionAtoms = sum (fmap (amountedAtoms "affected") (if tagged ["CantAttack", "CantBlock"] then keyed "value" else []))
         freeCastAtoms = sum (fmap (amountedAtoms "spells") (if tagged ["PayRatherThanManaCost"] then keyed "value" else []))
         -- A CastFrom value writes "pool" and "amount" too, so the descent below
@@ -2531,7 +2532,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- axis is the SLOT rather than the Framing: Parun.Engine.Target.slotContext fills
   -- Filter.Context.slotAmount off the target slot's own Quantity, so an
   -- EnclosingAmount operand in a slot naming no amount -- or anywhere that is not
-  -- a target slot, a conjure's reference pick, a combat restriction's affected
+  -- a target slot, a conjure's or a copy's reference pick, a combat restriction's affected
   -- set, a free-cast grant's spells, a cast permission's criterion or an
   -- enter-as-copy offer's eligible filter at all --
   -- is a silent False. See enclosingAmountCounts.
@@ -2565,7 +2566,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Weaver, Gelatinous Cube, Likeness Looter, The Mycosynth Gardens, Rydia, Summoner of Mist, Tamiyo, Compleated Sage, Synthetic Counted, Announced, Wide, Paired, Total and Divided
     -- Verdict, Synthetic Wide Muster on a modal trigger, Spell Blast and Detonate in a slot, and Fear of Change and Ornate Imitations in a reference
     -- pick, at the top level and
-    -- inside a ForEachNumber body; Isareth the Awakener and Halo Forager in a
+    -- inside a ForEachNumber body; Momir Vig, Simic Visionary Avatar and Sliver
+    -- Queen Avatar in a copy's reference pick, whose bounds are the X paid and
+    -- the cast spell's mana value; Isareth the Awakener and Halo Forager in a
     -- reflexive delayed ability's slot, whose amount the arming resolution's
     -- chosen X binds; Wishing
     -- Well in one, whose amount is its source's coin counters; Sidisi,
@@ -2594,7 +2597,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- The same in a sacrifice trigger's slot, against the sacrificed creature's
     -- last-known mana value: Riveteers Ascendancy.
     -- The same in an enters trigger's slot, totalling the creature that
-    -- entered: Clement, the Worrywort.
+    -- entered: Clement, the Worrywort. The same in a copy's reference pick,
+    -- totalling the creature that entered: Stonehewer Giant Avatar.
     --
     -- At most, against power, in an enters trigger's slot counting your lands:
     -- Invasion of Lorwyn. At most, against the mana value, in a reflexive
@@ -2651,6 +2655,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Detonate", 1),
         ("Fear of Change", 1),
         ("Ornate Imitations", 1),
+        ("Momir Vig, Simic Visionary Avatar", 1),
+        ("Sliver Queen Avatar", 1),
+        ("Stonehewer Giant Avatar", 1),
         ("Spawnbroker", 1),
         ("Nihiloor", 1),
         ("Custodi Peacekeeper", 1),

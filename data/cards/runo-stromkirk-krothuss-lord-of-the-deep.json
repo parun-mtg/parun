@@ -332,9 +332,12 @@
                       {
                         "type": "CreateCopy",
                         "value": {
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "target"
+                          "original": {
+                            "type": "OfObject",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "target"
+                            }
                           },
                           "riders": {
                             "attacking": {
@@ -409,13 +412,16 @@
                       {
                         "type": "CreateCopy",
                         "value": {
+                          "original": {
+                            "type": "OfObject",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "target"
+                            }
+                          },
                           "quantity": {
                             "type": "Literal",
                             "value": 2
-                          },
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "target"
                           },
                           "riders": {
                             "attacking": {

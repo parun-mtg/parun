@@ -40,29 +40,32 @@
                           ]
                         }
                       ],
-                      "ref": {
-                        "type": "EachMatching",
+                      "original": {
+                        "type": "OfObject",
                         "value": {
-                          "type": "And",
-                          "value": [
-                            {
-                              "type": "HasCardType",
-                              "value": "Creature"
-                            },
-                            {
-                              "type": "Not",
-                              "value": {
-                                "type": "IsToken"
+                          "type": "EachMatching",
+                          "value": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              {
+                                "type": "Not",
+                                "value": {
+                                  "type": "IsToken"
+                                }
+                              },
+                              {
+                                "type": "HeldBy",
+                                "value": {
+                                  "holder": "Controller",
+                                  "relation": "You"
+                                }
                               }
-                            },
-                            {
-                              "type": "HeldBy",
-                              "value": {
-                                "holder": "Controller",
-                                "relation": "You"
-                              }
-                            }
-                          ]
+                            ]
+                          }
                         }
                       }
                     }
