@@ -59,6 +59,12 @@ spec s = Spec.describe s "Parun.Codec.SeatView" $ do
       SeatView.codec
       testSeat {SeatView.team = Just (TeamId.MkTeamId 1)}
       (List.init testSeatJson <> ",\"team\":1}")
+  Spec.it s "CR 407.2 the seat's ante" $
+    Common.assertCodec
+      s
+      SeatView.codec
+      testSeat {SeatView.ante = [ObjectViewSpec.hidden]}
+      (List.init testSeatJson <> ",\"ante\":[" <> ObjectViewSpec.hiddenJson <> "]}")
   Spec.it s "has a schema" $ Common.assertHasSchema s SeatView.codec
 
 -- A seat whose hand shows one of its three cards.
@@ -76,6 +82,7 @@ testSeat =
       SeatView.library = [],
       SeatView.graveyard = [],
       SeatView.exile = [],
+      SeatView.ante = [],
       SeatView.manaPool = Mana.MkMana [],
       SeatView.ringTemptations = 0,
       SeatView.speed = Nothing,

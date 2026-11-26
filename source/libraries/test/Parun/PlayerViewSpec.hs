@@ -329,6 +329,13 @@ spec s registry = Spec.describe s "PlayerView" $ do
         view = PlayerView.viewFor S.bob gs
     Spec.assertEqWith s "bob is told the target" (fmap ObjectView.targets (PlayerView.Type.stack view)) [[Recipient.ToPlayer S.bob]]
     Spec.assertEqWith s "bob's wording names it" (fmap (Wording.describe view) (PlayerView.Type.stack view)) [Text.pack "Prodigal Sorcerer's ability \"{T}: Prodigal Sorcerer deals 1 damage to any target.\" targeting Player 2"]
+  Spec.it s "CR 400.2 / 407.2 a card in a player's ante shows in full to every seat" $ do
+    piker <- S.printingOf s registry "Goblin Piker"
+    let (oid, gs) = S.addObjectIn Zone.Ante piker S.alice (Setup.emptyGame S.bothPlayers)
+        view = PlayerView.viewFor S.bob gs
+        anted = foldMap SeatView.ante (seatOf S.alice view)
+    Spec.assertEqWith s "bob sees alice's ante card face up" (fmap (fmap ProjectedCharacteristics.names . ObjectView.characteristics) anted) [Just (Set.singleton (S.printingName piker))]
+    Spec.assertEqWith s "bob's wording places it in her ante" (Wording.choosable view oid) (Text.pack "Player 1's Goblin Piker 2/1, in the ante")
   Spec.it s "CR 406.3 a card exiled face down shows its owner nothing of itself" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (oid, placed) = S.addObjectIn Zone.Exile piker S.alice (Setup.emptyGame S.bothPlayers)

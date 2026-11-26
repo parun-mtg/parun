@@ -131,6 +131,7 @@ seatView pid gs seat = do
         SeatView.library = hidden Zone.Library,
         SeatView.graveyard = public Zone.Graveyard,
         SeatView.exile = public Zone.Exile,
+        SeatView.ante = public Zone.Ante,
         SeatView.manaPool = Map.findWithDefault (Mana.MkMana []) seat (GameState.manaPool gs),
         SeatView.ringTemptations = Player.ringTemptations player,
         SeatView.speed = Player.speed player,
