@@ -414,6 +414,7 @@ import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlacesSticker as PlacesSticker
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
 import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
+import qualified Parun.Types.PlayAsCopy as PlayAsCopy
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerCounters as PlayerCounters
@@ -4446,6 +4447,9 @@ playerEffectFilters playerEffect = case playerEffect of
   -- exactly as the cast-side one above is (City in a Bottle's is an Or of
   -- HasName, Damping Engine's is `And []`).
   PlayerEffect.CantPlayLands f -> [f]
+  -- CR 305.1's play-as-copy permission: the played card's qualities, and the
+  -- reference card's, read against the printed card (CR 400.11).
+  PlayerEffect.PlayAsCopy (PlayAsCopy.MkPlayAsCopy f original) -> [f, original]
   -- CR 601.3's zone permission, narrowed by the card's own qualities exactly as
   -- the timing permission beside it is (Yawgmoth's Will's is `And []`, Garruk's
   -- Horde's "creature spells"). WHOSE zone rides beside the Filter and is no

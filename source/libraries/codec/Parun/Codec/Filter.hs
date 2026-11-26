@@ -99,6 +99,7 @@ codec keywordCodec =
       Arm.payload "HasSupertype" Supertype.codec Filter.HasSupertype (\x -> case x of Filter.HasSupertype y -> Just y; _ -> Nothing),
       Arm.payload "HasColor" Color.codec Filter.HasColor (\x -> case x of Filter.HasColor y -> Just y; _ -> Nothing),
       Arm.payload "HasSubtype" Subtype.codec Filter.HasSubtype (\x -> case x of Filter.HasSubtype y -> Just y; _ -> Nothing),
+      Arm.payload "ProducesColorOf" SlotName.codec Filter.ProducesColorOf (\x -> case x of Filter.ProducesColorOf y -> Just y; _ -> Nothing),
       Arm.payload "HasName" CardName.codec Filter.HasName (\x -> case x of Filter.HasName y -> Just y; _ -> Nothing),
       Arm.payload "HasNameOriginallyPrintedIn" Expansion.codec Filter.HasNameOriginallyPrintedIn (\x -> case x of Filter.HasNameOriginallyPrintedIn y -> Just y; _ -> Nothing),
       Arm.payload "NameWordsAtLeast" Common.natural Filter.NameWordsAtLeast (\x -> case x of Filter.NameWordsAtLeast y -> Just y; _ -> Nothing),
@@ -358,6 +359,7 @@ tagOf x = case x of
   Filter.HasSupertype {} -> "HasSupertype"
   Filter.HasColor {} -> "HasColor"
   Filter.HasSubtype {} -> "HasSubtype"
+  Filter.ProducesColorOf {} -> "ProducesColorOf"
   Filter.HasName {} -> "HasName"
   Filter.HasNameOriginallyPrintedIn {} -> "HasNameOriginallyPrintedIn"
   Filter.NameWordsAtLeast {} -> "NameWordsAtLeast"

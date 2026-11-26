@@ -25,6 +25,7 @@ import qualified Parun.Codec.LoyaltyGrant as LoyaltyGrant
 import qualified Parun.Codec.ManaFilter as ManaFilter
 import qualified Parun.Codec.ManaType as ManaType
 import qualified Parun.Codec.ModifiedRoll as ModifiedRoll
+import qualified Parun.Codec.PlayAsCopy as PlayAsCopy
 import qualified Parun.Codec.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Codec.PlayerRelation as PlayerRelation
 import qualified Parun.Codec.PlayerScope as PlayerScope
@@ -153,6 +154,7 @@ codec =
           Arm.payload "CantPlayLands" filterCodec PlayerEffect.CantPlayLands (\x -> case x of PlayerEffect.CantPlayLands y -> Just y; _ -> Nothing),
           Arm.payload "CastFrom" CastFromZone.codec PlayerEffect.CastFrom (\x -> case x of PlayerEffect.CastFrom y -> Just y; _ -> Nothing),
           Arm.payload "PlayLandsFrom" InZone.codec PlayerEffect.PlayLandsFrom (\x -> case x of PlayerEffect.PlayLandsFrom y -> Just y; _ -> Nothing),
+          Arm.payload "PlayAsCopy" PlayAsCopy.codec PlayerEffect.PlayAsCopy (\x -> case x of PlayerEffect.PlayAsCopy y -> Just y; _ -> Nothing),
           Arm.payload "PlotFrom" PlotFromZone.codec PlayerEffect.PlotFrom (\x -> case x of PlayerEffect.PlotFrom y -> Just y; _ -> Nothing),
           Arm.payload "PayRatherThanManaCost" FreeCast.codec PlayerEffect.PayRatherThanManaCost (\x -> case x of PlayerEffect.PayRatherThanManaCost y -> Just y; _ -> Nothing),
           Arm.payload "CantGetCounters" (Common.maybe PlayerCounterKind.codec) PlayerEffect.CantGetCounters (\x -> case x of PlayerEffect.CantGetCounters y -> Just y; _ -> Nothing),
@@ -216,6 +218,7 @@ tagOf x = case x of
   PlayerEffect.PutTappedAsYouCascade {} -> "PutTappedAsYouCascade"
   PlayerEffect.CastOnlyAtSorcerySpeed {} -> "CastOnlyAtSorcerySpeed"
   PlayerEffect.CantPlayLands {} -> "CantPlayLands"
+  PlayerEffect.PlayAsCopy {} -> "PlayAsCopy"
   PlayerEffect.CastFrom {} -> "CastFrom"
   PlayerEffect.PlayLandsFrom {} -> "PlayLandsFrom"
   PlayerEffect.PlotFrom {} -> "PlotFrom"

@@ -4607,6 +4607,8 @@ filterReads f = case f of
   -- Reads the CANDIDATE's trait; the anchored object's arrive on the Context.
   Filter.Type.Shares trait anchor -> traitReads trait <> foldMap filterReads (Filter.anchorFilter anchor)
   Filter.Type.HasSubtype _ -> Set.singleton Subtypes
+  -- CR 305.6's land types; the slot's colours arrive on the Context.
+  Filter.Type.ProducesColorOf _ -> Set.fromList [Types, Subtypes]
   -- Reads no aspect: CR 201.1's names have no Aspect, so CR 613.8a's dependency
   -- cannot turn on the layer-3 writes of them (AddNamesMatching, SetName,
   -- InsertNameWords).
@@ -5012,6 +5014,7 @@ filterReadsPeers f = case f of
     Anchor.Source -> False
     Anchor.YourCommander -> False
   Filter.Type.HasSubtype _ -> False
+  Filter.Type.ProducesColorOf _ -> False
   Filter.Type.HasName _ -> False
   Filter.Type.NameWordsAtLeast _ -> False
   Filter.Type.HasNameOriginallyPrintedIn _ -> False

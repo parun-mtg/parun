@@ -1,0 +1,57 @@
+{
+  "faces": [
+    {
+      "name": "Dakkon Blackblade Avatar",
+      "oracleText": "You may play any colored card from your hand as a copy of a basic land card chosen at random that can produce mana of one of the card's colors.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "PlayAsCopy",
+            "value": {
+              "cards": {
+                "type": "Measures",
+                "value": {
+                  "comparison": "AtLeast",
+                  "measure": "ColorCount",
+                  "operand": {
+                    "type": "Literal",
+                    "value": 1
+                  }
+                }
+              },
+              "original": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasSupertype",
+                    "value": "Basic"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Land"
+                  },
+                  {
+                    "type": "ProducesColorOf",
+                    "value": "thatPlayedLand"
+                  }
+                ]
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 1,
+        "lifeModifier": 0
+      }
+    }
+  ]
+}

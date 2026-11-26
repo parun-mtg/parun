@@ -78,6 +78,7 @@ import qualified Parun.Types.Lookback as Lookback
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Measure as Measure
@@ -2495,6 +2496,12 @@ matches context view predicate = case predicate of
   Filter.HasColor c -> Set.member c (colors view)
   Filter.Shares trait anchor -> maybe False (\shared -> shared context view) (sharesAnchored trait anchor)
   Filter.HasSubtype s -> Set.member s (subtypes view)
+  -- CR 305.6 read off the land types, so a reference card with no object
+  -- behind it answers it (Parun.Engine.Projection.View.referenceAdmits). A slot
+  -- holding nothing answers False.
+  Filter.ProducesColorOf slot ->
+    let produced = Set.fromList [c | ManaType.Colored c <- Subtype.Engine.intrinsicMana (cardTypes view) (subtypes view)]
+     in maybe False (not . Set.null . Set.intersection produced) (Map.lookup slot (slotColors context))
   -- CR 709.4a's own test, said the way that rule says it: membership, so an
   -- object showing several names matches on any one of them.
   Filter.HasName n -> Set.member n (names view)
@@ -3563,6 +3570,18 @@ bakeChosenColors chosen predicate = case predicate of
   Filter.HasChosenColor -> Filter.Or (fmap Filter.HasColor (Set.toList chosen))
   _ -> Identity.runIdentity (Children.filterChildren (Children.descending (Identity.Identity . bakeChosenColors chosen)) predicate)
 
+-- CR 305.6: every ProducesColorOf whose slot `produced` binds named outright, as
+-- the land types adding one of those colours, so a reference pick
+-- (Prompt.ReferenceCards), matched with no slot bound, reads it: the atom's own
+-- reading, conjunct for conjunct. Left standing where the map does not bind the
+-- slot. bakeBound's descent, and its reason for not entering a keyword.
+bakeProducedColors :: Map.Map SlotName.SlotName (Set.Set Color.Color) -> Filter.Filter Keyword.Type.Keyword -> Filter.Filter Keyword.Type.Keyword
+bakeProducedColors produced predicate = case predicate of
+  Filter.ProducesColorOf slot ->
+    let landTypes cs = [Filter.HasSubtype t | t <- [minBound .. maxBound], Just (ManaType.Colored c) <- [Subtype.Engine.subtypeMana t], Set.member c cs]
+     in maybe predicate (\cs -> Filter.And [Filter.HasCardType CardType.Land, Filter.Or (landTypes cs)]) (Map.lookup slot produced)
+  _ -> Identity.runIdentity (Children.filterChildren (Children.descending (Identity.Identity . bakeProducedColors produced)) predicate)
+
 -- The mana-value LITERALS a Filter compares against: every `n` a Measures atom
 -- compares the candidate's mana value with, at any depth.
 --
@@ -3642,6 +3661,7 @@ manaValueThresholds predicate = case predicate of
   Filter.HasColor _ -> []
   Filter.Shares _ anchor -> foldMap manaValueThresholds (anchorFilter anchor)
   Filter.HasSubtype _ -> []
+  Filter.ProducesColorOf _ -> []
   Filter.HasName _ -> []
   Filter.NameWordsAtLeast _ -> []
   Filter.HasNameOriginallyPrintedIn _ -> []
@@ -3823,6 +3843,7 @@ statesAQuality predicate = case predicate of
   Filter.HasColor _ -> True
   Filter.Shares _ _ -> True
   Filter.HasSubtype _ -> True
+  Filter.ProducesColorOf _ -> True
   -- CR 701.23b's "stated quality" at its sharpest -- a named card is the most
   -- specific description a search can give -- so the searcher may decline to
   -- find one that is there, and CR 701.23d's "must find" does not apply.
@@ -4031,6 +4052,7 @@ readsSourceValues predicate = case predicate of
     Anchor.YourCommander -> False
     Anchor.Host -> False
   Filter.HasSubtype _ -> False
+  Filter.ProducesColorOf _ -> False
   Filter.HasName _ -> False
   Filter.NameWordsAtLeast _ -> False
   Filter.HasNameOriginallyPrintedIn _ -> False
@@ -4177,6 +4199,7 @@ talliesWhatHappened predicate = case predicate of
   Filter.HasColor {} -> False
   Filter.Shares {} -> False
   Filter.HasSubtype {} -> False
+  Filter.ProducesColorOf {} -> False
   Filter.HasName {} -> False
   Filter.NameWordsAtLeast {} -> False
   Filter.HasNameOriginallyPrintedIn {} -> False
