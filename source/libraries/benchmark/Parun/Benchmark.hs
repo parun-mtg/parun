@@ -55,6 +55,7 @@ import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Playout as Playout
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.Program as Program
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import Parun.Types.Result (Result)
@@ -518,7 +519,7 @@ decisionIn registry deck =
               Play.Game.underneath (State.put (Just (Asked.game asked)))
               Play.Game.stop (Text.pack "found")
         _ -> Answerer.unwrap (Play.Game.bot lifted) asked
-      taken = snd (Identity.runIdentity (State.runStateT (Play.Game.run lifted GameSettings.plain Limits.standard [] (Map.fromList [(Command.idOf 1, capture), (Command.idOf 2, capture)]) (seeded 3) Map.empty (Command.seated 1 (deck NonEmpty.:| [deck]))) Nothing))
+      taken = snd (Identity.runIdentity (State.runStateT (Play.Game.run Program.foldProgramM lifted GameSettings.plain Limits.standard [] (Map.fromList [(Command.idOf 1, capture), (Command.idOf 2, capture)]) (seeded 3) Map.empty (Command.seated 1 (deck NonEmpty.:| [deck]))) Nothing))
    in maybe (Exception.throwIO (userError "no decision from turn 3 on")) pure taken
 
 main :: IO ()

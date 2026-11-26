@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
 
 -- | A whole game: each seat answered by its own answerer (a program over
 -- lines or the random bot), chance by the generator.
@@ -83,15 +84,15 @@ remembered stored kept live = Answerer.MkAnswerer $ \asked -> case Protocol.requ
         pure answer
 
 -- | A game over the card reference `registry` ('consulting'), under
--- `settings`' options and format (CR 800.2, 100.2), from setup to its result;
--- the head of the matchup plays first, and each seat starts at its graveyard
--- order in `orders`, under the host's `limits` (Driver.match). Left is why
--- play stopped before the end.
+-- `settings`' options and format (CR 800.2, 100.2), from setup to its result,
+-- its prompts answered through `fold`; the head of the matchup plays first,
+-- and each seat starts at its graveyard order in `orders`, under the host's
+-- `limits` (Driver.match). Left is why play stopped before the end.
 -- RecordSpec's Yorion, Sky Nomad case proves the format reaches the game,
 -- and its ante case the options.
-run :: (Monad m) => Registry.Registry m -> GameSettings.GameSettings -> Limits.Limits -> [Observer.Observer (Play m)] -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)) -> Generator.Generator -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState))
-run registry settings limits observers seats generator orders matchup =
-  playing generator (Driver.match observers (consulting registry seats) settings limits orders matchup)
+run :: (Monad m) => Driver.Fold (Play m) -> Registry.Registry m -> GameSettings.GameSettings -> Limits.Limits -> [Observer.Observer (Play m)] -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)) -> Generator.Generator -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState))
+run fold registry settings limits observers seats generator orders matchup =
+  playing generator (Driver.match fold observers (consulting registry seats) settings limits orders matchup)
 
 -- | Play from the generator, in the base monad: Left is why it stopped first.
 playing :: (Monad m) => Generator.Generator -> Play m a -> m (Either Text.Text a)

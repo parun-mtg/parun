@@ -872,7 +872,7 @@ addEventListener("hashchange", () => {
 // held until the next reply, and added last, stamped, as the page hides or
 // unloads (stampRunning), for a reload to charge its seat the time it ran.
 let running = null;
-function keepGame({ start, reply, running: clock }) {
+function keepGame({ start, reply, retract, running: clock }) {
   if (clock !== undefined) {
     running = clock;
     return;
@@ -883,6 +883,12 @@ function keepGame({ start, reply, running: clock }) {
     if (start !== undefined) localStorage.setItem(gameKey, start);
     else if (reply !== undefined) {
       if (kept !== null) localStorage.setItem(gameKey, `${unstamped(kept)}\n${reply}`);
+    } else if (retract !== undefined) {
+      // The last reply's line taken back (Parun.Browser.retractReply): the
+      // game's own line, first, is never a reply's.
+      const replies = kept === null ? "" : unstamped(kept);
+      const last = replies.lastIndexOf("\n");
+      if (last !== -1) localStorage.setItem(gameKey, replies.slice(0, last));
     } else localStorage.removeItem(gameKey);
   } catch (problem) {
     console.warn(problem);

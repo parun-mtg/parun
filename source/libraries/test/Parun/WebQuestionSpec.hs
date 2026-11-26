@@ -503,7 +503,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "in hand" (sheetIn Zone.Hand withLier) (Just (Right printedText))
     Spec.assertEqWith s "given flashback" (sheetIn Zone.Graveyard withLier) (Just (Right (Text.pack "Its abilities have changed; this text may be out of date." : printedText)))
 
-  Spec.it s "CR 104.3a the turn bar carries the auto-pass level and the settings button, whose concession passes while the seat may" $ do
+  Spec.it s "CR 104.3a the turn bar carries the auto-pass level and the settings button, whose concession leaves at the seat's priority" $ do
     let request = requestFor S.threePlayerGame (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
         asked = Question.Web.view request Question.Web.blank
         watched = Maybe.fromMaybe (Html.text Text.empty) (Question.Web.watching (Just S.alice) [] False request Question.Web.blank)
@@ -512,7 +512,10 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         bar html = within "<div class=\"turn-bar" html >>= \path -> Html.at path html
         prompt = within "<section class=\"prompt\"" asked >>= \path -> Html.at path asked
         level html = bar html >>= \inner -> Html.labelled (Text.pack "button") (Text.pack "Auto") inner >>= \path -> Html.handler (Text.pack "click") path inner
-    Spec.assertEqWith s "the menu's Concede passes" (fmap (\event -> Question.Web.step request Set.empty event Text.empty) (conceding asked)) (Just (Question.Web.MkReplied (R.Number 0)))
+        stepped pending = fmap (\event -> Question.Web.step pending Set.empty event Text.empty) (conceding (Question.Web.view pending Question.Web.blank))
+    Spec.assertEqWith s "the menu's Concede leaves at once" (stepped request) (Just Question.Web.MkConceded)
+    Spec.assertEqWith s "CR 724.6 but passes where the seat decides for another" (stepped request {Request.question = (Request.question request) {Question.for = Just S.bob}}) (Just (Question.Web.MkReplied (R.Number 0)))
+    Spec.assertEqWith s "CR 730.1a and in a subgame" (stepped request {Request.depth = 1}) (Just (Question.Web.MkReplied (R.Number 0)))
     Spec.assertEqWith s "no concession while watching" (conceding watched) Nothing
     Spec.assertEqWith s "the level is chosen in the turn bar" (level asked) (Just (Question.Web.MkLevel Question.Web.MkAutoPass))
     Spec.assertEqWith s "and while watching" (level watched) (Just (Question.Web.MkLevel Question.Web.MkAutoPass))

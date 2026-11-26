@@ -55,3 +55,24 @@ foldProgramM answer program = case program of
   Then i k -> do
     b <- answer i
     foldProgramM answer (k b)
+
+-- | 'foldProgramM', where an answer can be given up for an earlier one: each
+-- instruction `keyOf` keys is kept, with the program as it stood suspended on
+-- it, while only keyed instructions follow; an answer that `catching` gives up
+-- with a key kept suspends on that key's instruction again, those kept after
+-- it forgotten, and one with a key not kept goes to `lost`. Since only keyed
+-- instructions were answered between, nothing is undone but what `catching`
+-- restores of the base monad. RemoteSeatSpec's game of three on the clocks
+-- is the proof.
+foldProgramResuming :: (Monad m, Eq k) => (forall b. instr b -> Maybe k) -> (forall b. m b -> (k -> m b) -> m b) -> (forall b. k -> m b) -> (forall b. instr b -> m b) -> Program instr a -> m a
+foldProgramResuming keyOf catching lost answer = go []
+  where
+    go kept program = case program of
+      Return a -> pure a
+      Then i k -> do
+        answered <- catching (fmap (Right . k) (answer i)) (pure . Left)
+        case answered of
+          Right rest -> go (foldMap (\key -> (key, program) : kept) (keyOf i)) rest
+          Left key -> case dropWhile ((/= key) . fst) kept of
+            (_, again) : earlier -> go earlier again
+            [] -> lost key

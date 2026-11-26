@@ -75,8 +75,9 @@ data Message
     MkDeciding PlayerId.PlayerId PlayerView.PlayerView Natural Banks
   | -- | The guest's reply to the last request.
     MkAnswer R.Reply
-  | -- | The guest's seat concedes at once, which ends a game of two
-    -- (Parun.Web.Question.decisive), whoever is asked.
+  | -- | The guest's seat concedes at once: ending a game of two
+    -- (Parun.Web.Question.decisive), whoever is asked, or leaving a game of
+    -- more at its priority (Parun.Web.Question.atPriority).
     MkConcede
   | -- | The game ended: the guest's ending, its log and life trail built
     -- from what the host sent its seat (seeing), which a page that reloaded

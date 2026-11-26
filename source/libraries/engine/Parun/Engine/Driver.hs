@@ -6,6 +6,7 @@
 -- game is stepped until it ends or its caller says stop.
 module Parun.Engine.Driver where
 
+import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -26,6 +27,7 @@ import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView.Type
+import qualified Parun.Types.Program as Program
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Result as Result
 
@@ -54,12 +56,16 @@ ask observers answerer asked = do
   mapM_ (\observer -> Observer.after observer asked answer) observers
   pure answer
 
--- | A whole game, from setup to its result, each player in `orders` starting
--- at that graveyard order (CR 404.3) and every other at Indifferent, under the
--- host's `limits`.
-match :: (Monad m) => [Observer.Observer m] -> Answerer.Answerer (Asked.Asked GameState.GameState) m -> GameSettings.GameSettings -> Limits.Limits -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Result.Result, GameState.GameState)
-match observers answerer settings limits orders matchup =
-  Engine.runGameAsked (ask observers answerer) (Map.foldrWithKey Game.setGraveyardOrder (Limit.under limits (Setup.gameWith settings (fmap fst matchup))) orders) (Engine.playFrom matchup)
+-- | How a game's prompts are answered in turn: each once
+-- (Program.foldProgramM), or some asked again (Program.foldProgramResuming).
+type Fold m = forall a. (forall r. Asked.Asked GameState.GameState r -> m r) -> Program.Program (Asked.Asked GameState.GameState) a -> m a
+
+-- | A whole game, from setup to its result, its prompts answered through
+-- `fold`, each player in `orders` starting at that graveyard order (CR 404.3)
+-- and every other at Indifferent, under the host's `limits`.
+match :: (Monad m) => Fold m -> [Observer.Observer m] -> Answerer.Answerer (Asked.Asked GameState.GameState) m -> GameSettings.GameSettings -> Limits.Limits -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Result.Result, GameState.GameState)
+match fold observers answerer settings limits orders matchup =
+  fold (ask observers answerer) (State.runStateT (Engine.playFrom matchup) (Map.foldrWithKey Game.setGraveyardOrder (Limit.under limits (Setup.gameWith settings (fmap fst matchup))) orders))
 
 -- | Whole steps (CR 500.1) from a state, until the game has a result, the
 -- budget is spent, or the predicate holds. In Grand Melee the budget counts

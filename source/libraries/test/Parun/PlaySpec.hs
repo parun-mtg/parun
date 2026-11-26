@@ -39,6 +39,7 @@ import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Search as Search
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
+import qualified Parun.RemoteSeatSpec as RemoteSeatSpec
 import qualified Parun.ResolveSpec as ResolveSpec
 import qualified Parun.Scenario as Scenario.Runner
 import qualified Parun.Spec as Spec
@@ -88,6 +89,7 @@ import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerCountersPlaced as PlayerCountersPlaced
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView.Type
+import qualified Parun.Types.Program as Program
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
@@ -106,6 +108,7 @@ import qualified Parun.Types.When as When
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 import qualified Parun.Web.Log as Log
+import qualified Parun.Web.Question as Web.Question
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Play" $ do
@@ -293,7 +296,7 @@ spec s registry = Spec.describe s "Play" $ do
     matchup <- BotSpec.sevens s registry
     let bots :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Identity.Identity))
         bots = Map.fromList [(S.alice, Game.bot (S.fixtureRegistry [])), (S.bob, Game.bot (S.fixtureRegistry []))]
-    case Identity.runIdentity (Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [] bots (S.seeded 1) Map.empty matchup) of
+    case Identity.runIdentity (Game.run Program.foldProgramM (S.fixtureRegistry []) GameSettings.plain Limits.standard [] bots (S.seeded 1) Map.empty matchup) of
       Right (Result.Won winner, gs) ->
         let loser = if winner == S.alice then S.bob else S.alice
          in Spec.assertEq s (Wording.departures Nothing gs) [Wording.player loser <> Text.pack " lost the game: drew from an empty library."]
@@ -304,7 +307,7 @@ spec s registry = Spec.describe s "Play" $ do
     let seats :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Identity.Identity))
         seats = Map.fromList [(S.alice, Game.goldfish (S.fixtureRegistry [])), (S.bob, Game.bot (S.fixtureRegistry []))]
         ownedBy pid gs = [oid | oid <- Set.toList (GameState.battlefield gs), Just o <- [Map.lookup oid (GameState.objects gs)], Object.owner o == pid]
-    case Identity.runIdentity (Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [] seats (S.seeded 1) Map.empty matchup) of
+    case Identity.runIdentity (Game.run Program.foldProgramM (S.fixtureRegistry []) GameSettings.plain Limits.standard [] seats (S.seeded 1) Map.empty matchup) of
       Right (_, gs) -> Spec.assertEqWith s "the goldfish's permanents, and the bot's" (null (ownedBy S.alice gs), null (ownedBy S.bob gs)) (True, False)
       Left reason -> Spec.assertBool s False ("finished: " <> Text.unpack reason)
 
@@ -321,7 +324,7 @@ spec s registry = Spec.describe s "Play" $ do
     alone <- NonEmpty.fromList . NonEmpty.take 1 <$> BotSpec.sevens s registry
     let bots :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Identity.Identity))
         bots = Map.singleton S.alice (Game.bot (S.fixtureRegistry []))
-    case Identity.runIdentity (Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [] bots (S.seeded 1) Map.empty alone) of
+    case Identity.runIdentity (Game.run Program.foldProgramM (S.fixtureRegistry []) GameSettings.plain Limits.standard [] bots (S.seeded 1) Map.empty alone) of
       Right (Result.Drawn, gs) -> Spec.assertEq s (Wording.departures Nothing gs) [Wording.player S.alice <> Text.pack " lost the game: drew from an empty library."]
       outcome -> Spec.assertBool s False ("drawn: " <> show (fmap fst outcome))
 
@@ -507,6 +510,48 @@ gameSpec s registry = Spec.describe s "Play.Command" $ do
         final = Seq.lookup (Seq.length timeline - 1) timeline
     Spec.assertEqWith s "the game stops" (fmap fst outcome) (Left (Text.pack "conceded"))
     Spec.assertEqWith s "its recording ends on the other seat's concession" (fmap (\t -> (When.player (Timed.when t), Timed.source t, Timed.entry t)) final) (fmap (\seat -> (Map.findWithDefault (Label.MkLabel Text.empty) (other seat) (Command.labels 2), Nothing, Entry.Do Move.Concede)) asked)
+    (_, replayed) <- Scenario.Runner.replay registry Scenario.Runner.unkept Nothing recorded
+    case replayed of
+      Right (Stop.MkEnded _) -> pure ()
+      Right Stop.MkBefore {} -> Spec.assertBool s False "the replay stopped short"
+      Left failure -> Spec.assertBool s False ("the replay takes the concession where it was made: " <> Text.unpack (Scenario.Runner.render failure))
+
+  Spec.it s "CR 104.3a / 800.4 a seat leaving a game of three at its priority leaves it there, the others playing on to a result, its recording replaying to it" $ do
+    matchup <- BotSpec.bears s registry
+    let seed = Generator.key (S.seeded 7)
+        decks = fmap snd matchup <> pure (snd (NonEmpty.head matchup))
+    -- The turn Player 2 left the game in, at its first priority after the
+    -- first turn's.
+    leftRef <- IORef.newIORef Nothing
+    let exchange request = case (Request.view request, Question.offer (Request.question request)) of
+          -- CR 103.1: the seat first offered plays first.
+          (Nothing, R.Array (first : _)) -> pure (Just (Right first))
+          (Nothing, _) -> pure Nothing
+          (Just shown, _) -> do
+            left <- IORef.readIORef leftRef
+            let question = Request.question request
+                turn = PlayerView.Type.turn shown
+            case left of
+              Just _
+                | Question.seat question == S.bob,
+                  Question.kind question == Text.pack "Concede" ->
+                    pure (Just (Right (R.Text (Text.pack "Concedes"))))
+              Nothing
+                | Question.seat question == S.bob,
+                  Web.Question.atPriority request,
+                  turn > 1 -> do
+                    IORef.writeIORef leftRef (Just turn)
+                    Exception.throwIO (Command.MkLeaving S.bob)
+              _ -> pure (Just (Right (RemoteSeatSpec.answer request)))
+    (outcome, recorded) <- Command.game (Text.pack "the web client") exchange (pure Nothing) (const (pure ())) [] (pure ()) PlayOptions.none Search.known (S.fixtureRegistry []) GameSettings.plain decks seed
+    left <- IORef.readIORef leftRef
+    case outcome of
+      Right (Result.Won winner, gs) -> do
+        Spec.assertBool s (winner /= S.bob) "a seat still playing wins"
+        Spec.assertEqWith s "Player 2 conceded" (filter (Text.isPrefixOf (Text.pack "Player 2")) (Wording.departures Nothing gs)) [Text.pack "Player 2 conceded."]
+        Spec.assertBool s (maybe False (< TurnRegisters.turnNumber (GameState.turn gs)) left) ("the others played on past the turn it left in: " <> show (left, TurnRegisters.turnNumber (GameState.turn gs)))
+      _ -> Spec.assertBool s False ("the game has a winner: " <> show (fmap fst outcome))
+    Spec.assertBool s (any (\t -> Timed.entry t == Entry.Do Move.Concede && When.player (Timed.when t) == Map.findWithDefault (Label.MkLabel Text.empty) S.bob (Command.labels 3)) (Scenario.timeline recorded)) "its recording holds the concession"
     (_, replayed) <- Scenario.Runner.replay registry Scenario.Runner.unkept Nothing recorded
     case replayed of
       Right (Stop.MkEnded _) -> pure ()

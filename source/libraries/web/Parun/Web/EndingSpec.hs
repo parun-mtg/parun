@@ -34,7 +34,7 @@ spec s = Spec.describe s "Parun.Web.Ending" $ do
     Spec.it s "loses the game for the seat out of time and wins it for the other of two" $ do
       Spec.assertEqWith s "the seat out of time" (Ending.leftEarly 2 outOfTime two (Just two)) (Ending.MkLost, [Text.pack "Player 2 ran out of time."])
       Spec.assertEqWith s "the other" (fmap fst [Ending.leftEarly 2 outOfTime two (Just one), Ending.leftEarly 2 outOfTime two Nothing]) [Ending.MkWon, Ending.MkWonBy one]
-    Spec.it s "stops a game of three for the rest (#9757)" $ do
+    Spec.it s "stops a game of three for the rest where the seat's time ran out but at its priority (#9646)" $ do
       Spec.assertEqWith s "the rest" (Ending.leftEarly 3 outOfTime two (Just one)) (Ending.MkStopped, [Text.pack "The game stopped: Player 2 ran out of time."])
       Spec.assertEqWith s "the seat out of time" (fst (Ending.leftEarly 3 outOfTime two (Just two))) Ending.MkLost
     Spec.it s "CR 104.3a / 104.2a a concession in a game of two loses it for the seat conceding, saying so" $ do

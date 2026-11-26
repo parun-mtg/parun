@@ -980,7 +980,7 @@ play shell seats settings clock invited here resuming = do
       told <- IORef.newIORef Map.empty
       let decides seat gs depth clocks = IORef.readIORef told >>= Link.telling (Map.fromList [(seatOf i, channelOf i) | i <- Map.keys invited]) seat gs depth clocks >>= IORef.writeIORef told
       parsed <- foldMap LazyMap.elems . cards <$> IORef.readIORef (loaded shell)
-      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (Hotseat.MkDealt settings (fmap (Bifunctor.first Text.unpack) seats)) clock (PlayerId.MkPlayerId 0) Set.empty remotes heeds (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) (resuming >>= Link.running) (\reply clocks -> Browser.keepReply (Link.savedReply (reply, clocks))) (Browser.keepRunning . Link.savedRunning) decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
+      ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (Hotseat.MkDealt settings (fmap (Bifunctor.first Text.unpack) seats)) clock (PlayerId.MkPlayerId 0) Set.empty remotes heeds (Map.mapKeys seatOf here) seed (foldMap Link.replies resuming) (resuming >>= Link.running) (\reply clocks -> Browser.keepReply (Link.savedReply (reply, clocks))) Browser.retractReply (Browser.keepRunning . Link.savedRunning) decides tellAll (leaveFor shell chosen [DeckBrowser.label (DeckBrowser.titleIn seat) name | seat@(name, _) <- NonEmpty.toList seats])
       Browser.forgetGame
       case ended of
         Left problems -> stopped problems >> notice shell problems
@@ -1298,7 +1298,7 @@ playOnFrom shell game resuming = opened shell (Link.replayed game) $ \reg _ play
       goldfish = Set.fromList [pid | (pid, Link.MkFilledByGoldfish) <- filled]
       -- Each bot in its slot, as the lobby numbers them (Lobby.botAt).
       bots = Map.fromList [(slot, (difficulty, persona)) | (slot, (_, Link.MkFilledByBot difficulty persona)) <- zip [0 :: Int ..] filled]
-  ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (Hotseat.MkBranched scenario (Link.position game)) (Link.minutes game) host goldfish Map.empty Map.empty locals key (foldMap Link.replies resuming) (resuming >>= Link.running) (\reply clocks -> Browser.keepReply (Link.savedReply (reply, clocks))) (Browser.keepRunning . Link.savedRunning) (\_ _ _ _ -> pure ()) (const (pure ())) (leaveFor shell chosen (foldMap (fmap History.deck . History.seats) played))
+  ended <- Hotseat.game (page shell) reg parsed (tableOf shell) (level shell) bots (Hotseat.MkBranched scenario (Link.position game)) (Link.minutes game) host goldfish Map.empty Map.empty locals key (foldMap Link.replies resuming) (resuming >>= Link.running) (\reply clocks -> Browser.keepReply (Link.savedReply (reply, clocks))) Browser.retractReply (Browser.keepRunning . Link.savedRunning) (\_ _ _ _ -> pure ()) (const (pure ())) (leaveFor shell chosen (foldMap (fmap History.deck . History.seats) played))
   Browser.forgetGame
   let over said' = do
         let said = foldMap (Maybe.maybeToList . History.drift (build shell)) played <> said'

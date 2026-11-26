@@ -38,6 +38,7 @@ import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.MatchOptions as MatchOptions
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Program as Program
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.Tally as Tally
@@ -123,7 +124,7 @@ game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natur
 game registry format searchers prior seed index decks =
   let count = Natural.length decks
       seat n = maybe (Game.bot (lifted registry)) (\(budget, weights) -> Game.remembered (pure Nothing) (const (pure ())) (Search.search (lifted registry) budget weights prior (Game.underneath (State.gets (\(_, plays, _, _) -> plays))) (Game.underneath (State.gets (\(_, _, memories, _) -> Map.findWithDefault Search.blank (Command.idOf n) memories))) (Search.keptBy (State.gets (\(_, _, _, aims) -> aims)) (\f -> State.modify' (\(timeline, plays, memories, aims) -> (timeline, plays, memories, f aims))) (Command.idOf n)) (pure ()) Search.unhurried)) (Map.lookup n searchers)
-   in fmap (fmap (\(timeline, _, _, _) -> timeline)) (State.runStateT (Game.run (lifted registry) GameSettings.plain {GameSettings.format = format} Limits.standard [Record.recording (Command.labels count) sink, Search.watching (\f -> State.modify' (\(timeline, plays, memories, aims) -> let kept = f plays in kept `seq` (timeline, kept, memories, aims))), Search.remembering (\f -> State.modify' (\(timeline, plays, memories, aims) -> let kept = f memories in kept `seq` (timeline, plays, kept, aims)))] (Map.fromList [(Command.idOf n, seat n) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) (Seq.empty, [], Map.empty, Map.empty))
+   in fmap (fmap (\(timeline, _, _, _) -> timeline)) (State.runStateT (Game.run Program.foldProgramM (lifted registry) GameSettings.plain {GameSettings.format = format} Limits.standard [Record.recording (Command.labels count) sink, Search.watching (\f -> State.modify' (\(timeline, plays, memories, aims) -> let kept = f plays in kept `seq` (timeline, kept, memories, aims))), Search.remembering (\f -> State.modify' (\(timeline, plays, memories, aims) -> let kept = f memories in kept `seq` (timeline, plays, kept, aims)))] (Map.fromList [(Command.idOf n, seat n) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) (Seq.empty, [], Map.empty, Map.empty))
 
 -- | A pair of decks, seat 1's first.
 both :: (Deck.Deck, Deck.Deck) -> NonEmpty.NonEmpty Deck.Deck
