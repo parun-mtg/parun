@@ -2563,7 +2563,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- counts the Plains its controller controls.
     --
     -- Exactly, against the mana value: Chthonian Nightmare, Shelob, Dread
-    -- Weaver, Gelatinous Cube, Likeness Looter, The Mycosynth Gardens, Rydia, Summoner of Mist, Tamiyo, Compleated Sage, Synthetic Counted, Announced, Wide, Paired, Total and Divided
+    -- Weaver, Ink-Eyes, Servant of Oni Avatar, Gelatinous Cube, Likeness Looter, The Mycosynth Gardens, Rydia, Summoner of Mist, Tamiyo, Compleated Sage, Synthetic Counted, Announced, Wide, Paired, Total and Divided
     -- Verdict, Synthetic Wide Muster on a modal trigger, Spell Blast and Detonate in a slot, and Fear of Change and Ornate Imitations in a reference
     -- pick, at the top level and
     -- inside a ForEachNumber body; Momir Vig, Simic Visionary Avatar and Sliver
@@ -2638,6 +2638,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Figure of Destiny Avatar", 1),
         ("Chthonian Nightmare", 1),
         ("Shelob, Dread Weaver", 1),
+        ("Ink-Eyes, Servant of Oni Avatar", 1),
         ("Gelatinous Cube", 1),
         ("Likeness Looter", 1),
         ("The Mycosynth Gardens", 1),

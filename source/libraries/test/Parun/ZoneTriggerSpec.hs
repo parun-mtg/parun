@@ -2143,6 +2143,7 @@ representativeEvents cond =
         TriggerCondition.ChaosEnsues -> one (GameEvent.ChaosEnsued Nothing)
         -- CR 732.1a's own event, day becoming night.
         TriggerCondition.DaytimeChanges -> one (GameEvent.DaytimeChanged Daytime.Night)
+        TriggerCondition.GameBegins -> one GameEvent.GameBegan
         -- CR 901.9c's own event, a planar die showing the Planeswalker symbol.
         TriggerCondition.PlayerRollsPlaneswalker _ -> one (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled S.bob PlanarDieFace.Planeswalker))
         -- CR 701.32's own event, and the only one this condition admits.
@@ -2523,6 +2524,7 @@ everyTriggerCondition =
     TriggerCondition.Visit,
     TriggerCondition.ChaosEnsues,
     TriggerCondition.DaytimeChanges,
+    TriggerCondition.GameBegins,
     TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.You,
     TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.Opponent,
     TriggerCondition.TurnedUpOffDeck ActingPermanent.Self,

@@ -1,0 +1,165 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "PayLife",
+                "value": {
+                  "type": "Announced",
+                  "value": "X"
+                }
+              }
+            ],
+            "mana": [
+              {
+                "type": "Variable"
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "amount": {
+                      "type": "InSlot",
+                      "value": "X"
+                    },
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "Measures",
+                          "value": {
+                            "comparison": "Exactly",
+                            "measure": "ManaValue",
+                            "operand": {
+                              "type": "EnclosingAmount"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "CardsInGraveyard",
+                      "value": {
+                        "type": "Scoped",
+                        "value": {
+                          "type": "Opponent"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Ink-Eyes, Servant of Oni Avatar",
+      "oracleText": "At the beginning of the game, look at target opponent's hand and choose a nonland card from it. That player discards that card.\n{X}, Pay X life: Put target creature card with mana value X from an opponent's graveyard onto the battlefield under your control.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "GameBegins"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LookAt",
+                        "value": {
+                          "ref": {
+                            "type": "EachCardInHand",
+                            "value": {
+                              "hands": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            }
+                          },
+                          "slot": "looked"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "These",
+                          "value": {
+                            "cards": {
+                              "type": "ChosenCardFromAmong",
+                              "value": {
+                                "filter": {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "HasCardType",
+                                    "value": "Land"
+                                  }
+                                },
+                                "slot": "looked"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "IsPlayer",
+                      "value": "Opponent"
+                    },
+                    "pool": {
+                      "type": "Players"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 0,
+        "lifeModifier": -3
+      }
+    }
+  ]
+}

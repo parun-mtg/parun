@@ -636,6 +636,7 @@ event reader view logged = case LoggedEvent.event logged of
     MulliganDecision.Keep -> said [acts reader (MulliganDeclared.player d) "keeps"]
     MulliganDecision.Mulligan -> said [acts reader (MulliganDeclared.player d) "mulligans, bottoming", count (MulliganDeclared.bottomCount d) "card"]
   GameEvent.StepBegan {} -> Nothing
+  GameEvent.GameBegan -> Nothing
   GameEvent.CardArrived {} -> Nothing
   GameEvent.AttackersDeclared {} -> Nothing
   GameEvent.BecameAttacked {} -> Nothing

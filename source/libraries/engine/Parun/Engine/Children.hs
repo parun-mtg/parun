@@ -1789,6 +1789,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.PlayerExpends _ -> pure condition
   TriggerCondition.ChaosEnsues -> pure condition
   TriggerCondition.DaytimeChanges -> pure condition
+  TriggerCondition.GameBegins -> pure condition
   TriggerCondition.PlayerRollsPlaneswalker _ -> pure condition
   TriggerCondition.TurnedUpOffDeck subject -> fmap TriggerCondition.TurnedUpOffDeck (actingChildren c subject)
   TriggerCondition.SelfPlaneswalkedAwayFrom -> pure condition

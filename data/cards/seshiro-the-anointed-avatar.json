@@ -1,0 +1,80 @@
+{
+  "faces": [
+    {
+      "name": "Seshiro the Anointed Avatar",
+      "oracleText": "At the beginning of the game, choose a creature type. Creatures you control, creature spells you control, and creature cards you own in any zone other than the battlefield or the stack have the chosen type in addition to their other types.",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "MatchingAnywhere",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "ChosenSubtype",
+              "value": {
+                "family": "CreatureType",
+                "mode": "InAddition"
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "GameBegins"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ChooseQuality",
+                        "value": {
+                          "linked": true,
+                          "quality": {
+                            "type": "Subtype",
+                            "value": {
+                              "family": "CreatureType"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 0,
+        "lifeModifier": -1
+      }
+    }
+  ]
+}

@@ -1155,6 +1155,7 @@ snapshotView viewOf context gs shape event = case event of
   GameEvent.TurnedUpOffDeck _ -> Nothing
   GameEvent.ChaosEnsued _ -> Nothing
   GameEvent.DaytimeChanged _ -> Nothing
+  GameEvent.GameBegan -> Nothing
   GameEvent.ClassLevelSet _ -> Nothing
   GameEvent.Plotted _ -> Nothing
   GameEvent.BecameAttacked _ -> Nothing

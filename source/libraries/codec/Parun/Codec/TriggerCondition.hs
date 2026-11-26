@@ -126,6 +126,7 @@ codec =
           Arm.nullary "Visit" TriggerCondition.Visit,
           Arm.nullary "ChaosEnsues" TriggerCondition.ChaosEnsues,
           Arm.nullary "DaytimeChanges" TriggerCondition.DaytimeChanges,
+          Arm.nullary "GameBegins" TriggerCondition.GameBegins,
           Arm.payload "PlayerRollsPlaneswalker" PlayerRelation.codec TriggerCondition.PlayerRollsPlaneswalker (\x -> case x of TriggerCondition.PlayerRollsPlaneswalker y -> Just y; _ -> Nothing),
           Arm.payload "TurnedUpOffDeck" ActingPermanent.codec TriggerCondition.TurnedUpOffDeck (\x -> case x of TriggerCondition.TurnedUpOffDeck y -> Just y; _ -> Nothing),
           Arm.nullary "SelfPlaneswalkedAwayFrom" TriggerCondition.SelfPlaneswalkedAwayFrom,
@@ -200,6 +201,7 @@ tagOf x = case x of
   TriggerCondition.Visit {} -> "Visit"
   TriggerCondition.ChaosEnsues {} -> "ChaosEnsues"
   TriggerCondition.DaytimeChanges {} -> "DaytimeChanges"
+  TriggerCondition.GameBegins {} -> "GameBegins"
   TriggerCondition.PlayerRollsPlaneswalker {} -> "PlayerRollsPlaneswalker"
   TriggerCondition.TurnedUpOffDeck {} -> "TurnedUpOffDeck"
   TriggerCondition.SelfPlaneswalkedAwayFrom {} -> "SelfPlaneswalkedAwayFrom"
