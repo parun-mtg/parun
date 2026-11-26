@@ -177,18 +177,21 @@ spec s corpus = Spec.describe s "Parun.Ingest" $ do
       _ -> Spec.assertFailure s "Blue Mage's Cane: no texts or no card"
 
   -- mtgish's AST for Dragon Engine predates its Dragon subtype; Maro's star
-  -- is the translation's to keep.
+  -- is the translation's to keep. Mishra's and Selenia's modifiers (CR
+  -- 313.6, CR 313.7) are signed as MTGJSON prints them.
   Spec.it s "reprint takes the printed characteristics from the record" $ do
     registry <- Registry.defaultRoot >>= Registry.fileRegistry
     Monad.forM_
       [ ("Dragon Engine", "{\"name\":\"Dragon Engine\",\"manaCost\":\"{3}\",\"supertypes\":[],\"types\":[\"Artifact\",\"Creature\"],\"subtypes\":[\"Dragon\",\"Construct\"],\"power\":\"1\",\"toughness\":\"3\",\"text\":null}"),
-        ("Maro", "{\"name\":\"Maro\",\"manaCost\":\"{2}{G}{G}\",\"supertypes\":[],\"types\":[\"Creature\"],\"subtypes\":[\"Elemental\"],\"power\":\"*\",\"toughness\":\"*\",\"text\":null}")
+        ("Maro", "{\"name\":\"Maro\",\"manaCost\":\"{2}{G}{G}\",\"supertypes\":[],\"types\":[\"Creature\"],\"subtypes\":[\"Elemental\"],\"power\":\"*\",\"toughness\":\"*\",\"text\":null}"),
+        ("Mishra", "{\"name\":\"Mishra\",\"manaCost\":null,\"supertypes\":[],\"types\":[\"Vanguard\"],\"subtypes\":[],\"power\":null,\"toughness\":null,\"text\":null,\"hand\":\"+0\",\"life\":\"-3\"}"),
+        ("Selenia", "{\"name\":\"Selenia\",\"manaCost\":null,\"supertypes\":[],\"types\":[\"Vanguard\"],\"subtypes\":[],\"power\":null,\"toughness\":null,\"text\":null,\"hand\":\"+1\",\"life\":\"+7\"}")
       ]
       $ \(name, json) -> do
         card <- Registry.named registry name
         -- A star stays as the translation has it, so only a number is staled.
         let staleNumber p = if p == Just (Power.MkPower Quantity.Star) then p else Just (Power.MkPower (Quantity.Literal 9))
-            stale c = c {Card.faces = fmap (\f -> f {Face.manaCost = Nothing, Face.typeLine = (Face.typeLine f) {TypeLine.subtypes = []}, Face.power = staleNumber (Face.power f)}) (Card.faces c)}
+            stale c = c {Card.faces = fmap (\f -> f {Face.manaCost = Nothing, Face.typeLine = (Face.typeLine f) {TypeLine.subtypes = []}, Face.vanguard = Nothing, Face.power = staleNumber (Face.power f)}) (Card.faces c)}
         case (Common.parse (Text.pack json) >>= Ingest.printed, card) of
           (Right record, Right (Just expected)) -> Spec.assertEqWith s name expected (Ingest.reprint [record] (stale expected))
           _ -> Spec.assertFailure s (name <> ": no record or no card")
@@ -210,6 +213,7 @@ spec s corpus = Spec.describe s "Parun.Ingest" $ do
     Spec.assertEq s (reason "{\"name\":\"X\",\"manaCost\":\"{1}\",\"supertypes\":[],\"types\":[\"Artifact\"],\"subtypes\":[\"Equipment\"],\"text\":\"Equip planeswalker {1}\"}") (Left (Text.pack "text: equip planeswalker {1}"))
     Spec.assertEq s (reason "{\"name\":\"X\",\"manaCost\":\"{1}\",\"supertypes\":[],\"types\":[\"Creature\"],\"subtypes\":[],\"power\":\"*\",\"toughness\":\"1\",\"text\":null}") (Left (Text.pack "power/toughness: *"))
     Spec.assertEq s (reason "{\"name\":\"X // Y\",\"faces\":[]}") (Left (Text.pack "faces: more than one"))
+    Spec.assertEq s (reason "{\"name\":\"X\",\"manaCost\":null,\"supertypes\":[],\"types\":[\"Vanguard\"],\"subtypes\":[],\"text\":null,\"hand\":\"+1\"}") (Left (Text.pack "vanguard: one modifier without the other"))
     Spec.assertEq s (reason "{\"name\":\"X\",\"manaCost\":\"{1}\",\"supertypes\":[],\"types\":[\"Creature\"],\"subtypes\":[\"Nonesuch\"],\"power\":\"1\",\"toughness\":\"1\",\"text\":null}") (Left (Text.pack "subtype: Nonesuch"))
 
 -- A printed keyword as its constructor's name: each word capitalised, then

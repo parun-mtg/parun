@@ -144,8 +144,9 @@ faceAbilities face =
         -- Free: a later reference may be "that creature" (Unstable Mutation).
         [word <> Text.pack " " <> one, Text.pack "that " <> one]
       context = contextOf self host
-      -- A printed loyalty (CR 306.5a) is no Oracle text, as power is not.
-      rest = face {Face.loyalty = Nothing, Face.keywords = Map.empty, Face.spell = Face.defaultSpell, Face.activatedAbilities = [], Face.triggeredAbilities = [], Face.staticAbilities = [], Face.replacementEffects = [], Face.combatRestrictions = [], Face.playerAbilities = [], Face.enchant = [], Face.characteristicPT = Nothing, Face.characteristicColors = Nothing, Face.deckLimit = Nothing}
+      -- A printed loyalty (CR 306.5a) or vanguard modifier (CR 313.6, CR
+      -- 313.7) is no Oracle text, as power is not.
+      rest = face {Face.loyalty = Nothing, Face.vanguard = Nothing, Face.keywords = Map.empty, Face.spell = Face.defaultSpell, Face.activatedAbilities = [], Face.triggeredAbilities = [], Face.staticAbilities = [], Face.replacementEffects = [], Face.combatRestrictions = [], Face.playerAbilities = [], Face.enchant = [], Face.characteristicPT = Nothing, Face.characteristicColors = Nothing, Face.deckLimit = Nothing}
       subtypes = Set.fromList (TypeLine.subtypes (Face.typeLine face))
       unread = rest /= Face.Oracle.bare (Face.name face) (Face.oracleText face) (Face.manaCost face) (Face.colorIndicator face) (Face.typeLine face) (Face.power face) (Face.toughness face) Map.empty
       -- Free for fathomless descent on a spell: printed (Terror Tide).

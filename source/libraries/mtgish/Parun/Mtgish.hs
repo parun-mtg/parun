@@ -221,9 +221,9 @@ accepted translated = translated <$ traverse said (Card.faces translated)
     rendered f = Monad.void (Oracle.render translated) >> Oracle.renderFace f
 
 -- | One line of mtgish's AST file as the card it means, or the node kind it
--- stopped at. Only a card of one normal face is read, or a preparation card
--- (CR 723), its own face first and its prepare spell's after
--- ('Layout.Preparation').
+-- stopped at. Only a card of one normal face is read, a vanguard card (CR
+-- 313) as one, or a preparation card (CR 723), its own face first and its
+-- prepare spell's after ('Layout.Preparation').
 card :: Value.Value -> Translated Card.Card
 card value = do
   pairs <- Common.asObject value
@@ -231,6 +231,10 @@ card value = do
   case Text.unpack oracleCard of
     "Card" -> do
       f <- readFace [] pairs
+      pure Card.MkCard {Card.synthetic = False, Card.layout = Layout.Normal, Card.faces = f NonEmpty.:| []}
+    -- Its modifiers are CANDIDATES' ('Ingest.reprint'), as its type line is.
+    "Vanguard" -> do
+      f <- readFace ["HandModifier", "LifeModifier"] pairs
       pure Card.MkCard {Card.synthetic = False, Card.layout = Layout.Normal, Card.faces = f NonEmpty.:| []}
     "Preparer" -> do
       f <- readFace ["Prepared"] pairs

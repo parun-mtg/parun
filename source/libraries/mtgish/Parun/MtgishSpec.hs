@@ -107,7 +107,9 @@ import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnScope as TurnScope
+import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Uses as Uses
+import qualified Parun.Types.Vanguard as Vanguard
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -196,6 +198,19 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
         Spec.assertEq s [False, True] (fmap ((/= Face.defaultSpell) . Face.spell) (NonEmpty.toList (Card.faces card)))
     Spec.assertEq s (Left (Text.pack "renders as: Put a +1/+1 counter on target creature and you gain 1 life.")) (Functor.void (acceptFaces ast [creature, "You gain 1 life."]))
     Spec.assertEq s (Left (Text.pack "renders as: Emergency Phytomedic enters prepared.")) (Functor.void (acceptFaces ast [spell, creature]))
+
+  -- CR 313: a vanguard card is read as one face, its modifiers left to
+  -- CANDIDATES' record ('Parun.Ingest.reprint'), and a face carrying them
+  -- still renders: they are printed, not rules text (CR 313.6, CR 313.7).
+  Spec.it s "reads a vanguard card as one face, its modifiers the record's" $ do
+    case accept ertai of
+      Left reason -> Spec.assertFailure s (Text.unpack reason)
+      Right card -> do
+        let face = NonEmpty.head (Card.faces card)
+        Spec.assertEq s Layout.Normal (Card.layout card)
+        Spec.assertEq s (Set.singleton CardType.Vanguard) (TypeLine.types (Face.typeLine face))
+        Spec.assertEq s Nothing (Face.vanguard face)
+        Spec.assertEq s (Right ()) (Functor.void (Mtgish.accepted card {Card.faces = face {Face.vanguard = Just (Vanguard.MkVanguard (-1) 4)} NonEmpty.:| []}))
 
   -- CR 614.1d: "This land enters tapped unless [condition]" applies while
   -- the condition fails, so it is held as the complement of what it names.
@@ -434,6 +449,13 @@ shock :: (String, String)
 shock =
   ( "{\"_OracleCard\":\"Card\",\"Name\":\"Shock\",\"Typeline\":{\"Supertypes\":[],\"Cardtypes\":[\"Instant\"],\"Subtypes\":[]},\"ManaCost\":[{\"_ManaSymbol\":\"ManaCostR\"}],\"Rules\":[{\"_Rule\":\"SpellActions\",\"args\":{\"_Actions\":\"Targeted\",\"args\":[[{\"_Target\":\"AnyTarget\"}],{\"_Actions\":\"ActionList\",\"args\":[{\"_Action\":\"SpellDealsDamage\",\"args\":[{\"_Spell\":\"ThisSpell\"},{\"_GameNumber\":\"Integer\",\"args\":2},{\"_DamageRecipient\":\"Ref_AnyTarget\"}]}]}]}}]}",
     "Shock deals 2 damage to any target."
+  )
+
+-- | Ertai's AST, a vanguard card's (CR 313), and its Oracle text.
+ertai :: (String, String)
+ertai =
+  ( "{\"_OracleCard\":\"Vanguard\",\"Name\":\"Ertai\",\"Typeline\":{\"Supertypes\":[],\"Cardtypes\":[\"Vanguard\"],\"Subtypes\":[]},\"Rules\":[{\"_Rule\":\"EachPermanentLayerEffect\",\"args\":[{\"_Permanents\":\"And\",\"args\":[{\"_Permanents\":\"IsCardtype\",\"args\":\"Creature\"},{\"_Permanents\":\"ControlledByAPlayer\",\"args\":{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"You\"}}}]},[{\"_StaticLayerEffect\":\"AddAbility\",\"args\":[{\"_Rule\":\"Hexproof\"}]}]]}],\"LifeModifier\":4,\"HandModifier\":-1}",
+    "Creatures you control have hexproof. (They can't be the targets of spells or abilities your opponents control.)"
   )
 
 -- | Sizzle's AST, and its Oracle text.
