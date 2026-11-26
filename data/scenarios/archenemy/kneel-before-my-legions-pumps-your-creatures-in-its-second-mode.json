@@ -1,0 +1,21 @@
+{
+  "description": "Kneel Before My Legions, set in motion in its second mode, gives creatures you control +3/+3, vigilance and trample until end of turn and makes no Scarecrow",
+  "board": {
+    "active": "alice",
+    "step": "Upkeep",
+    "seats": [
+      {"name": "alice", "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}], "battlefield": [{"card": "Grizzly Bears", "label": "bears"}], "sideDecks": [{"key": "Scheme", "value": [{"card": "Kneel Before My Legions", "label": "kneel"}]}]},
+      {"name": "bob", "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}], "battlefield": [{"card": "Hill Giant", "label": "giant"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseModes", "with": [1]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 5, "toughness": 5}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Vigilance"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Trample"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$giant", "power": 3, "toughness": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Scarecrow Token", "count": 0}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"PowerToughness": {"object": "$bears", "power": 2, "toughness": 2}}}
+  ]
+}

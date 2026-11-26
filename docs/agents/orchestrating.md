@@ -31,6 +31,14 @@ The units, as sub-issues of the tracker:
 - **Fix**: an audit finding on a merged unit.
 - **Finish**: one, last, filed when everything else is closed.
 
+A **product line** spread over mixed sets, such as schemes or planes, can be
+one tracker scoped by card type instead of a set code. Its census takes every
+name the type's printings carry in AllPrintings and gives `parun translate`
+the list as `@FILE` in place of `--set`. Its finish commits the set list only
+of each set the tracker completes, and ticks those; a mixed set keeps its own
+run, whose census finds the type's cards already in the pool. Its doc is
+`docs/sets/<line>.md`.
+
 ## Session setup
 
 A cloud session's machine is set up by `docs/agents/cloud-environment.md`,

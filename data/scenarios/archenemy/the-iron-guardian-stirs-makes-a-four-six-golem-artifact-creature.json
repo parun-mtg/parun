@@ -1,0 +1,17 @@
+{
+  "description": "The Iron Guardian Stirs, set in motion, makes one 4/6 colorless Golem artifact creature token",
+  "board": {
+    "active": "alice",
+    "step": "Upkeep",
+    "seats": [
+      {"name": "alice", "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}], "sideDecks": [{"key": "Scheme", "value": [{"card": "The Iron Guardian Stirs", "label": "stirs"}]}]},
+      {"name": "bob", "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $stirs"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Golem Token", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Golem Token", "power": 4, "toughness": 6}}}
+  ]
+}

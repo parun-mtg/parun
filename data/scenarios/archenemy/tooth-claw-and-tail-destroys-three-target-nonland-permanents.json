@@ -1,0 +1,17 @@
+{
+  "description": "Tooth, Claw, and Tail, set in motion, destroys the three nonland permanents it targets and leaves the rest",
+  "board": {
+    "active": "alice",
+    "step": "Upkeep",
+    "seats": [
+      {"name": "alice", "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}], "sideDecks": [{"key": "Scheme", "value": [{"card": "Tooth, Claw, and Tail", "label": "tooth"}]}]},
+      {"name": "bob", "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}], "battlefield": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Hill Giant", "label": "giant"}, {"card": "Ornithopter", "label": "thopter"}, {"card": "Goblin Piker", "label": "piker"}, {"card": "Mountain", "label": "mountain"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$bears", "$giant", "$thopter"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "bob", "zone": "Graveyard", "is": ["Grizzly Bears", "Hill Giant", "Ornithopter"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "bob", "zone": "Battlefield", "is": ["$piker", "$mountain"]}}}
+  ]
+}

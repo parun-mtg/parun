@@ -56,7 +56,7 @@ selfReferences name text =
       regnal = case List.unsnoc (Text.words short) of
         Just (rest@(_ : _ : _), numeral) | Text.all (`elem` "ivxlc") numeral -> Text.unwords rest
         _ -> Text.empty
-      nouns = fmap (\noun -> Text.pack ("this " <> noun)) ["creature", "spell", "artifact", "enchantment", "land", "permanent", "card", "planeswalker", "aura", "equipment", "vehicle"]
+      nouns = fmap (\noun -> Text.pack ("this " <> noun)) ["creature", "spell", "artifact", "enchantment", "land", "permanent", "card", "planeswalker", "aura", "equipment", "vehicle", "scheme"]
       named = List.foldl' (\t needle -> replaceWord needle (Text.pack "~") t) text ([full, short, titled, regnal, epithet " the ", epithet " of "] <> nouns)
    in List.foldl' (\t pronoun -> replaceWord pronoun (Text.pack "it") t) named (fmap Text.pack ["he", "she", "him"])
 
