@@ -66,6 +66,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RestrictedAction as RestrictedAction
+import qualified Parun.Types.SacrificeCause as SacrificeCause
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
@@ -233,7 +234,7 @@ instructionSpec s registry = Spec.describe s "Instruction" $ do
     Spec.assertBool s (S.onBattlefield stolen after) "CR 101.3: the instruction is ignored"
     Spec.assertBool
       s
-      (notElem (GameEvent.PermanentSacrificed (PermanentWasSacrificed.MkPermanentWasSacrificed S.alice stolen)) (S.eventsOf after))
+      (notElem (GameEvent.PermanentSacrificed (PermanentWasSacrificed.MkPermanentWasSacrificed S.alice stolen SacrificeCause.Ordinary)) (S.eventsOf after))
       "and no sacrifice was recorded"
   -- The control leg, and the one that proves the case above is about the
   -- prohibition rather than about a trigger that never fires: the SAME board with
@@ -247,7 +248,7 @@ instructionSpec s registry = Spec.describe s "Instruction" $ do
     Spec.assertBool s (not (S.onBattlefield his after)) "bob sacrifices his own creature"
     Spec.assertBool
       s
-      (elem (GameEvent.PermanentSacrificed (PermanentWasSacrificed.MkPermanentWasSacrificed S.bob his)) (S.eventsOf after))
+      (elem (GameEvent.PermanentSacrificed (PermanentWasSacrificed.MkPermanentWasSacrificed S.bob his SacrificeCause.Ordinary)) (S.eventsOf after))
       "and the sacrifice was recorded"
 
 -- CR 305.7 as Parun.Engine.ObjectRestriction reads it, which is the gate

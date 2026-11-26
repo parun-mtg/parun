@@ -1767,7 +1767,7 @@ triggerConditionChildren c condition = case condition of
     CrewRole.Vehicle frequency -> fmap (TriggerCondition.Crews . CrewRole.Vehicle) (triggerFrequency c HistoryRead.Crews frequency)
     CrewRole.Crewer _ -> pure condition
     CrewRole.Enlister -> pure condition
-  TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger acts batching) -> fmap (\renamed -> TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger renamed batching)) (playerActsOnChildren c acts)
+  TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger acts batching cause) -> fmap (\renamed -> TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger renamed batching cause)) (playerActsOnChildren c acts)
   TriggerCondition.AbilityWatch _ -> pure condition
   TriggerCondition.PlayerBecomesMonarch _ -> pure condition
   TriggerCondition.LosesControl subject -> case subject of
@@ -2553,8 +2553,8 @@ entryRewriteChildren c rewrite = case rewrite of
   EntryRewrite.EntersWith (EntersWith.MkEntersWith counters keywords abilities) ->
     fmap EntryRewrite.EntersWith (EntersWith.MkEntersWith <$> traverse (replacementCounters c) counters <*> traverseSet (replacementKeyword c) keywords <*> traverse (replacementAbility c) abilities)
   EntryRewrite.UnderControlOf _ -> pure rewrite
-  EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber filter_ kind each) ->
-    fmap EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber <$> replacementFilter c filter_ <*> traverse (replacementCounterKind c) kind <*> replacementQuantity c each)
+  EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber filter_ kind each cause) ->
+    fmap EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber <$> replacementFilter c filter_ <*> traverse (replacementCounterKind c) kind <*> replacementQuantity c each <*> pure cause)
   EntryRewrite.SacrificeToEnter (SacrificeToEnter.MkSacrificeToEnter count filter_) -> fmap EntryRewrite.SacrificeToEnter (SacrificeToEnter.MkSacrificeToEnter count <$> replacementFilter c filter_)
   EntryRewrite.ExileFromGraveyard (ExileFromGraveyard.MkExileFromGraveyard filter_ players count orGraveyard kinds each) ->
     fmap EntryRewrite.ExileFromGraveyard (ExileFromGraveyard.MkExileFromGraveyard <$> replacementFilter c filter_ <*> pure players <*> howManyChildren (replacementQuantity c) count <*> pure orGraveyard <*> traverse (replacementCounterKind c) kinds <*> replacementQuantity c each)

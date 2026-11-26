@@ -810,9 +810,9 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- of the event withholds it.
   -- A OneOrMore batch counts its sacrifices beside the sacrificer, as a
   -- OneOrMore Discards counts its cards: no one permanent is "it".
-  (TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger _ Batching.OneOrMore), GameEvent.PermanentSacrificed ev) ->
+  (TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger _ Batching.OneOrMore _), GameEvent.PermanentSacrificed ev) ->
     Binding.setEventAmount 1 (Binding.setTriggerPlayer (PermanentWasSacrificed.player ev) Map.empty)
-  (TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger _ Batching.EachOccurrence), GameEvent.PermanentSacrificed ev) ->
+  (TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger _ Batching.EachOccurrence _), GameEvent.PermanentSacrificed ev) ->
     let arrival = case Map.lookup (PermanentWasSacrificed.permanent ev) becameInGraveyard of
           Nothing -> Map.empty
           Just arrived -> Binding.setBecame arrived Map.empty

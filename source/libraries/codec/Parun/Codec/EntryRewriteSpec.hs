@@ -40,6 +40,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
+import qualified Parun.Types.SacrificeCause as SacrificeCause
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
 import qualified Parun.Types.SetPowerToughness as SetPowerToughness
 import qualified Parun.Types.Subtype as Subtype
@@ -326,7 +327,7 @@ spec s = Spec.describe s "Parun.Codec.EntryRewrite" $ do
     Common.assertCodec
       s
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
-      (EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber (Filter.And []) (Just CounterKind.PlusOnePlusOne) (Quantity.Literal 1)))
+      (EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber (Filter.And []) (Just CounterKind.PlusOnePlusOne) (Quantity.Literal 1) SacrificeCause.Ordinary))
       " {\"type\":\"SacrificeAnyNumber\",\"value\":{\"each\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"And\",\"value\":[]},\"kind\":{\"type\":\"PlusOnePlusOne\"}}} "
   -- The same rewrite buying no counters: Wood Elemental's count is read back by
   -- a characteristic-defining ability instead (CR 208.2a), so the second element
@@ -335,7 +336,7 @@ spec s = Spec.describe s "Parun.Codec.EntryRewrite" $ do
     Common.assertCodec
       s
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
-      (EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber (Filter.And [Filter.HasSubtype Subtype.Forest, Filter.Not Filter.IsTapped]) Nothing (Quantity.Literal 1)))
+      (EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber (Filter.And [Filter.HasSubtype Subtype.Forest, Filter.Not Filter.IsTapped]) Nothing (Quantity.Literal 1) SacrificeCause.Ordinary))
       " {\"type\":\"SacrificeAnyNumber\",\"value\":{\"each\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"And\",\"value\":[{\"type\":\"HasSubtype\",\"value\":\"Forest\"},{\"type\":\"Not\",\"value\":{\"type\":\"IsTapped\"}}]},\"kind\":null}} "
   -- CR 614.1a / 614.12: Heart of Yavimaya's "sacrifice a Forest instead".
   Spec.it s "SacrificeToEnter (Heart of Yavimaya)" $

@@ -9,6 +9,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
+import qualified Parun.Types.SacrificeCause as SacrificeCause
 import qualified Parun.Types.SlotName as SlotName
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -20,7 +21,8 @@ spec s = Spec.describe s "Parun.Codec.SacrificeAnyNumber" $ do
       ( SacrificeAnyNumber.MkSacrificeAnyNumber
           { SacrificeAnyNumber.each = Quantity.Literal 1,
             SacrificeAnyNumber.filter = Filter.HasCardType CardType.Creature,
-            SacrificeAnyNumber.kind = Just CounterKind.PlusOnePlusOne
+            SacrificeAnyNumber.kind = Just CounterKind.PlusOnePlusOne,
+            SacrificeAnyNumber.cause = SacrificeCause.Ordinary
           }
       )
       " {\"each\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"kind\":{\"type\":\"PlusOnePlusOne\"}} "
@@ -33,7 +35,8 @@ spec s = Spec.describe s "Parun.Codec.SacrificeAnyNumber" $ do
       ( SacrificeAnyNumber.MkSacrificeAnyNumber
           { SacrificeAnyNumber.each = Quantity.Literal 1,
             SacrificeAnyNumber.filter = Filter.HasCardType CardType.Creature,
-            SacrificeAnyNumber.kind = Nothing
+            SacrificeAnyNumber.kind = Nothing,
+            SacrificeAnyNumber.cause = SacrificeCause.Ordinary
           }
       )
       " {\"each\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"kind\":null} "
@@ -46,7 +49,8 @@ spec s = Spec.describe s "Parun.Codec.SacrificeAnyNumber" $ do
       ( SacrificeAnyNumber.MkSacrificeAnyNumber
           { SacrificeAnyNumber.each = Quantity.Literal 3,
             SacrificeAnyNumber.filter = Filter.HasCardType CardType.Creature,
-            SacrificeAnyNumber.kind = Just CounterKind.PlusOnePlusOne
+            SacrificeAnyNumber.kind = Just CounterKind.PlusOnePlusOne,
+            SacrificeAnyNumber.cause = SacrificeCause.Ordinary
           }
       )
       " {\"each\":{\"type\":\"Literal\",\"value\":3},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"kind\":{\"type\":\"PlusOnePlusOne\"}} "
@@ -59,8 +63,22 @@ spec s = Spec.describe s "Parun.Codec.SacrificeAnyNumber" $ do
       ( SacrificeAnyNumber.MkSacrificeAnyNumber
           { SacrificeAnyNumber.each = Quantity.InSlot (SlotName.MkSlotName (Text.pack "thatMany")),
             SacrificeAnyNumber.filter = Filter.HasCardType CardType.Creature,
-            SacrificeAnyNumber.kind = Just CounterKind.PlusOnePlusOne
+            SacrificeAnyNumber.kind = Just CounterKind.PlusOnePlusOne,
+            SacrificeAnyNumber.cause = SacrificeCause.Ordinary
           }
       )
       " {\"each\":{\"type\":\"InSlot\",\"value\":\"thatMany\"},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"kind\":{\"type\":\"PlusOnePlusOne\"}} "
+  -- CR 702.82b: the row a devour keyword mints, whose sacrifices are devoured.
+  Spec.it s "MkSacrificeAnyNumber, a devour row" $
+    Common.assertCodec
+      s
+      SacrificeAnyNumber.codec
+      ( SacrificeAnyNumber.MkSacrificeAnyNumber
+          { SacrificeAnyNumber.each = Quantity.Literal 1,
+            SacrificeAnyNumber.filter = Filter.HasCardType CardType.Creature,
+            SacrificeAnyNumber.kind = Just CounterKind.PlusOnePlusOne,
+            SacrificeAnyNumber.cause = SacrificeCause.Devour
+          }
+      )
+      " {\"each\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"kind\":{\"type\":\"PlusOnePlusOne\"},\"cause\":\"Devour\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s SacrificeAnyNumber.codec

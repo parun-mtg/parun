@@ -323,6 +323,7 @@ import qualified Parun.Types.RevealWindow as RevealWindow
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
+import qualified Parun.Types.SacrificeCause as SacrificeCause
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Settle as Settle
@@ -3966,7 +3967,7 @@ apply settle batch applied batchPrevented candidate event =
       -- starves a later member. Combat.attemptBlockDeclaration's rejected-set
       -- loop is the same shape. Parun.ReplacementSpec's Storm the Festival case
       -- proves it.
-      EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber criterion kind each) -> do
+      EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber criterion kind each cause) -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
         gs <- State.get
         case Projection.controllerOf oid gs of
@@ -4015,7 +4016,9 @@ apply settle batch applied batchPrevented candidate event =
             -- action on several objects, so every member's CR 616.1 loop reads the
             -- board the batch began on. Parun.EventSpec's Shimatsu case is the
             -- proof -- Rest in Peace among the chosen still exiles what follows it.
-            sacrificeAll settle (fmap ((,) controller) (Set.toAscList chosen))
+            -- The row's cause rides on each sacrifice's event, CR 702.82b's
+            -- "devoured" being a fact about the sacrifice and not the permanent.
+            sacrificeIn settle cause Nothing (fmap ((,) controller) (Set.toAscList chosen))
             -- "That many": the permanents CHOSEN, which is also the permanents
             -- sacrificed -- every member was on the battlefield under this
             -- player's control when it was offered, and nothing between there and
@@ -11380,7 +11383,7 @@ protectedFromCountering counterer oid gs =
 -- several, sacrificeInBatch for a batch nested in a larger event, and
 -- sacrificeIn is the shared body.
 sacrifice :: Settle.Settle -> PlayerId -> ObjectId -> Game ()
-sacrifice settle pid oid = sacrificeIn settle Nothing [(pid, oid)]
+sacrifice settle pid oid = sacrificeIn settle SacrificeCause.Ordinary Nothing [(pid, oid)]
 
 -- CR 608.2f: the sacrifice funnel for a whole batch one instruction named -- All
 -- Is Dust's "each player sacrifices all permanents they control that are one or
@@ -11392,7 +11395,7 @@ sacrifice settle pid oid = sacrificeIn settle Nothing [(pid, oid)]
 -- sacrificing player a fact about each member: an edict's batch spans seats, and
 -- the rule's "a permanent they don't control" is asked of each pair.
 sacrificeAll :: Settle.Settle -> [(PlayerId, ObjectId)] -> Game ()
-sacrificeAll settle = sacrificeIn settle Nothing
+sacrificeAll settle = sacrificeIn settle SacrificeCause.Ordinary Nothing
 
 -- sacrificeAll for a batch that is one PART of a larger simultaneous event, whose
 -- board is `asOf`. destroyInBatch's door one funnel over, and CR 704.3's
@@ -11400,7 +11403,7 @@ sacrificeAll settle = sacrificeIn settle Nothing
 -- Saga sacrifices stand on the board the pass began in, so a replacement effect
 -- belonging to a Saga the same pass is sacrificing still applies to the rest.
 sacrificeInBatch :: Settle.Settle -> GameState -> [(PlayerId, ObjectId)] -> Game ()
-sacrificeInBatch settle asOf = sacrificeIn settle (Just asOf)
+sacrificeInBatch settle asOf = sacrificeIn settle SacrificeCause.Ordinary (Just asOf)
 
 -- The shared body. Two readers of a board, split the way destroyIn splits its
 -- three:
@@ -11443,8 +11446,8 @@ sacrificeInBatch settle asOf = sacrificeIn settle (Just asOf)
 -- The whole body is ONE event, destroyIn's bracket for destroyIn's reason: CR
 -- 608.2f makes an action taken on multiple objects simultaneous, and every caller
 -- hands a batch one instruction or one CR 704.3 pass named.
-sacrificeIn :: Settle.Settle -> Maybe GameState -> [(PlayerId, ObjectId)] -> Game ()
-sacrificeIn settle asOf victims = simultaneously $ do
+sacrificeIn :: Settle.Settle -> SacrificeCause.SacrificeCause -> Maybe GameState -> [(PlayerId, ObjectId)] -> Game ()
+sacrificeIn settle cause asOf victims = simultaneously $ do
   began <- State.get
   -- A sacrifice among what replaced a destruction is part of that event
   -- (asPartOf): Crackling Emergence's.
@@ -11488,7 +11491,7 @@ sacrificeIn settle asOf victims = simultaneously $ do
           -- repeat terminates. This arm is the backstop under both.
           | ObjectRestriction.prohibited RestrictedAction.Sacrifice oid gs -> pure ()
           | otherwise -> do
-              State.modify' (recordEvent (GameEvent.PermanentSacrificed (PermanentWasSacrificed.MkPermanentWasSacrificed pid oid)))
+              State.modify' (recordEvent (GameEvent.PermanentSacrificed (PermanentWasSacrificed.MkPermanentWasSacrificed pid oid cause)))
               changeZoneInBatch settle gs oid Zone.Graveyard
         Zone.Library -> pure ()
         Zone.Hand -> pure ()

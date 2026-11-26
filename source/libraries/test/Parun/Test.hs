@@ -810,6 +810,7 @@ import qualified Parun.Codec.RuleFamilySpec
 import qualified Parun.Codec.RulePermissionSpec
 import qualified Parun.Codec.RuleWaiverSpec
 import qualified Parun.Codec.SacrificeAnyNumberSpec
+import qualified Parun.Codec.SacrificeCauseSpec
 import qualified Parun.Codec.SacrificeEffectSpec
 import qualified Parun.Codec.SacrificeSpec
 import qualified Parun.Codec.SacrificeToEnterSpec
@@ -1591,6 +1592,7 @@ spec s reference corpus = do
   Parun.Codec.DiscardSubjectSpec.spec s
   Parun.Codec.DiscardTriggerSpec.spec s
   Parun.Codec.SacrificeTriggerSpec.spec s
+  Parun.Codec.SacrificeCauseSpec.spec s
   Parun.Codec.DiscardWaySpec.spec s
   Parun.Codec.DistinctOfSpec.spec s
   Parun.Codec.DoesNotUntapNextSpec.spec s

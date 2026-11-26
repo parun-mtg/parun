@@ -213,6 +213,7 @@ import qualified Parun.Types.RollKind as RollKind
 import qualified Parun.Types.RollReading as RollReading
 import qualified Parun.Types.RollTrigger as RollTrigger
 import qualified Parun.Types.RoomIndex as RoomIndex
+import qualified Parun.Types.SacrificeCause as SacrificeCause
 import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.Settle as Settle
@@ -2046,9 +2047,12 @@ representativeEvents cond =
         -- move -- so the second row is the CR 614.1 case (Rest in Peace redirects
         -- it, or delayedPending scans no batch) and the floor has to hold for it
         -- as well as for the ordinary burial.
-        TriggerCondition.PermanentSacrificed {} ->
-          (buried, GameEvent.PermanentSacrificed (PermanentWasSacrificed.MkPermanentWasSacrificed S.alice departed))
-            NonEmpty.:| [noTable (GameEvent.PermanentSacrificed (PermanentWasSacrificed.MkPermanentWasSacrificed S.alice departed))]
+        --
+        -- The event carries the cause the condition narrows to, so a devour row
+        -- (Kresh the Bloodbraided Avatar) is offered a sacrifice it admits.
+        TriggerCondition.PermanentSacrificed t ->
+          let sacrificed = GameEvent.PermanentSacrificed (PermanentWasSacrificed.MkPermanentWasSacrificed S.alice departed (Maybe.fromMaybe SacrificeCause.Ordinary (SacrificeTrigger.cause t)))
+           in (buried, sacrificed) NonEmpty.:| [noTable sacrificed]
         -- CR 603.3b's own event, and the only one this condition admits. The
         -- pair does NOT actually match here -- `departed` projects as no Saga on
         -- the empty board Event.matchesTrigger is asked about -- which is fine
@@ -2473,10 +2477,12 @@ everyTriggerCondition =
     -- one of them would go unseen if only one were listed. Vengeful Tracker
     -- prints the Opponent form and Mayhem Devil the AnyPlayer one. The
     -- OneOrMore row (Camellia, the Seedmiser) stamps a different set.
-    TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.Type.And [])) Batching.EachOccurrence),
-    TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.Opponent (Filter.Type.And [])) Batching.EachOccurrence),
-    TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.AnyPlayer (Filter.Type.And [])) Batching.EachOccurrence),
-    TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.Type.And [])) Batching.OneOrMore),
+    TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.Type.And [])) Batching.EachOccurrence Nothing),
+    TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.Opponent (Filter.Type.And [])) Batching.EachOccurrence Nothing),
+    TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.AnyPlayer (Filter.Type.And [])) Batching.EachOccurrence Nothing),
+    TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.Type.And [])) Batching.OneOrMore Nothing),
+    -- CR 702.82b's "is devoured" (Kresh the Bloodbraided Avatar).
+    TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.Type.And [])) Batching.EachOccurrence (Just SacrificeCause.Devour)),
     TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch (WatchedAbility.SagaFinalChapter ChapterMoment.Triggers) PlayerRelation.You),
     TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch (WatchedAbility.SagaFinalChapter ChapterMoment.Resolves) PlayerRelation.You),
     TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch WatchedAbility.CausedByOwnAttack PlayerRelation.You),

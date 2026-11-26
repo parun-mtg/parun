@@ -6,6 +6,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.SacrificeCause as SacrificeCause
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.PermanentWasSacrificed" $ do
@@ -16,8 +17,21 @@ spec s = Spec.describe s "Parun.Codec.PermanentWasSacrificed" $ do
       PermanentWasSacrificed.codec
       ( PermanentWasSacrificed.MkPermanentWasSacrificed
           { PermanentWasSacrificed.player = PlayerId.MkPlayerId 0,
-            PermanentWasSacrificed.permanent = ObjectId.MkObjectId 1
+            PermanentWasSacrificed.permanent = ObjectId.MkObjectId 1,
+            PermanentWasSacrificed.cause = SacrificeCause.Ordinary
           }
       )
       " {\"player\":0,\"permanent\":1} "
+  -- CR 702.82b.
+  Spec.it s "MkPermanentWasSacrificed, devoured" $
+    Common.assertCodec
+      s
+      PermanentWasSacrificed.codec
+      ( PermanentWasSacrificed.MkPermanentWasSacrificed
+          { PermanentWasSacrificed.player = PlayerId.MkPlayerId 0,
+            PermanentWasSacrificed.permanent = ObjectId.MkObjectId 1,
+            PermanentWasSacrificed.cause = SacrificeCause.Devour
+          }
+      )
+      " {\"player\":0,\"permanent\":1,\"cause\":\"Devour\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s PermanentWasSacrificed.codec

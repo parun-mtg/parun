@@ -223,6 +223,7 @@ import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
+import qualified Parun.Types.SacrificeCause as SacrificeCause
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.Sacrificer as Sacrificer
 import qualified Parun.Types.Scaling as Scaling
@@ -3392,11 +3393,11 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("CR 715.2b's threshold", holds (triggerConditionFilters (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind kind) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 2) CounterGrouping.EachPermanent TriggerFrequency.EveryTime)))),
             ("CR 603.2c's batch placement", holds (triggerConditionFilters (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind kind) (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.Type.HasCardType CardType.Creature) Nothing) Nothing CounterGrouping.EachBatch TriggerFrequency.EveryTime)))),
             ("CR 614.1's scaling pattern", holds (replacementEffectFilters (ReplacementEffect.CounterR (CounterR.MkCounterR (CounterPattern.MkCounterPattern (Just kind) CounterSubject.ByAnything (ControllerRelation.Related PlayerRelation.You) (Filter.Type.HasCardType CardType.Creature) Nothing Nothing) (Scaling.AddMore (Quantity.Type.Literal 1)) False)))),
-            ("CR 614.1c's as-enters sacrifice", holds (entryRewriteFilters (EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber (Filter.Type.HasCardType CardType.Creature) (Just kind) one)))),
+            ("CR 614.1c's as-enters sacrifice", holds (entryRewriteFilters (EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber (Filter.Type.HasCardType CardType.Creature) (Just kind) one SacrificeCause.Ordinary)))),
             -- Its MULTIPLIER, a road of its own: the field is a Quantity, so the
             -- kind rides in a number here rather than in the row's own `kind`,
             -- which this case leaves empty to keep the two apart.
-            ("CR 702.82a's per-sacrifice multiplier", holds (entryRewriteFilters (EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber (Filter.Type.HasCardType CardType.Creature) Nothing (Quantity.Type.ObjectCounters kind))))),
+            ("CR 702.82a's per-sacrifice multiplier", holds (entryRewriteFilters (EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber (Filter.Type.HasCardType CardType.Creature) Nothing (Quantity.Type.ObjectCounters kind) SacrificeCause.Ordinary)))),
             ("CR 614.1c's as-enters counters", holds (entryRewriteFilters (EntryRewrite.WithCounters (WithCounters.one kind one)))),
             ("CR 614.1e's turn-up counters", holds (turnUpRewriteFilters (TurnUpRewrite.WithCounters (WithCounters.one kind one)))),
             -- The four roads a card writes the kind inside a NUMBER instead, each

@@ -620,7 +620,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.Opponent (Filter.HasCardType CardType.Artifact)) Batching.EachOccurrence))
+      (TriggerCondition.PermanentSacrificed (SacrificeTrigger.MkSacrificeTrigger (PlayerActsOn.MkPlayerActsOn PlayerRelation.Opponent (Filter.HasCardType CardType.Artifact)) Batching.EachOccurrence Nothing))
       " {\"type\":\"PermanentSacrificed\",\"value\":{\"player\":\"Opponent\",\"filter\":{\"type\":\"HasCardType\",\"value\":\"Artifact\"}}} "
   -- CR 715.2d's watcher: which Saga and which chapter are read off the event
   -- and the source's projection.

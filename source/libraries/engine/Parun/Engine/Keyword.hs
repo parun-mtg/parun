@@ -253,6 +253,7 @@ import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
+import qualified Parun.Types.SacrificeCause as SacrificeCause
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.Sacrificer as Sacrificer
 import qualified Parun.Types.Scope as Scope
@@ -920,7 +921,7 @@ expansionOf keyword = case keyword of
           let each = case Devour.count devour of
                 DevourCount.Fixed n -> Quantity.Literal (toInteger n)
                 DevourCount.Devoured -> Quantity.InSlot Binding.sacrificedCount
-           in perInstance [ReplacementEffect.EntryR (EntryR.MkEntryR Filter.IsSource (EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber {SacrificeAnyNumber.filter = Maybe.fromMaybe (Filter.HasCardType CardType.Creature) (Devour.quality devour), SacrificeAnyNumber.kind = Just CounterKind.PlusOnePlusOne, SacrificeAnyNumber.each = each})))]
+           in perInstance [ReplacementEffect.EntryR (EntryR.MkEntryR Filter.IsSource (EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber {SacrificeAnyNumber.filter = Maybe.fromMaybe (Filter.HasCardType CardType.Creature) (Devour.quality devour), SacrificeAnyNumber.kind = Just CounterKind.PlusOnePlusOne, SacrificeAnyNumber.each = each, SacrificeAnyNumber.cause = SacrificeCause.Devour})))]
       }
   Keyword.Exalted -> mempty {KeywordExpansion.triggered = perInstance [exalted]}
   Keyword.Unearth cost ->
