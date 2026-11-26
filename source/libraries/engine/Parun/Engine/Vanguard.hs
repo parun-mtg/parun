@@ -35,6 +35,7 @@
 module Parun.Engine.Vanguard where
 
 import qualified Data.List as List
+import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Conspiracy as Conspiracy
@@ -47,6 +48,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Face as Face
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.HandAction as HandAction
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.PlayerId (PlayerId)
@@ -136,6 +138,15 @@ modifiersOf pid gs = do
   oid <- vanguardOf pid gs
   face <- Game.faceOf oid gs
   Face.vanguard face
+
+-- | The "you begin the game with" actions this player's vanguard prints
+-- (Face.gameStartActions), each beside the card taking it. Off the printed face,
+-- modifiersOf's reason: no copy effect reaches a vanguard card.
+gameStartActionsOf :: PlayerId -> GameState -> [(ObjectId, HandAction.HandAction Card.Card)]
+gameStartActionsOf pid gs = do
+  oid <- Maybe.maybeToList (vanguardOf pid gs)
+  face <- Maybe.maybeToList (Game.faceOf oid gs)
+  fmap ((,) oid) (Face.gameStartActions face)
 
 -- | CR 902.5 \/ 902.5b: apply CR 313.6's hand modifier to a base of seven -- both
 -- the starting hand size and the maximum hand size, which the two rules state in

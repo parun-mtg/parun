@@ -1,0 +1,94 @@
+{
+  "faces": [
+    {
+      "gameStartActions": [
+        {
+          "effects": [
+            {
+              "type": "Create",
+              "value": {
+                "card": {
+                  "faces": [
+                    {
+                      "activatedAbilities": [
+                        {
+                          "cost": {
+                            "components": [
+                              {
+                                "type": "TapThis"
+                              }
+                            ],
+                            "mana": []
+                          },
+                          "modal": {
+                            "modes": [
+                              {
+                                "clauses": [
+                                  {
+                                    "effects": [
+                                      {
+                                        "type": "AddMana",
+                                        "value": {
+                                          "production": {
+                                            "type": "OfType",
+                                            "value": {
+                                              "type": "Colored",
+                                              "value": "Green"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "colorIndicator": [
+                        "Green"
+                      ],
+                      "name": "Elf Token",
+                      "power": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "toughness": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "typeLine": {
+                        "subtypes": [
+                          "Elf"
+                        ],
+                        "types": [
+                          "Creature"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "quantity": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "name": "Elvish Champion Avatar",
+      "oracleText": "You begin the game with a 1/1 green Elf creature token on the battlefield. It has \"{T}: Add {G}.\"",
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 0,
+        "lifeModifier": -5
+      }
+    }
+  ]
+}

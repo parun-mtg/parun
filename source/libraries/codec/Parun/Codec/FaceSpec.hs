@@ -210,6 +210,7 @@ baseFace =
       Face.costReductions = [],
       Face.mulliganActions = [],
       Face.openingHandActions = [],
+      Face.gameStartActions = [],
       Face.specialActions = [],
       Face.enchant = [],
       Face.counterability = Counterability.Counterable,
@@ -284,6 +285,7 @@ minimalFace =
       Face.counterLimits = [],
       Face.mulliganActions = [],
       Face.openingHandActions = [],
+      Face.gameStartActions = [],
       Face.specialActions = []
     }
 
@@ -351,6 +353,7 @@ populatedFace =
       Face.copyability = Copyability.Copyable,
       Face.mulliganActions = [HandAction.MkHandAction Nothing [Effect.ExileHandThenDraw]],
       Face.openingHandActions = [HandAction.MkHandAction Nothing [Effect.ExileHandThenDraw]],
+      Face.gameStartActions = [HandAction.MkHandAction Nothing [Effect.ExileHandThenDraw]],
       Face.specialActions = [SpecialAction.DiscardThisAnyTime],
       Face.enchant = [TargetSlot.required Pool.Creatures Nothing],
       Face.castingRestrictions = [CastingRestriction.AttackedThisStep]
@@ -395,6 +398,7 @@ populatedFaceJson =
     <> "\"counterability\":{\"type\":\"CantBeCountered\"},"
     <> "\"mulliganActions\":[{\"effects\":[{\"type\":\"ExileHandThenDraw\"}]}],"
     <> "\"openingHandActions\":[{\"effects\":[{\"type\":\"ExileHandThenDraw\"}]}],"
+    <> "\"gameStartActions\":[{\"effects\":[{\"type\":\"ExileHandThenDraw\"}]}],"
     <> "\"specialActions\":[{\"type\":\"DiscardThisAnyTime\"}],"
     <> "\"enchant\":[{\"pool\":{\"type\":\"Creatures\"}}],"
     <> "\"castingRestrictions\":[{\"type\":\"AttackedThisStep\"}]}"
@@ -520,6 +524,9 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
     Spec.it s "openingHandActions (CR 103.6) defaults to the empty list" $ do
       v <- Common.assertJson s baseFaceJson
       Spec.assertEq s (Face.openingHandActions <$> decodeFace v) (Right [])
+    Spec.it s "gameStartActions defaults to the empty list" $ do
+      v <- Common.assertJson s baseFaceJson
+      Spec.assertEq s (Face.gameStartActions <$> decodeFace v) (Right [])
     Spec.it s "specialActions (CR 116.2) defaults to the empty list" $ do
       v <- Common.assertJson s baseFaceJson
       Spec.assertEq s (Face.specialActions <$> decodeFace v) (Right [])
@@ -784,6 +791,13 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
         decodeFace
         baseFace {Face.openingHandActions = [HandAction.MkHandAction Nothing [Effect.ExileHandThenDraw]]}
         (init baseFaceJson <> ",\"openingHandActions\":[{\"effects\":[{\"type\":\"ExileHandThenDraw\"}]}]}")
+    Spec.it s "gameStartActions" $
+      Common.assertJsonCodec
+        s
+        encodeFace
+        decodeFace
+        baseFace {Face.gameStartActions = [HandAction.MkHandAction Nothing [Effect.ExileHandThenDraw]]}
+        (init baseFaceJson <> ",\"gameStartActions\":[{\"effects\":[{\"type\":\"ExileHandThenDraw\"}]}]}")
     Spec.it s "specialActions" $
       Common.assertJsonCodec
         s

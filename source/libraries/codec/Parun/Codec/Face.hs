@@ -195,6 +195,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
   -- face granting two of them is writable (Parun.Types.Face).
   mulliganActions <- Fields.defaulted "mulliganActions" [] (Common.list (HandAction.codec cardCodec)) Face.mulliganActions
   openingHandActions <- Fields.defaulted "openingHandActions" [] (Common.list (HandAction.codec cardCodec)) Face.openingHandActions
+  gameStartActions <- Fields.defaulted "gameStartActions" [] (Common.list (HandAction.codec cardCodec)) Face.gameStartActions
   -- CR 116.2: the special actions this face grants (Parun.Types.Face).
   specialActions <- Fields.defaulted "specialActions" [] (Common.list SpecialAction.codec) Face.specialActions
   -- CR 113.6g: Counterable is the absence of a card stating it can't be
@@ -273,6 +274,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
         Face.costReductions = costReductions,
         Face.mulliganActions = mulliganActions,
         Face.openingHandActions = openingHandActions,
+        Face.gameStartActions = gameStartActions,
         Face.specialActions = specialActions,
         Face.counterability = counterability,
         Face.copyability = copyability,

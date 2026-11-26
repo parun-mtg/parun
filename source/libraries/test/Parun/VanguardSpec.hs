@@ -16,6 +16,7 @@ module Parun.VanguardSpec where
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -29,12 +30,14 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Mulligan as Mulligan
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Projection as Projection
+import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.DamageEvent as DamageEvent
@@ -50,6 +53,7 @@ import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MulliganOffer as MulliganOffer
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
@@ -351,3 +355,41 @@ spec s registry = Spec.describe s "Vanguard" $ do
     Spec.assertBool s (elem (Just (CardName.MkCardName (Text.pack "Mountain"))) (namesIn S.bob Zone.Hand)) "and kept a Mountain, a land the choice could not take"
     Spec.assertEqWith s "alice, not an opponent, discarded nothing" (namesIn S.alice Zone.Graveyard) []
     Spec.assertEqWith s "a hand of Mountains alone keeps every card" (Game.zoneMembers Zone.Graveyard S.bob lands) []
+
+  -- "You begin the game with" (Setup.beginGame): no stack, so Elvish Champion's
+  -- Elf is alice's before her first turn begins and taps on it (CR 302.6) for the
+  -- {G} that casts a Llanowar Elves from a deck holding no land. bob, the same
+  -- deck under no vanguard, begins with no Elf.
+  Spec.it s "a vanguard's you-begin-the-game-with gives Elvish Champion's Elf, untapped on turn one" $ do
+    elves <- S.printingOf s registry "Llanowar Elves"
+    avatar <- S.printingOf s registry "Elvish Champion Avatar"
+    let answer :: Prompt.Prompt r -> r
+        answer p = case p of
+          Prompt.DeclareMulligan {} -> MulliganDecision.Keep
+          _ -> S.castAnswer p
+        begun = S.opening 1 1 answer ((S.alice, deckOf elves (Just avatar)) NonEmpty.:| [(S.bob, deckOf elves Nothing)])
+        named = CardName.MkCardName . Text.pack
+        tokens pid = filter (\oid -> fmap S.nameOf (Game.cardOf oid begun) == Just (named "Elf Token")) (Game.zoneMembers Zone.Battlefield pid begun)
+    Spec.assertEqWith s "alice cast a Llanowar Elves on turn one with the Elf's {G}" (S.countOnBattlefieldByName (named "Llanowar Elves") S.alice begun) 1
+    Spec.assertEqWith s "alice begins with one Elf" (length (tokens S.alice)) 1
+    Spec.assertEqWith s "a 1/1 green Elf she controls" (fmap (\oid -> (Projection.controllerOf oid begun, Projection.powerOf oid begun, Projection.toughnessOf oid begun, Projection.colorsOf oid begun, Set.member Subtype.Elf (Projection.subtypesOf oid begun))) (tokens S.alice)) [(Just S.alice, Just 1, Just 1, Set.singleton Color.Green, True)]
+    Spec.assertEqWith s "bob begins with none" (tokens S.bob) []
+    Spec.assertEqWith s "CR 902.4: alice's life is twenty less five" (S.lifeOf S.alice begun) (Just 15)
+
+  -- docs/decisions.md, "When a vanguard's game-start actions are taken": after
+  -- CR 103.6's opening-hand actions, so each Leyline of Vitality alice began the
+  -- game with sees her Elf enter and gains her 1 life at the first priority.
+  -- bob, the same deck under no vanguard, has no Elf to see.
+  Spec.it s "a vanguard's game-start Elf enters after the opening-hand Leylines" $ do
+    vitality <- S.printingOf s registry "Leyline of Vitality"
+    avatar <- S.printingOf s registry "Elvish Champion Avatar"
+    let answer :: Prompt.Prompt r -> r
+        answer p = case p of
+          Prompt.OpeningHandAction _ _ candidates -> Maybe.listToMaybe candidates
+          Prompt.ChooseOptional {} -> OptionalDecision.Exercises
+          _ -> keepAnswer p
+        begun = S.opening 1 1 answer ((S.alice, deckOf vitality (Just avatar)) NonEmpty.:| [(S.bob, deckOf vitality Nothing)])
+        leylines pid = S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Leyline of Vitality")) pid begun
+    Spec.assertEqWith s "alice's seven Leylines each gained her 1 life over CR 902.4's fifteen" (S.lifeOf S.alice begun) (Just 22)
+    Spec.assertEqWith s "bob gained none" (S.lifeOf S.bob begun) (Just 20)
+    Spec.assertEqWith s "each began the game with seven Leylines" (leylines S.alice, leylines S.bob) (7, 7)
