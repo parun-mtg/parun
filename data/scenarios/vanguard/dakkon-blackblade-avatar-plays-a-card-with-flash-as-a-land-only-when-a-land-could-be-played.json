@@ -3,6 +3,14 @@
     "active": "alice",
     "seats": [
       {
+        "battlefield": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
         "command": [
           {
             "card": "Dakkon Blackblade Avatar"
@@ -25,7 +33,6 @@
             "card": "Island"
           }
         ],
-        "manaPool": "CG",
         "name": "alice"
       },
       {
@@ -43,7 +50,14 @@
         "name": "bob"
       }
     ],
-    "step": "BeginningOfCombat"
+    "stack": [
+      {
+        "card": "Divination",
+        "label": "div",
+        "owner": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
   },
   "description": "Dakkon Blackblade Avatar plays a card with flash as a land only when a land could be played",
   "timeline": [
@@ -52,7 +66,64 @@
         "View": {
           "is": [
             "Pass",
-            "Cast $viper"
+            "Cast $viper",
+            "ActivateManaAbility Forest",
+            "ActivateManaAbility Forest#2"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "PlayLand": "$viper"
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "PlayLand $viper",
+            "Cast $viper",
+            "ActivateManaAbility Forest",
+            "ActivateManaAbility Forest#2"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $viper",
+            "ActivateManaAbility Forest",
+            "ActivateManaAbility Forest#2"
           ],
           "of": "Offered",
           "player": "alice"
