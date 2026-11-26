@@ -169,9 +169,12 @@
                               ]
                             }
                           ],
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "thatDepartedPermanent"
+                          "original": {
+                            "type": "OfObject",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "thatDepartedPermanent"
+                            }
                           },
                           "slot": "token"
                         }

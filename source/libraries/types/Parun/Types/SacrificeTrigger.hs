@@ -11,6 +11,10 @@ data SacrificeTrigger = MkSacrificeTrigger
     batching :: Batching.Batching,
     -- | Nothing for every sacrifice; Just Devour for CR 702.82b's "is devoured"
     -- (Kresh the Bloodbraided Avatar).
+    --
+    -- Unprinted: Just Ordinary, a trigger on every sacrifice but a devoured
+    -- one. Parun.EffectLintSpec's "no card narrows a sacrifice trigger to
+    -- ordinary sacrifices" keeps it out of card data.
     cause :: Maybe SacrificeCause.SacrificeCause
   }
   deriving (Eq, Ord, Show)

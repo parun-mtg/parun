@@ -1790,20 +1790,21 @@ pairwiseContext gs creature =
   withCharacteristicsOf creature gs (Filter.contextIn gs (controllerOf creature gs) (Just creature))
 
 -- CR 603.10's first sentence: a permanent as a trigger event's own board sample
--- (Event.Trigger.battlefieldAt) shows it -- the characteristics, controller and
--- attachers it had immediately after the event -- whether it still stands or
--- has since left, in which case CR 608.2h's record supplies what the sample does
--- not carry. The attachers come off the same `board`, so an Aura CR 704.5m has
+-- (Event.Trigger.battlefieldAt) shows it -- the characteristics, controller,
+-- attachers and counters it had immediately after the event -- whether it still
+-- stands or has since left, in which case CR 608.2h's record supplies what the
+-- sample does not carry. The attachers come off the same `board`, so an Aura CR 704.5m has
 -- buried since still enchants it; data/scenarios's
 -- venom-fires-though-the-block-toll-knocks-it-off-its-host proves it.
 sampledView :: Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> ObjectId -> BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics -> GameState -> Filter.View
 sampledView board oid candidate gs =
   let pc = BattlefieldCandidate.characteristics candidate
       controller = BattlefieldCandidate.controller candidate
+      counters = BattlefieldCandidate.counters candidate
       attacher aid = maybe (viewWithLastKnownAnywhere gs aid) (\c -> Just (sampledView board aid c gs)) (Map.lookup aid board)
       view = case Game.lastKnownOf oid gs of
-        Just lk -> Count.lastKnownView (viewWithLastKnownAnywhere gs) oid gs lk {LastKnown.characteristics = pc, LastKnown.controller = controller}
-        Nothing -> viewOfCharacteristics (viewWithLastKnownAnywhere gs) oid pc (Just controller) (countersOf oid gs) gs
+        Just lk -> Count.lastKnownView (viewWithLastKnownAnywhere gs) oid gs lk {LastKnown.characteristics = pc, LastKnown.controller = controller, LastKnown.counters = counters}
+        Nothing -> viewOfCharacteristics (viewWithLastKnownAnywhere gs) oid pc (Just controller) counters gs
    in view {Filter.attachedViews = Maybe.mapMaybe attacher (Set.toList (BattlefieldCandidate.attached candidate))}
 
 -- CR 110.2's controller off viewWithLastKnownAnywhere (CR 608.2h): controllerOf
@@ -4507,6 +4508,41 @@ holderReads holder = case holder of
   Holder.Caster -> Set.empty
   Holder.Protector -> Set.empty
 
+-- What a comparison's operand reads off a projection: the source's or the
+-- candidate's own other measure. A bound object's number arrives on the Context
+-- already projected, and a slot's amount is a binding.
+operandReads :: Operand.Operand -> Set Aspect
+operandReads operand = case operand of
+  Operand.OfSource measure -> measureReads measure
+  Operand.Own measure -> measureReads measure
+  Operand.OfBound _ -> Set.empty
+  Operand.Literal _ -> Set.empty
+  Operand.AmountInSlot _ -> Set.empty
+  Operand.EnclosingAmount -> Set.empty
+  -- A player's counters, no object's projection.
+  Operand.YourCounters _ -> Set.empty
+  -- The source's choice, a field of the object no layer writes.
+  Operand.ChosenNumber -> Set.empty
+  -- Another object's projection, declared as the candidate's (Aspect's note).
+  Operand.OfEachOtherCandidate (OtherCandidates.MkOtherCandidates measure scope) ->
+    measureReads measure <> case scope of
+      CandidateScope.EveryCandidate -> Set.empty
+      CandidateScope.SameController -> holderReads Holder.Controller
+
+-- Does a comparison's operand read another object's projection? Only
+-- OfEachOtherCandidate's, the other candidates'.
+operandReadsOthers :: Operand.Operand -> Bool
+operandReadsOthers operand = case operand of
+  Operand.OfEachOtherCandidate _ -> True
+  Operand.Literal _ -> False
+  Operand.OfSource _ -> False
+  Operand.Own _ -> False
+  Operand.OfBound _ -> False
+  Operand.AmountInSlot _ -> False
+  Operand.EnclosingAmount -> False
+  Operand.YourCounters _ -> False
+  Operand.ChosenNumber -> False
+
 -- CR 208.1 / 613.4: power and toughness are layer 7's, and CR 105.2's colours
 -- layer 5's (CR 613.1e); CR 202.3 reads the mana cost, which layer 1 alone sets
 -- (CR 707.2) and no Modification writes.
@@ -4587,23 +4623,7 @@ filterReads f = case f of
   -- operand reads a projection: Aspect names an aspect of one object's
   -- projection, with no way to say "the source's". A bound object's number
   -- arrives on the Context already projected, and a slot's amount is a binding.
-  Filter.Type.Measures m ->
-    measureReads (Measures.measure m) <> case Measures.operand m of
-      Operand.OfSource measure -> measureReads measure
-      Operand.Own measure -> measureReads measure
-      Operand.OfBound _ -> Set.empty
-      Operand.Literal _ -> Set.empty
-      Operand.AmountInSlot _ -> Set.empty
-      Operand.EnclosingAmount -> Set.empty
-      -- A player's counters, no object's projection.
-      Operand.YourCounters _ -> Set.empty
-      -- The source's choice, a field of the object no layer writes.
-      Operand.ChosenNumber -> Set.empty
-      -- Another object's projection, declared as the candidate's (Aspect's note).
-      Operand.OfEachOtherCandidate (OtherCandidates.MkOtherCandidates measure scope) ->
-        measureReads measure <> case scope of
-          CandidateScope.EveryCandidate -> Set.empty
-          CandidateScope.SameController -> holderReads Holder.Controller
+  Filter.Type.Measures m -> measureReads (Measures.measure m) <> operandReads (Measures.operand m)
   Filter.Type.ControllerIsOwner -> holderReads Holder.Controller <> holderReads Holder.Owner
   Filter.Type.HeldBy holder _ -> holderReads holder
   -- The candidate's controller; who defends is a combat-record fact.
@@ -4891,9 +4911,10 @@ filterReads f = case f of
   -- Reads nothing, for that atom's reason. What CR 701.60c hangs off `Suspected`
   -- IS in layer 6, but that is what the designation WRITES, not what this reads.
   Filter.Type.HasDesignation _ -> Set.empty
-  -- Reads nothing: CR 109.3's characteristics do not include counters. The P/T a
-  -- +1/+1 counter grants is CR 613.4c's, applied over the top of the set.
-  Filter.Type.HasCounters _ _ -> Set.empty
+  -- The count reads nothing: CR 109.3's characteristics do not include
+  -- counters. The P/T a +1/+1 counter grants is CR 613.4c's, applied over the
+  -- top of the set. The operand reads what a Measures atom's does.
+  Filter.Type.HasCounters _ operand _ -> operandReads operand
   -- CR 122.1 again, and reading nothing for the atom above's reason: CR 109.3's
   -- list of characteristics has no counters in it, whichever kind is asked about.
   Filter.Type.HasCountersOfAnyKind -> Set.empty
@@ -5000,16 +5021,7 @@ filterReadsPeers f = case f of
   -- affectsGiven builds with Filter.contextFor -- no projection of a second
   -- object is read -- except OfEachOtherCandidate's, which are the other
   -- candidates' projections.
-  Filter.Type.Measures m -> case Measures.operand m of
-    Operand.OfEachOtherCandidate _ -> True
-    Operand.Literal _ -> False
-    Operand.OfSource _ -> False
-    Operand.Own _ -> False
-    Operand.OfBound _ -> False
-    Operand.AmountInSlot _ -> False
-    Operand.EnclosingAmount -> False
-    Operand.YourCounters _ -> False
-    Operand.ChosenNumber -> False
+  Filter.Type.Measures m -> operandReadsOthers (Measures.operand m)
   Filter.Type.ControllerIsOwner -> False
   Filter.Type.HeldBy _ _ -> False
   Filter.Type.ControlledByRole _ -> False
@@ -5113,7 +5125,7 @@ filterReadsPeers f = case f of
   Filter.Type.IsPairedWithSource -> False
   Filter.Type.BlockPartnerOfSource _ -> False
   Filter.Type.HasDesignation _ -> False
-  Filter.Type.HasCounters _ _ -> False
+  Filter.Type.HasCounters _ operand _ -> operandReadsOthers operand
   Filter.Type.HasCountersOfAnyKind -> False
   Filter.Type.HasSticker _ -> False
   Filter.Type.Stickered -> False

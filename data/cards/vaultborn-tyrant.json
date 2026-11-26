@@ -168,9 +168,12 @@
                               }
                             }
                           ],
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "self"
+                          "original": {
+                            "type": "OfObject",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "self"
+                            }
                           }
                         }
                       }

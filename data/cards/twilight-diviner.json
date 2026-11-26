@@ -118,14 +118,17 @@
                       {
                         "type": "CreateCopy",
                         "value": {
-                          "ref": {
-                            "type": "ChosenCardFromAmong",
+                          "original": {
+                            "type": "OfObject",
                             "value": {
-                              "filter": {
-                                "type": "And",
-                                "value": []
-                              },
-                              "slot": "became"
+                              "type": "ChosenCardFromAmong",
+                              "value": {
+                                "filter": {
+                                  "type": "And",
+                                  "value": []
+                                },
+                                "slot": "became"
+                              }
                             }
                           }
                         }

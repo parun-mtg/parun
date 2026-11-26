@@ -3,6 +3,8 @@
 module Parun.Codec.BattlefieldCandidate where
 
 import qualified Data.Typeable as Typeable
+import qualified Parun.Codec.CounterKind as CounterKind
+import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.JsonCodec.Codec as Codec
@@ -18,9 +20,11 @@ codec inner = Fields.object $ do
   controller <- Fields.required "controller" PlayerId.codec BattlefieldCandidate.controller
   characteristics <- Fields.required "characteristics" inner BattlefieldCandidate.characteristics
   attached <- Fields.required "attached" (Common.set ObjectId.codec) BattlefieldCandidate.attached
+  counters <- Fields.required "counters" (Common.multiset (CounterKind.codec Keyword.codec)) BattlefieldCandidate.counters
   pure
     BattlefieldCandidate.MkBattlefieldCandidate
       { BattlefieldCandidate.controller = controller,
         BattlefieldCandidate.characteristics = characteristics,
-        BattlefieldCandidate.attached = attached
+        BattlefieldCandidate.attached = attached,
+        BattlefieldCandidate.counters = counters
       }

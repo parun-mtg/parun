@@ -5,7 +5,10 @@ import qualified Parun.Codec.CopyOriginal as CopyOriginal
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CopyOriginal as CopyOriginal
+import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.SlotName as SlotName
 
@@ -29,4 +32,10 @@ spec s = Spec.describe s "Parun.Codec.CopyOriginal" $ do
       (CopyOriginal.codec Common.text)
       (CopyOriginal.Defined (Text.pack "Missile"))
       " {\"type\":\"Defined\",\"value\":\"Missile\"} "
+  Spec.it s "AtRandom" $
+    Common.assertCodec
+      s
+      (CopyOriginal.codec Common.text)
+      (CopyOriginal.AtRandom (FromReference.MkFromReference (Filter.HasCardType CardType.Creature) Nothing))
+      " {\"type\":\"AtRandom\",\"value\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s (CopyOriginal.codec Common.text)

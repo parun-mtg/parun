@@ -71,13 +71,16 @@
                           ]
                         }
                       ],
+                      "original": {
+                        "type": "OfObject",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "target"
+                        }
+                      },
                       "quantity": {
                         "type": "Literal",
                         "value": 3
-                      },
-                      "ref": {
-                        "type": "InSlot",
-                        "value": "target"
                       }
                     }
                   }

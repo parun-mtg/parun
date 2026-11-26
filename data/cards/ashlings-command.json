@@ -32,9 +32,12 @@
                   {
                     "type": "CreateCopy",
                     "value": {
-                      "ref": {
-                        "type": "InSlot",
-                        "value": "elemental"
+                      "original": {
+                        "type": "OfObject",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "elemental"
+                        }
                       }
                     }
                   }

@@ -76,9 +76,12 @@
                               ]
                             }
                           ],
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "exiled"
+                          "original": {
+                            "type": "OfObject",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "exiled"
+                            }
                           }
                         }
                       }
@@ -161,9 +164,12 @@
                               ]
                             }
                           ],
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "chosen"
+                          "original": {
+                            "type": "OfObject",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "chosen"
+                            }
                           }
                         }
                       }
@@ -229,9 +235,12 @@
                               ]
                             }
                           ],
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "chosen"
+                          "original": {
+                            "type": "OfObject",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "chosen"
+                            }
                           }
                         }
                       }

@@ -141,13 +141,16 @@
                               ]
                             }
                           ],
+                          "original": {
+                            "type": "OfObject",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "self"
+                            }
+                          },
                           "quantity": {
                             "type": "Literal",
                             "value": 2
-                          },
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "self"
                           }
                         }
                       }

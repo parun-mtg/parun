@@ -32,9 +32,12 @@
                   {
                     "type": "CreateCopy",
                     "value": {
-                      "ref": {
-                        "type": "InSlot",
-                        "value": "kithkin"
+                      "original": {
+                        "type": "OfObject",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "kithkin"
+                        }
                       }
                     }
                   }

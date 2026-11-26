@@ -842,7 +842,7 @@ objectRefPositions =
         ("connive", Effect.Connive (Connive.MkConnive (Quantity.Type.Literal 1) (plantedRef "cn")), [plantedRef "cn"]),
         ("set-x", Effect.SetX (SetX.MkSetX (NewX.Becomes (Quantity.Type.Literal 5)) (plantedRef "sx")), [plantedRef "sx"]),
         ("discard-these", Effect.Discard (Discard.These (TheseDiscard.MkTheseDiscard (plantedRef "di") Nothing)), [plantedRef "di"]),
-        ("create-copy", Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) (plantedRef "cc") plainRiders Nothing [] (PlayerRef.Relative PlayerRelation.You) False Nothing), [plantedRef "cc"]),
+        ("create-copy", Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) (CopyOriginal.OfObject (plantedRef "cc")) plainRiders Nothing [] (PlayerRef.Relative PlayerRelation.You) False Nothing), [plantedRef "cc"]),
         ("become-copy", Effect.BecomeCopy (BecomeCopy.MkBecomeCopy (CopyOriginal.OfObject (plantedRef "bc-original")) (plantedRef "bc-subject") Nothing [] False), [plantedRef "bc-original", plantedRef "bc-subject"]),
         ("copy-spell", Effect.CopyStackObject (CopyStackObject.MkCopyStackObject (plantedRef "cs") CopyTargets.Copied CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [] Nothing), [plantedRef "cs"]),
         -- CR 707.10d names a SECOND ref, the candidates', which the sweep must
@@ -948,7 +948,7 @@ playerRefPositions =
         ("increase-speed", Effect.IncreaseSpeed (playerQuantity "is"), [plantedPlayer "is"]),
         ("decrease-speed", Effect.DecreaseSpeed (SpeedDecrease.MkSpeedDecrease (plantedPlayer "ds") one 0), [plantedPlayer "ds"]),
         ("create", Effect.Create (Create.MkCreate one () EntryRiders.defaultValue Nothing (plantedPlayer "cr") False Nothing Nothing), [plantedPlayer "cr"]),
-        ("create-copy", Effect.CreateCopy (CreateCopy.MkCreateCopy one (plantedRef "cp") EntryRiders.defaultValue Nothing [] (plantedPlayer "ccp") False Nothing), [plantedPlayer "ccp"]),
+        ("create-copy", Effect.CreateCopy (CreateCopy.MkCreateCopy one (CopyOriginal.OfObject (plantedRef "cp")) EntryRiders.defaultValue Nothing [] (plantedPlayer "ccp") False Nothing), [plantedPlayer "ccp"]),
         ("conjure", Effect.Conjure (Conjure.MkConjure one (ConjureCards.Written (NonEmpty.singleton ())) Conjure.defaultSelection False ConjureDestination.Hand Nothing (plantedPlayer "cj")), [plantedPlayer "cj"]),
         ("create-emblem", Effect.CreateEmblem (CreateEmblem.MkCreateEmblem () (plantedPlayer "ce")), [plantedPlayer "ce"]),
         ("skip-phase", Effect.SkipPhase SkipPhase.MkSkipPhase {SkipPhase.player = plantedPlayer "sn", SkipPhase.selector = SkipWindow.PartOfTurn PhaseSelector.CombatPhase, SkipPhase.uses = Uses.Once, SkipPhase.duration = Duration.Indefinite, SkipPhase.count = SkipPhase.defaultCount}, [plantedPlayer "sn"]),
@@ -969,7 +969,7 @@ playerRefPositions =
         ("cloak", Effect.Cloak (Cloak.MkCloak (plantedPlayer "ck") (Just (plantedRef "ck-cards")) False Nothing), [plantedPlayer "ck"]),
         ("manifestDread", Effect.ManifestDread (ManifestDread.MkManifestDread (plantedPlayer "md") one Nothing), [plantedPlayer "md"]),
         ("choose-group", Effect.ChooseGroup (ChooseGroup.MkChooseGroup Grouping.Sectors (SlotName.MkSlotName (Text.pack "cgp")) Nothing (plantedPlayer "cgp")), [plantedPlayer "cgp"]),
-        ("choose-permanents", Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty) (SlotName.MkSlotName (Text.pack "cp")) (Just (plantedPlayer "cp-piles")) Nothing False), [plantedPlayer "cp", plantedPlayer "cp-piles"]),
+        ("choose-permanents", Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty CardSelection.ByChoice) (SlotName.MkSlotName (Text.pack "cp")) (Just (plantedPlayer "cp-piles")) Nothing False), [plantedPlayer "cp", plantedPlayer "cp-piles"]),
         ("discard-counted", Effect.Discard (Discard.Counted (CountedDiscard.MkCountedDiscard (plantedPlayer "dc") one Nothing)), [plantedPlayer "dc"]),
         ("discard-any-number", Effect.Discard (Discard.AnyNumber (AnyNumberDiscard.MkAnyNumberDiscard (plantedPlayer "da") (AnyNumberMatching.MkAnyNumberMatching (Filter.Type.And []) Nothing) Nothing)), [plantedPlayer "da"]),
         ("player-sacrifices", Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices (plantedPlayer "ps") Nothing (Filter.Type.And []) one Nothing), [plantedPlayer "ps"]),
@@ -1018,7 +1018,7 @@ objectRefPlayerRefPositions =
     ("chosen-card-from-among", ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong (SlotName.MkSlotName (Text.pack "group")) (Filter.Type.And []) HowMany.one Nothing Nothing Set.empty (plantedPlayer "cfa") Nothing False CardSelection.ByChoice), [plantedPlayer "cfa"]),
     -- And Fact or Fiction's pile chooser beside the separating one (CR 700.3).
     ("chosen-card-from-among-pile", ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong (SlotName.MkSlotName (Text.pack "group")) (Filter.Type.And []) (HowMany.UpTo Nothing) Nothing Nothing Set.empty (plantedPlayer "cfa-split") (Just (plantedPlayer "cfa-pile")) False CardSelection.ByChoice), [plantedPlayer "cfa-split", plantedPlayer "cfa-pile"]),
-    ("chosen-permanents", ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") HowMany.one Nothing Zone.Battlefield Set.empty), [plantedPlayer "cp"])
+    ("chosen-permanents", ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") HowMany.one Nothing Zone.Battlefield Set.empty CardSelection.ByChoice), [plantedPlayer "cp"])
   ]
 
 -- plantedRef's player half, named for its position for that function's reason.
@@ -3582,11 +3582,21 @@ conjureCardsAmount cards = case cards of
   ConjureCards.Duplicate {} -> []
   ConjureCards.Reference from -> Maybe.maybeToList (FromReference.amount from)
 
--- A named original carries no filter, and a defined one's are its card's,
--- walked by the BecomeCopy arm of the effect collector.
+-- A named original carries no filter, a defined one's are its card's, walked
+-- by the copy arms of the effect collector, and a reference pick's are
+-- copyOriginalReferenceFilters' below.
 copyOriginalFilters :: CopyOriginal.CopyOriginal card -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 copyOriginalFilters original = case original of
   CopyOriginal.OfObject ref -> objectRefFilters ref
+  CopyOriginal.Named _ -> []
+  CopyOriginal.Defined _ -> []
+  CopyOriginal.AtRandom _ -> []
+
+-- A copy's reference pick's own Filters, conjureReferenceFilters' reading.
+copyOriginalReferenceFilters :: CopyOriginal.CopyOriginal card -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
+copyOriginalReferenceFilters original = case original of
+  CopyOriginal.AtRandom from -> (Unframed, FromReference.filter from) : foldMap quantityFilters (FromReference.amount from)
+  CopyOriginal.OfObject _ -> []
   CopyOriginal.Named _ -> []
   CopyOriginal.Defined _ -> []
 
@@ -3691,7 +3701,7 @@ objectRefFilters ref = case ref of
   -- so it is framed the same way. The ownership and control the card prints are
   -- conjuncts of that Filter, which is what this traversal hands to the Filter
   -- lints; the ceiling is reached through refFilters beside it.
-  ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents f _ _ _ _ _) -> unframed [f] <> refFilters ref
+  ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents f _ _ _ _ _ _) -> unframed [f] <> refFilters ref
   -- Rhuk's "all Equipment attached to that creature".
   ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound _ f _) -> unframed [f]
   ObjectRef.AttackedBy _ -> []
@@ -4193,6 +4203,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   TriggerCondition.Visit -> []
   TriggerCondition.ChaosEnsues -> []
   TriggerCondition.DaytimeChanges -> []
+  TriggerCondition.GameBegins -> []
   TriggerCondition.PlayerRollsPlaneswalker _ -> []
   TriggerCondition.TurnedUpOffDeck subject -> actingFilters subject
   TriggerCondition.SelfPlaneswalkedAwayFrom -> []
@@ -5646,12 +5657,12 @@ effectFilters effect = case effect of
   -- An EachMatching ref's Filter is card text like RequireBlock's below, and the
   -- count's and the riders' Filters are as much card text as Create's. The
   -- exceptions frame themselves, BecomeCopy's arm below.
-  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity ref riders _ exceptions _ _ _) -> frame Unframed (quantityFilters quantity <> riderFilters riders) <> frame SourceHostFramed (objectRefFilters ref) <> concatMap copyExceptionFilters exceptions
+  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity original riders _ exceptions _ _ _) -> frame Unframed (quantityFilters quantity <> riderFilters riders <> copyOriginalReferenceFilters original) <> frame SourceHostFramed (copyOriginalFilters original) <> concatMap copyExceptionFilters exceptions <> concat [overFaces cardFilters card | CopyOriginal.Defined card <- [original]]
   -- BOTH refs, RequireBlock's arm below: each EachMatching Filter is card text.
   -- The exceptions beside them carry Filters through a KEYWORD, and frame them
   -- themselves (copyExceptionFilters) -- EntryRewrite's AsCopy arm takes the same
   -- walk over the same list.
-  Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject duration exceptions _) -> frame SourceHostFramed (copyOriginalFilters original <> objectRefFilters subject) <> frame Unframed (foldMap durationFilters duration) <> concatMap copyExceptionFilters exceptions <> concat [overFaces cardFilters card | CopyOriginal.Defined card <- [original]]
+  Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject duration exceptions _) -> frame SourceHostFramed (copyOriginalFilters original <> objectRefFilters subject) <> frame Unframed (foldMap durationFilters duration <> copyOriginalReferenceFilters original) <> concatMap copyExceptionFilters exceptions <> concat [overFaces cardFilters card | CopyOriginal.Defined card <- [original]]
   -- BOTH refs, CreateCopy's arm above: an EachMatching Filter is card text, and
   -- CR 707.10d's candidates are named by one.
   Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets quantity _ exceptions _) -> frame Unframed (quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref <> copyTargetsFilters targets) <> concatMap copyExceptionFilters exceptions

@@ -28,6 +28,10 @@ data SacrificeAnyNumber = MkSacrificeAnyNumber
     -- | Devour for the row Parun.Engine.Keyword mints for CR 702.82a / 702.82c,
     -- whose sacrifices CR 702.82b calls devoured; Ordinary for a card's own
     -- as-enters sacrifice (Shimatsu the Bloodcloaked).
+    --
+    -- Unprinted: Devour written by a card, a devouring sacrifice without the
+    -- keyword. Parun.EffectLintSpec's "no card writes a devour sacrifice" keeps
+    -- it out of card data.
     cause :: SacrificeCause.SacrificeCause
   }
   deriving (Eq, Ord, Show)

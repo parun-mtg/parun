@@ -168,8 +168,8 @@ subdirectory named for that spec.
   sacrifice, cards a search finds, spellbook names) or a range (an X, a die,
   counters a permanent carries) is refused already when it names something
   the list lacks or leaves the range; a `do` naming one goes to the engine, and so does a `refuse` naming one, which the engine must then ask again. The engine's card lookups are answered from the card data, for
-  every name the engine asks about, and so is a conjure's question to the card
-  reference (CR 108.1), which offers its `RandomCard` every card of the data
+  every name the engine asks about, and so is a conjure's or a copy's question
+  to the card reference (CR 108.1), which offers its `RandomCard` every card of the data
   the filter admits, never a synthetic one, unless an `Answer` to
   `ReferenceCards` names the cards instead.
 - **Checks.** `Life`, `Count` (cards of one name in one of a player's zones,

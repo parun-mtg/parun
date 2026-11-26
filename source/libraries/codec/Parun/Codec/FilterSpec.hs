@@ -973,20 +973,26 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.HasDesignation Designation.Suspected)
       " {\"type\":\"HasDesignation\",\"value\":\"Suspected\"} "
-  -- CR 122.1's count read, the one Filter atom with a CounterKind payload. One,
-  -- the presence read every printing but Runadi's asks, is left unsaid.
+  -- CR 122.1's count read, the one Filter atom with a CounterKind payload. At
+  -- least one, the presence read most printings ask, is left unsaid.
   Spec.it s "HasCounters" $
     Common.assertCodec
       s
       codec
-      (Filter.HasCounters 1 CounterKind.PlusOnePlusOne)
+      (Filter.HasCounters Comparison.AtLeast (Operand.Literal 1) CounterKind.PlusOnePlusOne)
       " {\"type\":\"HasCounters\",\"value\":{\"kind\":{\"type\":\"PlusOnePlusOne\"}}} "
-  Spec.it s "HasCounters atLeast" $
+  Spec.it s "HasCounters operand" $
     Common.assertCodec
       s
       codec
-      (Filter.HasCounters 3 CounterKind.PlusOnePlusOne)
-      " {\"type\":\"HasCounters\",\"value\":{\"atLeast\":3,\"kind\":{\"type\":\"PlusOnePlusOne\"}}} "
+      (Filter.HasCounters Comparison.AtLeast (Operand.Literal 3) CounterKind.PlusOnePlusOne)
+      " {\"type\":\"HasCounters\",\"value\":{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"operand\":{\"type\":\"Literal\",\"value\":3}}} "
+  Spec.it s "HasCounters comparison" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.HasCounters Comparison.LessThan Operand.EnclosingAmount CounterKind.PlusOnePlusOne)
+      " {\"type\":\"HasCounters\",\"value\":{\"comparison\":\"LessThan\",\"kind\":{\"type\":\"PlusOnePlusOne\"},\"operand\":{\"type\":\"EnclosingAmount\"}}} "
   -- CR 122.1's kind-agnostic presence read. Razorfin Abolisher's whole target
   -- filter is this atom BARE, so this case is also the card's own round trip and
   -- there is nothing for it to add to the nested-composite list below.

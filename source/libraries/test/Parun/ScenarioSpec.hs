@@ -438,7 +438,10 @@ spec s registry = Spec.describe s "Scenario" $ do
     let setup = S.duel S.precombatMain [] []
         concede = S.turn 1 [S.on S.precombatMain S.alice Move.Concede]
     built <- S.buildBoardOrFail s registry setup
-    case Scenario.rehearse concede built (Game.ask (Prompt.Concede S.alice)) of
+    -- Taken at the question asked of the priority holder (Scenario's Concede arm).
+    let gs = Staged.state built
+        holding = built {Staged.state = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just S.alice}}}
+    case Scenario.rehearse concede holding (Game.ask (Prompt.Concede S.alice)) of
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
       Right (answer, _) ->
         Spec.assertEqWith s "scheduled concession" answer Concession.Concedes

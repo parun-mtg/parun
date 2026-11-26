@@ -285,6 +285,15 @@ oracle = do
   syncUnrendered root cards >>= reportMarkers
   putStrLn $ "rendered: " <> show (length rendered) <> " of " <> show (length cards)
   putStrLn $ "abilities rendered: " <> show (length (filter (not . null) abilities)) <> " of " <> show (length abilities) <> ", " <> show (length whole) <> " of them on cards rendered in full"
+  -- Every face, whatever its layout: what the web client words (#9868).
+  let described = concatMap (concatMap Oracle.described . Card.Type.faces) cards
+      ranked = List.sortOn (\(name, (alone, _)) -> (negate alone, name)) (Map.toList (Oracle.blockers described))
+  putStrLn "abilities with a wording, by kind, on every face:"
+  Foldable.for_ [minBound .. maxBound] $ \k -> do
+    let these = filter ((== k) . Oracle.kind) described
+    Monad.unless (null these) . putStrLn $ "  " <> show k <> ": " <> show (length (filter (not . null . Oracle.wordings) these)) <> " of " <> show (length these)
+  putStrLn $ "constructors only abilities with no wording hold: " <> show (length ranked) <> "; the 20 that alone block the most (alone, held by):"
+  Foldable.for_ (take 20 ranked) $ \(name, (alone, held)) -> putStrLn $ "  " <> name <> ": " <> show alone <> ", " <> show held
 
 -- | `parun translate`: its command line read
 -- (Parun.CommandLine.Translate.Config), then 'translate'.

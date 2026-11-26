@@ -288,19 +288,21 @@ Entries are ordered by the first rule each cites.
 ## Whether a concession restarts the pass count
 
 - **Question**: CR 117.4 resolves the top object once all players pass in
-  succession "without taking any actions in between". When the priority
-  holder concedes and priority moves on (CR 800.4a), do earlier passes still
-  count?
+  succession "without taking any actions in between". When a player concedes
+  (the priority holder, priority moving on per CR 800.4a, or another player
+  while the holder decides), do earlier passes still count?
 - **Rules**: CR 117.4, 104.3a, 117.1, 117.3d, 800.4a; the glossary's Pass in
   Succession; CR of 2026-11-06.
-- **Decision**: No. The pass set empties and priority goes to the next seat
-  still playing.
+- **Decision**: No. The pass set empties, and priority goes to the next seat
+  still playing or stays with the holder.
 - **Rejected**: Keeping the passes, which the glossary's "each player in the
   game ... opts not to take an action" allows if a concession is no action: it
   can resolve a spell a player would have answered after the board changed.
-- **Site**: `Parun.Engine.Engine.priorityLoop`, the `Concession.Concedes` arm,
+- **Site**: `Parun.Engine.Engine.priorityDecision`, its two concession arms,
   proved by `Parun.GameSpec`'s "CR 800.4a/117.4 priority after a concede goes
-  to the next seat, and the pass cycle restarts".
+  to the next seat, and the pass cycle restarts" and "CR 104.3a/117.4 a player
+  conceding while another holds priority leaves at once, the holder keeping
+  priority, and the pass cycle restarts".
 - **Issue**: #143.
 
 ## Whether a cost paid on resolution is an effect

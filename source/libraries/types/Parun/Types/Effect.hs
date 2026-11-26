@@ -377,12 +377,12 @@ data Effect card ability
     -- deck and put it into a zone (Emporium Thopterist). Digital-only, so there
     -- is no rule to cite; unlike CR 111.1's token, the result is a card.
     Conjure (Conjure.Conjure card)
-  | -- | CR 707.1 / 111.3: create this many tokens per named object that are
-    -- copies of it (Cackling Counterpart), entering simultaneously.
+  | -- | CR 707.1 / 111.3: create this many tokens per original that are copies
+    -- of it (Cackling Counterpart), entering simultaneously.
     --
     -- The payload carries CR 707.9's exceptions, BecomeCopy's arm below: the
     -- excepted value joins the token's copiable values (Multiversal Recruitment).
-    CreateCopy (CreateCopy.CreateCopy ability)
+    CreateCopy (CreateCopy.CreateCopy card ability)
   | -- | CR 707.4 / 613.1a: make a permanent already on the battlefield a copy of
     -- another object (Unstable Shapeshifter), by writing CR 707.2's copiable
     -- values themselves.

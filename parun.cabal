@@ -2560,11 +2560,15 @@ library oracle
     Parun.Oracle.Continuous
     Parun.Oracle.Cost
     Parun.Oracle.Effect
+    Parun.Oracle.Effect.Object
+    Parun.Oracle.Effect.Player
     Parun.Oracle.Face
     Parun.Oracle.Filter
     Parun.Oracle.Keyword
     Parun.Oracle.Normalise
+    Parun.Oracle.Predicate
     Parun.Oracle.Prose
+    Parun.Oracle.Replacement
     Parun.Oracle.Target
     Parun.Oracle.Trigger
     Parun.OracleSpec

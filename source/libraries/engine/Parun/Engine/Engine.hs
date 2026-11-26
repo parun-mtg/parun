@@ -1660,7 +1660,6 @@ resumePriority = do
 -- have left the game (CR 800.4j).
 openPriorityWindow :: Game ()
 openPriorityWindow = do
-  offerConcessions
   holder <- State.gets priorityHolder
   grantAfterSettle Set.empty holder
 
@@ -1709,6 +1708,9 @@ priorityDecision trail = do
                   -- Prompt.Concede carries no Decider precisely so this
                   -- cannot be got wrong (CR 724.6).
                   concession <- Game.ask (Prompt.Concede p)
+                  othersLeft <- case concession of
+                    Concession.Continues -> offerConcessions p
+                    Concession.Concedes -> pure False
                   case concession of
                     Concession.Concedes -> do
                       -- CR 104.3a: leaves the game IMMEDIATELY. Not a
@@ -1738,6 +1740,12 @@ priorityDecision trail = do
                                 p
                           )
                       grantAfterSettle Set.empty next
+                      pure (PriorityWindow.Open trail)
+                    -- CR 104.3a: another player left; `p` keeps priority,
+                    -- asked again on the board the departure left (CR
+                    -- 117.5), the pass count restarting as above.
+                    Concession.Continues | othersLeft -> do
+                      grantAfterSettle Set.empty p
                       pure (PriorityWindow.Open trail)
                     Concession.Continues -> do
                       -- CR 400.11: the cards outside the game a permission
@@ -2086,20 +2094,25 @@ priorityDecision trail = do
                     )
                   pure (PriorityWindow.Open trail)
 
--- CR 104.3a / 807.5a: a Grand Melee player without priority for the stack
--- (GrandMelee.eligible) is never asked Prompt.Concede in priorityDecision, so
--- they are asked here, in turn order, as each priority window opens. Asked of
--- the TRUE player, as the loop asks.
-offerConcessions :: Game ()
-offerConcessions = do
+-- CR 104.3a: every still-playing player but the priority holder `p`, asked in
+-- turn order whether they concede, right after `p` is and before `p`'s action,
+-- so a concession made while `p` decides takes effect at once: a host takes
+-- it back to the conceder's question (Parun.Play.Command.rewinding). Grand
+-- Melee's players without priority (CR 807.5a) are asked here too. Asked of
+-- the TRUE player, as the holder is. Whether any left.
+offerConcessions :: PlayerId -> Game Bool
+offerConcessions p = do
   gs <- State.get
-  Monad.when (GameSettings.grandMelee (MatchScope.settings (GameState.match gs)))
-    . Monad.forM_ (filter (not . GrandMelee.eligible gs) (Game.stillPlayingInOrder gs))
-    $ \p -> do
-      concession <- Game.ask (Prompt.Concede p)
-      case concession of
-        Concession.Concedes -> Departure.leaveGame Departure.Type.Conceded p
-        Concession.Continues -> pure ()
+  fmap or . Monad.forM (filter (/= p) (Game.stillPlayingInOrder gs)) $ \other -> do
+    -- One conceding can take others out with it (CR 810.8b) or end the game.
+    now <- State.get
+    if Maybe.isJust (GameState.result now) || List.notElem other (Game.stillPlaying now)
+      then pure False
+      else do
+        concession <- Game.ask (Prompt.Concede other)
+        case concession of
+          Concession.Concedes -> True <$ Departure.leaveGame Departure.Type.Conceded other
+          Concession.Continues -> pure False
 
 -- CR 500.7 / 800.4k / 800.4m: this turn is over, so begin the next one -- a
 -- pending EXTRA turn if there is one, and otherwise the turn of the next SEAT in
