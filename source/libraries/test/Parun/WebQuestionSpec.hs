@@ -964,6 +964,27 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "not another source's" (Question.Web.paying (Just (owing [ManaSymbol.OfType (ManaType.Colored Color.Green)])) (yielding city)) Nothing
     Spec.assertEqWith s "nor one auto did not tap" (Question.Web.paying Nothing (yielding city)) Nothing
 
+  Spec.it s "paying automatically taps the source that gives up least: a noncreature, a land, no other abilities" $ do
+    -- Each pair lists the source auto should pass over first, so offer order
+    -- alone would tap it.
+    let tapsLast names symbols = do
+          printings <- mapM (S.printingOf s registry) names
+          let (ids, gs) = List.foldl' (\(acc, g) p -> let (o, g') = S.addPermanent p S.alice g in (acc <> [o], g')) ([], Setup.emptyGame S.bothPlayers) printings
+              asked = fmap (\sources -> requestFor gs (Prompt.ChooseManaSource (Decider.MkDecider S.alice) S.alice (ManaCost.MkManaCost symbols) sources Nothing)) (NonEmpty.nonEmpty ids)
+          pure ((asked >>= Question.Web.paying Nothing) == fmap (PromptOffer.object Protocol.namer . NonEmpty.last) (NonEmpty.nonEmpty ids))
+        green = [ManaSymbol.OfType (ManaType.Colored Color.Green)]
+        generic = [ManaSymbol.Generic 1]
+    elves <- tapsLast ["Llanowar Elves", "Forest"] green
+    Spec.assertBool s elves "the Forest over Llanowar Elves"
+    forElves <- tapsLast ["Llanowar Elves", "Forest"] generic
+    Spec.assertBool s forElves "and for generic"
+    arbor <- tapsLast ["Dryad Arbor", "Forest"] green
+    Spec.assertBool s arbor "the Forest over Dryad Arbor, a land creature"
+    ring <- tapsLast ["Sol Ring", "Wastes"] generic
+    Spec.assertBool s ring "Wastes over Sol Ring"
+    vault <- tapsLast ["Mutavault", "Wastes"] generic
+    Spec.assertBool s vault "Wastes over Mutavault, which can become a creature"
+
   Spec.it s "CR 601.2g a payment's heading names what the pool leaves owed once some is paid" $ do
     mountain <- S.printingOf s registry "Mountain"
     let (land, g0) = S.addPermanent mountain S.alice (Setup.emptyGame S.bothPlayers)

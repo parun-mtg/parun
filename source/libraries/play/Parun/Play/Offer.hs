@@ -27,6 +27,7 @@ import qualified Parun.Codec.StoredResult as Codec.StoredResult
 import qualified Parun.Codec.TextWord as Codec.TextWord
 import qualified Parun.Codec.WordFamily as Codec.WordFamily
 import qualified Parun.Codec.Zone as Codec.Zone
+import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.TextWord as TextWord.Engine
 import qualified Parun.Extra.Natural as Natural
@@ -37,6 +38,7 @@ import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Scenario.PromptOffer as PromptOffer
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.EntryOption as EntryOption
 import qualified Parun.Types.EventGroup as EventGroup
@@ -53,6 +55,7 @@ import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.ProductionTag as ProductionTag
+import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.RollReading as RollReading
@@ -296,9 +299,11 @@ onlyPass offer = do
 -- (none for generic mana). The payer's pool goes first against the cost; then
 -- each colored symbol still owed is paid from the source that makes the
 -- fewest of the colors still owed, then generic mana from the source that
--- makes the fewest types. Nothing when the cost holds a symbol other than
--- generic or one type of mana, when the pool already covers it, or when no
--- source makes what is still owed.
+-- makes the fewest types. A tie goes to the source tapping gives up least
+-- (forgone): a noncreature, which could not attack or block, then a land,
+-- then the fewest activated abilities other than mana abilities. Nothing when
+-- the cost holds a symbol other than generic or one type of mana, when the
+-- pool already covers it, or when no source makes what is still owed.
 autoSource :: PlayerView.PlayerView -> R.Reply -> Maybe (R.Reply, Set.Set ManaType.ManaType)
 autoSource view offer = do
   (colored, generic) <- owing view offer
@@ -308,12 +313,25 @@ autoSource view offer = do
       fewest by = Maybe.listToMaybe . List.sortOn by
   source <-
     if not (Set.null wanted)
-      then fewest (\s -> (Set.size (Set.intersection wanted (makes s)), Set.size (makes s))) (filter (not . Set.disjoint wanted . makes) sources)
+      then fewest (\s -> (Set.size (Set.intersection wanted (makes s)), Set.size (makes s), forgone view (fst s))) (filter (not . Set.disjoint wanted . makes) sources)
       else
         if generic > 0
-          then fewest (Set.size . makes) (filter (not . Set.null . makes) sources)
+          then fewest (\s -> (Set.size (makes s), forgone view (fst s))) (filter (not . Set.null . makes) sources)
           else Nothing
   pure (fst source, Set.intersection wanted (makes source))
+
+-- | What tapping a mana source gives up, least first: whether it is a
+-- creature, which could otherwise attack or block, whether it is not a land,
+-- and how many of its activated abilities are not mana abilities (CR 605.1a).
+-- A source the view does not show gives up nothing it can tell.
+forgone :: PlayerView.PlayerView -> R.Reply -> (Bool, Bool, Int)
+forgone view source = case objectOf source >>= (`Map.lookup` Wording.objects view) of
+  Nothing -> (False, False, 0)
+  Just o ->
+    ( Wording.isA CardType.Creature o,
+      not (Wording.isA CardType.Land o),
+      maybe 0 (length . filter (not . ManaAbility.isManaAbility) . ProjectedCharacteristics.activatedAbilities) (ObjectView.characteristics o)
+    )
 
 -- | CR 601.2g-h: what of a ChooseManaSource offer's cost the payer's pool leaves
 -- owed: each colored symbol the pool cannot pay, the generic mana the rest of
