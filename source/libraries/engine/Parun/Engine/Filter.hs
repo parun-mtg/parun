@@ -372,6 +372,9 @@ data View = MkView
     -- `blocking` still counts. Count.lastKnownView answers it for a departed
     -- blocker from LastKnown.blocking (CR 603.10a).
     blocked :: Set.Set ObjectId.ObjectId,
+    -- CR 509.1g: `blocked`'s attackers as views, through `peers`, for IsBlocking
+    -- Just's nest. Lazy in its spine for `attachedViews`' reason.
+    blockedViews :: [View],
     -- CR 608.2i: did this candidate attack or block earlier this turn? Unlike
     -- `attacking` not even a present state: it is a look-back read of the
     -- turn-scoped GameEvent log. Every role a declaration answers, so an attack
@@ -1166,6 +1169,7 @@ nobodyView =
       blockStatus = Nothing,
       blockers = Set.empty,
       blocked = Set.empty,
+      blockedViews = [],
       -- CR 506.3 again: a player never attacked or blocked either.
       declaredThisTurn = Set.empty,
       couldAttackThisTurn = False,
@@ -2915,7 +2919,11 @@ matches context view predicate = case predicate of
   -- question Parun.Engine.Combat.isBlocked asks: CR 509.1h keeps an attacker
   -- blocked after every creature blocking it has gone, so this can be False for
   -- everything while that is still True.
-  Filter.IsBlocking -> blocking view
+  -- CR 509.1g: with a nest, an attacker this candidate blocks matches it under
+  -- the SAME context, HasAttached's reason: "a creature you control" stays the
+  -- ability controller's.
+  Filter.IsBlocking Nothing -> blocking view
+  Filter.IsBlocking (Just f) -> any (\attacker -> matches context attacker f) (blockedViews view)
   -- CR 509.1h: the status the declaration confers, or that an effect confers
   -- (Effect.BecomesBlocked). A live read of the same record, off the keys rather
   -- than the sets -- so this can be True with nothing at all blocking the
@@ -3684,7 +3692,7 @@ manaValueThresholds predicate = case predicate of
   Filter.IsAttackingPlayer _ -> []
   Filter.IsAttackingPlaneswalker _ -> []
   Filter.IsAttackingBattle _ -> []
-  Filter.IsBlocking -> []
+  Filter.IsBlocking f -> foldMap manaValueThresholds f
   Filter.HasBlockStatus _ -> []
   Filter.DeclaredThisTurn _ -> []
   Filter.CouldAttackThisTurn -> []
@@ -3882,7 +3890,7 @@ statesAQuality predicate = case predicate of
   Filter.IsAttackingPlayer _ -> True
   Filter.IsAttackingPlaneswalker _ -> True
   Filter.IsAttackingBattle _ -> True
-  Filter.IsBlocking -> True
+  Filter.IsBlocking _ -> True
   Filter.HasBlockStatus _ -> True
   Filter.DeclaredThisTurn _ -> True
   Filter.CouldAttackThisTurn -> True
@@ -4073,7 +4081,7 @@ readsSourceValues predicate = case predicate of
   Filter.IsAttackingPlayer _ -> False
   Filter.IsAttackingPlaneswalker _ -> False
   Filter.IsAttackingBattle _ -> False
-  Filter.IsBlocking -> False
+  Filter.IsBlocking f -> any readsSourceValues f
   Filter.HasBlockStatus _ -> False
   Filter.DeclaredThisTurn _ -> False
   Filter.CouldAttackThisTurn -> False

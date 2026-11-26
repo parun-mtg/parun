@@ -452,8 +452,14 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      Filter.IsBlocking
+      (Filter.IsBlocking Nothing)
       " {\"type\":\"IsBlocking\"} "
+  Spec.it s "IsBlocking with a nest" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.IsBlocking (Just Filter.IsToken))
+      " {\"type\":\"IsBlocking\",\"value\":{\"type\":\"IsToken\"}} "
   Spec.it s "HasBlockStatus" $
     Common.assertCodec
       s
@@ -1052,7 +1058,7 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
         -- ships in.
         breakOpen = Filter.And [Filter.IsFaceDown, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent)]
         crownOfTheAges = Filter.And [Filter.HasSubtype Subtype.Aura, Filter.AttachedTo (Filter.HasCardType CardType.Creature)]
-        labyrinthOfSkophos = Filter.Or [Filter.IsAttacking Nothing, Filter.IsBlocking]
+        labyrinthOfSkophos = Filter.Or [Filter.IsAttacking Nothing, Filter.IsBlocking Nothing]
         -- Hollow Warrior's toll criterion, the deepest nest of the two new
         -- combat-phase atoms a card actually writes.
         hollowWarrior =

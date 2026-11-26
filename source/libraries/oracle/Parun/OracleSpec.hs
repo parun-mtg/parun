@@ -586,9 +586,12 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s [[Text.pack "Destroy two target white and/or blue creatures.", Text.pack "Destroy two target creatures that are white and/or blue."]] (Oracle.abilities ignite)
     let decree = spell [clause [destroy (ObjectRef.InSlot target) Regenerability.Regenerable]] [(target, TargetSlot.required Pool.Creatures (Just colours))]
     Spec.assertEq s [[Text.pack "Destroy target white or blue creature.", Text.pack "Destroy target creature that's white or blue."]] (Oracle.abilities decree)
-    let combatants = Filter.Or [Filter.IsAttacking Nothing, Filter.IsBlocking]
+    let combatants = Filter.Or [Filter.IsAttacking Nothing, Filter.IsBlocking Nothing]
         fire = spell [clause [destroy (ObjectRef.InSlot target) Regenerability.Regenerable]] [(target, (TargetSlot.required Pool.Creatures (Just combatants)) {TargetSlot.count = SlotCount.Printed (TargetCount.MkTargetCount 2 (Just 2))})]
     Spec.assertEq s [[Text.pack "Destroy two target attacking or blocking creatures."]] (Oracle.abilities fire)
+    let yours = Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)]
+        sisters = spell [clause [destroy (ObjectRef.InSlot target) Regenerability.Regenerable]] [(target, TargetSlot.required Pool.Creatures (Just (Filter.IsBlocking (Just yours))))]
+    Spec.assertEq s (Just (Text.pack "Destroy target creature that's blocking a creature you control.")) (Oracle.render sisters)
 
   -- CR 611.2a: a change to an object "until end of turn", the duration ending
   -- the sentence (Giant Growth) or opening it (Aspirant's Ascent), ending it

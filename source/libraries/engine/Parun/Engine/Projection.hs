@@ -4728,7 +4728,7 @@ filterReads f = case f of
   -- declared attacked is no characteristic of anything.
   Filter.Type.DeclaredAttackedThisCombat _ -> Set.empty
   -- Reads nothing, for IsAttacking's reason and off the same record.
-  Filter.Type.IsBlocking -> Set.empty
+  Filter.Type.IsBlocking g -> foldMap filterReads g
   Filter.Type.HasBlockStatus _ -> Set.empty
   -- Reads nothing: no Modification writes TurnRegisters.events.
   Filter.Type.DeclaredThisTurn _ -> Set.empty
@@ -4930,9 +4930,9 @@ filterReads f = case f of
   Filter.Type.Not g -> filterReads g
   Filter.Type.Unwritten g -> filterReads g
 
--- Whether a Filter's answer can turn on ANOTHER object's projection: the five
+-- Whether a Filter's answer can turn on ANOTHER object's projection: the six
 -- Filter.View fields viewOfCharacteristics fills through `peers` --
--- attachedToView, attachedViews, attackingPlaneswalkerController,
+-- attachedToView, attachedViews, blockedViews, attackingPlaneswalkerController,
 -- attackingBattleProtector and activatedAbilityKinds -- and the
 -- OfEachOtherCandidate operand's Filter.Context.candidateMeasures, since
 -- Filter.matches reads no other channel into a second object and every other
@@ -5070,7 +5070,8 @@ filterReadsPeers f = case f of
   Filter.Type.IsAttacking _ -> False
   Filter.Type.IsAttackingPlayer _ -> False
   Filter.Type.DeclaredAttackedThisCombat _ -> False
-  Filter.Type.IsBlocking -> False
+  -- CR 509.1g: the attackers a blocker blocks come through `peers`.
+  Filter.Type.IsBlocking g -> Maybe.isJust g
   Filter.Type.HasBlockStatus _ -> False
   Filter.Type.DeclaredThisTurn _ -> False
   Filter.Type.CouldAttackThisTurn -> False

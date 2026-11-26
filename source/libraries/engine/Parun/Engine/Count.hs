@@ -1411,6 +1411,7 @@ lastKnownView peers oid gs lastKnown =
           -- scenarios prove it. `blockers` keeps the snapshot's empty set: no
           -- card asks a departed attacker which creatures blocked it.
           Filter.blocked = Maybe.fromMaybe Set.empty (LastKnown.blocking lastKnown),
+          Filter.blockedViews = Maybe.mapMaybe peers (Set.toList (Maybe.fromMaybe Set.empty (LastKnown.blocking lastKnown))),
           -- CR 310.9e / 608.2h: who protected it as it left.
           Filter.protector = LastKnown.protector lastKnown,
           Filter.paidCosts = LastKnown.paidCosts lastKnown,
@@ -1844,6 +1845,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.blockStatus = Nothing,
       Filter.blockers = Set.empty,
       Filter.blocked = Set.empty,
+      Filter.blockedViews = [],
       Filter.declaredThisTurn = Set.empty,
       Filter.couldAttackThisTurn = False,
       -- CR 508.1a / 509.1a: a snapshot holds characteristics alone, and combat
