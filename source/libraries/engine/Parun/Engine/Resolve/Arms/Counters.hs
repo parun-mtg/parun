@@ -1760,23 +1760,36 @@ payAnyEnergy resolving source controller slot = do
 -- that cannot be evaluated binds nothing, Bolster's posture.
 --
 -- The chooser is askedChooser's one seat (CR 608.2c / 800.4g); a reference
--- naming none binds nothing (CR 101.3).
+-- naming none binds nothing (CR 101.3). At random nobody chooses: the
+-- number is Prompt.RandomNumber's, from zero to the bound, asked once.
+--
+-- Unprinted: an unbounded random number, which binds nothing here;
+-- Parun.Types.ChooseNumber's selection names the lint keeping it out.
 chooseNumber :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ChooseNumber.ChooseNumber -> Game ()
-chooseNumber resolving source controller legal (ChooseNumber.MkChooseNumber slot upTo chooser) = do
-  asked <- Common.askedChooser resolving source controller legal chooser
-  Monad.forM_ asked $ \pid -> do
-    gs <- State.get
-    let viewOf = effectViewOf resolving source legal gs
-        context = effectContext gs resolving controller source legal (slotBindings resolving gs)
-        ask most = do
-          answer <- Game.choose (Prompt.ChooseNumber (Decide.deciderFor pid gs) pid resolving 0 NumberFloor.Least most)
-          State.modify' (Common.bindAmountSlot resolving source slot (maybe answer (min answer) most))
-    case upTo of
-      Nothing -> ask Nothing
-      Just quantity -> Monad.forM_ (Quantity.evaluateFor viewOf context gs resolving source quantity) $ \most ->
-        case Integer.toNaturalSaturating most of
-          0 -> State.modify' (Common.bindAmountSlot resolving source slot 0)
-          bound -> ask (Just bound)
+chooseNumber resolving source controller legal (ChooseNumber.MkChooseNumber slot upTo chooser selection) = do
+  gs0 <- State.get
+  let bound g = case upTo of
+        Nothing -> Just Nothing
+        Just quantity ->
+          let viewOf = effectViewOf resolving source legal g
+              context = effectContext g resolving controller source legal (slotBindings resolving g)
+           in fmap (Just . Integer.toNaturalSaturating) (Quantity.evaluateFor viewOf context g resolving source quantity)
+      bind n = State.modify' (Common.bindAmountSlot resolving source slot n)
+  case selection of
+    CardSelection.AtRandom -> Monad.forM_ (Monad.join (bound gs0)) $ \most ->
+      case most of
+        0 -> bind 0
+        _ -> Game.ask (Prompt.RandomNumber 0 most) >>= bind . min most
+    CardSelection.ByChoice -> do
+      asked <- Common.askedChooser resolving source controller legal chooser
+      Monad.forM_ asked $ \pid -> do
+        gs <- State.get
+        let ask most = do
+              answer <- Game.choose (Prompt.ChooseNumber (Decide.deciderFor pid gs) pid resolving 0 NumberFloor.Least most)
+              bind (maybe answer (min answer) most)
+        Monad.forM_ (bound gs) $ \most -> case most of
+          Just 0 -> bind 0
+          _ -> ask most
 
 -- CR 608.2h: the quantity is read once, here, against the source -- its last
 -- known information when it has left, as Ratchet Bomb has after CR 601.2h's

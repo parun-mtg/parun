@@ -18,6 +18,6 @@ data LibraryDepth
     -- card is this many cards down, 1 being the top.
     FromTop Natural.Natural
   | -- | Mine Security\'s "into the top eight cards of your library at random":
-    -- randomness names one of the top this-many places (Prompt.RandomDepth).
+    -- randomness names one of the top this-many places (Prompt.RandomNumber).
     AtRandomInTop Natural.Natural
   deriving (Eq, Ord, Show)

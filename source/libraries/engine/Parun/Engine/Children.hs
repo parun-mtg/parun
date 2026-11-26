@@ -1251,8 +1251,8 @@ effectChildren c effect = case effect of
   Effect.RemovePlayerCounters (RemovePlayerCounters.MkRemovePlayerCounters who kind quantity tally) ->
     fmap Effect.RemovePlayerCounters (RemovePlayerCounters.MkRemovePlayerCounters <$> onPlayer c who <*> pure kind <*> onQuantity c quantity <*> traverse (onSlot c) tally)
   Effect.PayAnyEnergy named -> fmap Effect.PayAnyEnergy (onSlot c named)
-  Effect.ChooseNumber (ChooseNumber.MkChooseNumber named upTo chooser) ->
-    fmap Effect.ChooseNumber (ChooseNumber.MkChooseNumber <$> onSlot c named <*> traverse (onQuantity c) upTo <*> onPlayer c chooser)
+  Effect.ChooseNumber (ChooseNumber.MkChooseNumber named upTo chooser selection) ->
+    fmap Effect.ChooseNumber (ChooseNumber.MkChooseNumber <$> onSlot c named <*> traverse (onQuantity c) upTo <*> onPlayer c chooser <*> pure selection)
   Effect.BindAmount (BindAmount.MkBindAmount quantity named) -> fmap Effect.BindAmount (BindAmount.MkBindAmount <$> onQuantity c quantity <*> onSlot c named)
   Effect.BindPlayers (BindPlayers.MkBindPlayers who named) -> fmap Effect.BindPlayers (BindPlayers.MkBindPlayers <$> onPlayer c who <*> onSlot c named)
   Effect.BindLeaders (BindLeaders.MkBindLeaders among measure named) -> fmap Effect.BindLeaders (BindLeaders.MkBindLeaders <$> onSlot c among <*> pure measure <*> onSlot c named)

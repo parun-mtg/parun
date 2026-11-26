@@ -2999,7 +2999,7 @@ boundSlots effect = case effect of
   -- CR 107.14: how much {E} the payer paid, for a later effect of the same
   -- resolution to read as Quantity.InSlot.
   Effect.PayAnyEnergy slot -> Set.singleton slot
-  Effect.ChooseNumber (ChooseNumber.MkChooseNumber slot _ _) -> Set.singleton slot
+  Effect.ChooseNumber (ChooseNumber.MkChooseNumber slot _ _ _) -> Set.singleton slot
   Effect.BindAmount payload -> Set.singleton (BindAmount.slot payload)
   Effect.BindPlayers payload -> Set.singleton (BindPlayers.slot payload)
   Effect.BindLeaders payload -> Set.singleton (BindLeaders.slot payload)

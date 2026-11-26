@@ -498,7 +498,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ChooseNumber (ChooseNumber.MkChooseNumber (SlotName.MkSlotName (Text.pack "number")) Nothing (PlayerRef.Relative PlayerRelation.You)))
+      (Effect.ChooseNumber (ChooseNumber.MkChooseNumber (SlotName.MkSlotName (Text.pack "number")) Nothing (PlayerRef.Relative PlayerRelation.You) CardSelection.ByChoice))
       " {\"type\":\"ChooseNumber\",\"value\":{\"slot\":\"number\"}} "
   Spec.it s "BindAmount" $
     Common.assertJsonCodec
