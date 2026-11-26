@@ -467,6 +467,8 @@ condition context c = case c of
     (Quantity.TurnsBegun TurnKind.ExtraTurn who, Quantity.Literal 0) | comparison == Comparison.Exactly -> do
       (subject, have) <- holder context who
       [subject <> Text.pack " " <> have <> Text.pack "n't begun an extra turn this game"]
+    -- CR 103.8, as Oracle text writes it (Necropotence Avatar).
+    (Quantity.IsFirstTurnOfGame, Quantity.Literal 0) | comparison == Comparison.Exactly -> [Text.pack "it's not the first turn of the game"]
     _ -> []
   -- CR 500.7: a condition of yours, then "and haven't begun an extra turn this
   -- game" (H.M.S. Bounty).

@@ -557,7 +557,7 @@ discardToHandSize pid = do
 -- added draw step on the first turn is skipped").
 skipsDraw :: GameState -> Bool
 skipsDraw gs =
-  TurnRegisters.turnNumber (GameState.turn gs) == 1
+  Turn.isFirstTurnOfGame gs
     && (length (GameState.seating gs) <= 2 || GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)))
     && case GameState.seating gs of
       starter : _ -> starter == TurnRegisters.activePlayer (GameState.turn gs)

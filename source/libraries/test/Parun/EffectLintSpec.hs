@@ -442,6 +442,7 @@ printedBoxQuantity quantity = case quantity of
   Quantity.Type.ActivationsThisTurn _ -> False
   Quantity.Type.RollTotalsThisTurn _ -> False
   Quantity.Type.PermanentsDiedThisTurn -> False
+  Quantity.Type.IsFirstTurnOfGame -> False
   Quantity.Type.DamagePreventedThisWay -> False
   Quantity.Type.SpellsCastUsingThisTurn {} -> False
   Quantity.Type.PhasesBegunThisTurn {} -> False
