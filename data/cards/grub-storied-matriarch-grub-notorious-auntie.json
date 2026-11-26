@@ -267,9 +267,12 @@
                               }
                             }
                           ],
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "blighted"
+                          "original": {
+                            "type": "OfObject",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "blighted"
+                            }
                           },
                           "riders": {
                             "attacking": {

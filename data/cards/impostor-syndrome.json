@@ -82,9 +82,12 @@
                               ]
                             }
                           ],
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "thatDamager"
+                          "original": {
+                            "type": "OfObject",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "thatDamager"
+                            }
                           }
                         }
                       }

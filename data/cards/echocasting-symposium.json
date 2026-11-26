@@ -41,9 +41,12 @@
                         "type": "InSlot",
                         "value": "player"
                       },
-                      "ref": {
-                        "type": "InSlot",
-                        "value": "creature"
+                      "original": {
+                        "type": "OfObject",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "creature"
+                        }
                       }
                     }
                   }

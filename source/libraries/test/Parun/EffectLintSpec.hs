@@ -152,6 +152,7 @@ import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.ForEach as ForEach
 import qualified Parun.Types.ForbidAttack as ForbidAttack
 import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
+import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.GainControl as GainControl
 import qualified Parun.Types.GrantCopyCast as GrantCopyCast
 import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
@@ -1725,7 +1726,7 @@ effectObjectRefs effect =
           ConjureCards.Reference {} -> []
         -- Twilight Diviner's "a copy of one of them", asked by
         -- Resolve.Common.askingObjects.
-        Effect.CreateCopy (CreateCopy.MkCreateCopy _ ref _ _ _ _ _ _) -> [([CardFromAmong], ref)]
+        Effect.CreateCopy (CreateCopy.MkCreateCopy _ original _ _ _ _ _ _) -> [([CardFromAmong], ref) | CopyOriginal.OfObject ref <- [original]]
         -- Volatile Chimera's "choose a card at random" and Olag, Ludevic's
         -- Hubris's "a creature card exiled with it", the original alone.
         Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject _ _ _) -> [([RandomAmong, ChosenAmong], ref) | CopyOriginal.OfObject ref <- [original]] <> read_ [subject]
@@ -2158,6 +2159,20 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- (Projection.freezeQuantities), and a card cannot know who is playing, so
   -- card data writes the bare tag; the codec round-trips a seat, #199's reason
   -- for a lint. Counted off the encoding, so every carrier is reached.
+  -- Unprinted: a permanent becoming a copy of a random reference card
+  -- (CopyOriginal.AtRandom under Effect.BecomeCopy); only CreateCopy's tokens
+  -- copy one (Momir Vig, Simic Visionary Avatar).
+  Spec.it s "no card makes a permanent a copy of a random reference card" $ do
+    ps <- S.allPrintings s corpus
+    let becomesRandom effect = case effect of
+          Effect.BecomeCopy x -> case BecomeCopy.original x of
+            CopyOriginal.AtRandom _ -> True
+            _ -> False
+          _ -> False
+        offends = any (any becomesRandom . cardAuthoredEffects) . Card.Type.faces . Printing.card
+    Spec.assertEqWith s "BecomeCopy's original is never a random pick" (fmap (S.nameOf . Printing.card) (filter offends ps)) []
+    -- Not vacuous: a doctored BecomeCopy offends.
+    Spec.assertBool s (becomesRandom (Effect.BecomeCopy (BecomeCopy.MkBecomeCopy (CopyOriginal.AtRandom (FromReference.MkFromReference (Filter.Type.And []) Nothing)) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing [] False))) "a random BecomeCopy offends"
   Spec.it s "no card writes a baked goader (CR 608.2h)" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace (bakesGoader . Codec.encode (Face.Codec.codec Card.Codec.codec)) . Printing.card) ps
@@ -2832,7 +2847,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let anyFromAmong = ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong group anyCard (HowMany.UpTo Nothing) Nothing Nothing Set.empty (PlayerRef.Relative PlayerRelation.You) Nothing False CardSelection.ByChoice)
     Spec.assertEqWith s "any number from among them is allowed by a reveal and a move alone" (inert [reveals anyFromAmong, moves anyFromAmong, discardsThese anyFromAmong]) [False, False, True]
     -- Twilight Diviner's "a copy of one of them" is the one question a copy asks.
-    let tokenCopies ref = Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) ref EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False Nothing)
+    let tokenCopies ref = Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) (CopyOriginal.OfObject ref) EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False Nothing)
     Spec.assertEqWith s "a copy allows one card from among them and no other chosen arm" (inert (fmap tokenCopies [inGraveyard, inHand, fromAmong, atRandom, anyFromAmong])) [True, True, False, True, True]
     -- An exact count other than one: only a move's test (Split the Party) reaches it.
     let exactlyTwo = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.Exactly (Quantity.Type.Literal 2)) Nothing Zone.Battlefield Set.empty)

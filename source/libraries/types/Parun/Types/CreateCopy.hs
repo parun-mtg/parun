@@ -1,8 +1,8 @@
 module Parun.Types.CreateCopy where
 
 import qualified Parun.Types.CopyException as CopyException
+import qualified Parun.Types.CopyOriginal as CopyOriginal
 import qualified Parun.Types.EntryRiders as EntryRiders
-import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
@@ -12,9 +12,13 @@ import qualified Parun.Types.SlotName as SlotName
 -- The quantity is how many copies. Rite of Replication is the only producer
 -- above one, and its five enter SIMULTANEOUSLY, which is what CR 614.12's entry
 -- loop and CR 616.1g's containment are asked about.
-data CreateCopy ability = MkCreateCopy
+data CreateCopy card ability = MkCreateCopy
   { quantity :: Quantity.Quantity,
-    ref :: ObjectRef.ObjectRef,
+    -- | What each token copies: the objects a ref names, or a card outside the
+    -- game -- the Oracle reference's by name or at random (CR 707.13), or one
+    -- the effect defines. BecomeCopy's type, so both opcodes read an original
+    -- one way.
+    original :: CopyOriginal.CopyOriginal card,
     -- | CR 110.5b's default is no riders at all, which is every copy token in
     -- data/cards but Littjara Mirrorlake's, so the key is elided rather than
     -- written.

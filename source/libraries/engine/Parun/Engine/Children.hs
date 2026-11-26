@@ -1162,8 +1162,8 @@ effectChildren c effect = case effect of
     fmap Effect.Create (Create.MkCreate <$> onQuantity c quantity <*> onCard c card <*> onEntryRiders c riders <*> traverse (onSlot c) named <*> onPlayer c creator <*> pure linked <*> traverse (\shown -> fmap (\r -> shown {ShownDie.result = r}) (onQuantity c (ShownDie.result shown))) die <*> traverse (onObjectRef c) lenders)
   Effect.Conjure (Conjure.MkConjure quantity cards selection drafted destination named conjurer) ->
     fmap Effect.Conjure (Conjure.MkConjure <$> onQuantity c quantity <*> conjureCardsChildren c cards <*> pure selection <*> pure drafted <*> pure destination <*> traverse (onSlot c) named <*> onPlayer c conjurer)
-  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity ref riders named exceptions creator linked linkExiled) ->
-    fmap Effect.CreateCopy (CreateCopy.MkCreateCopy <$> onQuantity c quantity <*> onObjectRef c ref <*> onEntryRiders c riders <*> traverse (onSlot c) named <*> traverse (onCopyException c) exceptions <*> onPlayer c creator <*> pure linked <*> traverse (onSlot c) linkExiled)
+  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity original riders named exceptions creator linked linkExiled) ->
+    fmap Effect.CreateCopy (CreateCopy.MkCreateCopy <$> onQuantity c quantity <*> copyOriginalChildren c original <*> onEntryRiders c riders <*> traverse (onSlot c) named <*> traverse (onCopyException c) exceptions <*> onPlayer c creator <*> pure linked <*> traverse (onSlot c) linkExiled)
   Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject duration exceptions newTargets) ->
     fmap Effect.BecomeCopy (BecomeCopy.MkBecomeCopy <$> copyOriginalChildren c original <*> onObjectRef c subject <*> traverse (onDuration c) duration <*> traverse (onCopyException c) exceptions <*> pure newTargets)
   Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets quantity copier exceptions named) ->
@@ -1489,15 +1489,20 @@ conjureCardsChildren :: (Applicative f) => EffectChildren card ability f -> Conj
 conjureCardsChildren c cards = case cards of
   ConjureCards.Written written -> fmap ConjureCards.Written (traverse (onConjured c) written)
   ConjureCards.Duplicate ref -> fmap ConjureCards.Duplicate (onObjectRef c ref)
-  ConjureCards.Reference (FromReference.MkFromReference predicate amount) -> fmap ConjureCards.Reference (FromReference.MkFromReference <$> onFilter c predicate <*> traverse (onQuantity c) amount)
+  ConjureCards.Reference from -> fmap ConjureCards.Reference (fromReferenceChildren c from)
 
--- | A copy's original: the object it is read off, a name, or a card the effect
--- defines (CR 707.2).
+-- | A copy's original: the object it is read off, a name, a card the effect
+-- defines, or a reference pick (CR 707.2).
 copyOriginalChildren :: (Applicative f) => EffectChildren card ability f -> CopyOriginal.CopyOriginal card -> f (CopyOriginal.CopyOriginal card)
 copyOriginalChildren c original = case original of
   CopyOriginal.OfObject ref -> fmap CopyOriginal.OfObject (onObjectRef c ref)
   CopyOriginal.Named name -> pure (CopyOriginal.Named name)
   CopyOriginal.Defined card -> fmap CopyOriginal.Defined (onCard c card)
+  CopyOriginal.AtRandom from -> fmap CopyOriginal.AtRandom (fromReferenceChildren c from)
+
+-- | CR 108.1: a reference pick's filter and the bound it reads.
+fromReferenceChildren :: (Applicative f) => EffectChildren card ability f -> FromReference.FromReference -> f FromReference.FromReference
+fromReferenceChildren c (FromReference.MkFromReference predicate amount) = FromReference.MkFromReference <$> onFilter c predicate <*> traverse (onQuantity c) amount
 
 -- | A stack copy's targets: CR 707.10d's candidates, where a ref names them.
 copyTargetsChildren :: (Applicative f) => EffectChildren card ability f -> CopyTargets.CopyTargets -> f CopyTargets.CopyTargets

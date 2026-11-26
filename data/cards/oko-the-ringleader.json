@@ -195,32 +195,35 @@
                       {
                         "type": "CreateCopy",
                         "value": {
-                          "ref": {
-                            "type": "EachMatching",
+                          "original": {
+                            "type": "OfObject",
                             "value": {
-                              "type": "And",
-                              "value": [
-                                {
-                                  "type": "Not",
-                                  "value": {
-                                    "type": "HasCardType",
-                                    "value": "Land"
+                              "type": "EachMatching",
+                              "value": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "Not",
+                                    "value": {
+                                      "type": "HasCardType",
+                                      "value": "Land"
+                                    }
+                                  },
+                                  {
+                                    "type": "Not",
+                                    "value": {
+                                      "type": "IsSource"
+                                    }
+                                  },
+                                  {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
                                   }
-                                },
-                                {
-                                  "type": "Not",
-                                  "value": {
-                                    "type": "IsSource"
-                                  }
-                                },
-                                {
-                                  "type": "HeldBy",
-                                  "value": {
-                                    "holder": "Controller",
-                                    "relation": "You"
-                                  }
-                                }
-                              ]
+                                ]
+                              }
                             }
                           }
                         }

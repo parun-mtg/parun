@@ -75,6 +75,7 @@ import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.BlockChoice as BlockChoice
 import qualified Parun.Types.Card as Card.Type
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChangeTargets as ChangeTargets
@@ -124,6 +125,7 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.InitiativeTarget as InitiativeTarget
+import qualified Parun.Types.Keyword as KeywordType
 import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.LibraryDepth as LibraryDepth
@@ -153,6 +155,7 @@ import qualified Parun.Types.PreventAllDamage as PreventAllDamage
 import qualified Parun.Types.PreventNextDamage as PreventNextDamage
 import qualified Parun.Types.PreventionRider as PreventionRider
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.Prohibit as Prohibit
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
@@ -435,13 +438,9 @@ conjure settle resolving source controller legal payload = do
           -- nothing conjures nothing.
           referenceAmount from = FromReference.amount from >>= Common.evaluateForRecipient viewOf context gs resolving source conjuring
           pickReference predicate amount names = do
-            answer <- pickName names
-            found <- Game.lookUpCard answer
+            found <- pickName names >>= admittedReferenceCard predicate amount
             g <- State.get
-            pure $ do
-              card <- found >>= (`Game.cardOfPrinting` g)
-              Monad.guard (Projection.referenceAdmits (Game.teams g) amount predicate card)
-              Just (card, Nothing)
+            pure (fmap (\card -> (card, Nothing)) (found >>= (`Game.cardOfPrinting` g)))
           referencePickers from count = do
             let amount = referenceAmount from
                 predicate = FromReference.filter from
@@ -508,12 +507,19 @@ conjure settle resolving source controller legal payload = do
                 ConjureCards.Reference from -> referencePickers from 1 >>= fmap concat . Monad.mapM (\p -> p >>= fmap concat . Monad.mapM (onto entry n) . Maybe.maybeToList)
         _ -> pure []
 
-createCopy :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> CreateCopy.CreateCopy (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
-createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateCopy quantity ref entry mSlot exceptions creator linked linkExiled) = do
+createCopy :: Settle.Settle -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> CreateCopy.CreateCopy Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
+createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateCopy quantity original entry mSlot exceptions creator linked linkExiled) = do
+  -- CR 108.1: a reference original is looked up, or picked, before the board
+  -- is read, becomeCopy's posture below.
+  outside <- referenceOriginal resolving source controller legal original
   -- Asked before the board is read (CR 608.2d), so Twilight Diviner's "a copy
   -- of one of them" is chosen. Common.LastKnown, since the copy only reads its
   -- pick: CR 608.2h's branch below answers for one that has left.
-  sources <- Common.askingObjects Common.LastKnown Nothing resolving source controller legal chosen ref
+  sources <- case original of
+    CopyOriginal.OfObject ref -> Common.askingObjects Common.LastKnown Nothing resolving source controller legal chosen ref
+    CopyOriginal.Named _ -> pure []
+    CopyOriginal.Defined _ -> pure []
+    CopyOriginal.AtRandom _ -> pure []
   gs <- State.get
   -- CR 707.2 / 111.3: this many tokens per named permanent, minted through the
   -- same CR 111.2 funnel, carrying the copied permanent's COPIABLE values
@@ -586,10 +592,16 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
             -- and a token minted by CR 707.1 did not. Both faces of a
             -- double-faced copy take them (CR 707.8a).
             let except = Replacement.applyCopyExceptions (Common.thisAbilitySource resolving gs) Nothing exceptions
-                shapeOf src =
-                  let copied = Event.copiedToken src gs
-                   in fmap (\card -> (card, Just copied {TokenCopy.values = except (TokenCopy.values copied), TokenCopy.turned = fmap except (TokenCopy.turned copied)})) (Event.copiedTokenCard src gs)
-            case NonEmpty.nonEmpty (Maybe.mapMaybe shapeOf sources) of
+                shapeOf (src, board) =
+                  let copied = Event.copiedToken src board
+                   in fmap (\card -> (card, Just copied {TokenCopy.values = except (TokenCopy.values copied), TokenCopy.turned = fmap except (TokenCopy.turned copied)})) (Event.copiedTokenCard src board)
+                -- A reference original's values are read off a counterfactual
+                -- board holding it (Event.mintOutside), becomeCopy's road, thrown
+                -- away with the read. ONE pick for every creator and the whole
+                -- count: no card in data/cards/ copies a reference card more than
+                -- once per resolution, so this reading is a regression fence.
+                originals = fmap (\src -> (src, gs)) sources <> foldMap (\printingId -> [Event.mintOutside controller printingId gs]) outside
+            case NonEmpty.nonEmpty (Maybe.mapMaybe shapeOf originals) of
               Nothing -> pure []
               -- CR 508.4 / 509.4, Create's road.
               Just shapes -> Common.creatingIntoCombat mAttack mBlocked (Event.createTokens settle creating shapes Nothing (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) Nothing (Common.resolvingMarks resolving gs))
@@ -607,15 +619,47 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
     State.modify' (\g -> g {GameState.exiledWith = foldr (Map.adjust join) (GameState.exiledWith g) exiled})
   Common.bindObjects resolving mSlot minted
 
+-- | CR 108.1: the card a copy's original names outside the game, interned --
+-- the Oracle reference's card of that name, the effect's own defined card, or
+-- one the reference admits chosen at random -- and Nothing for an object in
+-- the game. A random pick asks the interpreter which cards the filter admits,
+-- off the pre-effect board like conjure's reference road, and is filtered back:
+-- a reference admitting nothing copies nothing (CR 111.12).
+referenceOriginal :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> CopyOriginal.CopyOriginal Card.Type.Card -> Game (Maybe PrintingId.PrintingId)
+referenceOriginal resolving source controller legal original = case original of
+  CopyOriginal.Named name -> Game.lookUpCard name
+  CopyOriginal.Defined card -> fmap Just (State.state (Game.intern (Printing.ofCard card)))
+  CopyOriginal.OfObject _ -> pure Nothing
+  CopyOriginal.AtRandom from -> do
+    gs <- State.get
+    let predicate = FromReference.filter from
+        context = effectContext gs resolving controller source legal (slotBindings resolving gs)
+        amount = FromReference.amount from >>= Common.evaluateForRecipient (effectViewOf resolving source legal gs) context gs resolving source controller
+    names <- Game.ask (Prompt.ReferenceCards predicate amount)
+    case NonEmpty.nonEmpty (ListUtils.nubOrd names) of
+      Nothing -> pure Nothing
+      Just offered -> do
+        answer <- Maybe.fromMaybe (NonEmpty.head offered) <$> Game.drawAmong Prompt.RandomCard (NonEmpty.toList offered)
+        admittedReferenceCard predicate amount answer
+
+-- | CR 108.1: the reference card of this name, interned, provided the filter
+-- admits it -- an answer outside what the filter admits is not taken.
+admittedReferenceCard :: Filter.Type.Filter KeywordType.Keyword -> Maybe Integer -> CardName.CardName -> Game (Maybe PrintingId.PrintingId)
+admittedReferenceCard predicate amount answer = do
+  found <- Game.lookUpCard answer
+  g <- State.get
+  pure $ do
+    printingId <- found
+    card <- Game.cardOfPrinting printingId g
+    Monad.guard (Projection.referenceAdmits (Game.teams g) amount predicate card)
+    Just printingId
+
 becomeCopy :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> BecomeCopy.BecomeCopy Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 becomeCopy resolving source controller legal chosen (BecomeCopy.MkBecomeCopy original subjectRef duration exceptions newTargets) = do
   -- CR 108.1: a NAMED original is the card the Oracle reference gives the
   -- name, looked up before the board below is read. A DEFINED one is the
   -- effect's own card, interned as a token's is (Event.createTokens).
-  named <- case original of
-    CopyOriginal.Named name -> Game.lookUpCard name
-    CopyOriginal.Defined card -> fmap Just (State.state (Game.intern (Printing.ofCard card)))
-    CopyOriginal.OfObject _ -> pure Nothing
+  named <- referenceOriginal resolving source controller legal original
   -- Asked before the board is read (CR 608.2d), createCopy's reason: Volatile
   -- Chimera's "choose a card at random". The scenario
   -- volatile-chimera-becomes-a-random-card-its-controller-exiled-before-the-game
@@ -624,6 +668,7 @@ becomeCopy resolving source controller legal chosen (BecomeCopy.MkBecomeCopy ori
     CopyOriginal.OfObject ref -> Common.askingObjects Common.LastKnown Nothing resolving source controller legal chosen ref
     CopyOriginal.Named _ -> pure []
     CopyOriginal.Defined _ -> pure []
+    CopyOriginal.AtRandom _ -> pure []
   let onStackIn g oid = List.find ((== Zone.Stack) . Object.zone) (Game.lookupObject oid g)
       -- The copiable values, and the original's stack incarnation whose
       -- choices CR 707.2 hands on. A named or defined card's are read off a
@@ -636,6 +681,9 @@ becomeCopy resolving source controller legal chosen (BecomeCopy.MkBecomeCopy ori
           _ -> Nothing
         CopyOriginal.Named _ -> outside gs
         CopyOriginal.Defined _ -> outside gs
+        -- Unprinted: a permanent becoming a copy of a random reference card;
+        -- Parun.EffectLintSpec keeps it out of card data.
+        CopyOriginal.AtRandom _ -> outside gs
   before <- State.get
   State.modify' $ \gs ->
     -- CR 707.1: each named subject becomes a copy of the named original, in
