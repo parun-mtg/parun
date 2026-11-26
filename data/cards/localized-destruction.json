@@ -48,8 +48,11 @@
               {
                 "effects": [
                   {
-                    "type": "PayAnyEnergy",
-                    "value": "paid"
+                    "type": "PayAny",
+                    "value": {
+                      "resource": "Energy",
+                      "slot": "paid"
+                    }
                   }
                 ]
               },

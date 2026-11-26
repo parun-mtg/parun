@@ -385,13 +385,13 @@ data Prompt r where
   -- | CR 122.5: a move's ChooseCounterKind with declining added ("up to one"); raised
   -- for one candidate too, and an unoffered kind reads as declining.
   ChooseMovedCounterOrNone :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> ObjectId.ObjectId -> NonEmpty.NonEmpty (CounterKind.CounterKind Keyword.Keyword) -> Prompt (Maybe (CounterKind.CounterKind Keyword.Keyword))
-  -- | CR 107.14: how much {E} the player pays to an Effect.PayAnyEnergy as
+  -- | CR 107.14: how much {E} the player pays to an energy Effect.PayAny as
   -- the object resolves; the Natural is their energy, enforced (CR 118.3),
   -- and zero declines the "may". Not raised for a bound of 0, where that same
   -- rule leaves 0 as the only payable amount.
   ChoosePaidEnergy :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Natural.Natural -> Prompt Natural.Natural
   -- | CR 107.1c / 608.2d: the number an Effect.ChooseNumber binds as the object
-  -- resolves, an Effect.Bid's bid, or how many colours a ChosenQuality.Colors
+  -- resolves, the life a life Effect.PayAny pays (CR 119.4), an Effect.Bid's bid, or how many colours a ChosenQuality.Colors
   -- range picks (CR 105.4), or how many copies of a spell go onto the stack
   -- ahead of an additional one (Twinning Staff's ruling); the Natural is its
   -- floor, the NumberFloor what that floor means, and the Maybe its bound, the

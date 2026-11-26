@@ -88,6 +88,7 @@ import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NoteKind as NoteKind
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
+import qualified Parun.Types.PayAny as PayAny
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseOut as PhaseOut
@@ -472,14 +473,13 @@ data Effect card ability
     -- player-counter kind (CR 729.1); removing more than they have removes what
     -- they have.
     RemovePlayerCounters RemovePlayerCounters.RemovePlayerCounters
-  | -- | CR 107.14: "you may pay any amount of {E}" -- the resolving controller
-    -- names an amount, removes that many energy counters, and the amount is
-    -- bound to this SlotName for a later effect to read (Harnessed Lightning).
-    -- Not a cost, nothing on the card being gated on the payment.
+  | -- | CR 107.14 / 119.4: "you may pay any amount of {E}" or "of life", the
+    -- resolving controller naming the amount (Harnessed Lightning, Maralen of
+    -- the Mornsong Avatar). Not a cost.
     --
     -- Parun.VariableEffectSpec's "CR 118.12 paying nothing declines the offer" is
     -- what proves paying zero does not take a gate hung off this opcode.
-    PayAnyEnergy SlotName.SlotName
+    PayAny PayAny.PayAny
   | -- | CR 107.1c / 608.2d: the resolving controller, or randomness, names a
     -- number, zero included and at most the payload's bound, bound for a later
     -- effect to read.

@@ -20,6 +20,7 @@ import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.Decider as Decider
+import qualified Parun.Types.DrawKind as DrawKind
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Face as Face
 import Parun.Types.Game (Game)
@@ -86,7 +87,7 @@ openingHands perform seated = do
     owners
     ( \pid -> do
         n <- State.gets (startingHandSize pid)
-        Monad.replicateM_ (Natural.toIntSaturating n) (Event.drawCard Settle.none pid)
+        Monad.replicateM_ (Natural.toIntSaturating n) (drawOpeningCard pid)
     )
   additionalHands owners
   mulliganRounds perform Map.empty owners
@@ -145,12 +146,16 @@ additionalHands owners = do
       Monad.forM_ (concat (before <> drop 1 after)) (\oid -> Event.changeZone Settle.none oid Zone.Library)
       Event.shuffleLibrary pid
 
+-- CR 103.5: one draw for an opening hand, a mulligan's or an additional hand's.
+drawOpeningCard :: PlayerId -> Game ()
+drawOpeningCard pid = Monad.void (Event.drawCardSpentReturning DrawKind.OpeningHand Settle.none Set.empty pid)
+
 -- One additional hand: draw `size` cards and answer the cards that reached
 -- the hand, in hand order.
 drawHand :: PlayerId -> Numeric.Natural.Natural -> Game [ObjectId]
 drawHand pid size = do
   before <- State.gets (Game.zoneMembers Zone.Hand pid)
-  Monad.replicateM_ (Natural.toIntSaturating size) (Event.drawCard Settle.none pid)
+  Monad.replicateM_ (Natural.toIntSaturating size) (drawOpeningCard pid)
   State.gets (filter (`notElem` before) . Game.zoneMembers Zone.Hand pid)
 
 -- CR 103.5b / CR 103.6: every action the cards in this player's hand grant from
@@ -424,7 +429,7 @@ takeMulligan counts pid = do
   Monad.forM_ handIds (\oid -> Event.changeZone Settle.none oid Zone.Library)
   Event.shuffleLibrary pid
   handSize <- State.gets (startingHandSize pid)
-  Monad.replicateM_ (Natural.toIntSaturating handSize) (Event.drawCard Settle.none pid)
+  Monad.replicateM_ (Natural.toIntSaturating handSize) (drawOpeningCard pid)
   -- The SAME offer the declaration prompt reported -- offerFor is a pure
   -- function of `counts`, `pid` and the seat roster, none of which the redraw
   -- touches -- so this bottoms exactly what the player was promised.

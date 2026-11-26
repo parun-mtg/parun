@@ -1076,7 +1076,7 @@ effect context e = case e of
   Effect.RedirectDamage {} -> []
   Effect.GainPlayerCounters {} -> []
   Effect.RemovePlayerCounters {} -> []
-  Effect.PayAnyEnergy {} -> []
+  Effect.PayAny {} -> []
   Effect.ChooseNumber {} -> []
   Effect.BindAmount {} -> []
   Effect.BindPlayers {} -> []

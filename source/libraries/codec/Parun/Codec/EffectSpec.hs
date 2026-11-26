@@ -185,6 +185,8 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.OutsideDestination as OutsideDestination
+import qualified Parun.Types.PaidResource as PaidResource
+import qualified Parun.Types.PayAny as PayAny
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PermissionVerb as PermissionVerb
@@ -486,13 +488,20 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (Effect.Destroy (Destroy.MkDestroy (ObjectRef.EachMatching (Filter.HasCardType CardType.Artifact)) Regenerability.Regenerable (Just (SlotName.MkSlotName (Text.pack "destroyed"))) Nothing Nothing))
       " {\"type\":\"Destroy\",\"value\":{\"ref\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Artifact\"}},\"regenerability\":\"Regenerable\",\"slot\":\"destroyed\"}} "
-  Spec.it s "PayAnyEnergy" $
+  Spec.it s "PayAny" $
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.PayAnyEnergy (SlotName.MkSlotName (Text.pack "paid")))
-      " {\"type\":\"PayAnyEnergy\",\"value\":\"paid\"} "
+      (Effect.PayAny (PayAny.MkPayAny PaidResource.Energy (SlotName.MkSlotName (Text.pack "paid")) False))
+      " {\"type\":\"PayAny\",\"value\":{\"resource\":\"Energy\",\"slot\":\"paid\"}} "
+  Spec.it s "PayAny linked" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.PayAny (PayAny.MkPayAny PaidResource.Life (SlotName.MkSlotName (Text.pack "paid")) True))
+      " {\"type\":\"PayAny\",\"value\":{\"resource\":\"Life\",\"slot\":\"paid\",\"linked\":true}} "
   Spec.it s "ChooseNumber" $
     Common.assertJsonCodec
       s

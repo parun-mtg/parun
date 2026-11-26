@@ -368,6 +368,7 @@ import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.OrTapped as OrTapped
 import qualified Parun.Types.PaidExpiry as PaidExpiry
+import qualified Parun.Types.PayAny as PayAny
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
@@ -1251,7 +1252,7 @@ effectChildren c effect = case effect of
     fmap Effect.GainPlayerCounters (PlayerCounters.MkPlayerCounters <$> onPlayer c who <*> pure kind <*> onQuantity c quantity)
   Effect.RemovePlayerCounters (RemovePlayerCounters.MkRemovePlayerCounters who kind quantity tally) ->
     fmap Effect.RemovePlayerCounters (RemovePlayerCounters.MkRemovePlayerCounters <$> onPlayer c who <*> pure kind <*> onQuantity c quantity <*> traverse (onSlot c) tally)
-  Effect.PayAnyEnergy named -> fmap Effect.PayAnyEnergy (onSlot c named)
+  Effect.PayAny (PayAny.MkPayAny resource named linked) -> fmap (\s -> Effect.PayAny (PayAny.MkPayAny resource s linked)) (onSlot c named)
   Effect.ChooseNumber (ChooseNumber.MkChooseNumber named upTo chooser selection) ->
     fmap Effect.ChooseNumber (ChooseNumber.MkChooseNumber <$> onSlot c named <*> traverse (onQuantity c) upTo <*> onPlayer c chooser <*> pure selection)
   Effect.BindAmount (BindAmount.MkBindAmount quantity named) -> fmap Effect.BindAmount (BindAmount.MkBindAmount <$> onQuantity c quantity <*> onSlot c named)

@@ -3509,3 +3509,22 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Setup.beginGame`; `Parun.VanguardSpec`'s "a
   vanguard's game-start Elf enters after the opening-hand Leylines".
 - **Issue**: none.
+
+## Whether a vanguard's draw prohibition reaches the opening hand
+
+- **Question**: Maralen of the Mornsong Avatar's "You can't draw cards"
+  functions from the command zone (CR 902.7), where the card is before the
+  game begins (CR 902.3). Does it stop CR 103.5's opening-hand draws and a
+  mulligan's redraw, leaving its owner no hand?
+- **Rules**: CR 103.5, 121.2b, 313.4, 902.3, 902.5, 902.7; the card has no
+  ruling; CR of 2026-11-06.
+- **Decision**: No: an opening hand's draws pass no draw prohibition, and the
+  owner draws CR 902.5's starting hand. Every later draw is barred.
+- **Rejected**: Barring them: the printed hand modifier (CR 313.6) would then
+  size nothing, and the card's only cards would come from its draw-step
+  trigger.
+- **Site**: `Parun.Engine.Event.drawCardSpentReturning`'s
+  `DrawKind.OpeningHand`; `Parun.VanguardSpec`'s "a vanguard's
+  at-the-beginning-of-the-game life payment sets how many cards Maralen looks
+  at".
+- **Issue**: none.
