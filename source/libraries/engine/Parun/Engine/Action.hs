@@ -107,10 +107,16 @@ playableLands pid gs =
                   then []
                   else [(oid, mName) | (mName, _) <- Game.landFacesOf obj card, Set.member oid open || permitted oid mName]
               -- CR 305.1 / 707.2: a card a play-as-copy permission opens
-              -- (Dakkon Blackblade Avatar), played as no face of its own.
-              -- Where the card is playable as itself as well, Cast.playLand
-              -- asks the printed "may" instead.
-              asCopy = [(oid, Nothing) | null native, not (null (PlayerEffect.playAsCopyPermissions pid oid gs))]
+              -- (Dakkon Blackblade Avatar), played as no face of its own, and
+              -- withheld where CR 101.2 stops it whichever land it becomes
+              -- (Cast.asSomeLand). Where the card is playable as itself as
+              -- well, Cast.playLand asks the printed "may" instead.
+              asCopy =
+                [ (oid, Nothing)
+                | null native,
+                  not (null (PlayerEffect.playAsCopyPermissions pid oid gs)),
+                  Cast.unprohibitedAsSomeLand pid oid gs
+                ]
            in native <> asCopy
         _ -> []
       -- CR 305.1's own zone, which needs no permission.
@@ -215,10 +221,16 @@ legalActions pid gs =
       -- never widens a land play (CR 305.1). A printing whose permission says
       -- PLAY rather than cast -- Scout's Warning -- moves this window too, by
       -- CR 601.1a.
-      landTimingOk (oid, mName) =
-        Turn.sorcerySpeedWindow pid gs
-          || maybe False (\card -> Cast.flashOn oid (Game.resolveFace mName card) gs) (Game.cardOf oid gs)
-          || PlayerEffect.mayPlayAsThoughItHadFlash pid oid (Cast.asPlayed oid mName gs)
+      --
+      -- CR 707.2: a card only a play-as-copy permission plays is the land it
+      -- becomes as it is played, so its window is that land's
+      -- (Cast.timelyAsSomeLand) and never the card's own flash.
+      landTimingOk (oid, mName)
+        | not (Cast.playableAsItself pid oid gs) && not (null (PlayerEffect.playAsCopyPermissions pid oid gs)) = Cast.timelyAsSomeLand pid oid gs
+        | otherwise =
+            Turn.sorcerySpeedWindow pid gs
+              || maybe False (\card -> Cast.flashOn oid (Game.resolveFace mName card) gs) (Game.cardOf oid gs)
+              || PlayerEffect.mayPlayAsThoughItHadFlash pid oid (Cast.asPlayed oid mName gs)
       lands = if canPlayLand then fmap (uncurry Action.Play) (filter landTimingOk (playableLands pid gs)) else []
       -- CR 709.3: one action per castable HALF, so choosing a half is choosing
       -- an action and the engine never asks which one. CR 702.37d adds one more

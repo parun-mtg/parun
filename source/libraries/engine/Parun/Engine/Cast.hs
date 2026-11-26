@@ -3199,8 +3199,9 @@ playLand settle offered pid oid mName = do
   copy <- playedAsCopy offered pid oid
   case copy of
     Nothing -> playLandAs settle offered False pid oid mName
-    -- Implementation-defined: a play-as-copy permission whose reference admits
-    -- no card the player may play plays nothing; the CR is silent.
+    -- Not implemented: withholding the play where prohibitions naming lands
+    -- stop every candidate, which Parun.Engine.Action.playableLands cannot
+    -- see; taking it plays nothing (#9913).
     Just Nothing -> pure ()
     -- CR 707.2: the card is the copy as it is played, so the reads below
     -- (landFacesOf, CR 101.2's prohibitions, CR 614.12's entry) see the land.
@@ -3212,46 +3213,69 @@ playLand settle offered pid oid mName = do
 stampedAsCopy :: PC.ProjectedCharacteristics -> ObjectId -> GameState -> GameState
 stampedAsCopy pc oid gs = gs {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setCopy pc (Object.bindings o)}) oid (GameState.objects gs)}
 
+-- CR 305.1 / 707.2: `oid` as a play-as-copy permission plays it before its land
+-- is drawn, a copy of a land with no other characteristic. CR 101.2's
+-- prohibitions and CR 116.2a's window read off it hold whichever land is
+-- drawn, except a prohibition naming lands (Conjurer's Ban), which
+-- playedAsCopy narrows the draw by.
+asSomeLand :: ObjectId -> GameState -> GameState
+asSomeLand = stampedAsCopy Projection.noCharacteristics {PC.cardTypes = Set.singleton CardType.Land}
+
+-- CR 101.2: whether CR 101.2's prohibitions leave `oid` playable as
+-- asSomeLand.
+unprohibitedAsSomeLand :: PlayerId -> ObjectId -> GameState -> Bool
+unprohibitedAsSomeLand pid oid gs = not (PlayerEffect.prohibitsPlayingLand pid oid (asSomeLand oid gs))
+
+-- CR 116.2a: whether it is now `oid`'s window as asSomeLand: a main phase with
+-- the stack empty, or a play-scoped flash grant reaching it. No basic land
+-- card has flash, so the card's own is never read.
+timelyAsSomeLand :: PlayerId -> ObjectId -> GameState -> Bool
+timelyAsSomeLand pid oid gs = Turn.sorcerySpeedWindow pid gs || PlayerEffect.mayPlayAsThoughItHadFlash pid oid (asSomeLand oid gs)
+
+-- CR 305.1: whether `oid`, in `pid`'s hand, may be played as itself: it has a
+-- land face and CR 101.2's prohibitions leave it playable.
+playableAsItself :: PlayerId -> ObjectId -> GameState -> Bool
+playableAsItself pid oid gs = case (Game.lookupLayerOne oid gs, Game.cardOfHandMember oid gs) of
+  (Just obj, Just card) -> not (null (Game.landFacesOf obj card)) && not (PlayerEffect.prohibitsPlayingLand pid oid gs)
+  _ -> False
+
 -- CR 305.1 / 707.2: what `pid`'s play of `oid` makes it a copy of under a
 -- play-as-copy permission (Dakkon Blackblade Avatar): Nothing for a play made
 -- as the card itself -- under no such permission, one an effect instructs
--- (`offered`), or one declining the printed "may" (Prompt.OfferedExtra) where
--- the card is playable as itself too. Otherwise the copiable values of a card
+-- (`offered`), one outside asSomeLand's window where the card is playable as
+-- itself (Dryad Arbor under Scout's Warning), or one declining the printed
+-- "may" (Prompt.OfferedExtra) there. Otherwise the copiable values of a card
 -- of the Oracle reference (CR 108.1) chosen at random among those the
 -- permission admits, the played card bound at Binding.playedLand, and Just
 -- Nothing where none is left.
 --
--- Narrowed to the cards CR 101.2's land-play prohibitions leave playable, each
--- asked as the copy it would make. Implementation-defined: picking first and
--- refusing the play differs only where a prohibition stops some of the
--- candidates, and every printed one stops every land or no basic one.
+-- Drawn among the cards CR 101.2's land-play prohibitions leave playable, each
+-- asked as the copy it would make: docs/decisions.md, "Whether a land played
+-- as a random copy is drawn among the playable ones".
 --
 -- ONE permission: CR 902.7's vanguard is the only printing, and a player has
 -- one vanguard.
 playedAsCopy :: Bool -> PlayerId -> ObjectId -> Game (Maybe (Maybe PC.ProjectedCharacteristics))
 playedAsCopy offered pid oid = do
   gs <- State.get
-  case (offered, PlayerEffect.playAsCopyPermissions pid oid gs, Game.lookupLayerOne oid gs, Game.cardOfHandMember oid gs) of
-    (False, (src, permission) : _, Just obj, Just card) -> do
-      let itself = not (null (Game.landFacesOf obj card)) && not (PlayerEffect.prohibitsPlayingLand pid oid gs)
+  case (offered, PlayerEffect.playAsCopyPermissions pid oid gs) of
+    (False, (src, permission) : _) -> do
       taken <-
-        if itself
-          then (== OptionalDecision.Exercises) <$> Game.choose (Prompt.OfferedExtra (Decide.deciderFor pid gs) pid src (PlayerEffect.Type.PlayAsCopy permission))
+        if playableAsItself pid oid gs
+          then
+            if timelyAsSomeLand pid oid gs
+              then (== OptionalDecision.Exercises) <$> Game.choose (Prompt.OfferedExtra (Decide.deciderFor pid gs) pid src (PlayerEffect.Type.PlayAsCopy permission))
+              else pure False
           else pure True
       if not taken
         then pure Nothing
         else do
           let colors = maybe Set.empty Filter.colors (Projection.fullView gs oid)
               predicate = Filter.bakeProducedColors (Map.singleton Binding.playedLand colors) (PlayAsCopy.original permission)
-          names <- Game.ask (Prompt.ReferenceCards predicate Nothing)
-          let copyOf printingId g = let (minted, board) = Event.mintOutside pid printingId g in Event.copiedSnapshot minted board
-              playable (_, pc) = not (PlayerEffect.prohibitsPlayingLand pid oid (stampedAsCopy pc oid gs))
-          found <- traverse (\name -> fmap (fmap (\printingId -> (name, printingId))) (Game.lookUpCard name)) (ListUtils.nubOrd names)
-          -- Read after the lookups, which intern each printing.
-          interned <- State.get
-          let candidates = filter playable [(name, copyOf printingId interned) | (name, printingId) <- Maybe.catMaybes found]
-          picked <- Game.drawAmong Prompt.RandomCard (fmap fst candidates)
-          pure (Just (picked >>= (`lookup` candidates)))
+              playable printingId board = not (PlayerEffect.prohibitsPlayingLand pid oid (stampedAsCopy (Event.referenceSnapshot pid printingId board) oid board))
+          picked <- Event.drawFromReference playable 1 predicate Nothing
+          board <- State.get
+          pure (Just (fmap (\printingId -> Event.referenceSnapshot pid printingId board) (Maybe.listToMaybe picked)))
     _ -> pure Nothing
 
 -- The play itself, `asCopy` where playedAsCopy stamped the card, whose copy

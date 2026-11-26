@@ -63,6 +63,24 @@ Entries are ordered by the first rule each cites.
   revealed".
 - **Issue**: #3261.
 
+## Whether a land played as a random copy is drawn among the playable ones
+
+- **Question**: Dakkon Blackblade Avatar plays a colored card "as a copy of a
+  basic land card chosen at random". Where a prohibition stops some of the
+  candidates (Conjurer's Ban naming Plains, for Lightning Helix), is the land
+  drawn among those left playable, or among all of them with the play refused
+  when it lands on a prohibited one?
+- **Rules**: CR 101.2, 305.1, 707.2; CR of 2026-11-06. No ruling.
+- **Decision**: Among those left playable, each candidate asked as the copy
+  it would make: the play goes ahead whenever one is left.
+- **Rejected**: Drawing among all and refusing the play on a prohibited one,
+  which takes back a special action the player was free to take and makes
+  the randomness decide its legality.
+- **Site**: `Parun.Engine.Cast.playedAsCopy`, through
+  `Parun.Engine.Event.drawFromReference`'s `keep`. Proved by
+  `data/scenarios/vanguard/dakkon-blackblade-avatar-draws-its-land-among-those-conjurer-s-ban-leaves-playable.json`.
+- **Issue**: #9910.
+
 ## What a creature an effect makes block may block
 
 - **Question**: "You may have it block an attacking creature of your choice"
