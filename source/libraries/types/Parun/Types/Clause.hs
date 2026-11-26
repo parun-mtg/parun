@@ -101,7 +101,8 @@ data Clause card ability = MkClause
     -- at all.
     condition :: Maybe Condition.Condition,
     -- | CR 608.2d's "or": the sibling clauses of this mode that this one is
-    -- exclusive with, so exactly one of the group happens. Twiddle's "you may tap
+    -- exclusive with, so exactly one of the group happens (or OrElse.count of
+    -- it, drawn at random). Twiddle's "you may tap
     -- or untap target artifact, creature, or land" is the witness -- the tap and
     -- the untap are two clauses of one mode reading one target slot, and the
     -- payload's chooser announces which of them "while applying the effect".

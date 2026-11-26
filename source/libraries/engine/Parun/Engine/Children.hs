@@ -3063,7 +3063,7 @@ clauseChildren :: (Applicative f) => ModalChildren card ability f -> Clause.Clau
 clauseChildren c (Clause.MkClause ifTaken condition orElse optionality payGate effects) =
   Clause.MkClause ifTaken
     <$> traverse (modalCondition c) condition
-    <*> traverse (\(OrElse.MkOrElse siblings chooser villainous) -> (\who -> OrElse.MkOrElse siblings who villainous) <$> modalPlayer c chooser) orElse
+    <*> traverse (\(OrElse.MkOrElse siblings chooser villainous selection count) -> (\who -> OrElse.MkOrElse siblings who villainous selection count) <$> modalPlayer c chooser) orElse
     <*> optionalityChildren c optionality
     <*> traverse (modalPayGate c) payGate
     <*> traverse (modalEffect c) effects

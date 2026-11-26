@@ -98,6 +98,9 @@ data Response
     -- point -- a transcript of a player DECIDING must not satisfy a prompt that
     -- asked randomness, which is CR 701.9b's distinction.
     SelectedPlayerAtRandom PlayerId.PlayerId
+  | -- | The branch of a CR 608.2d group randomness drew; ChoseClause's
+    -- payload, its own constructor for SelectedPlayerAtRandom's reason.
+    SelectedClauseAtRandom ClauseIndex.ClauseIndex
   | -- | The card randomness named out of a printed spellbook (Tome of the
     -- Infinite's "conjure a random card from Tome of the Infinite's
     -- spellbook").

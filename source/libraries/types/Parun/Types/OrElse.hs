@@ -1,6 +1,8 @@
 module Parun.Types.OrElse where
 
 import qualified Data.Set as Set
+import qualified Numeric.Natural as Natural
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.PlayerRef as PlayerRef
 
@@ -71,6 +73,21 @@ data OrElse = MkOrElse
     -- whose option is running is bound under Binding.facingPlayers.
     -- Parun.ResolveSpec's "CR 701.55d two opponents each taking The Dalek
     -- Emperor's token limb make two tokens" is what proves it.
-    villainous :: Bool
+    villainous :: Bool,
+    -- | Whether the chooser announces the branch or randomness draws it, among
+    -- the branches CR 608.2d leaves on offer (Master of the Wild Hunt Avatar's
+    -- "a 2/2 Wolf, ... or a 4/4 Rhino with trample, chosen at random"). At
+    -- random nobody chooses, and the drawn branches run for the chooser's seats
+    -- as a forced branch does. Every member of a group must agree on it, for
+    -- `siblings`' reason.
+    selection :: CardSelection.CardSelection,
+    -- | How many DISTINCT branches of the group happen: one for CR 608.2d's
+    -- "or", two for Akroma, Angel of Wrath Avatar's "two abilities chosen at
+    -- random from among". Every member of a group must agree on it.
+    --
+    -- Unprinted: more than one branch by choice, more than the group holds, a
+    -- random villainous choice, or a random group naming a chooser;
+    -- Parun.CardSpec's cardBranchesAreAsymmetric keeps all four out of card data.
+    count :: Natural.Natural
   }
   deriving (Eq, Ord, Show)

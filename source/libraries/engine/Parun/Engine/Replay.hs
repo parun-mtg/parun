@@ -102,6 +102,7 @@ encode p answer = case p of
   Prompt.RandomCard _ -> Response.SelectedCardAtRandom answer
   Prompt.ChooseConjuredCard {} -> Response.ChoseConjuredCard answer
   Prompt.RandomPlayer _ -> Response.SelectedPlayerAtRandom answer
+  Prompt.RandomClause _ -> Response.SelectedClauseAtRandom answer
   Prompt.RollDie _ -> Response.RolledDie answer
   Prompt.RandomNumber {} -> Response.PickedRandomNumber answer
   Prompt.LookUpCard _ -> Response.LookedUpCard answer
@@ -312,6 +313,9 @@ decode p response = case p of
     _ -> Nothing
   Prompt.RandomPlayer _ -> case response of
     Response.SelectedPlayerAtRandom pid -> Just pid
+    _ -> Nothing
+  Prompt.RandomClause _ -> case response of
+    Response.SelectedClauseAtRandom cIdx -> Just cIdx
     _ -> Nothing
   Prompt.RollDie _ -> case response of
     Response.RolledDie n -> Just n
@@ -878,6 +882,9 @@ defaultAnswer p = case p of
   -- The head of the offer is always one of the offered players, and FIXED for
   -- the reason RandomObject gives just above.
   Prompt.RandomPlayer candidates -> NonEmpty.head candidates
+  -- The head of the offer is always one of the offered branches, and FIXED for
+  -- the reason RandomObject gives above.
+  Prompt.RandomClause branches -> NonEmpty.head branches
   -- The head of the offer is always one of the offered cards, and FIXED for the
   -- reason RandomObject gives just above.
   Prompt.RandomCard candidates -> NonEmpty.head candidates

@@ -44,6 +44,7 @@ import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Card as Card.Type
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.Chosen as Chosen
@@ -1232,19 +1233,25 @@ gateHolds controller resolving source chosen bindings clause = case Clause.condi
 -- announces nothing, recorded as an empty answer map so the loser's arrival
 -- raises no prompt either.
 --
+-- A RANDOM group (OrElse.selection) asks nobody: OrElse.count distinct branches
+-- are drawn among the survivors of that filter, through Prompt.RandomClause,
+-- and filed for every seat the chooser names, the way a forced branch is.
+-- The scenario "Akroma, Angel of Wrath Avatar gives its owner's entering
+-- creature two distinct abilities drawn at random" proves it.
+--
 -- A VILLAINOUS pair never reaches the unanswered half of this function: CR
 -- 701.55d takes it out of rule 608.2e altogether, so both callers route it to
 -- `villainousPass` instead and file an empty answer map here, which is how the
 -- sibling's own arrival is turned into the no-op above. Rule 608.2d's filter is
 -- therefore unconditional here, rule 701.55b's exemption from it living at that
 -- pass.
-chosenBranch :: ObjectId -> ObjectId -> PlayerId -> ModeIndex -> ClauseIndex -> Map.Map SlotName (Set Recipient) -> (ClauseIndex -> Game Bool) -> (ClauseIndex -> Maybe (Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))) -> Map.Map ClauseIndex (Bool, Map.Map PlayerId ClauseIndex) -> Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game (Maybe (Set PlayerId), Set PlayerId, Map.Map ClauseIndex (Bool, Map.Map PlayerId ClauseIndex))
+chosenBranch :: ObjectId -> ObjectId -> PlayerId -> ModeIndex -> ClauseIndex -> Map.Map SlotName (Set Recipient) -> (ClauseIndex -> Game Bool) -> (ClauseIndex -> Maybe (Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))) -> Map.Map ClauseIndex (Bool, Map.Map PlayerId (Set ClauseIndex)) -> Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game (Maybe (Set PlayerId), Set PlayerId, Map.Map ClauseIndex (Bool, Map.Map PlayerId (Set ClauseIndex)))
 chosenBranch resolving source controller idx cIdx legal eligible limbOf picked clause = case Clause.orElse clause of
   Nothing -> pure (Nothing, Set.empty, picked)
   Just orElse ->
     let branches = orElseLimbs cIdx orElse
         key = NonEmpty.head branches
-        won answers = Map.keysSet (Map.filter (== cIdx) answers)
+        won answers = Map.keysSet (Map.filter (Set.member cIdx) answers)
         settled (committing, answers) = (Just (won answers), if committing then won answers else Set.empty)
         neither = all (maybe False (declinesAlone (OrElse.chooser orElse)) . limbOf) branches
         seatCanTake seat branch gsNow = case limbOf branch >>= Clause.payGate of
@@ -1257,11 +1264,17 @@ chosenBranch resolving source controller idx cIdx legal eligible limbOf picked c
             offered <- Monad.filterM eligible (NonEmpty.toList branches)
             memo <- case offered of
               [] -> pure (False, Map.empty)
-              [forced] -> pure (False, Map.fromList (fmap (\chooser -> (chooser, forced)) (Common.apnapDecidersOf (OrElse.chooser orElse) legal resolving source controller gs)))
+              [forced] -> pure (False, Map.fromList (fmap (\chooser -> (chooser, Set.singleton forced)) (Common.apnapDecidersOf (OrElse.chooser orElse) legal resolving source controller gs)))
+              _ | OrElse.selection orElse == CardSelection.AtRandom -> do
+                -- Nobody chooses: OrElse.count distinct branches are drawn
+                -- among the ones on offer, and run for the chooser's seats as
+                -- a forced branch does.
+                drawn <- Set.fromList <$> Game.drawDistinct Prompt.RandomClause (OrElse.count orElse) offered
+                pure (False, Map.fromList (fmap (\chooser -> (chooser, drawn)) (Common.apnapDecidersOf (OrElse.chooser orElse) legal resolving source controller gs)))
               _ ->
                 -- CR 101.4b: each chooser is told the branches the choosers
                 -- before them announced.
-                fmap (\made -> (neither, Map.fromList [(chooser, branch) | (chooser, Just branch) <- Foldable.toList made])) $
+                fmap (\made -> (neither, Map.fromList [(chooser, Set.singleton branch) | (chooser, Just branch) <- Foldable.toList made])) $
                   Monad.foldM
                     ( \made chooser -> do
                         gs1 <- State.get
@@ -1317,7 +1330,7 @@ orElseLimbs cIdx orElse = NonEmpty.sort (cIdx NonEmpty.:| Set.toList (Set.delete
 -- been performed? An empty answer map filed under the pair's ordinal is what
 -- `villainousPass` leaves behind, so the sibling's arrival answers Nothing here
 -- and falls through to chosenBranch's memo, which skips it.
-facedVillainously :: Map.Map ClauseIndex (Bool, Map.Map PlayerId ClauseIndex) -> ClauseIndex -> Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Maybe (OrElse.OrElse, NonEmpty.NonEmpty ClauseIndex)
+facedVillainously :: Map.Map ClauseIndex (Bool, Map.Map PlayerId (Set ClauseIndex)) -> ClauseIndex -> Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Maybe (OrElse.OrElse, NonEmpty.NonEmpty ClauseIndex)
 facedVillainously picked cIdx clause = case Clause.orElse clause of
   Just orElse
     | OrElse.villainous orElse,
