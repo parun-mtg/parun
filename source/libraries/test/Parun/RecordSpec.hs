@@ -7,6 +7,7 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Either as Either
+import qualified Data.Foldable as Foldable
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
@@ -18,6 +19,7 @@ import qualified Parun.BotSpec as BotSpec
 import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.CompanionSpec as CompanionSpec
 import qualified Parun.Engine.Event as Event
+import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
@@ -60,6 +62,7 @@ import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Web.Ending as Ending
 import qualified Parun.Web.History as History
+import qualified Parun.Web.Replay as Replay
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Record" $ do
@@ -144,6 +147,43 @@ spec s registry = Spec.describe s "Record" $ do
     (_, blind) <- Scenario.replay registry held (Just (count - 1)) scenario {Scenario.Type.timeline = Seq.empty}
     (_, freshLast) <- Scenario.replay registry Scenario.unkept (Just (count - 1)) scenario
     Spec.assertEqWith s "the last position but one, resumed with no timeline to read" (reached [blind]) (reached [freshLast])
+
+  Spec.it s "a replay going on from a kept pause stops where a fresh one does" $ do
+    matchup <- BotSpec.sevens s registry
+    let (_, timeline) = recorded bots matchup
+        scenario = saved matchup timeline
+        count = Natural.length timeline
+        half = count `div` 2
+        reached :: Either e Stop.Stop -> Either e GameState.GameState
+        reached = fmap Stop.state
+        fresh at = reached . snd <$> Scenario.replay registry Scenario.unkept (Just at) scenario
+    (held, _) <- Scenario.replay registry Scenario.keeping (Just half) scenario
+    -- With no step start kept and no timeline to read, every later position
+    -- is reached only by going on from the pause.
+    Monad.forM_ [half + 1, half + 2, half + 5, (half + count) `div` 2, count, count + 1] $ \at -> do
+      (_, went) <- Scenario.replay registry held {Scenario.keptSteps = Map.empty} (Just at) scenario {Scenario.Type.timeline = Seq.empty}
+      expected <- fresh at
+      Spec.assertEqWith s ("position " <> show at <> ", gone on from the pause and fresh") (reached went) expected
+    -- Step by step, each going on from the last, and back.
+    let positions = [half + 1 .. half + 6] <> [half + 3, half + 4]
+        visit (before, stops) at = do
+          (kept, stop) <- Scenario.replay registry before (Just at) scenario
+          pure (kept, stops <> [reached stop])
+    (_, stepped) <- Monad.foldM visit (held, []) positions
+    expected <- traverse fresh positions
+    Spec.assertEqWith s "each position, stepped and fresh" stepped expected
+
+  Spec.it s "the replay's log read on from each turn's kept reads as the whole log read afresh" $ do
+    matchup <- BotSpec.sevens s registry
+    let (_, timeline) = recorded bots matchup
+        scenario = saved matchup timeline
+        visit (before, views) at = do
+          (kept, stop) <- Scenario.replay registry before (Just at) scenario
+          pure (kept, views <> either (const []) (\reached -> [PlayerView.viewFor S.alice (Stop.state reached)]) stop)
+    (_, views) <- Monad.foldM visit (Scenario.keeping, []) (Replay.turnStarts (Foldable.toList timeline) <> [Natural.length timeline])
+    let whole = Replay.logOf views
+    Spec.assertEqWith s "the log" (snd (Foldable.foldl' (\logged v -> Replay.readOn logged [v]) Replay.unread views)) whole
+    Spec.assertBool s (Seq.length whole > length views) "more entries than turns"
 
   Spec.it s "CR 404.3: a seat arranging its graveyard is asked again on replay" $ do
     matchup <- scours s registry

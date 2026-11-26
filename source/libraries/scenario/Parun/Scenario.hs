@@ -19,6 +19,7 @@ import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Ord as Ord
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -248,16 +249,54 @@ data Rehearsal = MkRehearsal
     stepsKept :: Steps
   }
 
-type Run = State.StateT Rehearsal (Either Halt)
+type Run = State.StateT Rehearsal Progress
 
 -- | Why a run stopped short: a failure, or a name its reference has yet to be
 -- asked, or its whole reference, which `run` fetches before running again from
--- the start, or a replay's stop.
+-- the start.
 data Halt
   = Failed Failure.ScenarioFailure
-  | Stopped Stop.Stop Steps
   | Fetching CardName.CardName
   | Enumerating
+
+-- | Where a run stands: done, halted, or paused at a replay's stop (popAt)
+-- with the run's state there and the rest of the run, which goes on from
+-- that state as a run not stopping there does.
+data Progress a
+  = MkDone a
+  | MkHalted Halt
+  | MkPaused Stop.Stop Rehearsal (Rehearsal -> Progress a)
+
+instance Functor Progress where
+  fmap = Monad.liftM
+
+instance Applicative Progress where
+  pure = MkDone
+  (<*>) = Monad.ap
+
+instance Monad Progress where
+  progress >>= next = case progress of
+    MkDone a -> next a
+    MkHalted stopped -> MkHalted stopped
+    MkPaused stop rehearsal rest -> MkPaused stop rehearsal (rest Monad.>=> next)
+
+-- | Halts the run.
+halt :: Halt -> Run a
+halt = Trans.lift . MkHalted
+
+-- | A run's progress up to its first pause, which halts it there.
+settled :: Progress a -> Either (Either Halt (Stop.Stop, Rehearsal)) a
+settled progress = case progress of
+  MkDone a -> Right a
+  MkHalted stopped -> Left (Left stopped)
+  MkPaused stop rehearsal _ -> Left (Right (stop, rehearsal))
+
+-- | The run, with `handler` taking over a halt it reaches, past any pause.
+catchHalt :: Progress a -> (Halt -> Progress a) -> Progress a
+catchHalt progress handler = case progress of
+  MkHalted stopped -> handler stopped
+  MkPaused stop rehearsal rest -> MkPaused stop rehearsal (\resumed -> catchHalt (rest resumed) handler)
+  MkDone a -> MkDone a
 
 -- | Build, run from the board's step, check. The entry point for a scenario
 -- written as data: whole steps (CR 500.1) until the timeline is spent, the game
@@ -281,13 +320,24 @@ run registry = fmap (fmap Stop.state . snd) . replay registry unkept Nothing
 -- answers to when chosen, and every card once asked for them all; and,
 -- where kept, the start of each whole step a run reached (Driver.drive) by
 -- how many entries it had taken, the latest of each count, with the state
--- the run stood in there.
+-- the run stood in there; and the runs paused at the last few stops, by
+-- entries taken, the most recently paused or reached first (pausesKept).
 data Kept = MkKept
   { keptNames :: Map.Map CardName.CardName (Maybe Card.Card, Maybe (Face.Face Card.Card)),
     keptWhole :: Maybe [Card.Card],
     keepingSteps :: Bool,
-    keptSteps :: Steps
+    keptSteps :: Steps,
+    keptPauses :: [(Natural, Paused)]
   }
+
+-- | A replay paused at its stop: the stop, the run's state there, and the
+-- rest of the run (Progress).
+data Paused = MkPausedAt Stop.Stop Rehearsal (Rehearsal -> Progress (Steps, Stop.Stop))
+
+-- | How many paused runs a replay keeps: one for the position shown, one
+-- for the run going on ahead of it, and a couple for positions gone back to.
+pausesKept :: Int
+pausesKept = 4
 
 -- | The start of each whole step a run reached, by entries taken: the
 -- step's state and the run's.
@@ -301,7 +351,7 @@ seatsOf scenario = case Scenario.start scenario of
 
 -- | Nothing kept, and nothing to keep: a single run.
 unkept :: Kept
-unkept = MkKept Map.empty Nothing False Map.empty
+unkept = MkKept Map.empty Nothing False Map.empty []
 
 -- | Nothing kept yet, each step to be: the web client's replay.
 keeping :: Kept
@@ -320,8 +370,40 @@ keeping = unkept {keepingSteps = True}
 -- steps the game is its state and the run its Rehearsal, the budget
 -- counted on from the steps run before. Parun.RecordSpec's "a replay
 -- resumed from the steps kept stops where a fresh one does" proves it.
+--
+-- A run paused at a kept stop no further than this one, and no earlier than
+-- the step start it would resume at, goes on instead to the first pause at
+-- this stop or past it (#9818): a pause stops nothing, so the rest of the
+-- run is the one a later stop's run takes, and a run stopped at a position
+-- stops at the first entry it takes there. A halt on the way leaves it to
+-- the run from the step start. Parun.RecordSpec's "a replay going on from a
+-- kept pause stops where a fresh one does" proves it.
 replay :: (Monad m) => Registry.Registry m -> Kept -> Maybe Natural -> Scenario.Scenario -> m (Kept, Either Failure.ScenarioFailure Stop.Stop)
-replay registry kept stop scenario = do
+replay registry kept stop scenario = maybe (fresh registry kept stop scenario) pure (stop >>= goOn kept)
+
+-- | The replay to the stop `at` going on from the latest run `kept` paused
+-- there or before, unless it paused before the step start a fresh replay
+-- resumes at, or halts on the way.
+goOn :: Kept -> Natural -> Maybe (Kept, Either Failure.ScenarioFailure Stop.Stop)
+goOn kept at = do
+  let start = maybe 0 fst (Map.lookupLE at (keptSteps kept))
+      candidates = [(from, paused) | (from, paused) <- keptPauses kept, from <= at, from >= start]
+  (from, MkPausedAt reached here rest) <- Maybe.listToMaybe (List.sortOn (Ord.Down . fst) candidates)
+  let others = filter ((/= from) . fst) (keptPauses kept)
+      remember taken paused = take pausesKept ((taken, paused) : others)
+      walk progress = case progress of
+        MkPaused next there later
+          | entriesTaken there >= at -> Just (kept {keptSteps = stepsKept there, keptPauses = remember (entriesTaken there) (MkPausedAt next there later)}, Right next)
+          | otherwise -> walk (later there)
+        MkDone (finalSteps, final) -> Just (kept {keptSteps = finalSteps, keptPauses = others}, Right final)
+        MkHalted _ -> Nothing
+  if from == at
+    then Just (kept {keptPauses = remember from (MkPausedAt reached here rest)}, Right reached)
+    else walk (rest here {reference = Just (keptNames kept), catalogue = keptWhole kept, stepsKept = keptSteps kept})
+
+-- | `replay` from the latest step start kept, else from the start.
+fresh :: (Monad m) => Registry.Registry m -> Kept -> Maybe Natural -> Scenario.Scenario -> m (Kept, Either Failure.ScenarioFailure Stop.Stop)
+fresh registry kept stop scenario = do
   staging <- case Scenario.start scenario of
     Start.FromBoard board -> fmap (fmap (\placed' -> (placed', pure (Staged.state placed')))) (stage registry board)
     Start.FromDecks settings entrants starter -> fmap (fmap (\(seated, matchup) -> (seated, dealt matchup (Staged.state seated)))) (enter registry settings entrants starter)
@@ -337,23 +419,25 @@ replay registry kept stop scenario = do
       onward driven = Driver.drive [] scripted (budget - driven) (\gs -> keepStep gs >> finished gs)
       attempt whole known = do
         (begin, playing) <- case resumed of
-          Just (_, (gs, rehearsal)) -> Right (rehearsal, onward (stepsDriven rehearsal) gs)
+          Just (_, (gs, rehearsal)) -> pure (rehearsal, onward (stepsDriven rehearsal) gs)
           Nothing -> do
-            (board, opening) <- Bifunctor.first Failed staging
+            (board, opening) <- either (MkHalted . Failed) pure staging
             pure ((rehearsalOf (Scenario.timeline scenario) board) {replaying = fromDecks}, opening >>= onward 0)
         (reached, rehearsal) <- State.runStateT playing begin {reference = Just known, catalogue = whole, stopAt = stop, stepsKept = steps}
         let final = Maybe.fromMaybe reached (ended rehearsal)
-        Bifunctor.first Failed (settle rehearsal final)
+        either (MkHalted . Failed) pure (settle rehearsal final)
         State.evalStateT (mapM_ (expect Nothing final Nothing) (Scenario.final scenario)) rehearsal {depth = 0}
         pure (stepsKept rehearsal, Stop.MkEnded final)
       fetching whole known =
-        let held = MkKept known whole (keepingSteps kept)
+        let held taken = MkKept known whole (keepingSteps kept) taken (keptPauses kept)
          in case attempt whole known of
-              Left (Fetching name) -> fetchInto registry name known >>= either (pure . (,) (held steps) . Left) (fetching whole)
-              Left Enumerating -> Registry.cards registry >>= either (pure . (,) (held steps) . Left . Failure.MkInvalidCorpus) (\every -> fetching (Just every) known)
-              Left (Failed failure) -> pure (held steps, Left failure)
-              Left (Stopped reached reachedSteps) -> pure (held reachedSteps, Right reached)
-              Right (finalSteps, final) -> pure (held finalSteps, Right final)
+              MkHalted (Fetching name) -> fetchInto registry name known >>= either (pure . (,) (held steps) . Left) (fetching whole)
+              MkHalted Enumerating -> Registry.cards registry >>= either (pure . (,) (held steps) . Left . Failure.MkInvalidCorpus) (\every -> fetching (Just every) known)
+              MkHalted (Failed failure) -> pure (held steps, Left failure)
+              MkPaused reached here rest ->
+                let paused = if keepingSteps kept then take pausesKept ((entriesTaken here, MkPausedAt reached here rest) : filter ((/= entriesTaken here) . fst) (keptPauses kept)) else []
+                 in pure ((held (stepsKept here)) {keptPauses = paused}, Right reached)
+              MkDone (finalSteps, final) -> pure (held finalSteps, Right final)
   fetching (keptWhole kept) (keptNames kept)
   where
     dealt matchup gs = snd <$> Engine.runGameAsked answerPrompt gs (Setup.newGame (Resolve.performHandAction Engine.playSubgame) matchup)
@@ -395,7 +479,7 @@ branch registry at onward scenario = do
     handOver gs = do
       standing <- State.get
       case standing of
-        MkScripted rehearsal | Right True <- State.evalStateT (finished gs) rehearsal -> False <$ State.put MkOnward
+        MkScripted rehearsal | Right True <- settled (State.evalStateT (finished gs) rehearsal) -> False <$ State.put MkOnward
         _ -> pure False
 
 -- | A branch's question: answered from the timeline until the stop, then by
@@ -407,14 +491,14 @@ answerBranch registry onward asked = do
     MkOnward -> Trans.lift (Trans.lift (Answerer.unwrap onward asked))
     MkScripted rehearsal
       | replaying rehearsal && Map.null (queues rehearsal) && recorded (Asked.prompt asked) -> State.put MkOnward >> again
-      | otherwise -> case State.runStateT (answerPrompt asked) rehearsal of
+      | otherwise -> case settled (State.runStateT (answerPrompt asked) rehearsal) of
           Right (answered, next) -> answered <$ State.put (MkScripted next)
-          Left (Stopped _ _) -> State.put MkOnward >> again
-          Left (Failed failure) -> Trans.lift (Except.throwE failure)
-          Left (Fetching name) ->
+          Left (Right _) -> State.put MkOnward >> again
+          Left (Left (Failed failure)) -> Trans.lift (Except.throwE failure)
+          Left (Left (Fetching name)) ->
             Trans.lift (Trans.lift (fetchInto registry name (Maybe.fromMaybe Map.empty (reference rehearsal))))
               >>= either (Trans.lift . Except.throwE) (\known -> State.put (MkScripted rehearsal {reference = Just known}) >> again)
-          Left Enumerating ->
+          Left (Left Enumerating) ->
             Trans.lift (Trans.lift (Registry.cards registry))
               >>= either (Trans.lift . Except.throwE . Failure.MkInvalidCorpus) (\every -> State.put (MkScripted rehearsal {catalogue = Just every}) >> again)
   where
@@ -469,14 +553,14 @@ finished gs = do
 -- never arrives is a failure, not a silently skipped claim.
 rehearse :: Seq.Seq Timed.Timed -> Staged.Staged -> Game.Type.Game a -> Either Failure.ScenarioFailure (a, GameState.GameState)
 rehearse timeline board game = do
-  let halted halt = case halt of
-        Failed failure -> failure
+  let halted stopped = case stopped of
+        Left (Failed failure) -> failure
         -- Unreached: rehearsalOf holds no reference, which never fetches.
-        Fetching name -> Failure.MkUnknownCard name
-        Enumerating -> Failure.MkUnknownCard (CardName.MkCardName (Text.pack "the card reference"))
+        Left (Fetching name) -> Failure.MkUnknownCard name
+        Left Enumerating -> Failure.MkUnknownCard (CardName.MkCardName (Text.pack "the card reference"))
         -- Unreached: rehearsalOf sets no stop.
-        Stopped _ _ -> Failure.MkUnknownCard (CardName.MkCardName (Text.pack "a replay's stop"))
-  ((value, final), rehearsal) <- Bifunctor.first halted (State.runStateT (Engine.runGameAsked answerPrompt (Staged.state board) game) (rehearsalOf timeline board))
+        Right _ -> Failure.MkUnknownCard (CardName.MkCardName (Text.pack "a replay's stop"))
+  ((value, final), rehearsal) <- Bifunctor.first halted (settled (State.runStateT (Engine.runGameAsked answerPrompt (Staged.state board) game) (rehearsalOf timeline board)))
   settle rehearsal final
   pure (value, final)
 
@@ -1860,14 +1944,12 @@ onEntry unscheduled key kind offers select match = do
       Entry.Refuse verb
         | Just action <- match verb -> do
             popAt key index
-            before <- State.get
             -- A refused move naming something the prompt did not offer is
             -- refused already: the prompt takes the next entry instead.
-            case State.runStateT action before {refusing = Just (key, verb, kind)} of
-              Left (Failed Failure.MkUnofferedObject {}) -> onEntry unscheduled key kind offers select match
-              Left (Failed Failure.MkActionNotOffered {}) -> onEntry unscheduled key kind offers select match
-              Left halt -> State.StateT (const (Left halt))
-              Right (answer, after) -> answer <$ State.put after
+            State.StateT $ \before -> catchHalt (State.runStateT action before {refusing = Just (key, verb, kind)}) $ \stopped -> case stopped of
+              Failed Failure.MkUnofferedObject {} -> State.runStateT (onEntry unscheduled key kind offers select match) before
+              Failed Failure.MkActionNotOffered {} -> State.runStateT (onEntry unscheduled key kind offers select match) before
+              _ -> MkHalted stopped
       entry -> failWith (Failure.MkUnexpectedPrompt key entry kind offers)
 
 -- Checks -----------------------------------------------------------------------
@@ -2030,24 +2112,24 @@ takeForSource gs key source = do
       unqualified = List.find (\(_, _, oid) -> Maybe.isNothing oid) qualifiers
   pure (fmap (\(index, timed, _) -> (index, timed)) (qualified <|> unqualified))
 
--- | Takes the entry at `index` of the moment's queue, or stops a replay that
--- has taken as many as it asked for.
+-- | Takes the entry at `index` of the moment's queue, pausing a replay that
+-- has taken as many as it asked for first, at each entry from there on.
 popAt :: When.When -> Int -> Run ()
 popAt key index = do
   rehearsal <- State.get
   case (stopAt rehearsal, stopHere rehearsal, Seq.lookup index =<< Map.lookup key (queues rehearsal)) of
-    (Just limit, Just at, Just timed) | entriesTaken rehearsal >= limit -> State.StateT (const (Left (Stopped (at (entriesTaken rehearsal) timed) (stepsKept rehearsal))))
+    (Just limit, Just at, Just timed) | entriesTaken rehearsal >= limit -> State.StateT (\here -> MkPaused (at (entriesTaken here) timed) here (\resumed -> MkDone ((), resumed)))
     _ -> pure ()
-  State.put $
-    let remaining = case Map.lookup key (queues rehearsal) of
-          Nothing -> queues rehearsal
+  State.modify' $ \resumed ->
+    let remaining = case Map.lookup key (queues resumed) of
+          Nothing -> queues resumed
           Just entries ->
             let rest = Seq.deleteAt index entries
-             in if Seq.null rest then Map.delete key (queues rehearsal) else Map.insert key rest (queues rehearsal)
-     in rehearsal {queues = remaining, entriesTaken = entriesTaken rehearsal + 1}
+             in if Seq.null rest then Map.delete key (queues resumed) else Map.insert key rest (queues resumed)
+     in resumed {queues = remaining, entriesTaken = entriesTaken resumed + 1}
 
 failWith :: Failure.ScenarioFailure -> Run a
-failWith failure = State.StateT (const (Left (Failed failure)))
+failWith = halt . Failed
 
 -- | CR 108.1: the card the reference gives a name, halting the run for `run`
 -- to fetch a name it has not yet been asked.
@@ -2062,14 +2144,14 @@ referenceWhole = do
   case (reference rehearsal, catalogue rehearsal) of
     (Nothing, _) -> pure []
     (Just _, Just every) -> pure every
-    (Just _, Nothing) -> State.StateT (const (Left Enumerating))
+    (Just _, Nothing) -> halt Enumerating
 
 referenced :: CardName.CardName -> Run (Maybe Card.Card, Maybe (Face.Face Card.Card))
 referenced name = do
   held <- State.gets reference
   case held of
     Nothing -> pure (Nothing, Nothing)
-    Just fetched -> maybe (State.StateT (const (Left (Fetching name)))) pure (Map.lookup name fetched)
+    Just fetched -> maybe (halt (Fetching name)) pure (Map.lookup name fetched)
 
 -- References -------------------------------------------------------------------
 
@@ -2225,24 +2307,22 @@ resolveSlots gs key verb offered chosen =
 -- then goes to the engine, which rejects it and asks the announcement again
 -- (CR 603.3d), so the next entry announces its own counts.
 refuseTargets :: GameState.GameState -> When.When -> Move.Move -> Map.Map SlotName.SlotName (Natural, Set.Set Recipient.Recipient) -> Map.Map SlotName.SlotName (Seq.Seq Reference.Reference) -> Run (Maybe (Int, Timed.Timed)) -> Run (Map.Map SlotName.SlotName (Set.Set Recipient.Recipient))
-refuseTargets gs key verb offered chosen select = do
-  before <- State.get
-  case State.runStateT (resolveSlots gs key verb offered chosen) before of
-    Right (answer, after) -> answer <$ State.put after
-    Left halt@(Failed failure)
-      | refusedAlready failure -> do
-          next <- select
-          let recounts later = Map.filter (> 0) (fmap Natural.length later) /= fmap fst offered
-              submit ref candidates = resolveRecipient gs ref candidates (fmap (either Recipient.ToPlayer Recipient.ToObject) (resolveEither ref gs))
-          case fmap (Timed.entry . snd) next of
-            Just (Entry.Do (Move.ChooseTargets later)) | recounts later -> pure ()
-            Just (Entry.Refuse (Move.ChooseTargets later)) | recounts later -> pure ()
-            _ -> State.StateT (const (Left halt))
-          Map.traverseWithKey
-            (\slot refs -> fmap Set.fromList (mapM (\ref -> submit ref (maybe Set.empty snd (Map.lookup slot offered))) (Foldable.toList refs)))
-            (Map.filter (not . Seq.null) chosen)
-    Left halt -> State.StateT (const (Left halt))
+refuseTargets gs key verb offered chosen select =
+  State.StateT $ \before -> catchHalt (State.runStateT (resolveSlots gs key verb offered chosen) before) $ \stopped -> case stopped of
+    Failed failure | refusedAlready failure -> State.runStateT (recounted stopped) before
+    _ -> MkHalted stopped
   where
+    recounted stopped = do
+      next <- select
+      let recounts later = Map.filter (> 0) (fmap Natural.length later) /= fmap fst offered
+          submit ref candidates = resolveRecipient gs ref candidates (fmap (either Recipient.ToPlayer Recipient.ToObject) (resolveEither ref gs))
+      case fmap (Timed.entry . snd) next of
+        Just (Entry.Do (Move.ChooseTargets later)) | recounts later -> pure ()
+        Just (Entry.Refuse (Move.ChooseTargets later)) | recounts later -> pure ()
+        _ -> halt stopped
+      Map.traverseWithKey
+        (\slot refs -> fmap Set.fromList (mapM (\ref -> submit ref (maybe Set.empty snd (Map.lookup slot offered))) (Foldable.toList refs)))
+        (Map.filter (not . Seq.null) chosen)
     refusedAlready failure = case failure of
       Failure.MkActionNotOffered {} -> True
       Failure.MkUnofferedObject {} -> True
