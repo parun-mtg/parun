@@ -55,8 +55,8 @@
         "View": {
           "is": [
             "Pass",
-            "Cast $thopter",
-            "PlayLand $viper"
+            "PlayLand $viper",
+            "Cast $thopter"
           ],
           "of": "Offered",
           "player": "alice"
