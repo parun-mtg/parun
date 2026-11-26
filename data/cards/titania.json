@@ -1,0 +1,31 @@
+{
+  "faces": [
+    {
+      "name": "Titania",
+      "oracleText": "You may play an additional land on each of your turns.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "PlayAdditionalLands",
+            "value": {
+              "type": "Additional",
+              "value": 1
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 2,
+        "lifeModifier": -5
+      }
+    }
+  ]
+}

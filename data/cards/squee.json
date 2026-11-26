@@ -1,0 +1,31 @@
+{
+  "faces": [
+    {
+      "name": "Squee",
+      "oracleText": "Your opponents play with their hands revealed.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "Shows",
+            "value": {
+              "cards": "Hand",
+              "to": "Everyone"
+            }
+          },
+          "scope": {
+            "type": "Opponent"
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 3,
+        "lifeModifier": -4
+      }
+    }
+  ]
+}

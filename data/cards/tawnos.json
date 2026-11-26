@@ -1,0 +1,46 @@
+{
+  "faces": [
+    {
+      "name": "Tawnos",
+      "oracleText": "You may cast artifact, creature, and enchantment spells as though they had flash.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "CastAsThoughItHadFlash",
+            "value": {
+              "matching": {
+                "type": "Or",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Artifact"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Enchantment"
+                  }
+                ]
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 3,
+        "lifeModifier": -4
+      }
+    }
+  ]
+}
