@@ -121,7 +121,13 @@ phraseJoining joining f named = case f of
   Filter.Not Filter.IsTapped -> [adjective (Text.pack "untapped")]
   Filter.IsAttacking Nothing -> [adjective (Text.pack "attacking")]
   Filter.IsAttacking (Just AloneAmong.EveryAttacker) -> [qualifier (Text.pack "that's attacking alone") (Text.pack "that are attacking alone")]
-  Filter.IsBlocking -> [adjective (Text.pack "blocking")]
+  Filter.IsBlocking Nothing -> [adjective (Text.pack "blocking")]
+  -- Sisters of Stone Death Avatar's "that's blocking a creature you control".
+  Filter.IsBlocking (Just g) -> do
+    nested <- phraseJoining joining g named
+    attacker <- describe Singular (MkNoun (Text.pack "creature") (Just (Text.pack "creatures"))) nested
+    let blocked = Text.unwords [Text.pack "blocking", Prose.article attacker, attacker]
+    [qualifier (Text.pack "that's " <> blocked) (Text.pack "that are " <> blocked)]
   Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You) -> [qualifier (Text.pack "you control") (Text.pack "you control")]
   Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.Opponent) -> [MkPhrase [] [] [opponentControls]]
   Filter.Not (Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)) -> [qualifier (Text.pack "you don't control") (Text.pack "you don't control")]

@@ -19,6 +19,7 @@ import qualified Parun.Engine.Projection.Rewrite as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Requirement as Requirement
 import qualified Parun.Engine.RestrictedCreatures as RestrictedCreatures
+import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Types.ActiveBlockRequirement as ActiveBlockRequirement
 import qualified Parun.Types.BlockRequirement as BlockRequirement
 import Parun.Types.GameState (GameState)
@@ -255,8 +256,17 @@ instances able candidates attackers gs =
                 pair@(_, attacker) <- storedPairs active
               ]
           )
+      -- CR 113.6p / 902.7: a vanguard's requirement functions from the command
+      -- zone, on CombatRestriction.inForce's terms there: no ability-loss gate and
+      -- no CR 612.1 rewrite, nothing in the pool reaching an object in that zone.
+      -- The Sisters of Stone Death Avatar scenarios in data/scenarios/vanguard
+      -- prove it.
+      fromCommandZone source
+        | Vanguard.functionsFromCommandZone source gs = mconcat (fmap (fromRequirement source []) (RuleAbilities.blockRequirements (Projection.ruleAbilitiesOf source gs)))
+        | otherwise = mempty
       gathered =
         fmap (\source -> fromPermanent source <> fromGrant source) (Set.toList (GameState.battlefield gs))
+          <> fmap fromCommandZone (Set.toList (GameState.command gs))
       atoms (these, _, _) = these
       sets (_, these, _) = these
       exactSets (_, _, these) = these

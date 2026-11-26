@@ -128,6 +128,7 @@ blackCreature =
       Filter.blockStatus = Nothing,
       Filter.blockers = Set.empty,
       Filter.blocked = Set.empty,
+      Filter.blockedViews = [],
       Filter.declaredThisTurn = Set.empty,
       Filter.couldAttackThisTurn = False,
       Filter.declaredAttackerThisCombat = False,
@@ -244,6 +245,7 @@ devoidBigCreature =
       Filter.blockStatus = Nothing,
       Filter.blockers = Set.empty,
       Filter.blocked = Set.empty,
+      Filter.blockedViews = [],
       Filter.declaredThisTurn = Set.empty,
       Filter.couldAttackThisTurn = False,
       Filter.declaredAttackerThisCombat = False,
@@ -1432,10 +1434,10 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
 
   Spec.describe s "IsBlocking" $ do
     Spec.it s "matches a view whose combat status says so" $ do
-      Spec.assertBool s (Filter.matches self (blackCreature {Filter.blocking = True}) Filter.Type.IsBlocking) "blocking"
+      Spec.assertBool s (Filter.matches self (blackCreature {Filter.blocking = True}) (Filter.Type.IsBlocking Nothing)) "blocking"
 
     Spec.it s "does not match a creature that is not blocking" $ do
-      Spec.assertBool s (not (Filter.matches self blackCreature Filter.Type.IsBlocking)) "not blocking"
+      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.IsBlocking Nothing))) "not blocking"
 
     -- The two combat roles are independent in BOTH directions, which is
     -- why Labyrinth of Skophos' "attacking or blocking" needs two atoms
@@ -1443,14 +1445,14 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- declaration and CR 509.1g the second at the blocker declaration,
     -- and neither says anything about the other.
     Spec.it s "is not implied by attacking" $ do
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.attacking = True}) Filter.Type.IsBlocking)) "attacking does not imply blocking"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.attacking = True}) (Filter.Type.IsBlocking Nothing))) "attacking does not imply blocking"
 
     Spec.it s "does not imply attacking" $ do
       Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.blocking = True}) (Filter.Type.IsAttacking Nothing))) "blocking does not imply attacking"
 
     -- Labyrinth of Skophos' own filter, over each role in turn.
     Spec.it s "Or [IsAttacking, IsBlocking] admits either role and rejects a creature in neither" $ do
-      let both = Filter.Type.Or [Filter.Type.IsAttacking Nothing, Filter.Type.IsBlocking]
+      let both = Filter.Type.Or [Filter.Type.IsAttacking Nothing, Filter.Type.IsBlocking Nothing]
       Spec.assertBool s (Filter.matches self (blackCreature {Filter.attacking = True}) both) "attacker"
       Spec.assertBool s (Filter.matches self (blackCreature {Filter.blocking = True}) both) "blocker"
       Spec.assertBool s (not (Filter.matches self blackCreature both)) "neither"
@@ -1458,7 +1460,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- CR 509.1a: only a creature can be chosen to block, and a player is
     -- not one.
     Spec.it s "a player candidate is vacuously false" $ do
-      Spec.assertBool s (not (Filter.matches self aPlayer Filter.Type.IsBlocking)) "player"
+      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.IsBlocking Nothing))) "player"
 
   -- CR 612.1: a text-changing effect applies to "any words or symbols
   -- printed on that object", and HasSubtype is the only atom that can
@@ -1881,7 +1883,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
       Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.blocking = True}) Filter.Type.DeclaredBlockerThisCombat)) "blocking does not imply declared"
 
     Spec.it s "does not imply blocking right now" $ do
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredBlockerThisCombat = True}) Filter.Type.IsBlocking)) "declared does not imply blocking"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredBlockerThisCombat = True}) (Filter.Type.IsBlocking Nothing))) "declared does not imply blocking"
 
     -- CR 508 and CR 509 are two turn-based actions, so the two atoms are two
     -- axes -- which is what makes Hollow Warrior's criterion a conjunction of

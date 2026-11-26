@@ -362,9 +362,11 @@ data Filter keyword
     -- 805.10c): Firemane Commando's "none of those creatures attacked you".
     DeclaredAttackedThisCombat (Maybe SlotName.SlotName)
   | -- | CR 509.1g: the candidate is a BLOCKING creature, not since removed under
-    -- CR 506.4. Not the question HasBlockStatus below asks: CR 509.1h keeps a creature
-    -- blocked once every blocker has left combat.
-    IsBlocking
+    -- CR 506.4, and with Just, blocking an attacker the nest admits (Sisters of
+    -- Stone Death Avatar's "blocking a creature you control"). Not the question
+    -- HasBlockStatus below asks: CR 509.1h keeps a creature blocked once every
+    -- blocker has left combat.
+    IsBlocking (Maybe (Filter keyword))
   | -- | CR 509.1h: the candidate is an attacking creature with this status.
     -- "Unblocked" is not @Not@ "blocked": before blockers are declared an
     -- attacker has neither.
