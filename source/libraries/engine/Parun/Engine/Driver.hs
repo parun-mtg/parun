@@ -96,6 +96,7 @@ subjectOf prompt = case prompt of
   Prompt.ChooseConjuredCard _ pid _ -> Just pid
   Prompt.RandomNumber {} -> Nothing
   Prompt.RandomPlayer {} -> Nothing
+  Prompt.RandomClause {} -> Nothing
   Prompt.RollDie {} -> Nothing
   Prompt.LookUpCard {} -> Nothing
   Prompt.ReferenceCards {} -> Nothing
@@ -288,6 +289,7 @@ deciderOf prompt = case prompt of
   Prompt.RandomObject {} -> Nothing
   Prompt.RandomStickerSheet {} -> Nothing
   Prompt.RandomPlayer {} -> Nothing
+  Prompt.RandomClause {} -> Nothing
   Prompt.RandomCard {} -> Nothing
   Prompt.ChooseConjuredCard decider _ _ -> Just (Decider.unwrap decider)
   Prompt.RollDie {} -> Nothing

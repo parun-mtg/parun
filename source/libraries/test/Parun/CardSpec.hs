@@ -1980,6 +1980,10 @@ cardBranchesAreAsymmetric = any (any modeBranchesOffend . Modal.modes) . faceMod
 -- -- the loser's own chooser would be data
 -- nothing reads. And so does a group whose members disagree about CR 701.55a's
 -- villainous flag, which is read at the same single announcement.
+--
+-- And four shapes no card prints (OrElse.count's "Unprinted:"): a group happening
+-- more than once by choice, or more often than it has members (or never), a
+-- random villainous choice, and a random group naming a chooser.
 modeBranchesOffend :: Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 modeBranchesOffend mode =
   let indexed = zip (fmap ClauseIndex.MkClauseIndex [0 ..]) (Foldable.toList (Mode.clauses mode))
@@ -1989,9 +1993,14 @@ modeBranchesOffend mode =
         Just orElse ->
           let group = Set.insert cIdx (OrElse.siblings orElse)
               namesBack sibling = fmap Clause.orElse (Map.lookup sibling byIndex) == Just (Just orElse {OrElse.siblings = Set.delete sibling group})
+              random = OrElse.selection orElse == CardSelection.AtRandom
            in Set.null (OrElse.siblings orElse)
                 || Set.member cIdx (OrElse.siblings orElse)
                 || not (all namesBack (OrElse.siblings orElse))
+                || OrElse.count orElse == 0
+                || toInteger (OrElse.count orElse) > toInteger (Set.size group)
+                || (not random && OrElse.count orElse /= 1)
+                || (random && (OrElse.villainous orElse || OrElse.chooser orElse /= PlayerRef.Relative PlayerRelation.You))
    in any offends indexed
 
 -- CR 603.2h: does a "Do this only once each turn" name a clause one of its
@@ -2753,9 +2762,10 @@ protectionFromEach = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Irid
 
 -- CR 702.16g's "protection from [A] and from [B]": the cards printing a list,
 -- which any subset of the domain satisfies. Council Guardian's per-colour
--- grants, each gated on that colour's votes, are listed the same way.
+-- grants, each gated on that colour's votes, are listed the same way, and so
+-- are Akroma, Angel of Wrath Avatar's, two branches of a random group.
 protectionListed :: Set.Set CardName.CardName
-protectionListed = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Akroma, Angel of Fury", "Akroma's Memorial", "Animar, Soul of Elements", "Council Guardian", "Great Sable Stag", "Paladin en-Vec", "Sword of Forge and Frontier", "Sword of Light and Shadow", "Sword of Once and Future", "Sword of Wealth and Power", "Ureni, the Song Unending"])
+protectionListed = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Akroma, Angel of Fury", "Akroma, Angel of Wrath Avatar", "Akroma's Memorial", "Animar, Soul of Elements", "Council Guardian", "Great Sable Stag", "Paladin en-Vec", "Sword of Forge and Frontier", "Sword of Light and Shadow", "Sword of Once and Future", "Sword of Wealth and Power", "Ureni, the Song Unending"])
 
 -- The qualities of each protection group a face prints: its own keywords, each
 -- static ability's grants, and every grant its resolution effects make.
@@ -6934,13 +6944,13 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- Twiddle's own chooser, the unmarked "you" (CR 405.4): every offender
         -- below keeps it, so each assertion fails for the arm it names rather
         -- than for the chooser half.
-        branchTo n = Just (OrElse.MkOrElse (Set.singleton (ClauseIndex.MkClauseIndex n)) (PlayerRef.Relative PlayerRelation.You) False)
-        nobody = Just (OrElse.MkOrElse Set.empty (PlayerRef.Relative PlayerRelation.You) False)
+        branchTo n = Just (OrElse.MkOrElse (Set.singleton (ClauseIndex.MkClauseIndex n)) (PlayerRef.Relative PlayerRelation.You) False CardSelection.ByChoice 1)
+        nobody = Just (OrElse.MkOrElse Set.empty (PlayerRef.Relative PlayerRelation.You) False CardSelection.ByChoice 1)
         selfNaming, dangling, disagreeing, halfVillainous :: [(Int, Maybe OrElse.OrElse)]
         selfNaming = [(0, branchTo 0), (1, branchTo 1)]
         dangling = [(0, branchTo 7), (1, branchTo 7)]
-        disagreeing = [(0, Just (OrElse.MkOrElse (Set.singleton (ClauseIndex.MkClauseIndex 1)) (PlayerRef.Relative PlayerRelation.AnyPlayer) False))]
-        halfVillainous = [(0, Just (OrElse.MkOrElse (Set.singleton (ClauseIndex.MkClauseIndex 1)) (PlayerRef.Relative PlayerRelation.You) True))]
+        disagreeing = [(0, Just (OrElse.MkOrElse (Set.singleton (ClauseIndex.MkClauseIndex 1)) (PlayerRef.Relative PlayerRelation.AnyPlayer) False CardSelection.ByChoice 1))]
+        halfVillainous = [(0, Just (OrElse.MkOrElse (Set.singleton (ClauseIndex.MkClauseIndex 1)) (PlayerRef.Relative PlayerRelation.You) True CardSelection.ByChoice 1))]
     Spec.assertBool s (not (cardBranchesAreAsymmetric face)) "Twiddle's tap and untap name each other, and are accepted"
     Spec.assertBool s (cardBranchesAreAsymmetric (rewrite [(1, Nothing)])) "a branch whose sibling names nobody back is rejected"
     Spec.assertBool s (cardBranchesAreAsymmetric (rewrite selfNaming)) "two branches each naming themselves are rejected"
@@ -6954,10 +6964,24 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     let face = S.combinedFace ceratops
         overAbility f ability = ability {ActivatedAbility.modal = (ActivatedAbility.modal ability) {Modal.modes = fmap (\mode -> mode {Mode.clauses = f (Mode.clauses mode)}) (Modal.modes (ActivatedAbility.modal ability))}}
         rewrite i orElse = face {Face.activatedAbilities = fmap (overAbility (Seq.adjust' (\clause -> clause {Clause.orElse = orElse}) i)) (Face.activatedAbilities face)}
-        naming ns = Just (OrElse.MkOrElse (Set.fromList (fmap ClauseIndex.MkClauseIndex ns)) (PlayerRef.Relative PlayerRelation.You) False)
+        naming ns = Just (OrElse.MkOrElse (Set.fromList (fmap ClauseIndex.MkClauseIndex ns)) (PlayerRef.Relative PlayerRelation.You) False CardSelection.ByChoice 1)
     Spec.assertBool s (not (cardBranchesAreAsymmetric face)) "reach, trample and haste each name the other two, and are accepted"
     Spec.assertBool s (cardBranchesAreAsymmetric (rewrite 2 (naming [0]))) "haste naming only reach is rejected"
     Spec.assertBool s (cardBranchesAreAsymmetric (rewrite 2 (naming [0, 1, 2]))) "and haste naming itself among the three is rejected"
+  -- The unprinted selections, against Shifting Ceratops with every member of its
+  -- group rewritten alike, so only the arm under test can offend.
+  Spec.it s "the lint itself catches a random or repeated either-or no card prints" $ do
+    ceratops <- S.printingOf s registry "Shifting Ceratops"
+    let face = S.combinedFace ceratops
+        overAbility f ability = ability {ActivatedAbility.modal = (ActivatedAbility.modal ability) {Modal.modes = fmap (\mode -> mode {Mode.clauses = f (Mode.clauses mode)}) (Modal.modes (ActivatedAbility.modal ability))}}
+        everyMember f = face {Face.activatedAbilities = fmap (overAbility (fmap (\clause -> clause {Clause.orElse = fmap f (Clause.orElse clause)}))) (Face.activatedAbilities face)}
+        drawing n orElse = orElse {OrElse.selection = CardSelection.AtRandom, OrElse.count = n}
+    Spec.assertBool s (not (cardBranchesAreAsymmetric (everyMember (drawing 2)))) "two of the three drawn at random are accepted"
+    Spec.assertBool s (cardBranchesAreAsymmetric (everyMember (\orElse -> orElse {OrElse.count = 2}))) "two of the three by choice are rejected"
+    Spec.assertBool s (cardBranchesAreAsymmetric (everyMember (drawing 4))) "four of the three drawn are rejected"
+    Spec.assertBool s (cardBranchesAreAsymmetric (everyMember (drawing 0))) "none of the three drawn are rejected"
+    Spec.assertBool s (cardBranchesAreAsymmetric (everyMember (\orElse -> (drawing 1 orElse) {OrElse.villainous = True}))) "a random villainous choice is rejected"
+    Spec.assertBool s (cardBranchesAreAsymmetric (everyMember (\orElse -> (drawing 1 orElse) {OrElse.chooser = PlayerRef.Relative PlayerRelation.AnyPlayer}))) "and a random group naming a chooser is rejected"
   -- CR 118.6's described cost, whose mana part comes from the object its basis
   -- names: the corpus half.
   Spec.it s "no card states a mana part beside a cost described in terms of another object" $ do

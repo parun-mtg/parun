@@ -1,0 +1,251 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Green"
+                                ],
+                                "name": "Wolf Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 2
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 2
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Wolf"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ],
+                    "orElse": {
+                      "selection": "AtRandom",
+                      "siblings": [
+                        1,
+                        2,
+                        3
+                      ]
+                    }
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Green"
+                                ],
+                                "keywords": [
+                                  {
+                                    "type": "Landwalk",
+                                    "value": {
+                                      "type": "HasSubtype",
+                                      "value": "Forest"
+                                    }
+                                  }
+                                ],
+                                "name": "Antelope Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 2
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 3
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Antelope"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ],
+                    "orElse": {
+                      "selection": "AtRandom",
+                      "siblings": [
+                        0,
+                        2,
+                        3
+                      ]
+                    }
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Green"
+                                ],
+                                "keywords": [
+                                  {
+                                    "type": "Shroud"
+                                  }
+                                ],
+                                "name": "Cat Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 3
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 2
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Cat"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ],
+                    "orElse": {
+                      "selection": "AtRandom",
+                      "siblings": [
+                        0,
+                        1,
+                        3
+                      ]
+                    }
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Green"
+                                ],
+                                "keywords": [
+                                  {
+                                    "type": "Trample"
+                                  }
+                                ],
+                                "name": "Rhino Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 4
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 4
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Rhino"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ],
+                    "orElse": {
+                      "selection": "AtRandom",
+                      "siblings": [
+                        0,
+                        1,
+                        2
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Master of the Wild Hunt Avatar",
+      "oracleText": "{2}{G}: Create a green creature token that's a 2/2 Wolf, a 2/3 Antelope with forestwalk, a 3/2 Cat with shroud, or a 4/4 Rhino with trample, chosen at random.",
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 1,
+        "lifeModifier": 3
+      }
+    }
+  ]
+}

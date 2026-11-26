@@ -1,0 +1,234 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "command": [
+          {
+            "card": "Akroma, Angel of Wrath Avatar",
+            "label": "akroma"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "GG",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Akroma, Angel of Wrath Avatar gives its owner's entering creature two distinct abilities drawn at random",
+  "note": "Neither draw is the head of its offer, so a branch taken unasked would show; the second offer lacks first strike, the branch already drawn.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $akroma"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "RandomClause",
+            "offer": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ]
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RandomClause",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "RandomClause",
+            "offer": [
+              0,
+              2,
+              3,
+              4,
+              5,
+              6
+            ]
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RandomClause",
+          "with": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "FirstStrike"
+          },
+          "object": "Grizzly Bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Protection",
+            "value": {
+              "quality": {
+                "type": "HasColor",
+                "value": "Red"
+              },
+              "spares": null
+            }
+          },
+          "object": "Grizzly Bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Flying"
+          },
+          "object": "Grizzly Bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Vigilance"
+          },
+          "object": "Grizzly Bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

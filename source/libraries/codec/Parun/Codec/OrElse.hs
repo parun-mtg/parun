@@ -2,11 +2,13 @@
 
 module Parun.Codec.OrElse where
 
+import qualified Parun.Codec.CardSelection as CardSelection
 import qualified Parun.Codec.ClauseIndex as ClauseIndex
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.CardSelection as CardSelection.Type
 import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PlayerRef as PlayerRef.Type
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -16,12 +18,16 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 -- announced by the resolving controller writes only its siblings' ordinals. The
 -- villainous flag elides the same way: CR 608.2d's ordinary either-or is the
 -- unmarked case, and only a card printing CR 701.55a's keyword action says so.
+-- A choice of one branch is likewise unmarked, so only a random group or one
+-- happening more than once writes its selection or count.
 codec :: Codec.Codec OrElse.OrElse
 codec = Fields.object $ do
   siblings <- Fields.required "siblings" (Common.set ClauseIndex.codec) OrElse.siblings
   chooser <- Fields.defaulted "chooser" defaultChooser PlayerRef.codec OrElse.chooser
   villainous <- Fields.defaulted "villainous" False Common.boolean OrElse.villainous
-  pure OrElse.MkOrElse {OrElse.siblings = siblings, OrElse.chooser = chooser, OrElse.villainous = villainous}
+  selection <- Fields.defaulted "selection" CardSelection.Type.ByChoice CardSelection.codec OrElse.selection
+  count <- Fields.defaulted "count" 1 Common.natural OrElse.count
+  pure OrElse.MkOrElse {OrElse.siblings = siblings, OrElse.chooser = chooser, OrElse.villainous = villainous, OrElse.selection = selection, OrElse.count = count}
 
 -- | CR 608.2d: who announces the branch unless the card names somebody else.
 defaultChooser :: PlayerRef.Type.PlayerRef

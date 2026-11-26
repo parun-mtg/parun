@@ -161,6 +161,11 @@ data Prompt r where
   -- Sontaran Nurse) or leave them out (Ruhan of the Fomori), and Parun.CardSpec's
   -- Strax case proves the first.
   RandomPlayer :: NonEmpty.NonEmpty PlayerId.PlayerId -> Prompt PlayerId.PlayerId
+  -- | Which branch of a CR 608.2d group randomness drew, by its ordinal
+  -- (Parun.Types.OrElse's selection), one draw per branch the group runs.
+  -- RandomObject's reasons for carrying neither Decider nor PlayerId; asked only
+  -- for two or more, and the caller filters the answer back.
+  RandomClause :: NonEmpty.NonEmpty ClauseIndex.ClauseIndex -> Prompt ClauseIndex.ClauseIndex
   -- | CR 706.1a: what an N-sided die came up -- CR 706.2's natural result, the
   -- instruction's modifier added afterwards. RandomObject's reasons for
   -- carrying neither Decider nor PlayerId.
