@@ -4,12 +4,12 @@
 -- Covers Parun.Engine.Vanguard and the CR 902 readings its callers make:
 -- Parun.Engine.Setup's starting life, command zone and rebuild paths,
 -- Parun.Engine.Mulligan's starting hand size, and Parun.Engine.PlayerEffect's
--- maximum hand size. Also three of the five walks that let a vanguard's abilities
+-- maximum hand size. Also three of the six walks that let a vanguard's abilities
 -- function from the command zone, all of which ask
 -- Vanguard.functionsFromCommandZone: Parun.Engine.Projection's static and
 -- replacement ones and Parun.Engine.CombatRestriction.inForce. Parun.Engine.Event's
--- triggered one and Parun.Engine.Activate's activated one are scenarios under
--- data/scenarios/vanguard.
+-- triggered one, Parun.Engine.Activate's activated one and
+-- Parun.Engine.BlockPermission's are scenarios under data/scenarios/vanguard.
 module Parun.VanguardSpec where
 
 import qualified Data.List as List
