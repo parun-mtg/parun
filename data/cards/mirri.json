@@ -1,0 +1,49 @@
+{
+  "faces": [
+    {
+      "name": "Mirri",
+      "oracleText": "If a basic land you control is tapped for mana, it produces mana of a color of your choice instead of any other type.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "ManaR",
+            "value": {
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasSupertype",
+                    "value": "Basic"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Land"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  }
+                ]
+              },
+              "produces": {
+                "type": "AnyColor"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 0,
+        "lifeModifier": 5
+      }
+    }
+  ]
+}
