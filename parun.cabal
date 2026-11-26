@@ -2625,6 +2625,8 @@ library play
     Parun.Play.Command.ConfigSpec
     Parun.Play.Command.Flag
     Parun.Play.Command.FlagSpec
+    Parun.Play.Fit
+    Parun.Play.FitSpec
     Parun.Play.Game
     Parun.Play.Generator
     Parun.Play.GeneratorSpec
@@ -3828,6 +3830,7 @@ library types
     Parun.Types.Plus
     Parun.Types.Polarity
     Parun.Types.Pool
+    Parun.Types.Position
     Parun.Types.Power
     Parun.Types.PowerToughnessIs
     Parun.Types.PowerToughnessSticker

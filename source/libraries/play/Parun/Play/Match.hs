@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+
 -- | `parun match`: many seeded games between two decks, each seat played by
 -- the random bot or the search bot, and how often each seat won.
 module Parun.Play.Match where
@@ -19,6 +21,7 @@ import qualified Parun.CommandLine as CommandLine
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Command as Command
+import qualified Parun.Play.Fit as Fit
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Generator as Generator
 import qualified Parun.Play.Key as Key
@@ -30,6 +33,7 @@ import qualified Parun.Play.Search as Search
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Registry as Registry
 import qualified Parun.Trustworthy.Directory as Directory
+import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameSettings as GameSettings
@@ -37,8 +41,11 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.Limits as Limits
 import qualified Parun.Types.MatchOptions as MatchOptions
+import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Position as Position
 import qualified Parun.Types.Program as Program
+import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.Tally as Tally
@@ -92,14 +99,16 @@ match options searchers prior registry format decks = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
   seed <- maybe Key.fresh pure (MatchOptions.seed options)
   Monad.forM_ (MatchOptions.save options) (Directory.createDirectoryIfMissing True)
+  Monad.forM_ (MatchOptions.positions options) $ \path -> TextIO.writeFile path (Text.unlines [Fit.header])
   let count = MatchOptions.games options
   tally <-
     Monad.foldM
       ( \tally index -> do
-          let (outcome, timeline) = Identity.runIdentity (game registry format searchers prior seed index (both decks))
+          let (outcome, played) = Identity.runIdentity (game registry format searchers prior seed index [positioning | Maybe.isJust (MatchOptions.positions options)] (both decks))
           TextIO.hPutStrLn IO.stderr (Text.pack ("Game " <> show (index + 1) <> ", seed ") <> Key.toHex (seedAt seed index) <> Text.pack (", seat " <> show (firstAt index) <> " first: ") <> ended outcome)
           Monad.forM_ (MatchOptions.save options) $ \directory ->
-            Command.save (directory <> "/game-" <> show (index + 1) <> ".json") (Command.saved (Registry.printings registry) (Text.pack "Played with parun match, seed " <> Key.toHex (seedAt seed index) <> Text.pack (", seat " <> show (firstAt index) <> " first.")) GameSettings.plain {GameSettings.format = format} Map.empty (Command.seated (firstAt index) (both decks)) timeline)
+            Command.save (directory <> "/game-" <> show (index + 1) <> ".json") (Command.saved (Registry.printings registry) (Text.pack "Played with parun match, seed " <> Key.toHex (seedAt seed index) <> Text.pack (", seat " <> show (firstAt index) <> " first.")) GameSettings.plain {GameSettings.format = format} Map.empty (Command.seated (firstAt index) (both decks)) (timeline played))
+          Monad.forM_ (MatchOptions.positions options) $ \path -> TextIO.appendFile path (Text.unlines (rows (seedAt seed index) outcome (positions played)))
           -- Forced, so no game's final state outlives its game.
           pure $! tallied outcome tally
       )
@@ -117,14 +126,22 @@ match options searchers prior registry format decks = do
 -- drawing apart as parun play's does:
 -- Game.remembered), never running out of time (Search.unhurried), and the
 -- random bot in every other; with the entry each answer replays as
--- (Record.recording). With every seat searching at PlayOptions.none's budget
--- and weights and Search.known it is the game `parun play --bot 1 --bot 2
--- --think-limit 0` plays at that seed and `--first`.
-game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natural (SearchBudget.SearchBudget, Weights.Type.Weights) -> Search.Prior -> Key.Type.Key -> Natural -> NonEmpty.NonEmpty Deck.Deck -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
-game registry format searchers prior seed index decks =
+-- (Record.recording), and whatever the `observers` keep. With every seat
+-- searching at PlayOptions.none's budget and weights and Search.known it is
+-- the game `parun play --bot 1 --bot 2 --think-limit 0` plays at that seed
+-- and `--first`.
+game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Map.Map Natural (SearchBudget.SearchBudget, Weights.Type.Weights) -> Search.Prior -> Key.Type.Key -> Natural -> [Observer.Observer (Game.Play (State.StateT Played m))] -> NonEmpty.NonEmpty Deck.Deck -> m (Either Text.Text (Result.Result, GameState.GameState), Played)
+game registry format searchers prior seed index observers decks =
   let count = Natural.length decks
-      seat n = maybe (Game.bot (lifted registry)) (\(budget, weights) -> Game.remembered (pure Nothing) (const (pure ())) (Search.search (lifted registry) budget weights prior (Game.underneath (State.gets (\(_, plays, _, _) -> plays))) (Game.underneath (State.gets (\(_, _, memories, _) -> Map.findWithDefault Search.blank (Command.idOf n) memories))) (Search.keptBy (State.gets (\(_, _, _, aims) -> aims)) (\f -> State.modify' (\(timeline, plays, memories, aims) -> (timeline, plays, memories, f aims))) (Command.idOf n)) (pure ()) Search.unhurried)) (Map.lookup n searchers)
-   in fmap (fmap (\(timeline, _, _, _) -> timeline)) (State.runStateT (Game.run Program.foldProgramM (lifted registry) GameSettings.plain {GameSettings.format = format} Limits.standard [Record.recording (Command.labels count) sink, Search.watching (\f -> State.modify' (\(timeline, plays, memories, aims) -> let kept = f plays in kept `seq` (timeline, kept, memories, aims))), Search.remembering (\f -> State.modify' (\(timeline, plays, memories, aims) -> let kept = f memories in kept `seq` (timeline, plays, kept, aims)))] (Map.fromList [(Command.idOf n, seat n) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) (Seq.empty, [], Map.empty, Map.empty))
+      seat n = maybe (Game.bot (lifted registry)) (\(budget, weights) -> Game.remembered (pure Nothing) (const (pure ())) (Search.search (lifted registry) budget weights prior (Game.underneath (State.gets plays)) (Game.underneath (State.gets (Map.findWithDefault Search.blank (Command.idOf n) . memories))) (Search.keptBy (State.gets aims) (\f -> State.modify' (\played -> played {aims = f (aims played)})) (Command.idOf n)) (pure ()) Search.unhurried)) (Map.lookup n searchers)
+   in State.runStateT (Game.run Program.foldProgramM (lifted registry) GameSettings.plain {GameSettings.format = format} Limits.standard ([Record.recording (Command.labels count) sink, Search.watching (\f -> State.modify' (\played -> let kept = f (plays played) in kept `seq` played {plays = kept})), Search.remembering (\f -> State.modify' (\played -> let kept = f (memories played) in kept `seq` played {memories = kept}))] <> observers) (Map.fromList [(Command.idOf n, seat n) | n <- [1 .. count]]) (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) unplayed
+
+-- | A game's positions as `parun fit` reads them (Fit.row), keyed by the
+-- game's seed; none for a game no seat won.
+rows :: Key.Type.Key -> Either Text.Text (Result.Result, GameState.GameState) -> Seq.Seq Position.Position -> [Text.Text]
+rows key outcome kept = case outcome of
+  Right (Result.Won winner, _) -> [Fit.row (Key.toHex key) winner position | position <- Foldable.toList kept]
+  _ -> []
 
 -- | A pair of decks, seat 1's first.
 both :: (Deck.Deck, Deck.Deck) -> NonEmpty.NonEmpty Deck.Deck
@@ -136,12 +153,40 @@ lifted = Registry.hoist Trans.lift
 
 -- | Keeps an answer's entry, after those before it.
 sink :: (Monad m) => Timed.Timed -> Game.Play (State.StateT Played m) ()
-sink entry = Game.underneath (State.modify' (\(timeline, plays, memories, aims) -> (timeline Seq.|> entry, plays, memories, aims)))
+sink entry = Game.underneath (State.modify' (\played -> played {timeline = timeline played Seq.|> entry}))
 
--- | What a match's game keeps beside its play: the entries so far, the
--- plays kept (Search.watching), the memories kept (Search.remembering) and
--- each search bot's line kept (Search.keptBy).
-type Played = (Seq.Seq Timed.Timed, [Search.Watched], Map.Map PlayerId.PlayerId Search.Memory, Map.Map PlayerId.PlayerId Search.Line)
+-- | Keeps the position of each decision at priority in the main game
+-- (Search.featuresOfAll), after those before it.
+positioning :: (Monad m) => Observer.Observer (Game.Play (State.StateT Played m))
+positioning =
+  Observer.MkObserver
+    { Observer.before = \asked -> case Asked.prompt asked of
+        Prompt.ChooseAction {}
+          | null (Asked.enclosing asked) ->
+              let gs = Asked.game asked
+                  position = Position.MkPosition {Position.turn = TurnRegisters.turnNumber (GameState.turn gs), Position.features = Search.featuresOfAll gs}
+               in position `seq` Game.underneath (State.modify' (\played -> played {positions = positions played Seq.|> position}))
+        _ -> pure (),
+      Observer.after = \_ _ -> pure ()
+    }
+
+-- | What a match's game keeps beside its play.
+data Played = MkPlayed
+  { -- | The entries so far (Record.recording).
+    timeline :: Seq.Seq Timed.Timed,
+    -- | The plays kept (Search.watching).
+    plays :: [Search.Watched],
+    -- | The memories kept (Search.remembering).
+    memories :: Map.Map PlayerId.PlayerId Search.Memory,
+    -- | Each search bot's line kept (Search.keptBy).
+    aims :: Map.Map PlayerId.PlayerId Search.Line,
+    -- | The positions kept ('positioning').
+    positions :: Seq.Seq Position.Position
+  }
+
+-- | A game's keeping before its first prompt.
+unplayed :: Played
+unplayed = MkPlayed {timeline = Seq.empty, plays = [], memories = Map.empty, aims = Map.empty, positions = Seq.empty}
 
 -- | Game `index`'s key, derived from the match's (Generator.derive), the
 -- index wrapping at 2^64.

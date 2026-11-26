@@ -52,3 +52,48 @@ Skew: Mono Red Madness is under-rated. Its gap against Rakdos Madness falls
 outside both intervals. Games are also far too long for these decks: 21 to
 32 turns on average. Both are filed as #9472. Only the first matchup has
 enough games to say anything; the rest needs a full run.
+
+## Fitting the evaluation weights
+
+`parun fit` fits the search bot's evaluation weights (`Parun.Types.Weights`)
+to how games end (#9724): a logistic regression of each position's winner on
+both players' features, the positions `parun match --positions` writes at
+every decision at priority. Each game weighs 1 however many positions it
+holds. A ridge, chosen by five-fold cross-validation over games, holds the
+weights toward `Weights.neutral`'s shape, every feature alike. Each loss it
+reports is on games held out of the fit scoring them. A coefficient `b`
+becomes the weight `500 b`: a cut-off playout's score stands for its expected
+result, 1000 (2p - 1), which rises 500 per unit of the logit where p is a
+half. With two seats every position is counted from both sides, so `ours` and
+`theirs` come out alike.
+
+A full collection, on a quiet machine:
+
+```
+for m in "mono-red-madness rakdos-madness" "mono-red-madness jeskai-ephemerate" "rakdos-madness jeskai-ephemerate"; do
+  set -- $m
+  $PARUN match --games 200 --search 1 --search 2 --positions _scratch/positions/$1--$2.tsv \
+    data/decks/pauper/$1.txt data/decks/pauper/$2.txt &
+done; wait
+$PARUN fit --out data/calibration/weights.json _scratch/positions/*.tsv
+```
+
+Then measure playing strength with `--weights=1=data/calibration/weights.json`.
+
+### Smoke run, 2026-11-26
+
+Eight games of each matchup, both seats searching at the default budget:
+11645 positions from 24 games.
+
+| Evaluation | Log loss |
+| --- | --- |
+| `Weights.neutral` as it stands | 0.6862 |
+| `Weights.neutral` at its best scale, held out | 0.5465 |
+| Fitted, held out | 0.5894 |
+| Fitted with a damage clock, held out | 0.5549 |
+
+Cross-validation chose the largest ridge, so `data/calibration/weights.json`
+is `Weights.neutral`'s shape at 68 a unit. All of the gain is scale.
+`Weights.neutral`'s 1 a unit scores a cut-off playout near 0 beside a win's
+1000. 24 games cannot tell one feature from another, and on them the damage
+clock does not beat the six features weighted alike.

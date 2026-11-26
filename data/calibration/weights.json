@@ -1,0 +1,18 @@
+{
+  "ours": {
+    "hand": 68,
+    "lands": 68,
+    "life": 68,
+    "permanents": 68,
+    "power": 68,
+    "toughness": 68
+  },
+  "theirs": {
+    "hand": 68,
+    "lands": 68,
+    "life": 68,
+    "permanents": 68,
+    "power": 68,
+    "toughness": 68
+  }
+}

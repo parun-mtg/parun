@@ -20,6 +20,7 @@ data Flag
   | Persona String
   | Playout String
   | Pool String
+  | Positions FilePath
   | Samples String
   | Save FilePath
   | Search String
@@ -35,6 +36,7 @@ flags =
     GetOpt.Option [] ["seed"] (GetOpt.ReqArg Seed "KEY") "the key each game's is derived from, 64 hexadecimal digits, said when the match ends; drawn from the operating system when absent",
     GetOpt.Option [] ["games"] (GetOpt.ReqArg Games "N") "how many games to play; 100 when absent",
     GetOpt.Option [] ["save"] (GetOpt.ReqArg Save "DIR") "save each game in this directory as a scenario",
+    GetOpt.Option [] ["positions"] (GetOpt.ReqArg Positions "FILE") "write the position of each decision at priority in a game a seat won to this file, for parun fit",
     GetOpt.Option [] ["search"] (GetOpt.ReqArg Search "SEAT") "the search bot plays this seat, 1 or 2; the random bot plays every other",
     GetOpt.Option [] ["samples"] (GetOpt.ReqArg Samples "[SEAT=]N") "the search bot's playouts of each option, in every seat or in SEAT alone; 2 when absent",
     GetOpt.Option [] ["turns"] (GetOpt.ReqArg Turns "[SEAT=]N") "the turns a playout may begin after the decision's before it is cut off and its position scored, in every seat or in SEAT alone; 0 when absent, ending a playout as the next turn begins",

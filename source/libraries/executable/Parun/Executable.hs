@@ -47,6 +47,7 @@ import qualified Parun.Oracle as Oracle
 import qualified Parun.Oracle.Normalise as Normalise
 import qualified Parun.Play.Command
 import qualified Parun.Play.Command.Config
+import qualified Parun.Play.Fit
 import qualified Parun.Play.Match
 import qualified Parun.Play.Match.Config
 import qualified Parun.Play.Meta
@@ -113,6 +114,7 @@ subcommands =
     MkSubcommand Parun.Play.Command.Config.command Parun.Play.Command.main,
     MkSubcommand Parun.Play.Match.Config.command Parun.Play.Match.main,
     MkSubcommand Parun.Play.Meta.command Parun.Play.Meta.main,
+    MkSubcommand Parun.Play.Fit.command Parun.Play.Fit.main,
     MkSubcommand Parun.Benchmark.Config.command (`Environment.withArgs` Parun.Benchmark.main),
     MkSubcommand Parun.Test.Config.command (`Environment.withArgs` Parun.Test.main),
     MkSubcommand ((Command.new "completion" Bare.Flag.flags) {Command.positionals = [Completion.Value.MkChoices (fmap fst Shim.shells)]}) completionCommand

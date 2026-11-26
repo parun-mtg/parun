@@ -5,6 +5,10 @@ import qualified Parun.Spec as Spec
 
 spec :: (Applicative m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Extra.Integer" $ do
+  Spec.describe s "toDouble" $ do
+    Spec.it s "converts exactly, either side of zero" $ do
+      Spec.assertEq s (fmap Integer.toDouble [0, 1, -300, 2 ^ (53 :: Int)]) [0, 1, -300, 9007199254740992]
+
   Spec.describe s "toInt" $ do
     Spec.it s "succeeds with zero" $ do
       Spec.assertEq s (Integer.toInt 0) $ Just 0

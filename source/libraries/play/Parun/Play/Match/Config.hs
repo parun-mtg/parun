@@ -59,6 +59,7 @@ applyFlag config flag = case flag of
   Flag.Persona s -> weighed (fmap Left . Opponent.named Opponent.personaName) s
   Flag.Playout s -> perSeat "a playout policy, random, greedy, polar or classified" playoutNamed (\n b -> b {SearchBudget.playout = n}) s
   Flag.Pool s -> set o {MatchOptions.pool = Just (Text.pack s)}
+  Flag.Positions s -> set o {MatchOptions.positions = Just s}
   Flag.Samples s -> perSeat "a number of samples" (Monad.mfilter (> 0) . Read.readMaybe) (\n b -> b {SearchBudget.samples = n}) s
   Flag.Save s -> set o {MatchOptions.save = Just s}
   Flag.Search s -> CommandLine.orInvalid ("not a seat: " <> s) (Monad.mfilter (`elem` seats) (Read.readMaybe s)) >>= \n -> set o {MatchOptions.searching = Set.insert n (MatchOptions.searching o)}
@@ -127,6 +128,7 @@ command =
   (Command.new "match" Flag.flags)
     { Command.values =
         [ ("save", Value.MkFiles),
+          ("positions", Value.MkFiles),
           ("search", Value.MkChoices (fmap show seats)),
           ("playout", perSeat (fmap playoutName [minBound .. maxBound])),
           ("method", perSeat (fmap methodName [minBound .. maxBound])),

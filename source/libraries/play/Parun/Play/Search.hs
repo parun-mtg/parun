@@ -20,6 +20,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Engine.Card
@@ -1132,15 +1133,34 @@ won = 1000
 -- the highest of every other player's weighted by `Weights.theirs`.
 evaluate :: Weights.Weights -> PlayerId.PlayerId -> GameState.GameState -> Integer
 evaluate weights pid gs =
+  let position = featuresOfAll gs
+      weighed side player = dot (side weights) (Map.findWithDefault none player position)
+      none = Features.MkFeatures 0 0 0 0 0 0
+   in weighed Weights.ours pid - maybe 0 maximum (NonEmpty.nonEmpty [weighed Weights.theirs other | other <- Map.keys position, other /= pid])
+
+-- | Every player's 'features' in `gs`, the board projected once.
+featuresOfAll :: GameState.GameState -> Map.Map PlayerId.PlayerId Features.Features
+featuresOfAll gs =
   let board = Projection.projectAll gs
       grants = Projection.View.controlGrants gs
-      weighed side player = dot (side weights) (features board grants player gs)
-   in weighed Weights.ours pid - maybe 0 maximum (NonEmpty.nonEmpty [weighed Weights.theirs other | other <- Map.keys (GameState.players gs), other /= pid])
+   in Map.mapWithKey (\pid _ -> features board grants pid gs) (GameState.players gs)
 
 -- | The weighted sum of a player's features.
 dot :: Features.Features -> Features.Features -> Integer
 dot weight count =
-  sum [field weight * field count | field <- [Features.life, Features.hand, Features.power, Features.toughness, Features.lands, Features.permanents]]
+  sum [field weight * field count | (_, field) <- featureFields]
+
+-- | Every feature, named as Parun.Codec.Features names it, in the order of
+-- Features.MkFeatures's fields.
+featureFields :: [(Text.Text, Features.Features -> Integer)]
+featureFields =
+  [ (Text.pack "life", Features.life),
+    (Text.pack "hand", Features.hand),
+    (Text.pack "power", Features.power),
+    (Text.pack "toughness", Features.toughness),
+    (Text.pack "lands", Features.lands),
+    (Text.pack "permanents", Features.permanents)
+  ]
 
 -- | `pid`'s generic features, from the board projected and the control
 -- grants of `gs`: what every player may see or count (CR 400.2, 402.3), and
