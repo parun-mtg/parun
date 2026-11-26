@@ -2289,31 +2289,14 @@ fromAmongMembers legal resolving chosen slot = do
     Nothing -> Maybe.mapMaybe Recipient.objectOf (legalMany slot legal)
 
 -- | CR 108.1: up to @count@ distinct cards of the Oracle reference the pick
--- admits, chosen at random (Game.drawDistinct) and interned. The interpreter
--- answers which cards the filter admits, off the pre-effect board, and each
--- answer is filtered back: a reference admitting nothing yields nothing (CR
--- 609.3).
+-- admits, chosen at random (Event.drawReferenceCards), its amount read off the
+-- pre-effect board.
 drawReferenceCards :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Natural -> FromReference.FromReference -> Game [PrintingId.PrintingId]
 drawReferenceCards resolving source controller legal count from = do
   gs <- State.get
-  let predicate = FromReference.filter from
-      context = effectContext gs resolving controller source legal (slotBindings resolving gs)
+  let context = effectContext gs resolving controller source legal (slotBindings resolving gs)
       amount = FromReference.amount from >>= evaluateForRecipient (effectViewOf resolving source legal gs) context gs resolving source controller
-  names <- Game.ask (Prompt.ReferenceCards predicate amount)
-  drawn <- Game.drawDistinct Prompt.RandomCard count (ListUtils.nubOrd names)
-  Maybe.catMaybes <$> traverse (admittedReferenceCard predicate amount) drawn
-
--- | CR 108.1: the reference card of this name, interned, provided the filter
--- admits it -- an answer outside what the filter admits is not taken.
-admittedReferenceCard :: Filter.Type.Filter Keyword.Type.Keyword -> Maybe Integer -> CardName.CardName -> Game (Maybe PrintingId.PrintingId)
-admittedReferenceCard predicate amount answer = do
-  found <- Game.lookUpCard answer
-  g <- State.get
-  pure $ do
-    printingId <- found
-    card <- Game.cardOfPrinting printingId g
-    Monad.guard (Projection.referenceAdmits (Game.teams g) amount predicate card)
-    Just printingId
+  Event.drawReferenceCards (\_ _ -> True) (FromReference.filter from) amount count
 
 -- CR 201.4a: a card name chosen from a list the engine holds (CR 707.13's
 -- names, ChooseCardName's `among`). None chooses nothing (CR 609.3), one is

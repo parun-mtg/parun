@@ -1,0 +1,72 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "command": [
+          {
+            "card": "Dakkon Blackblade Avatar"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Ambush Viper",
+            "label": "viper"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Dakkon Blackblade Avatar plays Ambush Viper as a random basic land only in a main phase, its flash being the card's and not the land's",
+  "note": "CR 116.2a / 305.1 / 707.2: the play is a land's, timed as the land the card becomes. The main-phase check is the control.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "PlayLand $viper"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "PlayLand": "$viper"
+      },
+      "step": "BeginningOfCombat",
+      "turn": 1
+    }
+  ]
+}

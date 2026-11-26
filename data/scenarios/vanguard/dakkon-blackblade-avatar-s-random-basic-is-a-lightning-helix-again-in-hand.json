@@ -1,0 +1,111 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "command": [
+          {
+            "card": "Dakkon Blackblade Avatar"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Helix",
+            "label": "helix"
+          },
+          {
+            "card": "Boomerang",
+            "label": "boomerang"
+          }
+        ],
+        "manaPool": "UU",
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Dakkon Blackblade Avatar's Lightning Helix played as a Plains is a Lightning Helix again once returned to its owner's hand",
+  "note": "CR 400.7 / 707.2: the card stops being a copy as it leaves the battlefield.",
+  "timeline": [
+    {
+      "do": {
+        "PlayLand": "$helix"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RandomCard",
+          "with": "Plains"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Plains"
+          ],
+          "object": "Lightning Helix"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            null
+          ],
+          "object": "$boomerang"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Lightning Helix"
+          ],
+          "object": "Lightning Helix"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Lightning Helix",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

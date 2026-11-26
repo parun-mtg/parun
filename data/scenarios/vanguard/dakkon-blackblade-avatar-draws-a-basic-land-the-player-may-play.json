@@ -1,0 +1,130 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "command": [
+          {
+            "card": "Dakkon Blackblade Avatar"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Conjurer's Ban",
+            "label": "ban"
+          },
+          {
+            "card": "Lightning Helix",
+            "label": "helix"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "WB",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Dakkon Blackblade Avatar draws its random basic land among those the player may play, so a Plains drawn under Conjurer's Ban naming Plains is drawn again",
+  "note": "docs/decisions.md, \"Whether a land played as a random copy draws among the playable cards\": the Plains is set aside and the draw repeated, so the play goes ahead as a Mountain. Under the rejected reading the play would stop at the Plains and no second draw would come.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$ban"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardName",
+          "with": "Plains"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "PlayLand": "$helix"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RandomCard",
+          "with": "Plains"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RandomCard",
+          "with": "Mountain"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Mountain"
+          ],
+          "object": "Lightning Helix"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mountain",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

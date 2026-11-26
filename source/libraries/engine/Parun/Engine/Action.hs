@@ -98,19 +98,23 @@ import qualified Parun.Types.Zone as Zone
 -- (Filter.HasChosenName for Null Chamber, City in a Bottle's names beside it),
 -- turned up first by CR 406.3a's Cast.turnedUpForPlay: a land exiled face down
 -- is face up by the time it is played.
-playableLands :: PlayerId -> GameState -> [(ObjectId, Maybe CardName.CardName)]
-playableLands pid gs =
+--
+-- The third component is the board a play as a copy is judged on
+-- (Cast.playAsCopyBoards), Nothing for a play as the card itself.
+landPlays :: PlayerId -> GameState -> [(ObjectId, Maybe CardName.CardName, Maybe GameState)]
+landPlays pid gs =
   let playable oid = case (Game.lookupLayerOne oid gs, Game.cardOfHandMember oid gs) of
         (Just obj, Just card) ->
           let native =
                 if PlayerEffect.prohibitsPlayingLand pid oid (Cast.turnedUpForPlay oid Facing.FaceUp gs)
                   then []
-                  else [(oid, mName) | (mName, _) <- Game.landFacesOf obj card, Set.member oid open || permitted oid mName]
+                  else [(oid, mName, Nothing) | (mName, _) <- Game.landFacesOf obj card, Set.member oid open || permitted oid mName]
               -- CR 305.1 / 707.2: a card a play-as-copy permission opens
-              -- (Dakkon Blackblade Avatar), played as no face of its own.
+              -- (Dakkon Blackblade Avatar), played as no face of its own and
+              -- withheld where CR 101.2 stops it as every land it could become.
               -- Where the card is playable as itself as well, Cast.playLand
               -- asks the printed "may" instead.
-              asCopy = [(oid, Nothing) | null native, not (null (PlayerEffect.playAsCopyPermissions pid oid gs))]
+              asCopy = take 1 [(oid, Nothing, Just board) | null native, board <- Cast.playAsCopyBoards pid oid gs, not (PlayerEffect.prohibitsPlayingLand pid oid board)]
            in native <> asCopy
         _ -> []
       -- CR 305.1's own zone, which needs no permission.
@@ -157,6 +161,10 @@ playableLands pid gs =
       -- for, which only a Play-verb permission opens.
       fromOutside = Game.standInsOf pid gs
    in concatMap playable (ListUtils.nubOrd (fromHand <> fromGranted <> fromPermitted <> fromPermission <> fromMayhem <> fromGraveyard <> fromOutside))
+
+-- landPlays' cards and faces.
+playableLands :: PlayerId -> GameState -> [(ObjectId, Maybe CardName.CardName)]
+playableLands pid gs = [(oid, mName) | (oid, mName, _) <- landPlays pid gs]
 
 -- The cards in this player's hand whose text grants CR 116.2e's special
 -- action: Circling Vultures' "you may discard this card any time you could cast
@@ -215,11 +223,19 @@ legalActions pid gs =
       -- never widens a land play (CR 305.1). A printing whose permission says
       -- PLAY rather than cast -- Scout's Warning -- moves this window too, by
       -- CR 601.1a.
-      landTimingOk (oid, mName) =
-        Turn.sorcerySpeedWindow pid gs
-          || maybe False (\card -> Cast.flashOn oid (Game.resolveFace mName card) gs) (Game.cardOf oid gs)
-          || PlayerEffect.mayPlayAsThoughItHadFlash pid oid (Cast.asPlayed oid mName gs)
-      lands = if canPlayLand then fmap (uncurry Action.Play) (filter landTimingOk (playableLands pid gs)) else []
+      --
+      -- A card played as a copy (Cast.playAsCopyBoards) is asked as the land
+      -- it becomes: CR 707.2 replaces the printed card's characteristics, so
+      -- Ambush Viper's flash is not read.
+      landTimingOk (oid, mName, asCopy) =
+        Turn.sorcerySpeedWindow pid gs || case asCopy of
+          Nothing ->
+            maybe False (\card -> Cast.flashOn oid (Game.resolveFace mName card) gs) (Game.cardOf oid gs)
+              || PlayerEffect.mayPlayAsThoughItHadFlash pid oid (Cast.asPlayed oid mName gs)
+          Just board ->
+            Cast.projectedFlash oid board
+              || PlayerEffect.mayPlayAsThoughItHadFlash pid oid board
+      lands = if canPlayLand then [Action.Play oid mName | play@(oid, mName, _) <- landPlays pid gs, landTimingOk play] else []
       -- CR 709.3: one action per castable HALF, so choosing a half is choosing
       -- an action and the engine never asks which one. CR 702.37d adds one more
       -- per half with morph, for the same reason: casting face down is a second

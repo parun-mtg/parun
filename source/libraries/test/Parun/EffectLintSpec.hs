@@ -2174,10 +2174,11 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- (Projection.freezeQuantities), and a card cannot know who is playing, so
   -- card data writes the bare tag; the codec round-trips a seat, #199's reason
   -- for a lint. Counted off the encoding, so every carrier is reached.
-  -- Unprinted: a permanent becoming a copy of a random reference card
+  -- Unprinted: an effect making a permanent a copy of a random reference card
   -- (CopyOriginal.AtRandom under Effect.BecomeCopy); only CreateCopy's tokens
-  -- copy one (Momir Vig, Simic Visionary Avatar).
-  Spec.it s "no card makes a permanent a copy of a random reference card" $ do
+  -- copy one (Momir Vig, Simic Visionary Avatar), and Dakkon Blackblade
+  -- Avatar's card played as one is a player permission (PlayerEffect.PlayAsCopy).
+  Spec.it s "no effect makes a permanent a copy of a random reference card" $ do
     ps <- S.allPrintings s corpus
     let becomesRandom effect = case effect of
           Effect.BecomeCopy x -> case BecomeCopy.original x of

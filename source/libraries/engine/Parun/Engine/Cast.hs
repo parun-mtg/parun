@@ -6,6 +6,7 @@ import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Const as Const
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Monoid as Monoid
@@ -45,6 +46,7 @@ import qualified Parun.Engine.Snapshot as Snapshot
 import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.SplitSecond as SplitSecond
 import qualified Parun.Engine.Sticker as Sticker
+import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Engine.Target as Target
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Integer as Integer
@@ -111,6 +113,7 @@ import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.KickerDecision as KickerDecision
 import qualified Parun.Types.LandPlayed as LandPlayed
 import qualified Parun.Types.Layer as Layer
+import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaAbilityPerformer as ManaAbilityPerformer
@@ -145,6 +148,7 @@ import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Pool as Pool
+import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity
@@ -428,9 +432,13 @@ instantSpeed oid face gs = Card.isInstant face || flashOn oid face gs
 -- would separate the limbs, and nothing in CR 305 or CR 702.8 forbids one.
 flashOn :: ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
 flashOn oid face gs =
-  let projected = Projection.project oid gs
-   in (Keyword.hasFlash (Face.keywordSet face) && not (PC.lostAllAbilities projected))
-        || Keyword.hasFlash (Map.keysSet (PC.keywords projected))
+  (Keyword.hasFlash (Face.keywordSet face) && not (PC.lostAllAbilities (Projection.project oid gs)))
+    || projectedFlash oid gs
+
+-- flashOn's projected limb alone: what a card played as a copy reads
+-- (Parun.Engine.Action.legalActions), CR 707.2 replacing its printed face.
+projectedFlash :: ObjectId -> GameState -> Bool
+projectedFlash oid gs = Keyword.hasFlash (Map.keysSet (PC.keywords (Projection.project oid gs)))
 
 -- CR 601.2c / 700.2a: castable when the fillable modes admit some selection at
 -- all (Modal.selectionPossible) -- ordinarily at least as many fillable modes as
@@ -3199,8 +3207,8 @@ playLand settle offered pid oid mName = do
   copy <- playedAsCopy offered pid oid
   case copy of
     Nothing -> playLandAs settle offered False pid oid mName
-    -- Implementation-defined: a play-as-copy permission whose reference admits
-    -- no card the player may play plays nothing; the CR is silent.
+    -- CR 734.1: no card the reference admits is one CR 101.2 lets the player
+    -- play, so the play cannot be completed and is reversed.
     Just Nothing -> pure ()
     -- CR 707.2: the card is the copy as it is played, so the reads below
     -- (landFacesOf, CR 101.2's prohibitions, CR 614.12's entry) see the land.
@@ -3212,19 +3220,25 @@ playLand settle offered pid oid mName = do
 stampedAsCopy :: PC.ProjectedCharacteristics -> ObjectId -> GameState -> GameState
 stampedAsCopy pc oid gs = gs {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setCopy pc (Object.bindings o)}) oid (GameState.objects gs)}
 
+-- CR 108.1 / 305.6: the reference cards a play-as-copy permission admits for
+-- `oid`, its ProducesColorOf read off the played card's colours.
+copyReference :: ObjectId -> PlayAsCopy.PlayAsCopy -> GameState -> Filter.Type.Filter Keyword.Type.Keyword
+copyReference oid permission gs =
+  let colors = maybe Set.empty Filter.colors (Projection.fullView gs oid)
+   in Filter.bakeProducedColors (Map.singleton Binding.playedLand colors) (PlayAsCopy.original permission)
+
 -- CR 305.1 / 707.2: what `pid`'s play of `oid` makes it a copy of under a
 -- play-as-copy permission (Dakkon Blackblade Avatar): Nothing for a play made
 -- as the card itself -- under no such permission, one an effect instructs
 -- (`offered`), or one declining the printed "may" (Prompt.OfferedExtra) where
 -- the card is playable as itself too. Otherwise the copiable values of a card
 -- of the Oracle reference (CR 108.1) chosen at random among those the
--- permission admits, the played card bound at Binding.playedLand, and Just
--- Nothing where none is left.
+-- permission admits (Event.drawReferenceCards), and Just Nothing where none is
+-- left.
 --
--- Narrowed to the cards CR 101.2's land-play prohibitions leave playable, each
--- asked as the copy it would make. Implementation-defined: picking first and
--- refusing the play differs only where a prohibition stops some of the
--- candidates, and every printed one stops every land or no basic one.
+-- The draw is among the cards CR 101.2's land-play prohibitions leave
+-- playable, each asked as the copy it would make: docs/decisions.md, "Whether
+-- a land played as a random copy draws among the playable cards".
 --
 -- ONE permission: CR 902.7's vanguard is the only printing, and a player has
 -- one vanguard.
@@ -3241,18 +3255,35 @@ playedAsCopy offered pid oid = do
       if not taken
         then pure Nothing
         else do
-          let colors = maybe Set.empty Filter.colors (Projection.fullView gs oid)
-              predicate = Filter.bakeProducedColors (Map.singleton Binding.playedLand colors) (PlayAsCopy.original permission)
-          names <- Game.ask (Prompt.ReferenceCards predicate Nothing)
-          let copyOf printingId g = let (minted, board) = Event.mintOutside pid printingId g in Event.copiedSnapshot minted board
-              playable (_, pc) = not (PlayerEffect.prohibitsPlayingLand pid oid (stampedAsCopy pc oid gs))
-          found <- traverse (\name -> fmap (fmap (\printingId -> (name, printingId))) (Game.lookUpCard name)) (ListUtils.nubOrd names)
-          -- Read after the lookups, which intern each printing.
-          interned <- State.get
-          let candidates = filter playable [(name, copyOf printingId interned) | (name, printingId) <- Maybe.catMaybes found]
-          picked <- Game.drawAmong Prompt.RandomCard (fmap fst candidates)
-          pure (Just (picked >>= (`lookup` candidates)))
+          let playable printingId g = not (PlayerEffect.prohibitsPlayingLand pid oid (stampedAsCopy (Event.outsideSnapshot pid printingId g) oid g))
+          picked <- Event.drawReferenceCards playable (copyReference oid permission gs) Nothing 1
+          drawn <- State.get
+          pure (Just (fmap (\printingId -> Event.outsideSnapshot pid printingId drawn) (Maybe.listToMaybe picked)))
     _ -> pure Nothing
+
+-- CR 305.1 / 707.2: the boards a play-as-copy of `oid` is offered on before
+-- the draw names its card (Parun.Engine.Action.landPlays): the card stamped
+-- as a copy of a NAMELESS basic land (Card.faceDownFace's empty name) of each
+-- basic land type, and of none (CR 305.6), the permission's reference admits.
+-- A prohibition that reads the drawn card's name (Conjurer's Ban) is asked of
+-- each candidate at the draw instead.
+--
+-- Not implemented: withholding the play where name prohibitions stop every
+-- candidate, which playedAsCopy's CR 734.1 arm reverses instead (#9915).
+playAsCopyBoards :: PlayerId -> ObjectId -> GameState -> [GameState]
+playAsCopyBoards pid oid gs = case PlayerEffect.playAsCopyPermissions pid oid gs of
+  [] -> []
+  (_, permission) : _ ->
+    let reference = copyReference oid permission gs
+        probe subtypes =
+          Card.Type.MkCard
+            { Card.Type.layout = Layout.Normal,
+              Card.Type.synthetic = False,
+              Card.Type.faces = NonEmpty.singleton (Card.faceDownFace (FaceDownCharacteristics.MkFaceDownCharacteristics (TypeLine.MkTypeLine (Set.singleton Supertype.Basic) (Set.singleton CardType.Land) subtypes) Nothing Nothing Set.empty []))
+            }
+        probes = filter (Projection.referenceAdmits (Game.teams gs) Nothing reference) (probe [] : [probe [t] | t <- [minBound .. maxBound], Subtype.Engine.isBasicLandType t])
+        boardOf card = let (printingId, g) = Game.intern (Printing.ofCard card) gs in stampedAsCopy (Event.outsideSnapshot pid printingId g) oid g
+     in fmap boardOf probes
 
 -- The play itself, `asCopy` where playedAsCopy stamped the card, whose copy
 -- then follows it onto the battlefield.

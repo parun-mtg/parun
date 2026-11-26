@@ -1785,6 +1785,48 @@ mintOutside pid printingId gs =
           }
       )
 
+-- CR 707.2: this printing's copiable values, read off a counterfactual board
+-- holding a copy of it minted outside the game (mintOutside), which is thrown
+-- away with the read.
+outsideSnapshot :: PlayerId -> PrintingId.PrintingId -> GameState.GameState -> PC.ProjectedCharacteristics
+outsideSnapshot pid printingId gs = let (oid, board) = mintOutside pid printingId gs in copiedSnapshot oid board
+
+-- | CR 108.1: up to @count@ distinct cards of the Oracle reference the filter
+-- admits, chosen at random (Prompt.RandomCard) and interned. The interpreter
+-- answers which cards the filter admits, and each card drawn is filtered back
+-- (admittedReferenceCard) and asked `kept` on the board after its lookup: one
+-- refused is dropped and another drawn, so the draw is among the cards kept,
+-- and none kept yields none (CR 609.3).
+drawReferenceCards :: (PrintingId.PrintingId -> GameState.GameState -> Bool) -> Filter.Type.Filter Keyword.Type.Keyword -> Maybe Integer -> Natural -> Game [PrintingId.PrintingId]
+drawReferenceCards kept predicate amount count = do
+  names <- Game.ask (Prompt.ReferenceCards predicate amount)
+  let draw n candidates
+        | n <= 0 = pure []
+        | otherwise = do
+            drawn <- Game.drawAmong Prompt.RandomCard candidates
+            case drawn of
+              Nothing -> pure []
+              Just name -> do
+                found <- admittedReferenceCard predicate amount name
+                g <- State.get
+                let rest = filter (/= name) candidates
+                case found of
+                  Just printingId | kept printingId g -> (printingId :) <$> draw (n - 1) rest
+                  _ -> draw n rest
+  draw count (ListUtils.nubOrd names)
+
+-- | CR 108.1: the reference card of this name, interned, provided the filter
+-- admits it -- an answer outside what the filter admits is not taken.
+admittedReferenceCard :: Filter.Type.Filter Keyword.Type.Keyword -> Maybe Integer -> CardName.CardName -> Game (Maybe PrintingId.PrintingId)
+admittedReferenceCard predicate amount answer = do
+  found <- Game.lookUpCard answer
+  g <- State.get
+  pure $ do
+    printingId <- found
+    card <- Game.cardOfPrinting printingId g
+    Monad.guard (Projection.referenceAdmits (Game.teams g) amount predicate card)
+    Just printingId
+
 -- Alchemy's conjure keyword action: create the given card out of nothing and put
 -- it into the conjuring player's zone.
 --

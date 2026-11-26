@@ -1,0 +1,61 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Aggressive Mining",
+            "label": "mining"
+          }
+        ],
+        "command": [
+          {
+            "card": "Dakkon Blackblade Avatar"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Helix",
+            "label": "helix"
+          },
+          {
+            "card": "Dryad Arbor",
+            "label": "arbor"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Dakkon Blackblade Avatar offers no land play while Aggressive Mining says its controller can't play lands",
+  "note": "CR 101.2: the can't beats the permission, so neither Lightning Helix nor the Dryad Arbor Aggressive Mining stops as itself is offered as a random basic. dakkon-blackblade-avatar-plays-a-colored-card-as-a-random-basic-land offers Lightning Helix on the board without the Mining.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "PlayLand": "$helix"
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

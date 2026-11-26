@@ -3509,3 +3509,23 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Setup.beginGame`; `Parun.VanguardSpec`'s "a
   vanguard's game-start Elf enters after the opening-hand Leylines".
 - **Issue**: none.
+
+## Whether a land played as a random copy draws among the playable cards
+
+- **Question**: Dakkon Blackblade Avatar plays a colored card "as a copy of a
+  basic land card chosen at random". Where CR 101.2 stops some of the
+  candidates (Conjurer's Ban naming Plains, for Lightning Helix), is the card
+  drawn among those the player may play, or among every candidate, the play
+  being reversed when it lands on a prohibited one?
+- **Rules**: CR 101.2, 116.2a, 305.1, 707.2, 734.1; the card has no ruling;
+  CR of 2026-11-06.
+- **Decision**: Among the playable ones: a drawn card CR 101.2 stops as the
+  copy it would make is set aside and the draw repeated. Only where none is
+  left is the play reversed (CR 734.1).
+- **Rejected**: Drawing among every candidate and reversing the play on a
+  prohibited one: the "can't" stops that land, not the permission, which
+  still admits a land the player may play.
+- **Site**: `Parun.Engine.Cast.playedAsCopy`, through
+  `Parun.Engine.Event.drawReferenceCards`' `kept`; the scenario
+  `dakkon-blackblade-avatar-draws-a-basic-land-the-player-may-play`.
+- **Issue**: none.
