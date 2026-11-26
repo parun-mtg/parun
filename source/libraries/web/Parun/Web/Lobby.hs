@@ -8,7 +8,7 @@
 --
 -- WHAT IS NOT IMPLEMENTED:
 --
---   * Deploying creatures (CR 804) (#9794).
+--   * Shared team turns (CR 805) in an Emperor game (#9806).
 module Parun.Web.Lobby where
 
 import qualified Control.Applicative as Applicative
@@ -237,6 +237,9 @@ data Options = MkOptions
     -- | CR 804.1: whether a game between teams uses the deploy creatures
     -- option ('deployOffered').
     deployCreatures :: Bool,
+    -- | CR 805.1: whether a Team vs. Team game uses the shared team turns
+    -- option ('sharedTurnsOffered').
+    sharedTeamTurns :: Bool,
     -- | The minutes each seat a person plays has on its clock
     -- (Parun.Web.Clock), which no rule sets; untimed where absent.
     clock :: Maybe Natural
@@ -246,7 +249,7 @@ data Options = MkOptions
 -- | No option in use: CR 802's attack multiple players, which needs no
 -- seating agreed ('GameSettings.plain').
 noOptions :: Options
-noOptions = MkOptions {variant = MkFreeForAll, ante = False, planechase = False, singlePlanarDeck = False, archenemy = Nothing, attackOption = AttackOption.MultiplePlayers, rangeOfInfluence = Nothing, deployCreatures = False, clock = Nothing}
+noOptions = MkOptions {variant = MkFreeForAll, ante = False, planechase = False, singlePlanarDeck = False, archenemy = Nothing, attackOption = AttackOption.MultiplePlayers, rangeOfInfluence = Nothing, deployCreatures = False, sharedTeamTurns = False, clock = Nothing}
 
 -- | A multiplayer variant a game started here may use (CR 800.2).
 data Variant
@@ -295,6 +298,17 @@ teamed lobby = variantOf lobby `notElem` [MkFreeForAll, MkGrandMelee]
 -- between teams, and not as Emperor, which always uses it (CR 804.1).
 deployOffered :: Lobby -> Bool
 deployOffered lobby = teamed lobby && variantOf lobby /= MkEmperor
+
+-- | Whether the game may choose the shared team turns option: it is Team vs.
+-- Team, whose teams sit together (CR 805.1, 808.2). Two-Headed Giant always
+-- uses it (CR 810.2), and Alternating Teams seats no teammates together (CR
+-- 811.3).
+sharedTurnsOffered :: Lobby -> Bool
+sharedTurnsOffered lobby = variantOf lobby == MkTeamVsTeam
+
+-- | Whether the game uses the shared team turns option ('sharedTurnsOffered').
+sharesTurns :: Lobby -> Bool
+sharesTurns lobby = sharedTurnsOffered lobby && sharedTeamTurns (options lobby)
 
 -- | How many teams a seat may choose among: CR 810.1's two, else as many
 -- as there are seats.
@@ -415,7 +429,11 @@ settings lobby =
         then if count < 2 then Left "Archenemy needs a seat against the archenemy: add one." else Right plain
         else case variantOf lobby of
           MkFreeForAll -> Right free
-          MkTeamVsTeam -> together' free {GameSettings.teams = teams'}
+          MkTeamVsTeam
+            -- CR 805.10, 805.10a: the team attacks as a group under combat
+            -- rules of its own, not CR 803's attack left or right.
+            | sharesTurns lobby -> together' free {GameSettings.teams = teams', GameSettings.sharedTeamTurns = True, GameSettings.attackOption = Just AttackOption.MultiplePlayers}
+            | otherwise -> together' free {GameSettings.teams = teams'}
           MkTwoHeadedGiant
             | sizes /= [2, 2] -> Left "Two-Headed Giant is two teams of two: four seats, two on each team."
             | otherwise -> together' plain {GameSettings.teams = teams', GameSettings.twoHeadedGiant = True, GameSettings.sharedTeamTurns = True, GameSettings.sharedTeamLife = True}
@@ -549,6 +567,9 @@ data Event
   | -- | Toggles whether a game between teams uses the deploy creatures
     -- option (CR 804.1).
     MkDeployCreatures
+  | -- | Toggles whether a Team vs. Team game uses the shared team turns
+    -- option (CR 805.1).
+    MkSharedTeamTurns
   | -- | Sets each seat's time to the one whose value is chosen
     -- (Clock.choices).
     MkClock
@@ -958,6 +979,7 @@ newGameUpdated event typed lobby = case event of
   MkAttackOption -> maybe lobby (\a -> optioned (\o -> o {attackOption = a})) (valued attackOptions)
   MkRangeOfInfluence -> maybe lobby (\r -> optioned (\o -> o {rangeOfInfluence = r})) (valued ranges)
   MkDeployCreatures -> optioned (\o -> o {deployCreatures = not (deployCreatures o)})
+  MkSharedTeamTurns -> optioned (\o -> o {sharedTeamTurns = not (sharedTeamTurns o)})
   MkClock -> maybe lobby (\c -> optioned (\o -> o {clock = c})) (valued Clock.choices)
   MkVariant -> maybe lobby (\v -> (optioned (\o -> o {variant = v})) {teams = Map.empty, emperors = Map.empty}) (valued variants)
   MkTeam place
@@ -1103,10 +1125,9 @@ told lobby
         <> [(Text.pack "Archenemy", maybe (Text.pack "No") (\place -> Text.pack ("Player " <> show (place + 1))) (archenemy chosen'))]
         <> [timed]
         <> [(Text.pack "Deploy creatures", yesNo (deployCreatures chosen')) | deployOffered lobby]
-        <> ( if chosesAttacks lobby
-               then [(Text.pack "Attacks", labelIn attackOptions (attackOption chosen')), (Text.pack "Range of influence", labelIn ranges (rangeOfInfluence chosen'))]
-               else []
-           )
+        <> [(Text.pack "Shared team turns", yesNo (sharedTeamTurns chosen')) | sharedTurnsOffered lobby]
+        <> [(Text.pack "Attacks", labelIn attackOptions (attackOption chosen')) | chosesAttacks lobby, not (sharesTurns lobby)]
+        <> [(Text.pack "Range of influence", labelIn ranges (rangeOfInfluence chosen')) | chosesAttacks lobby]
   where
     timed = (Text.pack "Clock", labelIn Clock.choices (clock chosen'))
     chosen' = options lobby
@@ -1369,9 +1390,10 @@ seatsView lobby =
 -- Archenemy game, and in Emperor each team's emperor; ante, Planechase
 -- and, while it is on, the single planar deck, Archenemy and, while it is
 -- on, the archenemy's seat, each seat's clock, where it may choose it
--- ('deployOffered') CR 804's deploy creatures option, and where the game
--- chooses them ('chosesAttacks') CR 806.2's attack option and range of
--- influence.
+-- ('deployOffered') CR 804's deploy creatures option and
+-- ('sharedTurnsOffered') CR 805's shared team turns option, and where the
+-- game chooses them ('chosesAttacks') CR 806.2's attack option, but under
+-- shared team turns (CR 805.10a), and range of influence.
 optionsView :: Lobby -> Html.Html Event
 optionsView lobby =
   Element.el "fieldset" ["game-options"] [] $
@@ -1391,13 +1413,9 @@ optionsView lobby =
          ]
       <> [clockMenu lobby]
       <> [toggle "option-deploy-creatures" MkDeployCreatures (deployCreatures chosen') "Deploy creatures" "Each creature can tap to give itself to a teammate, as a sorcery." | deployOffered lobby]
-      <> ( if chosesAttacks lobby
-             then
-               [ optionMenu "option-attack" MkAttackOption "Attacks" [(value, label, option == attackOption chosen') | (option, (value, label)) <- attackOptions],
-                 optionMenu "option-range" MkRangeOfInfluence "Range of influence" [(value, label, option == rangeOfInfluence chosen') | (option, (value, label)) <- ranges]
-               ]
-             else []
-         )
+      <> [toggle "option-shared-team-turns" MkSharedTeamTurns (sharedTeamTurns chosen') "Shared team turns" "Each team takes its turns together, attacking and blocking as one." | sharedTurnsOffered lobby]
+      <> [optionMenu "option-attack" MkAttackOption "Attacks" [(value, label, option == attackOption chosen') | (option, (value, label)) <- attackOptions] | chosesAttacks lobby, not (sharesTurns lobby)]
+      <> [optionMenu "option-range" MkRangeOfInfluence "Range of influence" [(value, label, option == rangeOfInfluence chosen') | (option, (value, label)) <- ranges] | chosesAttacks lobby]
   where
     chosen' = options lobby
     toggle :: String -> Event -> Bool -> String -> String -> Html.Html Event
