@@ -1,17 +1,19 @@
 module Parun.Codec.BattlefieldCandidateSpec where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Parun.Codec.BattlefieldCandidate as BattlefieldCandidate
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.BattlefieldCandidate as BattlefieldCandidate
+import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.BattlefieldCandidate" $ do
   -- Instantiated at a natural rather than at ProjectedCharacteristics: what this
-  -- module has to prove is that the three fields are written under their own names
+  -- module has to prove is that the four fields are written under their own names
   -- and in their own order, which the inner codec being a parameter makes
   -- independent of what rides there.
   Spec.it s "a controller and what rides beside it" $
@@ -21,8 +23,9 @@ spec s = Spec.describe s "Parun.Codec.BattlefieldCandidate" $ do
       BattlefieldCandidate.MkBattlefieldCandidate
         { BattlefieldCandidate.controller = PlayerId.MkPlayerId 1,
           BattlefieldCandidate.characteristics = 7,
-          BattlefieldCandidate.attached = Set.fromList [ObjectId.MkObjectId 3]
+          BattlefieldCandidate.attached = Set.fromList [ObjectId.MkObjectId 3],
+          BattlefieldCandidate.counters = Map.singleton CounterKind.PlusOnePlusOne 2
         }
-      " {\"controller\":1,\"characteristics\":7,\"attached\":[3]} "
+      " {\"controller\":1,\"characteristics\":7,\"attached\":[3],\"counters\":[{\"key\":{\"type\":\"PlusOnePlusOne\"},\"value\":2}]} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s (BattlefieldCandidate.codec Common.natural)
