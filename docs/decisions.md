@@ -1966,19 +1966,6 @@ Entries are ordered by the first rule each cites.
   and "CR 807.5b a player with priority for several stacks chooses one".
 - **Issue**: #6117.
 
-## Which Grand Melee turn is the first turn of the game
-
-- **Question**: CR 807.4b starts every marker's turn at once. Is each of those
-  "the first turn of the game" (Necropotence Avatar)?
-- **Rules**: CR 103.8, 807.4b; CR of 2026-11-06.
-- **Decision**: Only the starting player's, the turn numbered 1.
-- **Rejected**: Every opening marker's turn. CR 103.8 names the starting
-  player's turn as the one the game begins with; the others are their
-  takers' first turns, which `Quantity.TurnsBegun` already reads.
-- **Site**: `Parun.Engine.Turn.isFirstTurnOfGame`. `Parun.GrandMeleeSpec`'s
-  "CR 103.8 only the starting player's opening turn is the game's first".
-- **Issue**: #9846.
-
 ## Which turn a Grand Melee read of the active player means
 
 - **Question**: CR 102.1's active player is "the player whose turn it is",

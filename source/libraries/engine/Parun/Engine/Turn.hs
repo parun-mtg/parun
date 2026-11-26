@@ -231,9 +231,13 @@ duringRunningTurn :: (PlayerRef.PlayerRef -> Maybe [PlayerId]) -> GameState -> M
 duringRunningTurn named gs window scope own =
   any (\(active, phase) -> maybe True (`inWindow` phase) window && turnScopeAdmits named gs scope active own) (runningTurns gs)
 
--- | CR 103.8: is the turn being worked the game's first, numbered 1 at setup?
--- In Grand Melee, the starting player's alone (docs/decisions.md, "Which Grand
--- Melee turn is the first turn of the game").
+-- | CR 103.1 / glossary "Starting Player": is the turn being worked the game's
+-- first, the starting player's, numbered 1 at setup? In Grand Melee the other
+-- opening markers' turns are not (CR 807.4b, 901.14a). An anchor read
+-- (docs/decisions.md, "Which turn a Grand Melee read of the active player
+-- means"): "it" is the turn the question arises in, as a step paired with its
+-- player is, not any running turn; an end step's trigger is checked and
+-- resolved (CR 603.4) during that step's own turn.
 isFirstTurnOfGame :: GameState -> Bool
 isFirstTurnOfGame gs = TurnRegisters.turnNumber (GameState.turn gs) == 1
 
