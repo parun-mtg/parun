@@ -164,6 +164,7 @@ import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantZone as GrantZone
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Guess as Guess
+import qualified Parun.Types.HandAction as HandAction
 import qualified Parun.Types.HiddenZone as HiddenZone
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
@@ -3987,6 +3988,24 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         offends c = isVanguard c /= Maybe.isJust (Face.vanguard c)
         offenders = filter (anyFace offends . Printing.card) ps
     Spec.assertEqWith s "vanguard iff modifiers" (fmap (S.nameOf . Printing.card) offenders) []
+  -- Parun.Engine.Setup.beginGame takes Face.gameStartActions off a player's
+  -- vanguard only (CR 902.7), so the field on any other card is never read, and
+  -- performs each action without reading its HandAction.condition.
+  Spec.it s "only a vanguard begins the game with something, unconditionally" $ do
+    ps <- S.allPrintings s corpus
+    let offends c =
+          (not (null (Face.gameStartActions c)) && not (Set.member CardType.Vanguard (TypeLine.types (Face.typeLine c))))
+            || any (Maybe.isJust . HandAction.condition) (Face.gameStartActions c)
+        offenders = filter (anyFace offends . Printing.card) ps
+    Spec.assertEqWith s "no other card begins the game with something" (fmap (S.nameOf . Printing.card) offenders) []
+    avatar <- S.combinedFace <$> S.printingOf s registry "Elvish Champion Avatar"
+    bears <- S.combinedFace <$> S.printingOf s registry "Grizzly Bears"
+    Spec.assertBool s (not (offends avatar)) "the real Elvish Champion Avatar is accepted"
+    Spec.assertBool s (offends bears {Face.gameStartActions = Face.gameStartActions avatar}) "Grizzly Bears printing it is rejected"
+    caverns <- S.combinedFace <$> S.printingOf s registry "Gemstone Caverns"
+    let gate = foldMap (Maybe.maybeToList . HandAction.condition) (Face.openingHandActions caverns)
+    Spec.assertBool s (not (null gate)) "Gemstone Caverns prints a gate"
+    Spec.assertBool s (offends avatar {Face.gameStartActions = fmap (\action -> action {HandAction.condition = Maybe.listToMaybe gate}) (Face.gameStartActions avatar)}) "Gemstone Caverns' gate on it is rejected"
   -- CR 310.4 / 210.1: the same biconditional one rule number over. "Defense is a
   -- characteristic that battles have", so a battle without one has nothing for CR
   -- 310.4b's intrinsic replacement to place and would enter with no defense

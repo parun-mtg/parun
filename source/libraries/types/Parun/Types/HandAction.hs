@@ -9,7 +9,8 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 -- be taken at all.
 --
 -- The carrier of Parun.Types.Face's mulliganActions and openingHandActions, which
--- held a bare list of effects until Gemstone Caverns printed a gate, see #186.
+-- held a bare list of effects until Gemstone Caverns printed a gate, see #186,
+-- and of gameStartActions, a vanguard's, taken from the command zone.
 -- ONE type for both fields, because Parun.Engine.Mulligan.actionsFor is a single hand-scanner
 -- taking the field as a selector, so the two must agree in shape.
 --

@@ -398,10 +398,11 @@ viewOfCardLapsed lapsed face =
 
 -- CR 113.1a / 113.3: does a printed face have any ability at all, given the
 -- kinds of activated ability viewOfCard measured? Count.characteristicsHaveAbility
--- read off the face's own lists, which no layer has touched, plus the two that
+-- read off the face's own lists, which no layer has touched, plus the three that
 -- function before play only (CR 103.5's mulligan and CR 103.6's opening-hand
--- actions). A REGRESSION FENCE: a card in a game is read through its
--- projection, and no card in the pool asks this of a card outside one.
+-- actions, and a vanguard's game-start ones). A REGRESSION FENCE: a card in a
+-- game is read through its projection, and no card in the pool asks this of a
+-- card outside one.
 printedHasAbility :: [AbilityKind.AbilityKind] -> Face.Face Card.Type.Card -> Bool
 printedHasAbility activated face =
   not (null activated)
@@ -423,6 +424,7 @@ printedHasAbility activated face =
     || not (null (Face.castingRestrictions face))
     || not (null (Face.mulliganActions face))
     || not (null (Face.openingHandActions face))
+    || not (null (Face.gameStartActions face))
     || Face.counterability face /= Counterability.Counterable
     || Face.copyability face /= Copyability.Copyable
     || any (`Set.member` types) [CardType.Planeswalker, CardType.Battle]

@@ -12,7 +12,8 @@ import qualified Parun.Types.PlayerId as PlayerId
 -- granted it, the player taking it, and the effects themselves.
 --
 -- Both windows use it: the mulligan-declaration window (CR 103.5b) and the
--- opening-hand window (CR 103.6), which is explicitly not a mulligan.
+-- opening-hand window (CR 103.6), which is explicitly not a mulligan; so does
+-- a vanguard's Face.gameStartActions, taken from the command zone.
 --
 -- A PARAMETER rather than an import because Parun.Engine.Resolve sits ABOVE
 -- Parun.Engine.Mulligan in the module graph, so importing back would close a

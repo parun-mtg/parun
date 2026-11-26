@@ -3488,3 +3488,24 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Resolve.Arms.Damage.search`'s `Search.atRandom`
   draw, proved by the scenarios `enigma-sphinx-avatar-*`.
 - **Issue**: none.
+
+## When a vanguard's game-start actions are taken
+
+- **Question**: Elvish Champion Avatar's "You begin the game with a 1/1 green
+  Elf creature token on the battlefield" is no triggered ability and no
+  opening-hand action. Where among CR 103's steps does the token arrive: before
+  or after CR 103.6's opening-hand actions, so that a Leyline of Vitality put
+  onto the battlefield there does or does not see it enter?
+- **Rules**: CR 103.6, 103.6a, 103.7, 103.8, 302.6, 902.7; the card has no
+  ruling; CR of 2026-11-06.
+- **Decision**: Once every CR 103 step before the first turn is done, after
+  CR 103.7's starting plane, the starting player's first, then each other
+  player's in turn order (CR 103.6's order), and before the game-start event
+  "at the beginning of the game" triggers on.
+- **Rejected**: Before CR 103.5's opening hands, beside the vanguard's own
+  modifiers (CR 902.4, 902.5): the card speaks of the game's beginning, and
+  every other "begin the game with" action (CR 103.6a) comes after the hands.
+  Inside CR 103.6's window: that window is for cards in an opening hand.
+- **Site**: `Parun.Engine.Setup.beginGame`; `Parun.VanguardSpec`'s "a
+  vanguard's game-start Elf enters after the opening-hand Leylines".
+- **Issue**: none.

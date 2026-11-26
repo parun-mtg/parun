@@ -616,6 +616,7 @@ vanillaFace name typeLine =
       Face.counterLimits = [],
       Face.mulliganActions = [],
       Face.openingHandActions = [],
+      Face.gameStartActions = [],
       Face.specialActions = [],
       Face.additionalCosts = [],
       Face.additionalCostChoices = [],
@@ -1503,9 +1504,10 @@ carrierEffects =
       Children.abilityReplacement = Const.Const . replacementPrintedEffects
     }
 
--- CR 103.5b and CR 103.6: the actions a face grants from a HAND, one effect list
--- per action: every faceHandAction child, which is the two fields
--- Parun.Engine.Mulligan passes to handWindow.
+-- CR 103.5b and CR 103.6: the actions a face grants before the game, one effect
+-- list per action: every faceHandAction child, the two fields
+-- Parun.Engine.Mulligan passes to handWindow and the vanguard's
+-- Face.gameStartActions, which Parun.Engine.Setup.beginGame performs.
 --
 -- A list of ACTIONS rather than one flat list, because each action is performed
 -- on its own (Parun.Engine.Mulligan.handWindow performs one and asks again), so a
@@ -1518,7 +1520,7 @@ carrierEffects =
 handActions :: Face.Face Card.Type.Card -> [[Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]]
 handActions = Const.getConst . Children.faceChildren Children.faceLeaves {Children.faceHandAction = \action -> Const.Const [HandAction.effects action]}
 
--- Every effect a card AUTHORS, its two pregame windows included: what
+-- Every effect a card AUTHORS, its pregame actions included: what
 -- cardResolutionEffects reaches, plus the hand actions it deliberately leaves
 -- out, each closed over its own nesting.
 --
@@ -6203,8 +6205,9 @@ activatedAbilityFilters ability =
 --   * `castingPermissions` -- CR 601.3d's flash permission condition and a
 --     graveyard permission's (CR 601.3).
 --   * `counterability` -- CR 113.6g's condition (Exquisite Firecraft).
---   * `mulliganActions` (CR 103.5b) and `openingHandActions` (CR 103.6) -- the two
---     pregame actions, which `cardResolutionEffects` above does not reach.
+--   * `mulliganActions` (CR 103.5b), `openingHandActions` (CR 103.6) and
+--     `gameStartActions` (a vanguard's) -- the three pregame actions, which
+--     `cardResolutionEffects` above does not reach.
 --   * `commanderDeckRules` -- CR 903.5e's cards of any colour identity, matched
 --     before the game with a bare context (Parun.Legality's inIdentity).
 --   * `pregameExile` -- CR 607.2n's cards exiled before the game, matched
@@ -6305,6 +6308,7 @@ cardFilters card =
     <> concatMap (modalFilters . DungeonRoom.ability) (Face.rooms card)
     <> concatMap handActionFilters (Face.mulliganActions card)
     <> concatMap handActionFilters (Face.openingHandActions card)
+    <> concatMap handActionFilters (Face.gameStartActions card)
 
 -- A lint fixture built as a FACE, put back into the one-face card an
 -- Effect.Create's token payload has to be.
@@ -6652,6 +6656,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- `handActionBound` at all.
     Spec.assertBool s (prints Face.mulliganActions) "the pool prints a mulligan action"
     Spec.assertBool s (prints Face.openingHandActions) "the pool prints an opening-hand action"
+    Spec.assertBool s (prints Face.gameStartActions) "the pool prints a game-start action"
     Spec.assertBool
       s
       (any (anyFace (not . all (all (Map.null . Resolve.slotsOf)) . handActions) . Printing.card) ps)
@@ -6716,6 +6721,8 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         stray = SlotName.MkSlotName (Text.pack "stray")
     Spec.assertBool s (not (handActionSlotsOffend face)) "the real Leyline of the Void is accepted"
     Spec.assertBool s (handActionSlotsOffend (overActions (readSlot stray) face)) "a slot nothing binds is rejected"
+    let asGameStart card = card {Face.openingHandActions = [], Face.gameStartActions = Face.openingHandActions card}
+    Spec.assertBool s (handActionSlotsOffend (asGameStart (overActions (readSlot stray) face))) "and in a vanguard's game-start action"
     -- The dataflow the lint must NOT reject: an action that defines a slot and then
     -- reads it back, which is Resolve.definedSlots' whole job on the resolution
     -- carriers.

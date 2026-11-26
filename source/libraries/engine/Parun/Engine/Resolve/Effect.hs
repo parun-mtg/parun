@@ -1005,7 +1005,8 @@ runDamageRewriteEffect runSubgame pending = do
   Monad.when (PendingReplacementEffect.origin pending == PendingOrigin.AsTransforms) (State.modify' (Event.resampleTransformed src))
 
 -- CR 103.5b / CR 103.6: perform the effects of an action a card grants from a
--- player's hand. Parun.Engine.Mulligan's window loops reach this through the
+-- player's hand, or a vanguard's from the command zone. Parun.Engine.Mulligan's
+-- window loops and Parun.Engine.Setup.beginGame reach this through the
 -- HandActionPerformer parameter (see Parun.Types.HandActionPerformer).
 --
 -- The action does not use the stack, so there is nothing to put on it and no
@@ -1019,9 +1020,9 @@ performHandAction runSubgame source player =
         source
         player
         -- CR 115.1: the reserved self slot is NOT a target, so there is no CR
-        -- 608.2b legality question -- the card is in the acting player's hand by
-        -- construction. Binding it is how "this card" is expressible with no
-        -- self-variant opcode.
+        -- 608.2b legality question -- the card is in the acting player's hand, or
+        -- is their vanguard, by construction. Binding it is how "this card" is
+        -- expressible with no self-variant opcode.
         (Map.singleton Binding.triggerSource (Set.singleton (Recipient.ToObject source)))
         (Map.singleton Binding.triggerSource (Set.singleton (Recipient.ToObject source)))
     )

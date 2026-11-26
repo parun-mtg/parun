@@ -165,6 +165,7 @@ armyToken subtype =
               Face.counterLimits = [],
               Face.mulliganActions = [],
               Face.openingHandActions = [],
+              Face.gameStartActions = [],
               Face.specialActions = []
             }
     }

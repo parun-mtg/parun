@@ -707,6 +707,16 @@ data Face card = MkFace
     -- not the starting player" allows the action to some players and not others,
     -- which no CR 103.5b card says.
     openingHandActions :: [HandAction.HandAction card],
+    -- | A vanguard's "you begin the game with", taken from the command zone
+    -- (CR 902.7) once the game begins, by Parun.Engine.Setup.beginGame:
+    -- Elvish Champion Avatar's token. Shaped like openingHandActions but taken
+    -- without being offered, since the card says "you begin", not "you may".
+    --
+    -- Unprinted: such an action on a card that is not a vanguard, which no rule
+    -- puts where beginGame looks, or one carrying a HandAction condition, which
+    -- beginGame does not read. Parun.EffectLintSpec's "only a vanguard begins the
+    -- game with something, unconditionally" keeps both out of card data.
+    gameStartActions :: [HandAction.HandAction card],
     -- | CR 116.2: the special actions this face's printed text grants -- CR
     -- 116.2e's "you may discard this card any time you could cast an instant"
     -- (Circling Vultures). WHERE it is read from is the reader's question and
