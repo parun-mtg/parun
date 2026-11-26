@@ -33,6 +33,8 @@ data SeatView = MkSeatView
     library :: [ObjectView.ObjectView],
     graveyard :: [ObjectView.ObjectView],
     exile :: [ObjectView.ObjectView],
+    -- | CR 407.2: the player's cards in the ante, which any player may examine.
+    ante :: [ObjectView.ObjectView],
     manaPool :: Mana.Mana,
     -- | CR 701.54c: how many times the Ring has tempted the player.
     ringTemptations :: Natural.Natural,

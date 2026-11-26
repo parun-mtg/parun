@@ -31,6 +31,7 @@ codec = Fields.object $ do
   library <- Fields.required "library" (Common.list ObjectView.codec) SeatView.library
   graveyard <- Fields.required "graveyard" (Common.list ObjectView.codec) SeatView.graveyard
   exile <- Fields.required "exile" (Common.list ObjectView.codec) SeatView.exile
+  ante <- Fields.defaulted "ante" [] (Common.list ObjectView.codec) SeatView.ante
   manaPool <- Fields.required "manaPool" Mana.codec SeatView.manaPool
   ringTemptations <- Fields.defaulted "ringTemptations" 0 Common.natural SeatView.ringTemptations
   speed <- Fields.defaulted "speed" Nothing (Common.maybe Common.natural) SeatView.speed
@@ -53,6 +54,7 @@ codec = Fields.object $ do
         SeatView.library = library,
         SeatView.graveyard = graveyard,
         SeatView.exile = exile,
+        SeatView.ante = ante,
         SeatView.manaPool = manaPool,
         SeatView.ringTemptations = ringTemptations,
         SeatView.speed = speed,

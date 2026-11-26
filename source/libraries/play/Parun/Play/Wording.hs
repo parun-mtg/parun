@@ -323,7 +323,7 @@ objects view =
       <> PlayerView.command view
       <> PlayerView.stack view
       <> concat (PlayerView.parkedStacks view)
-      <> concatMap (\s -> SeatView.hand s <> SeatView.library s <> SeatView.graveyard s <> SeatView.exile s) (PlayerView.seats view)
+      <> concatMap (\s -> SeatView.hand s <> SeatView.library s <> SeatView.graveyard s <> SeatView.exile s <> SeatView.ante s) (PlayerView.seats view)
 
 -- | An object by id as the view shows it, or else as the last witnessed move,
 -- look or reveal of it showed it: its characteristics then and no status, so
@@ -376,13 +376,15 @@ named view oid = Maybe.fromMaybe (Text.pack ("object " <> show (ObjectId.unwrap 
 
 -- | An object as a prompt lists it, told apart from others of its name: on
 -- the battlefield or the stack, by its controller and its status (CR 108.4);
--- in a graveyard or exile, by its owner and that zone; elsewhere by name.
+-- in a graveyard, exile or the ante, by its owner and that zone; elsewhere by
+-- name.
 choosable :: PlayerView.PlayerView -> ObjectId.ObjectId -> Text.Text
 choosable view oid = case located view oid of
   Just (Zone.Battlefield, o) -> whose (ObjectView.controller o) <> describe view o
   Just (Zone.Stack, o) -> whose (ObjectView.controller o) <> describe view o <> Text.pack ", on the stack"
   Just (Zone.Graveyard, o) -> whose (Just (ObjectView.owner o)) <> describe view o <> Text.pack ", in a graveyard"
   Just (Zone.Exile, o) -> whose (Just (ObjectView.owner o)) <> describe view o <> Text.pack ", in exile"
+  Just (Zone.Ante, o) -> whose (Just (ObjectView.owner o)) <> describe view o <> Text.pack ", in the ante"
   _ -> named view oid
   where
     whose = maybe Text.empty (\pid -> if pid == PlayerView.viewer view then Text.pack "Your " else player pid <> Text.pack "'s ")
@@ -407,6 +409,7 @@ located view oid =
               <> fmap ((,) Zone.Library) (SeatView.library s)
               <> fmap ((,) Zone.Graveyard) (SeatView.graveyard s)
               <> fmap ((,) Zone.Exile) (SeatView.exile s)
+              <> fmap ((,) Zone.Ante) (SeatView.ante s)
         )
         (PlayerView.seats view)
 

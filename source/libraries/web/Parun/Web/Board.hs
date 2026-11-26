@@ -315,6 +315,7 @@ seatHead marks board own s =
                    ]
                 <> pile marks board "Graveyard" (SeatView.graveyard s)
                 <> pile marks board "Exile" (SeatView.exile s)
+                <> pile marks board "Ante" (SeatView.ante s)
                 <> designations
             )
         ]

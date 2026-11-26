@@ -184,7 +184,7 @@ linking known reading t =
 -- one only a witnessed move, look or reveal showed (Wording.recalled).
 linkable :: PlayerView.PlayerView -> Map.Map Text.Text ObjectId.ObjectId
 linkable view =
-  let shown = PlayerView.battlefield view <> PlayerView.stack view <> concatMap (\seat -> SeatView.hand seat <> SeatView.graveyard seat <> SeatView.exile seat) (PlayerView.seats view)
+  let shown = PlayerView.battlefield view <> PlayerView.stack view <> concatMap (\seat -> SeatView.hand seat <> SeatView.graveyard seat <> SeatView.exile seat <> SeatView.ante seat) (PlayerView.seats view)
       remembered = [(name, oid) | oid <- Map.keys (Wording.snapshots view), Map.notMember oid (Wording.objects view), Just name <- [Wording.knownName view oid]]
    in Map.fromListWith (\_ first -> first) ([(Wording.cardName o, ObjectView.object o) | o <- shown, Maybe.isNothing (ObjectView.ability o), Maybe.isJust (ObjectView.characteristics o)] <> remembered)
 
