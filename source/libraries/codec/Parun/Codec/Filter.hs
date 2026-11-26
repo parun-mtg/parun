@@ -104,6 +104,7 @@ codec keywordCodec =
       Arm.payload "NameWordsAtLeast" Common.natural Filter.NameWordsAtLeast (\x -> case x of Filter.NameWordsAtLeast y -> Just y; _ -> Nothing),
       Arm.payload "HasKeyword" keywordCodec Filter.HasKeyword (\x -> case x of Filter.HasKeyword y -> Just y; _ -> Nothing),
       Arm.payload "HasKeywordFamily" KeywordFamily.codec Filter.HasKeywordFamily (\x -> case x of Filter.HasKeywordFamily y -> Just y; _ -> Nothing),
+      Arm.payload "HasProtectionFrom" Color.codec Filter.HasProtectionFrom (\x -> case x of Filter.HasProtectionFrom y -> Just y; _ -> Nothing),
       Arm.payload "Measures" Measures.codec Filter.Measures (\x -> case x of Filter.Measures y -> Just y; _ -> Nothing),
       Arm.payload "ControlledByRole" TurnRole.codec Filter.ControlledByRole (\x -> case x of Filter.ControlledByRole y -> Just y; _ -> Nothing),
       Arm.payload "HeldByBound" heldByBound (uncurry Filter.HeldByBound) (\x -> case x of Filter.HeldByBound h y -> Just (h, y); _ -> Nothing),
@@ -363,6 +364,7 @@ tagOf x = case x of
   Filter.NameWordsAtLeast {} -> "NameWordsAtLeast"
   Filter.HasKeyword {} -> "HasKeyword"
   Filter.HasKeywordFamily {} -> "HasKeywordFamily"
+  Filter.HasProtectionFrom {} -> "HasProtectionFrom"
   Filter.Measures {} -> "Measures"
   Filter.ControlledByRole {} -> "ControlledByRole"
   Filter.HeldByBound {} -> "HeldByBound"

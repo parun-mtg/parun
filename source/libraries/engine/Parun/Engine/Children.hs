@@ -602,6 +602,7 @@ filterChildren children predicate = case predicate of
   Filter.NameWordsAtLeast _ -> pure predicate
   Filter.HasKeyword k -> fmap Filter.HasKeyword (keyword children k)
   Filter.HasKeywordFamily _ -> pure predicate
+  Filter.HasProtectionFrom _ -> pure predicate
   Filter.Measures measures -> fmap Filter.Measures (measuresChildren children measures)
   Filter.ManaValueParity _ -> pure predicate
   Filter.ManaCostRepeatsSymbol -> pure predicate
