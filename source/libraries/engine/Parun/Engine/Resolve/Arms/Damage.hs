@@ -55,6 +55,7 @@ import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Card as Card.Type
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CarryOver as CarryOver
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.ChangeWord as ChangeWord
@@ -108,6 +109,7 @@ import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MoveMana as MoveMana
 import qualified Parun.Types.NoteKind as NoteKind
 import qualified Parun.Types.Noted as Noted
+import qualified Parun.Types.NumberFloor as NumberFloor
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.ObjectRef (ObjectRef)
@@ -760,7 +762,7 @@ moveMana settle resolving source controller legal (MoveMana.MkMoveMana fromRef t
   Mana.moveMana settle (Common.apnapPlayersOf fromRef legal resolving source controller gs) (foldMap (\ref -> Common.apnapPlayersOf ref legal resolving source controller gs) toRef)
 
 search :: Settle.Settle -> (Game Result -> ManaAbilityPerformer.ManaAbilityPerformer) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Search.Search -> Game ()
-search settle performManaAbility runSubgame resolving source controller legal (Search.MkSearch searcherRef ownerRef zones outside quantity filter_ descriptions upTo destination counters subject foundSlot handSlot librarySlot differentIn exactly andOr top atRandom) =
+search settle performManaAbility runSubgame resolving source controller legal (Search.MkSearch searcherRef ownerRef zones outside quantity filter_ descriptions upTo destination counters subject foundSlot handSlot librarySlot differentIn exactly andOr top selection) =
   -- CR 701.23a: match each candidate through its own CR 613 projection --
   -- rule 613.1 names no zone, so a card in any of the searched zones is folded
   -- exactly as a permanent is, and CR 208.2a's characteristic-defining power
@@ -1085,16 +1087,29 @@ search settle performManaAbility runSubgame resolving source controller legal (S
                     ask rejected = do
                       given <- ListUtils.nubOrd . filter (`List.elem` matches) <$> Game.choose (Prompt.Search decider searcher matches capHere)
                       if admissible given || Set.member given rejected then pure given else ask (Set.insert given rejected)
-                -- Search.atRandom: the interpreter names the find among
-                -- every match, as Common.randomCards does, and nobody is
-                -- asked. Over the matches the look above already narrowed,
-                -- so a replaced search (Aven Mindcensor) draws from its
-                -- portion. The scenarios enigma-sphinx-avatar-* are the proof.
-                -- Drawing up to the cap leaves the completion below nothing.
+                -- Search.selection: at random, the searcher says HOW MANY
+                -- of the matches to find and chance says which, as
+                -- Common.randomCards does: CR 701.23b's permission to find
+                -- fewer is "that player's", and the card hands only the pick
+                -- to chance. Asked only where some match lies in a zone
+                -- mayDecline allows; elsewhere the count is the cap. The
+                -- scenario enigma-sphinx-avatar-s-searcher-may-decline-the-
+                -- random-find is the proof. Over the matches the look above
+                -- already narrowed, so a replaced search draws from its
+                -- portion: enigma-sphinx-avatar-s-random-find-stays-in-aven-
+                -- mindcensor-s-top-four is the proof. Drawing up to the cap
+                -- leaves the completion below nothing.
+                let mayDecline zone = exactly || upTo || Maybe.isNothing cap || (isHidden zone && Filter.statesAQuality admits)
+                    randomCount
+                      | any (\(zone, inZone) -> not (null inZone) && mayDecline zone) byZone =
+                          min capHere <$> Game.choose (Prompt.ChooseNumber decider searcher resolving 0 NumberFloor.Least (Just capHere))
+                      | otherwise = pure capHere
                 answer <-
                   if Set.null searchedZones
                     then pure []
-                    else if atRandom then Game.drawDistinct Prompt.RandomObject capHere matches else ask Set.empty
+                    else case selection of
+                      CardSelection.AtRandom -> randomCount >>= \count -> Game.drawDistinct Prompt.RandomObject count matches
+                      CardSelection.ByChoice -> ask Set.empty
                 -- CR 701.23a: every card found is one the filter admits.
                 -- Filtered, not trusted, deduplicated, and truncated to the cap:
                 -- an inadmissible answer is still taken when repeated.
@@ -1128,8 +1143,7 @@ search settle performManaAbility runSubgame resolving source controller legal (S
                 --
                 -- Search.exactly validated its answer above, which is then the
                 -- whole find: nothing completes it.
-                let mayDecline zone = exactly || upTo || Maybe.isNothing cap || (isHidden zone && Filter.statesAQuality admits)
-                    -- Search.differentIn: "with different names" (CR
+                let -- Search.differentIn: "with different names" (CR
                     -- 201.2b), "with different powers", "don't share a mana
                     -- value". Filtered, not trusted: a card sharing a value
                     -- with one kept ahead of it is dropped. The completion

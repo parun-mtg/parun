@@ -1848,7 +1848,7 @@ cycling cost searchFor =
                 Search.exactly = False,
                 Search.andOr = False,
                 Search.top = Nothing,
-                Search.atRandom = False
+                Search.selection = CardSelection.ByChoice
               }
    in ActivatedAbility.MkActivatedAbility
         { ActivatedAbility.costChoices = [],
@@ -2046,7 +2046,7 @@ searchForSameManaValue cost filter_ destination =
               Search.exactly = False,
               Search.andOr = False,
               Search.top = Nothing,
-              Search.atRandom = False
+              Search.selection = CardSelection.ByChoice
             }
    in ActivatedAbility.MkActivatedAbility
         { ActivatedAbility.costChoices = [],
@@ -7723,7 +7723,7 @@ partnerWith name =
               Search.exactly = False,
               Search.andOr = False,
               Search.top = Nothing,
-              Search.atRandom = False
+              Search.selection = CardSelection.ByChoice
             }
    in Mint.triggerOf
         (TriggerCondition.Enters EntersTrigger.defaultValue)
