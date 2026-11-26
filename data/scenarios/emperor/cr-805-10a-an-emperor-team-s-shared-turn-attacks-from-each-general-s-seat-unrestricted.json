@@ -1,0 +1,51 @@
+{
+  "description": "CR 805.10a / 801.3 / 809.3c an Emperor team's shared turn attacks from each general's own seat",
+  "note": "The control, with CR 507.1's unrestricted option in place of Adjacent: bob's Hill Giant may attack dave, in his range of 2, so the main file's idle Giant is the option and not the range.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "team": 1,
+        "range": 1
+      },
+      {
+        "name": "bob",
+        "team": 1,
+        "range": 2,
+        "emperor": true,
+        "battlefield": [{ "card": "Hill Giant", "label": "giant", "ready": true }]
+      },
+      {
+        "name": "carol",
+        "team": 1,
+        "range": 1
+      },
+      {
+        "name": "dave",
+        "team": 2,
+        "range": 1
+      },
+      {
+        "name": "erin",
+        "team": 2,
+        "range": 2,
+        "emperor": true
+      },
+      {
+        "name": "frank",
+        "team": 2,
+        "range": 1
+      }
+    ],
+    "active": "bob",
+    "step": "BeginningOfCombat",
+    "attackOption": null,
+    "deployCreatures": true,
+    "sharedTeamTurns": true
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$giant"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$giant", "do": { "ChooseAttackTarget": "$dave" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "check": { "Attackers": { "attackers": { "$giant": "$dave" } } } }
+  ]
+}

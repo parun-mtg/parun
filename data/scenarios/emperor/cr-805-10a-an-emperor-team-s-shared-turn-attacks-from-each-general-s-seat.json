@@ -1,0 +1,53 @@
+{
+  "description": "CR 805.10a / 801.3 / 809.3c an Emperor team's shared turn attacks from each general's own seat",
+  "note": "Parun.Engine.Emperor.setUp spelled out under the shared team turns option: alice, bob and carol are team 1 with bob its emperor, dave, erin and frank team 2 with erin its emperor. Each player on the active team is an attacking player, so the defending team is every seat one of them may attack: carol's neighbour dave and alice's neighbour frank. Each creature still attacks only from its controller's seat, so carol's Goblin Piker goes at dave and alice's Grizzly Bears at frank, neither asked where, and bob's Hill Giant, beside only his own generals, cannot attack at all (docs/decisions.md, \"Whether an Emperor game's shared team turns keep the adjacent attack\"). The -unrestricted file is the control.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "team": 1,
+        "range": 1,
+        "battlefield": [{ "card": "Grizzly Bears", "label": "bears", "ready": true }]
+      },
+      {
+        "name": "bob",
+        "team": 1,
+        "range": 2,
+        "emperor": true,
+        "battlefield": [{ "card": "Hill Giant", "label": "giant", "ready": true }]
+      },
+      {
+        "name": "carol",
+        "team": 1,
+        "range": 1,
+        "battlefield": [{ "card": "Goblin Piker", "label": "piker", "ready": true }]
+      },
+      {
+        "name": "dave",
+        "team": 2,
+        "range": 1
+      },
+      {
+        "name": "erin",
+        "team": 2,
+        "range": 2,
+        "emperor": true
+      },
+      {
+        "name": "frank",
+        "team": 2,
+        "range": 1
+      }
+    ],
+    "active": "bob",
+    "step": "BeginningOfCombat",
+    "attackOption": "Adjacent",
+    "deployCreatures": true,
+    "sharedTeamTurns": true
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "View": { "of": "Prompt", "is": { "kind": "DeclareAttackers", "offer": ["$bears", "$piker"] } } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$piker", "$bears"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "check": { "Attackers": { "attackers": { "$piker": "$dave", "$bears": "$frank" } } } }
+  ]
+}

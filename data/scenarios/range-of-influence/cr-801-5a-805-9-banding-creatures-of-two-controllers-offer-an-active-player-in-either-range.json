@@ -73,17 +73,6 @@
     },
     {
       "do": {
-        "Answer": {
-          "prompt": "DeclareBands",
-          "with": []
-        }
-      },
-      "player": "alice",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
-      "do": {
         "Block": {
           "$brigade": [
             "$hero",
