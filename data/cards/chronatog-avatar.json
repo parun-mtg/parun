@@ -1,0 +1,77 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 3
+                          }
+                        }
+                      },
+                      {
+                        "type": "SkipPhase",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "selector": {
+                            "type": "Turn"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "restrictions": [
+            {
+              "type": "TimesEachTurn",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "name": "Chronatog Avatar",
+      "oracleText": "You have no maximum hand size.\n{0}: Draw three cards. You skip your next turn. Activate only once each turn.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "NoMaximumHandSize"
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": -1,
+        "lifeModifier": 1
+      }
+    }
+  ]
+}

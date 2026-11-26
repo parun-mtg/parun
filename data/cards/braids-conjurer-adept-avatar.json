@@ -1,0 +1,196 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "ChosenCardInHand",
+                            "value": {
+                              "count": {
+                                "type": "UpTo",
+                                "value": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              },
+                              "filter": {
+                                "type": "HasCardType",
+                                "value": "Land"
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              }
+                            }
+                          },
+                          "riders": {
+                            "tapped": "Tapped",
+                            "under": {
+                              "type": "Owner"
+                            }
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 3
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "ChosenCardInHand",
+                            "value": {
+                              "count": {
+                                "type": "UpTo",
+                                "value": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "Not",
+                                    "value": {
+                                      "type": "HasCardType",
+                                      "value": "Creature"
+                                    }
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Artifact"
+                                  }
+                                ]
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              }
+                            }
+                          },
+                          "riders": {
+                            "under": {
+                              "type": "Owner"
+                            }
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 4
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "ChosenCardInHand",
+                            "value": {
+                              "count": {
+                                "type": "UpTo",
+                                "value": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              },
+                              "filter": {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              }
+                            }
+                          },
+                          "riders": {
+                            "under": {
+                              "type": "Owner"
+                            }
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "restrictions": [
+            {
+              "type": "SorcerySpeed"
+            }
+          ]
+        }
+      ],
+      "name": "Braids, Conjurer Adept Avatar",
+      "oracleText": "{2}: Each player may put a land card from their hand onto the battlefield tapped.\n{3}: Each player may put a noncreature artifact card from their hand onto the battlefield.\n{4}: Each player may put a creature card from their hand onto the battlefield. Activate only as a sorcery.",
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 0,
+        "lifeModifier": 3
+      }
+    }
+  ]
+}

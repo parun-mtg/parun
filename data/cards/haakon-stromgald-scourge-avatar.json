@@ -1,0 +1,216 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "PayLife",
+                "value": {
+                  "type": "Fixed",
+                  "value": 1
+                }
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "GrantPlayFromExile",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "verb": "Cast",
+                          "zone": "Graveyard"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    "pool": {
+                      "type": "CardsInGraveyard",
+                      "value": {
+                        "type": "Scoped",
+                        "value": {
+                          "type": "You"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Haakon, Stromgald Scourge Avatar",
+      "oracleText": "Pay 1 life: You may cast target creature card in your graveyard this turn.\nWhenever you cast a creature spell from your graveyard, it becomes a black Zombie Knight.\nIf a Zombie Knight would be put into your graveyard from the battlefield, exile it instead.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "ZoneChangeR",
+            "value": {
+              "destination": "Exile",
+              "matching": {
+                "whatObject": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasSubtype",
+                      "value": "Zombie"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Knight"
+                    },
+                    {
+                      "type": "IsInZone",
+                      "value": "Battlefield"
+                    }
+                  ]
+                },
+                "whenDestination": "Graveyard",
+                "whoseObject": {
+                  "type": "You"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    }
+                  ]
+                }
+              },
+              "zone": "Graveyard"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "Colors",
+                            "value": {
+                              "colors": [
+                                "Black"
+                              ],
+                              "mode": "Replace"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "thatSpell"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "CreatureSubtype",
+                            "value": {
+                              "mode": "Replace",
+                              "subtype": "Zombie"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "thatSpell"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "CreatureSubtype",
+                            "value": {
+                              "mode": "InAddition",
+                              "subtype": "Knight"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "thatSpell"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 0,
+        "lifeModifier": -3
+      }
+    }
+  ]
+}

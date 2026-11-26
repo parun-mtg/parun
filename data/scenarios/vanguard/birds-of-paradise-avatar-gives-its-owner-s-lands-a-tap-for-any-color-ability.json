@@ -1,0 +1,173 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bear"
+          }
+        ],
+        "command": [
+          {
+            "card": "Birds of Paradise Avatar",
+            "label": "birds"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Giant Growth",
+            "label": "growth"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "bplains"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "theirs"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Giant Growth",
+            "label": "bgrowth"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Birds of Paradise Avatar lets its owner tap a Plains for green to cast Giant Growth, and gives an opponent's Plains nothing",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $plains",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              }
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$growth",
+          "targets": [
+            "$bear"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$bplains"
+          ],
+          "object": "$bgrowth",
+          "targets": [
+            "$theirs"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bear",
+          "power": 5,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$theirs",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

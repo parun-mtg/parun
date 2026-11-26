@@ -1,0 +1,209 @@
+{
+  "description": "Eladamri, Lord of Leaves Avatar has the player whose first main phase it is add {G}{G}, not its owner, and nothing in the second main phase",
+  "board": {
+    "active": "bob",
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "command": [
+          {
+            "card": "Eladamri, Lord of Leaves Avatar",
+            "label": "eladamri"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "player": "bob",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $eladamri"
+          ]
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "do": "Pass"
+    },
+    {
+      "player": "bob",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "bob",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "turn": 1,
+      "step": "PrecombatMain",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "turn": 1,
+      "step": "PostcombatMain",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "turn": 1,
+      "step": "PostcombatMain",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "bob",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "carol",
+      "turn": 2,
+      "step": "PrecombatMain",
+      "do": "Pass"
+    },
+    {
+      "player": "carol",
+      "turn": 2,
+      "step": "PrecombatMain",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "carol",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

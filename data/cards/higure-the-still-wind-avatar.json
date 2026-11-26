@@ -1,0 +1,110 @@
+{
+  "faces": [
+    {
+      "name": "Higure, the Still Wind Avatar",
+      "oracleText": "Whenever a nontoken creature you control deals combat damage to an opponent, choose a creature card at random from your library, reveal that card, put it into your hand, then shuffle.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "DealsDamage",
+            "value": {
+              "actor": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "IsToken"
+                      }
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              },
+              "kind": "Combat",
+              "recipients": [
+                {
+                  "type": "Player",
+                  "value": {
+                    "type": "Relative",
+                    "value": "Opponent"
+                  }
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "RandomCard",
+                            "value": {
+                              "filter": {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              },
+                              "zone": "Library"
+                            }
+                          },
+                          "slot": "chosen",
+                          "zone": "Hand"
+                        }
+                      },
+                      {
+                        "type": "Reveal",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "chosen"
+                          }
+                        }
+                      },
+                      {
+                        "type": "Shuffle",
+                        "value": {
+                          "type": "Relative",
+                          "value": "You"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": -1,
+        "lifeModifier": 3
+      }
+    }
+  ]
+}

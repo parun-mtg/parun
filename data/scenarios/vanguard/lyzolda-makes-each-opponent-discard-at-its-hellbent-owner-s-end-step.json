@@ -1,0 +1,222 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "command": [
+          {
+            "card": "Lyzolda, the Blood Witch Avatar",
+            "label": "lyzolda"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "hand": [
+          {
+            "card": "Island",
+            "label": "b1"
+          },
+          {
+            "card": "Mountain",
+            "label": "b2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "hand": [
+          {
+            "card": "Island",
+            "label": "c1"
+          },
+          {
+            "card": "Mountain",
+            "label": "c2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Lyzolda, the Blood Witch Avatar makes each opponent discard a card at its owner's end step only while its owner has no cards in hand",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $lyzolda"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$b1"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$c2"
+          ]
+        }
+      },
+      "player": "carol",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mountain",
+          "count": 1,
+          "player": "carol",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mountain",
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "carol",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mountain",
+          "count": 1,
+          "player": "carol",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 4
+    }
+  ]
+}

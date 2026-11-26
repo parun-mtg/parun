@@ -1,0 +1,105 @@
+{
+  "faces": [
+    {
+      "name": "Frenetic Efreet Avatar",
+      "oracleText": "Each permanent you control has phasing. (It phases in or out before you untap during each of your untap steps. While it's phased out, it's treated as though it doesn't exist.)\nAt the beginning of your end step, flip a coin. If you win the flip, take an extra turn after this one.",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "HeldBy",
+              "value": {
+                "holder": "Controller",
+                "relation": "You"
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Phasing"
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Ending",
+                "value": "EndStep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "FlipCoin",
+                        "value": {
+                          "slot": "flip"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "Exactly",
+                        "measured": {
+                          "type": "InSlot",
+                          "value": "flip"
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    },
+                    "effects": [
+                      {
+                        "type": "TakeExtraTurn",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "skips": []
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": -1,
+        "lifeModifier": -3
+      }
+    }
+  ]
+}
