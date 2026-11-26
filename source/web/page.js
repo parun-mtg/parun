@@ -847,7 +847,7 @@ function download({ name, text }) {
 // join screen's queries (Parun.Web.Route's MkJoin) keep the fragment carrying
 // the host's code, so a reload there makes a fresh reply to it; every other
 // screen's drops it.
-const joining = new Set(["?join", "?rejoin"]);
+const joining = new Set(["?join", "?seated", "?rejoin"]);
 let located = location.search;
 function locate({ search, push }) {
   located = search;

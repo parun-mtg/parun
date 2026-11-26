@@ -37,6 +37,10 @@ data Route
 data Stage
   = -- | Still in the host's lobby, so the guest brings a deck.
     MkGathering
+  | -- | Still in the host's lobby, each seat's deck fixed, as a game played on
+    -- from a replay's position (Parun.Web.Lobby.PlayOn), so the guest brings
+    -- none.
+    MkSeated
   | -- | Under way, so it picks up where it stopped, its decks already set.
     MkUnderWay
   deriving (Eq, Show)
@@ -58,6 +62,7 @@ fields route =
         MkHome -> []
         MkPlay -> [(Text.pack "play", Text.empty)]
         MkJoin MkGathering -> [(Text.pack "join", Text.empty)]
+        MkJoin MkSeated -> [(Text.pack "seated", Text.empty)]
         MkJoin MkUnderWay -> [(Text.pack "rejoin", Text.empty)]
         MkDecks deck -> named "decks" deck
         MkBuild deck -> named "build" deck
@@ -101,6 +106,7 @@ parse query =
             named "game" >>= fmap (replay . Web.Replay.MkPlayed),
             MkPlay <$ field "play",
             MkJoin MkGathering <$ field "join",
+            MkJoin MkSeated <$ field "seated",
             MkJoin MkUnderWay <$ field "rejoin",
             MkDecks <$> named "decks",
             MkBuild <$> named "build"

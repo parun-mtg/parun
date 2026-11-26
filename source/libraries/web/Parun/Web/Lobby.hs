@@ -72,6 +72,7 @@ import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Icon as Icon
 import qualified Parun.Web.Link as Link
+import qualified Parun.Web.Route as Route
 import qualified Text.Read as Read
 
 data Lobby = MkLobby
@@ -87,7 +88,8 @@ data Lobby = MkLobby
     -- added changes, never a pick.
     choosing :: Slot,
     -- | Each seat taken by a player invited from another browser, by its
-    -- place in 'theirs' (Parun.Web.Link).
+    -- place in 'theirs', or in a game played on by its place at the table
+    -- (Parun.Web.Link).
     invites :: Map.Map Int Invite,
     -- | The link number the next invite takes, never one an invite took
     -- before, so a closed link's late word reaches no other.
@@ -105,9 +107,9 @@ data Lobby = MkLobby
     -- | Whether a game is in progress, set aside for this lobby, which
     -- starting another abandons.
     paused :: Bool,
-    -- | What was tapped that abandons the game in progress, asked about
-    -- first.
-    abandoning :: Maybe Event,
+    -- | What was tapped that abandons the game in progress, and the value
+    -- typed with it, asked about first.
+    abandoning :: Maybe (Event, Text.Text),
     -- | The options the game is started with.
     options :: Options,
     -- | The team each seat chose (CR 808.1), by its place at the table,
@@ -137,9 +139,23 @@ data PlayOn = MkPlayOn
   deriving (Eq, Show)
 
 -- | A lobby to play on from a replay's position, seated so, each seat's
--- deck as `named` names it.
+-- deck as `named` names it, and each seat filled by an invite given one
+-- ('invitedFor').
 playingOnFrom :: Link.PlayedOn -> [Text.Text] -> Lobby
-playingOnFrom seated named = new {playingOn = Just (MkPlayOn seated named)}
+playingOnFrom seated named = invitedFor new {playingOn = Just (MkPlayOn seated named)}
+
+-- | A game played on with an invite for each seat but the host's that one
+-- fills, a new one taking 'nextLink' onward, and none for any other seat;
+-- a new game as it is.
+invitedFor :: Lobby -> Lobby
+invitedFor lobby = case playingOn lobby of
+  Nothing -> lobby
+  Just table ->
+    let game = begun table
+        wanted = [place | place <- [0 .. length (places table) - 1], let pid = PlayerId.MkPlayerId (Int.toNaturalSaturating place), pid /= Link.host game, Link.fillingAt game pid == Link.MkFilledByInvite]
+        kept = Map.restrictKeys (invites lobby) (Set.fromList wanted)
+        added = filter (`Map.notMember` kept) wanted
+     in lobby {invites = kept <> Map.fromList (zip added (fmap newInvite [nextLink lobby ..])), nextLink = nextLink lobby + length added}
 
 -- | The game to play on, with the lobby's clock; Nothing for a new game.
 playedOn :: Lobby -> Maybe Link.PlayedOn
@@ -152,7 +168,8 @@ fillingChoices =
   [ (Link.defaultFilling, ("bot", "Bot")),
     (Link.MkFilledHere Link.MkHandedOver, ("here", "Player here")),
     (Link.MkFilledHere Link.MkYours, ("yours", "Yourself")),
-    (Link.MkFilledByGoldfish, ("goldfish", "Goldfish (only passes)"))
+    (Link.MkFilledByGoldfish, ("goldfish", "Goldfish (only passes)")),
+    (Link.MkFilledByInvite, ("invited", "Invite a player"))
   ]
 
 -- | Whether two fillings are of one kind, whatever a bot's settings.
@@ -164,7 +181,8 @@ sameKind one two = case (one, two) of
 -- | The game to play on after an event; any other than these changes
 -- nothing: a seat but the host's filled as the value chosen names, its
 -- bot's difficulty or persona chosen, or the host taking it, the seat the
--- host leaves filled as that one was.
+-- host leaves filled as that one was, but one an invited player fills,
+-- whose link is that seat's.
 seatedOn :: Event -> Text.Text -> PlayOn -> PlayOn
 seatedOn event typed table =
   let game = begun table
@@ -190,7 +208,8 @@ seatedOn event typed table =
             Just style <- named Opponent.personaName ->
               filled place (Link.MkFilledByBot level style)
         MkTakeSeat place
-          | other place ->
+          | other place,
+            Link.fillingAt game (seat place) /= Link.MkFilledByInvite ->
               let taken = seat place
                in table {begun = game {Link.host = taken, Link.fillings = Map.insert (Link.host game) (Link.fillingAt game taken) (Map.delete taken (Link.fillings game))}}
         _ -> table
@@ -425,6 +444,11 @@ data Invite = MkInvite
     inviteProblem :: Maybe Text.Text
   }
   deriving (Eq, Show)
+
+-- | The stage an invite's link names: in a game played on, its decks
+-- fixed, so the guest brings none; else still gathering.
+inviteStage :: Lobby -> Route.Stage
+inviteStage lobby = if Maybe.isJust (playingOn lobby) then Route.MkSeated else Route.MkGathering
 
 -- | An invite just made over link number `n`: no link yet, nothing typed.
 newInvite :: Int -> Invite
@@ -837,31 +861,34 @@ deckName root path =
 -- 'opponents'.
 update :: Event -> Text.Text -> Lobby -> Lobby
 update event typed lobby
-  | paused lobby && abandons event lobby = lobby {abandoning = Just event}
+  | paused lobby && abandons event typed lobby = lobby {abandoning = Just (event, typed)}
   | otherwise = settled lobby (updated event typed lobby)
 
--- | Whether this event, done, abandons a game in progress: starting a game,
--- or inviting a player, whose link needs the data channels the game set
--- aside holds (Parun.Browser.aside).
-abandons :: Event -> Lobby -> Bool
-abandons event lobby = case event of
+-- | Whether this event, the value typed being `typed`, done, abandons a game
+-- in progress: starting a game, or inviting a player, whose link needs the
+-- data channels the game set aside holds (Parun.Browser.aside).
+abandons :: Event -> Text.Text -> Lobby -> Bool
+abandons event typed lobby = case event of
   MkStart -> Maybe.isJust (playingOn lobby) || Either.isRight (startable lobby)
-  MkAdd MkInvited -> length (theirs lobby) < mostOthers
-  _ -> False
+  _ -> nextLink (updated event typed lobby) /= nextLink lobby
 
 -- | The lobby once the game in progress is abandoned, and the event asked
--- about, to do next; nothing where none was asked about.
-abandoned :: Lobby -> Maybe (Lobby, Event)
+-- about and its value typed, to do next; nothing where none was asked
+-- about.
+abandoned :: Lobby -> Maybe (Lobby, (Event, Text.Text))
 abandoned lobby = (,) lobby {paused = False, abandoning = Nothing} <$> abandoning lobby
 
 -- | 'update' before any ready flag is cleared; a game played on changes
--- only as 'seatedOn' has it, and by its clock.
+-- only as 'seatedOn' has it, each invite following it ('invitedFor'), by
+-- its clock, and by an invite's reply code and you being ready.
 updated :: Event -> Text.Text -> Lobby -> Lobby
 updated event typed lobby
   | Just table <- playingOn lobby = case event of
       MkClock -> fresh
       MkCancel -> fresh
-      _ -> lobby {playingOn = Just (seatedOn event typed table)}
+      MkReplyCode _ -> fresh
+      MkReady -> fresh
+      _ -> invitedFor lobby {playingOn = Just (seatedOn event typed table)}
   | otherwise = fresh
   where
     fresh = newGameUpdated event typed lobby
@@ -953,12 +980,14 @@ removable :: Lobby -> Int -> Bool
 removable lobby i = i >= 0 && i < length (theirs lobby)
 
 -- | The lobby once the page of the player invited to this slot said this
--- (Parun.Web.Link): their deck, and whether they are ready.
+-- (Parun.Web.Link): their deck, but in a game played on, whose decks are
+-- fixed, and whether they are ready.
 heard :: Int -> Link.Message -> Lobby -> Lobby
 heard i message lobby =
   let adjust f = lobby {invites = Map.adjust f i (invites lobby)}
    in settled lobby $ case message of
-        Link.MkHello name contents -> adjust (\invite -> invite {guestDeck = Just (name, contents)})
+        Link.MkHello name contents
+          | Maybe.isNothing (playingOn lobby) -> adjust (\invite -> invite {guestDeck = Just (name, contents)})
         Link.MkReady on -> adjust (\invite -> invite {guestReady = on})
         _ -> lobby
 
@@ -997,26 +1026,58 @@ rematch (yours NonEmpty.:| rest) invited here =
     }
 
 -- | Whether a game with the players invited starts: there is one, the
--- table can play the variant ('settings'), your deck is chosen, and every
--- player is connected, has a deck and is ready.
+-- table can play the variant ('settings'), your deck is chosen, but in a
+-- game played on, whose decks are fixed, and every player is ready
+-- ('guestsReady').
 starts :: Lobby -> Bool
 starts lobby =
   not (Map.null (invites lobby))
     && Either.isRight (settings lobby)
     && ready lobby
-    && Maybe.isJust (mine lobby)
+    && (Maybe.isJust (mine lobby) || Maybe.isJust (playingOn lobby))
     && guestsReady lobby
 
--- | Whether every player invited is connected, with a deck, and ready, so
--- that you being ready starts the game.
+-- | Whether every player invited is connected, with a deck ('guestDecked'),
+-- and ready, so that you being ready starts the game.
 guestsReady :: Lobby -> Bool
-guestsReady = all (\invite -> connected invite && Maybe.isJust (guestDeck invite) && guestReady invite) . invites
+guestsReady lobby = all (\invite -> connected invite && guestDecked lobby invite && guestReady invite) (invites lobby)
+
+-- | Whether this invited player has the deck they play: one they chose, or
+-- in a game played on, whose decks are fixed, the seat's own.
+guestDecked :: Lobby -> Invite -> Bool
+guestDecked lobby invite = Maybe.isJust (playingOn lobby) || Maybe.isJust (guestDeck invite)
 
 -- | The match-up as the player invited to this slot is shown it, each seat
 -- with its team where the game has teams (CR 808.1), each deck coloured by
--- its name (`named`) or, a guest's, by its list (`listed`).
+-- its name (`named`) or, a guest's, by its list (`listed`); in a game
+-- played on, 'playOnPlaces'.
 placesFor :: (Text.Text -> Set.Set Color.Color) -> (Text.Text -> Set.Set Color.Color) -> Int -> Lobby -> [Link.Place]
-placesFor named listed i lobby =
+placesFor named listed i lobby
+  | Just table <- playingOn lobby = playOnPlaces i lobby table
+  | otherwise = newGamePlaces named listed i lobby
+
+-- | A game played on as the player invited to the seat at place `i` at the
+-- table is shown it: each seat by its name, with its deck as the replay
+-- names it, uncoloured; whether the host and each player invited is ready;
+-- and each seat a bot or the goldfish plays marked a bot's.
+playOnPlaces :: Int -> Lobby -> PlayOn -> [Link.Place]
+playOnPlaces i lobby table =
+  [ Link.MkPlace (if place == i then Text.pack "You" else Wording.player pid) deck readiness botted Set.empty
+  | (place, deck) <- zip [0 ..] (places table),
+    let pid = PlayerId.MkPlayerId (Int.toNaturalSaturating place)
+        hosting = pid == Link.host (begun table)
+        readiness = if hosting then Just (ready lobby) else guestReady <$> Map.lookup place (invites lobby)
+        botted =
+          not hosting && case Link.fillingAt (begun table) pid of
+            Link.MkFilledByBot {} -> True
+            Link.MkFilledByGoldfish -> True
+            Link.MkFilledHere _ -> False
+            Link.MkFilledByInvite -> False
+  ]
+
+-- | 'placesFor' a new game.
+newGamePlaces :: (Text.Text -> Set.Set Color.Color) -> (Text.Text -> Set.Set Color.Color) -> Int -> Lobby -> [Link.Place]
+newGamePlaces named listed i lobby =
   Link.MkPlace (onTeam 0 (Text.pack "Player 1")) (maybe Link.unchosen (DeckBrowser.label (DeckBrowser.titles (browser lobby))) (mine lobby)) (Just (ready lobby)) False (foldMap named (mine lobby))
     : [ case Map.lookup j (invites lobby) of
           Just invite -> Link.MkPlace (onTeam (j + 1) (if j == i then Text.pack "You" else Text.pack (seatName (MkTheirs j)))) (maybe Link.unchosen (\deck -> DeckBrowser.label (DeckBrowser.titleIn deck) (fst deck)) (guestDeck invite)) (Just (guestReady invite)) False (foldMap (listed . snd) (guestDeck invite))
@@ -1030,20 +1091,24 @@ placesFor named listed i lobby =
     crowned place = Emperors.isEmperor (seatEmperors lobby) (Command.idOf (Int.toNaturalSaturating place + 1))
 
 -- | The game's options as an invited player is told them, each a label and
--- its value as 'optionsView' shows them.
+-- its value as 'optionsView' shows them: in a game played on, the clock, its
+-- only option.
 told :: Lobby -> [(Text.Text, Text.Text)]
-told lobby =
-  [(Text.pack "Variant", labelIn variants (variantOf lobby)) | multiplayer (seatCount lobby), not (archenemyGame lobby)]
-    <> [(Text.pack "Play for ante", yesNo (ante chosen')), (Text.pack "Planechase", yesNo (planechase chosen'))]
-    <> [(Text.pack "Single planar deck", yesNo (singlePlanarDeck chosen')) | planechase chosen']
-    <> [(Text.pack "Archenemy", maybe (Text.pack "No") (\place -> Text.pack ("Player " <> show (place + 1))) (archenemy chosen'))]
-    <> [(Text.pack "Clock", labelIn Clock.choices (clock chosen'))]
-    <> [(Text.pack "Deploy creatures", yesNo (deployCreatures chosen')) | deployOffered lobby]
-    <> ( if chosesAttacks lobby
-           then [(Text.pack "Attacks", labelIn attackOptions (attackOption chosen')), (Text.pack "Range of influence", labelIn ranges (rangeOfInfluence chosen'))]
-           else []
-       )
+told lobby
+  | Maybe.isJust (playingOn lobby) = [timed]
+  | otherwise =
+      [(Text.pack "Variant", labelIn variants (variantOf lobby)) | multiplayer (seatCount lobby), not (archenemyGame lobby)]
+        <> [(Text.pack "Play for ante", yesNo (ante chosen')), (Text.pack "Planechase", yesNo (planechase chosen'))]
+        <> [(Text.pack "Single planar deck", yesNo (singlePlanarDeck chosen')) | planechase chosen']
+        <> [(Text.pack "Archenemy", maybe (Text.pack "No") (\place -> Text.pack ("Player " <> show (place + 1))) (archenemy chosen'))]
+        <> [timed]
+        <> [(Text.pack "Deploy creatures", yesNo (deployCreatures chosen')) | deployOffered lobby]
+        <> ( if chosesAttacks lobby
+               then [(Text.pack "Attacks", labelIn attackOptions (attackOption chosen')), (Text.pack "Range of influence", labelIn ranges (rangeOfInfluence chosen'))]
+               else []
+           )
   where
+    timed = (Text.pack "Clock", labelIn Clock.choices (clock chosen'))
     chosen' = options lobby
     yesNo on = Text.pack (if on then "Yes" else "No")
     labelIn :: (Eq a) => [(a, (String, String))] -> a -> Text.Text
@@ -1096,12 +1161,19 @@ blocking lobby
 waiting :: Lobby -> Maybe String
 waiting lobby = case blocking lobby of
   Just why -> Just why
-  Nothing -> case [(i, invite) | (i, invite) <- Map.toList (invites lobby), not (connected invite && Maybe.isJust (guestDeck invite) && guestReady invite)] of
+  Nothing -> case [(i, invite) | (i, invite) <- Map.toList (invites lobby), not (connected invite && guestDecked lobby invite && guestReady invite)] of
     (i, invite) : _
-      | not (connected invite) -> Just (seatName (MkTheirs i) <> " is still to connect.")
-      | Maybe.isNothing (guestDeck invite) -> Just (seatName (MkTheirs i) <> " is choosing a deck.")
-      | otherwise -> Just (seatName (MkTheirs i) <> " is not ready yet.")
+      | not (connected invite) -> Just (invitedName lobby i <> " is still to connect.")
+      | not (guestDecked lobby invite) -> Just (invitedName lobby i <> " is choosing a deck.")
+      | otherwise -> Just (invitedName lobby i <> " is not ready yet.")
     [] -> Nothing
+
+-- | The name of the seat invite `i` takes: by its place in 'theirs', or in a
+-- game played on by its place at the table (Parun.Play.Wording.player).
+invitedName :: Lobby -> Int -> String
+invitedName lobby i
+  | Maybe.isJust (playingOn lobby) = Text.unpack (Wording.player (PlayerId.MkPlayerId (Int.toNaturalSaturating i)))
+  | otherwise = seatName (MkTheirs i)
 
 -- | Whether Start, or Ready with players invited, may be pressed.
 pressable :: Lobby -> Bool
@@ -1124,8 +1196,10 @@ newGameView lobby =
 
 -- | The lobby of a game played on: each seat the replay has, by its
 -- number, with its deck; yours marked, and each other's filling, a bot's
--- difficulty and persona, and the way to take it; the clock, its only
--- option, the others being the replay's; and Start at the foot.
+-- difficulty and persona, an invited player's link (inviteSteps) and
+-- whether they are ready, and the way to take it, but an invited player's;
+-- the clock, its only option, the others being the replay's; and Start, or
+-- Ready with players invited, at the foot.
 playOnView :: Lobby -> PlayOn -> Html.Html Event
 playOnView lobby table =
   Element.el "main" ["lobby", "new-game", "play-on"] [] . pure . Element.el "section" ["seats"] [Element.attr "aria-label" (Text.pack "Seats")] $
@@ -1152,6 +1226,8 @@ playOnView lobby table =
                 Link.MkFilledHere Link.MkYours -> Element.string "Y"
                 Link.MkFilledHere Link.MkHandedOver -> Element.string "P"
                 Link.MkFilledByGoldfish -> Element.string "G"
+                Link.MkFilledByInvite -> Element.string "P"
+          invited = Map.lookup place (invites lobby)
        in Element.el "div" (["lobby-seat", "play-on-seat"] <> ["on" | yours]) [] $
             Element.el
               "div"
@@ -1161,7 +1237,10 @@ playOnView lobby table =
                   "span"
                   ["seat-head"]
                   []
-                  ([Element.el "span" ["avatar"] [] [avatar], Element.el "strong" ["seat-name"] [] [Element.text (Wording.player pid)]] <> [Element.el "span" ["chip", "choosing"] [] [Element.string "You"] | yours]),
+                  ( [Element.el "span" ["avatar"] [] [avatar], Element.el "strong" ["seat-name"] [] [Element.text (Wording.player pid)]]
+                      <> [Element.el "span" ["chip", "choosing"] [] [Element.string "You"] | yours]
+                      <> [Element.el "span" ["chip"] [] [Element.string (if guestReady invite then "Ready \x2713" else "Not ready")] | Just invite <- [invited], connected invite]
+                  ),
                 Element.el "span" ["seat-deck"] [] [Element.el "span" ["seat-deck-name"] [] [Element.text deck]]
               ]
               : if yours
@@ -1180,7 +1259,8 @@ playOnView lobby table =
                       ]
                   ]
                     <> [BotSettings.botView ("play-on-" <> show place) (MkDifficulty place) (MkPersona place) (level, style) | Link.MkFilledByBot level style <- [filling]]
-                    <> [Element.el "div" ["seat-actions"] [] [Element.el "button" ["quiet", "take-seat"] [Element.attr "type" (Text.pack "button"), Element.on "click" (MkTakeSeat place), Element.attr "aria-label" (Text.pack "Take " <> Wording.player pid)] [Element.string "Take this seat"]]]
+                    <> foldMap (inviteSteps place) invited
+                    <> [Element.el "div" ["seat-actions"] [] [Element.el "button" ["quiet", "take-seat"] [Element.attr "type" (Text.pack "button"), Element.on "click" (MkTakeSeat place), Element.attr "aria-label" (Text.pack "Take " <> Wording.player pid)] [Element.string "Take this seat"]] | Maybe.isNothing invited]
 
 -- | The menu of each seat's time on its clock (Clock.choices).
 clockMenu :: Lobby -> Html.Html Event
@@ -1346,7 +1426,7 @@ startView lobby = case abandoning lobby of
           ["choices"]
           []
           [ Element.button ["primary", "resume"] MkResume [Element.string "Resume"],
-            Element.button [] MkAbandon [Element.string (if asked == MkStart then "Abandon and play" else "Abandon and invite")],
+            Element.button [] MkAbandon [Element.string (if fst asked == MkStart then "Abandon and play" else "Abandon and invite")],
             Element.button [] MkCancel [Element.string "Cancel"]
           ]
       ]
@@ -1449,20 +1529,27 @@ inviteView i invite extra =
             Element.el "span" ["seat-note", "muted"] [] [Element.string (if connected invite then "Chooses their own deck" else "Invited from another browser")]
           ]
       ]
-      <> ( if connected invite
-             then []
-             else case link invite of
-               Nothing -> [Element.el "p" ["invite-step"] [] [Element.string "Making the link\x2026"]]
-               Just url ->
-                 [ Element.el "label" [] [Element.attr "for" (field "invite-link")] [Element.string "1. Send them this link"],
-                   Element.copyable ("invite-link-" <> show i) url,
-                   Element.el "label" [] [Element.attr "for" (field "invite-reply")] [Element.string "2. Paste the code they send back"],
-                   Element.el "input" ["invite-reply"] [Element.attr "id" (field "invite-reply"), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "spellcheck" (Text.pack "false"), Element.on "input" (MkReplyCode i)] [],
-                   Element.el "button" ["connect"] ([Element.attr "type" (Text.pack "button"), Element.on "click" (MkConnect i)] <> [Element.attr "disabled" Text.empty | Text.null (Text.strip (replyCode invite))]) [Element.string "Connect"]
-                 ]
-         )
-      <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p] | p <- Maybe.maybeToList (inviteProblem invite)]
-      <> [Element.el "p" ["invite-warning"] [] [Element.string "Your browser runs the game, so you could see their hidden cards: invite only friends."]]
+      <> inviteSteps i invite
       <> [Element.el "div" ["seat-actions"] [] extra | not (null extra)]
+
+-- | How invite `i` connects, until it does: the link to send, the box the
+-- reply code goes in, and Connect; why the connection failed or ended; and
+-- the warning that the host sees every card.
+inviteSteps :: Int -> Invite -> [Html.Html Event]
+inviteSteps i invite =
+  ( if connected invite
+      then []
+      else case link invite of
+        Nothing -> [Element.el "p" ["invite-step"] [] [Element.string "Making the link\x2026"]]
+        Just url ->
+          [ Element.el "label" [] [Element.attr "for" (field "invite-link")] [Element.string "1. Send them this link"],
+            Element.copyable ("invite-link-" <> show i) url,
+            Element.el "label" [] [Element.attr "for" (field "invite-reply")] [Element.string "2. Paste the code they send back"],
+            Element.el "input" ["invite-reply"] [Element.attr "id" (field "invite-reply"), Element.attr "type" (Text.pack "text"), Element.attr "autocomplete" (Text.pack "off"), Element.attr "spellcheck" (Text.pack "false"), Element.on "input" (MkReplyCode i)] [],
+            Element.el "button" ["connect"] ([Element.attr "type" (Text.pack "button"), Element.on "click" (MkConnect i)] <> [Element.attr "disabled" Text.empty | Text.null (Text.strip (replyCode invite))]) [Element.string "Connect"]
+          ]
+  )
+    <> [Element.el "p" ["problem"] [Element.attr "role" (Text.pack "alert")] [Element.text p] | p <- Maybe.maybeToList (inviteProblem invite)]
+    <> [Element.el "p" ["invite-warning"] [] [Element.string "Your browser runs the game, so you could see their hidden cards: invite only friends."]]
   where
     field name = Text.pack (name <> "-" <> show i)

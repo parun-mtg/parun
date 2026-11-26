@@ -44,6 +44,13 @@ spec s = Spec.describe s "Parun.Web.Join" $ do
       Spec.assertEqWith s "Make my reply code on" [Text.isInfixOf (Text.pack "disabled") (Html.toText b) | b <- Html.elements (Text.pack "button") (Join.view underWay), Html.content b == Text.pack "Make my reply code"] [False]
       Spec.assertBool s (not (any ((`Text.isInfixOf` shown) . Text.pack) ["Choose your deck", "class=\"deck-grid\"", "Your deck"])) "no deck picker"
       Spec.assertBool s (Join.canReply underWay) "the reply code made"
+    Spec.it s "asks no deck of a game whose decks are fixed, its reply code to make at once" $ do
+      let seated = decked {Join.stage = Route.MkSeated}
+          shown = Html.toText (Join.view seated)
+          held = seated {Join.connected = True, Join.places = [place "Player 1" (Just False) False, place "You" (Just False) False]}
+      Spec.assertEqWith s "Make my reply code on" [Text.isInfixOf (Text.pack "disabled") (Html.toText b) | b <- Html.elements (Text.pack "button") (Join.view seated), Html.content b == Text.pack "Make my reply code"] [False]
+      Spec.assertEqWith s "no deck picker" (fmap ((`Text.isInfixOf` shown) . Text.pack) ["Choose your deck", "class=\"deck-grid\"", "Your deck", "each seat's deck set"]) [False, False, False, True]
+      Spec.assertEqWith s "Ready on, the deck the host holds" [Text.isInfixOf (Text.pack "disabled") (Html.toText b) | b <- Html.elements (Text.pack "button") (Join.view held), Html.content b == Text.pack "Ready"] [False]
     Spec.it s "names your deck as the host holds it after a Rematch of a game rejoined" $ do
       let back = Join.rematched decked {Join.connected = True, Join.places = [place "Player 1" (Just True) False, place "You" (Just True) False]}
           shown = Html.toText (Join.view back)
