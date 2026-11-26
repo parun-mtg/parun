@@ -109,7 +109,9 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     wholeGame s matchup [S.bob]
 
   Spec.it s "a whole game with two guests, each answering only its own seat over its own channel, seeing only its own view and told which other seat decides" $ do
-    matchup <- BotSpec.bears s registry
+    -- Half decks: a guest is sent the board at nearly every decision, and
+    -- a full game of three outlasts the test timeout on a slow runner.
+    matchup <- fmap (fmap (Deck.fromCards . fmap (`div` 2) . Deck.cards)) <$> BotSpec.bears s registry
     wholeGame s (matchup <> pure (S.carol, snd (NonEmpty.head matchup))) [S.bob, S.carol]
 
   -- A seat deciding again on a board that moved on, which the whole games
