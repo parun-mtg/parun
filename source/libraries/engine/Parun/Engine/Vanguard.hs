@@ -90,8 +90,9 @@ isVanguard oid gs = maybe False isVanguardFace (Game.faceOf oid gs)
 -- stated-zone scan uses it as an exclusion instead, leaving these objects to
 -- `inCommand`, whose `commandCandidate` ignores a stated set: that differs only
 -- for a command-zone object stating some other zone, which no card does.
--- Parun.Engine.CombatRestriction.inForce reads a construct carrying no stated
--- set to ask (Parun.Types.CombatRestriction has no functionsFrom field).
+-- Parun.Engine.CombatRestriction.inForce and
+-- Parun.Engine.BlockPermission.additionalBlocks read constructs carrying no
+-- stated set to ask (neither type has a functionsFrom field).
 --
 -- A CLASSIFICATION and never an identity: the emblem arm reads
 -- Parun.Types.Source's own tag and the card arm reads the printed card type.

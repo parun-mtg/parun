@@ -26,7 +26,8 @@ import qualified Parun.Types.Quantity as Quantity
 -- attackers, so one reader could not answer both. CantBlockMoreThan is also
 -- about the size of the whole declaration, where this is about one creature.
 --
--- Gathered LIVE from the battlefield on every read and never captured, the
+-- Gathered LIVE from the battlefield (and a vanguard's from the command zone,
+-- CR 902.7) on every read and never captured, the
 -- posture every sibling takes, so an Equipment leaving lifts the permission it
 -- granted. CR 509.1b's note that an evasion ability gained after a legal block
 -- does not affect that block is the rules saying the same of the other side.

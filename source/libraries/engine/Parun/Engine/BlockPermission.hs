@@ -18,6 +18,7 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.Rewrite as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Quantity as Quantity
+import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Types.BlockPermission as BlockPermission
 import Parun.Types.GameState (GameState)
@@ -130,4 +131,17 @@ additionalBlocks candidates gs =
       -- word swap (CR 612.3) -- CombatRestriction.gathered's reading.
       grantedRules = Projection.grantedRuleAbilities gs
       fromGrant source = rowsOf source [] (RuleAbilities.blockPermissions (grantedRules source))
-   in Map.fromListWith (\a b -> (+) <$> a <*> b) (concatMap (\source -> fromPermanent source <> fromGrant source) (Set.toList (GameState.battlefield gs)))
+      -- CR 902.7: a face-up vanguard card's permission functions from the
+      -- command zone, on CombatRestriction.gathered's terms -- CR 113.6p's list
+      -- rather than the whole zone, no liveness gate and no CR 612.1 word swap.
+      -- data/scenarios/vanguard/two-headed-giant-of-foriys-avatar-lets-its-owner-s-creature-block-two-attackers.json
+      -- proves it.
+      fromCommandZone source
+        | Vanguard.functionsFromCommandZone source gs =
+            rowsOf source [] (RuleAbilities.blockPermissions (Projection.ruleAbilitiesOf source gs))
+        | otherwise = []
+   in Map.fromListWith
+        (\a b -> (+) <$> a <*> b)
+        ( concatMap (\source -> fromPermanent source <> fromGrant source) (Set.toList (GameState.battlefield gs))
+            <> concatMap fromCommandZone (Set.toList (GameState.command gs))
+        )
