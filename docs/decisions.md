@@ -3509,3 +3509,22 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Setup.beginGame`; `Parun.VanguardSpec`'s "a
   vanguard's game-start Elf enters after the opening-hand Leylines".
 - **Issue**: none.
+
+## What Dakkon Blackblade Avatar's random land is drawn among
+
+- **Question**: Dakkon Blackblade Avatar plays a colored card "as a copy of a
+  basic land card chosen at random that can produce mana of one of the card's
+  colors." Where some of those lands can't be played (Conjurer's Ban naming
+  Plains, under a Lightning Helix), is the land drawn among the ones that can,
+  or among all of them, the play refused when the draw lands on one that
+  can't?
+- **Rules**: CR 101.2, 116.2a, 305.1, 707.2; the card has no ruling; CR of
+  2026-11-06.
+- **Decision**: Among the ones that can be played: each candidate is asked as
+  the copy it would make, and the play is offered only while one is left.
+- **Rejected**: Drawing first and refusing: the play would be offered and then
+  do nothing on some draws, a special action taken that CR 101.2 forbade after
+  the fact. Neither reading is forced, and the card has no ruling.
+- **Site**: `Parun.Engine.Cast.asCopyCandidates`, proved by the scenario
+  `dakkon-blackblade-avatar-draws-the-basic-land-among-those-that-can-be-played`.
+- **Issue**: none.

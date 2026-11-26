@@ -436,7 +436,7 @@ conjure settle resolving source controller legal payload = do
           -- nothing conjures nothing.
           referenceAmount from = FromReference.amount from >>= Common.evaluateForRecipient viewOf context gs resolving source conjuring
           pickReference predicate amount names = do
-            found <- pickName names >>= Common.admittedReferenceCard predicate amount
+            found <- pickName names >>= Event.admittedReferenceCard predicate amount
             g <- State.get
             pure (fmap (\card -> (card, Nothing)) (found >>= (`Game.cardOfPrinting` g)))
           referencePickers from count = do
@@ -664,18 +664,18 @@ becomeCopy resolving source controller legal chosen (BecomeCopy.MkBecomeCopy ori
     CopyOriginal.AtRandom _ -> pure []
   let onStackIn g oid = List.find ((== Zone.Stack) . Object.zone) (Game.lookupObject oid g)
       -- The copiable values, and the original's stack incarnation whose
-      -- choices CR 707.2 hands on. A named or defined card's are read off a
-      -- counterfactual board holding it (Event.mintOutside), which is
-      -- thrown away with the read; it is on no stack, so it hands on none.
-      outside gs = fmap (\printingId -> let (oid, board) = Event.mintOutside controller printingId gs in (Event.copiedSnapshot oid board, Nothing)) named
+      -- choices CR 707.2 hands on. A named or defined card's are
+      -- Event.outsideSnapshot's; it is on no stack, so it hands on none.
+      outside gs = fmap (\printingId -> (Event.outsideSnapshot controller printingId gs, Nothing)) named
       copiedOriginal gs = case original of
         CopyOriginal.OfObject _ -> case originals of
           [oid] -> Just (Event.copiedSnapshotWithLastKnown oid gs, onStackIn gs oid)
           _ -> Nothing
         CopyOriginal.Named _ -> outside gs
         CopyOriginal.Defined _ -> outside gs
-        -- Unprinted: a permanent becoming a copy of a random reference card;
-        -- Parun.EffectLintSpec keeps it out of card data.
+        -- Unprinted: an effect making an object a copy of a random reference
+        -- card (Dakkon Blackblade Avatar's card is played as one, which is
+        -- PlayerEffect.PlayAsCopy); Parun.EffectLintSpec keeps it out of card data.
         CopyOriginal.AtRandom _ -> outside gs
   before <- State.get
   State.modify' $ \gs ->

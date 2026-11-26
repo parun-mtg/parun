@@ -6,6 +6,7 @@ import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Const as Const
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Monoid as Monoid
@@ -57,6 +58,7 @@ import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AppliedReduction as AppliedReduction
 import qualified Parun.Types.Binding as Binding.Type
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card.Type
@@ -3199,8 +3201,9 @@ playLand settle offered pid oid mName = do
   copy <- playedAsCopy offered pid oid
   case copy of
     Nothing -> playLandAs settle offered False pid oid mName
-    -- Implementation-defined: a play-as-copy permission whose reference admits
-    -- no card the player may play plays nothing; the CR is silent.
+    -- Implementation-defined: a play-as-copy whose candidates are all gone
+    -- plays nothing, which Action.playableLands' listing of the same
+    -- candidates (asCopyCandidates) leaves unreachable; the CR is silent.
     Just Nothing -> pure ()
     -- CR 707.2: the card is the copy as it is played, so the reads below
     -- (landFacesOf, CR 101.2's prohibitions, CR 614.12's entry) see the land.
@@ -3216,15 +3219,9 @@ stampedAsCopy pc oid gs = gs {GameState.objects = Map.adjust (\o -> o {Object.bi
 -- play-as-copy permission (Dakkon Blackblade Avatar): Nothing for a play made
 -- as the card itself -- under no such permission, one an effect instructs
 -- (`offered`), or one declining the printed "may" (Prompt.OfferedExtra) where
--- the card is playable as itself too. Otherwise the copiable values of a card
--- of the Oracle reference (CR 108.1) chosen at random among those the
--- permission admits, the played card bound at Binding.playedLand, and Just
--- Nothing where none is left.
---
--- Narrowed to the cards CR 101.2's land-play prohibitions leave playable, each
--- asked as the copy it would make. Implementation-defined: picking first and
--- refusing the play differs only where a prohibition stops some of the
--- candidates, and every printed one stops every land or no basic one.
+-- the card is playable as itself too, which is not asked where no copy is
+-- left. Otherwise the copiable values of one of asCopyCandidates chosen at
+-- random, and Just Nothing where none is left.
 --
 -- ONE permission: CR 902.7's vanguard is the only printing, and a player has
 -- one vanguard.
@@ -3233,26 +3230,68 @@ playedAsCopy offered pid oid = do
   gs <- State.get
   case (offered, PlayerEffect.playAsCopyPermissions pid oid gs, Game.lookupLayerOne oid gs, Game.cardOfHandMember oid gs) of
     (False, (src, permission) : _, Just obj, Just card) -> do
+      learnReferenceCards (asCopyFilter oid permission gs)
+      candidates <- State.gets (asCopyCandidates pid oid permission)
       let itself = not (null (Game.landFacesOf obj card)) && not (PlayerEffect.prohibitsPlayingLand pid oid gs)
       taken <-
-        if itself
+        if itself && not (null candidates)
           then (== OptionalDecision.Exercises) <$> Game.choose (Prompt.OfferedExtra (Decide.deciderFor pid gs) pid src (PlayerEffect.Type.PlayAsCopy permission))
-          else pure True
+          else pure (not itself)
       if not taken
         then pure Nothing
         else do
-          let colors = maybe Set.empty Filter.colors (Projection.fullView gs oid)
-              predicate = Filter.bakeProducedColors (Map.singleton Binding.playedLand colors) (PlayAsCopy.original permission)
-          names <- Game.ask (Prompt.ReferenceCards predicate Nothing)
-          let copyOf printingId g = let (minted, board) = Event.mintOutside pid printingId g in Event.copiedSnapshot minted board
-              playable (_, pc) = not (PlayerEffect.prohibitsPlayingLand pid oid (stampedAsCopy pc oid gs))
-          found <- traverse (\name -> fmap (fmap (\printingId -> (name, printingId))) (Game.lookUpCard name)) (ListUtils.nubOrd names)
-          -- Read after the lookups, which intern each printing.
-          interned <- State.get
-          let candidates = filter playable [(name, copyOf printingId interned) | (name, printingId) <- Maybe.catMaybes found]
           picked <- Game.drawAmong Prompt.RandomCard (fmap fst candidates)
           pure (Just (picked >>= (`lookup` candidates)))
     _ -> pure Nothing
+
+-- CR 108.1: the reference cards a play-as-copy permission admits for `oid`,
+-- its ProducesColorOf baked with the card's colors.
+asCopyFilter :: ObjectId -> PlayAsCopy.PlayAsCopy -> GameState -> Filter.Type.Filter Keyword
+asCopyFilter oid permission gs =
+  let colors = maybe Set.empty Filter.colors (Projection.fullView gs oid)
+   in Filter.bakeProducedColors (Map.singleton Binding.playedLand colors) (PlayAsCopy.original permission)
+
+-- CR 305.1 / 707.2: the cards `pid` may play `oid` as a copy of under this
+-- permission, by first-face name, each with its copiable values: those the
+-- reference admits (Bookkeeping.referenceCards, empty until learned) that `oid`,
+-- stamped as the copy, is neither prohibited from being played as (CR 101.2)
+-- nor out of its timing as (CR 116.2a, 702.8a). Read as the copy because the
+-- card IS the land while it is played: a card with flash in the hand lends the
+-- land none.
+--
+-- Narrowed before the draw rather than drawn first and refused:
+-- docs/decisions.md, "What Dakkon Blackblade Avatar's random land is drawn
+-- among". Action.playableLands lists the play only where this is non-empty.
+asCopyCandidates :: PlayerId -> ObjectId -> PlayAsCopy.PlayAsCopy -> GameState -> [(CardName.CardName, PC.ProjectedCharacteristics)]
+asCopyCandidates pid oid permission gs =
+  let known = Map.findWithDefault [] (asCopyFilter oid permission gs) (Bookkeeping.referenceCards (GameState.bookkeeping gs))
+      named printingId = fmap (\card -> (Face.name (NonEmpty.head (Card.Type.faces card)), Event.outsideSnapshot pid printingId gs)) (Game.cardOfPrinting printingId gs)
+      playable (_, pc) =
+        let stamped = stampedAsCopy pc oid gs
+         in not (PlayerEffect.prohibitsPlayingLand pid oid stamped)
+              && ( Turn.sorcerySpeedWindow pid gs
+                     || Keyword.hasFlash (Map.keysSet (PC.keywords (Projection.project oid stamped)))
+                     || PlayerEffect.mayPlayAsThoughItHadFlash pid oid stamped
+                 )
+   in filter playable (ListUtils.nubOrdOn fst (Maybe.mapMaybe named known))
+
+-- CR 108.1: ask the reference, once per filter, for the cards it admits, and
+-- remember them interned in Bookkeeping.referenceCards for asCopyCandidates,
+-- which cannot ask. Asked, not chosen, as Engine.learnReferenceNames' names.
+learnReferenceCards :: Filter.Type.Filter Keyword -> Game ()
+learnReferenceCards predicate = do
+  known <- State.gets (Map.member predicate . Bookkeeping.referenceCards . GameState.bookkeeping)
+  Monad.unless known $ do
+    names <- Game.ask (Prompt.ReferenceCards predicate Nothing)
+    printings <- Maybe.catMaybes <$> traverse (Event.admittedReferenceCard predicate Nothing) (ListUtils.nubOrd names)
+    State.modify' (\g -> g {GameState.bookkeeping = (GameState.bookkeeping g) {Bookkeeping.referenceCards = Map.insert predicate printings (Bookkeeping.referenceCards (GameState.bookkeeping g))}})
+
+-- learnReferenceCards for every card in `pid`'s hand a play-as-copy permission
+-- reaches, so Action.playableLands' listing has the candidates in hand.
+learnAsCopyCandidates :: PlayerId -> Game ()
+learnAsCopyCandidates pid = do
+  gs <- State.get
+  Monad.mapM_ learnReferenceCards (ListUtils.nubOrd [asCopyFilter oid permission gs | (oid, permission) <- PlayerEffect.playAsCopyHand pid gs])
 
 -- The play itself, `asCopy` where playedAsCopy stamped the card, whose copy
 -- then follows it onto the battlefield.

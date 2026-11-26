@@ -525,6 +525,7 @@ blankBookkeeping =
       Bookkeeping.printingIds = Map.empty,
       Bookkeeping.lookedUp = Set.empty,
       Bookkeeping.referenceNames = Map.empty,
+      Bookkeeping.referenceCards = Map.empty,
       Bookkeeping.lastChoice = Timestamp.MkTimestamp 0,
       Bookkeeping.repeatPicks = Nothing,
       Bookkeeping.undone = Map.empty,

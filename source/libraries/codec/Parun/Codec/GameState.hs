@@ -208,6 +208,7 @@ codec resolve = Fields.object $ do
   printings <- Fields.defaulted "printings" Map.empty (Common.naturalMap PrintingId.codec (Printing.reference resolve)) (Bookkeeping.printings . GameState.bookkeeping)
   lookedUp <- Fields.defaulted "lookedUp" Set.empty (Common.set PrintingId.codec) (Bookkeeping.lookedUp . GameState.bookkeeping)
   referenceNames <- Fields.defaulted "referenceNames" Map.empty (Common.keyedList (Common.keyValue (Filter.codec Keyword.codec) (Common.set CardName.codec))) (Bookkeeping.referenceNames . GameState.bookkeeping)
+  referenceCards <- Fields.defaulted "referenceCards" Map.empty (Common.keyedList (Common.keyValue (Filter.codec Keyword.codec) (Common.list PrintingId.codec))) (Bookkeeping.referenceCards . GameState.bookkeeping)
   outsideCopies <- Fields.defaulted "outsideCopies" Set.empty (Common.set ObjectId.codec) GameState.outsideCopies
   outsideFinds <- Fields.defaulted "outsideFinds" Map.empty (Common.naturalMap ObjectId.codec OutsideCard.codec) GameState.outsideFinds
   copyStandIns <- Fields.defaulted "copyStandIns" Map.empty (Common.naturalMap ObjectId.codec Timestamp.codec) GameState.copyStandIns
@@ -330,6 +331,7 @@ codec resolve = Fields.object $ do
               Bookkeeping.printingIds = invert printings,
               Bookkeeping.lookedUp = lookedUp,
               Bookkeeping.referenceNames = referenceNames,
+              Bookkeeping.referenceCards = referenceCards,
               Bookkeeping.lastChoice = lastChoice,
               Bookkeeping.repeatPicks = repeatPicks,
               Bookkeeping.undone = undone,

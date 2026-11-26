@@ -890,7 +890,7 @@ prohibitsPlayingLand pid oid gs =
         -- No CR 601.3a lookahead beside it, where the cast side has one: a land
         -- play announces no choice that could move a characteristic, CR 305.1
         -- being a special action with no proposal to make. A play-as-copy's
-        -- random card is no choice either, and Cast.playedAsCopy asks this of
+        -- random card is no choice either, and Cast.asCopyCandidates asks this of
         -- each candidate.
         PlayerEffect.CantPlayLands criterion -> matchesObjectFor pid source criterion oid gs
         -- A permission, prohibiting nothing.
@@ -2428,6 +2428,12 @@ playAsCopyPermissions :: PlayerId -> ObjectId -> GameState -> [(ObjectId, PlayAs
 playAsCopyPermissions pid oid gs
   | oid `notElem` Game.zoneMembers Zone.Hand pid gs = []
   | otherwise = [(src, permission) | (source, PlayerEffect.PlayAsCopy permission) <- applying pid gs, matchesObjectFrom source (PlayAsCopy.cards permission) oid gs, Just src <- [RowSource.object source]]
+
+-- playAsCopyPermissions over `pid`'s whole hand, each card named with its
+-- permissions' payloads; asked of the rows first, so a player under none pays
+-- for no hand.
+playAsCopyHand :: PlayerId -> GameState -> [(ObjectId, PlayAsCopy.PlayAsCopy)]
+playAsCopyHand pid gs = [(oid, permission) | (source, PlayerEffect.PlayAsCopy permission) <- applying pid gs, Maybe.isJust (RowSource.object source), oid <- Game.zoneMembers Zone.Hand pid gs, matchesObjectFrom source (PlayAsCopy.cards permission) oid gs]
 
 -- CR 602.5: the clauses of its rider that grants let `pid` activate an ability
 -- under this rule-702 keyword of `srcId` past -- Leonin Shikari's "equip

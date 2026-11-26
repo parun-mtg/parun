@@ -348,7 +348,8 @@ representatives pcs gs candidates =
 --     the two games are disjoint (Setup.funnelBack takes the max), so no key of
 --     it can be a candidate.
 --   * Scratch.ambientAmounts is keyed by slot and valued at a number, and
---     Bookkeeping.referenceNames is keyed by a Filter and valued at names.
+--     Bookkeeping.referenceNames is keyed by a Filter and valued at names, and
+--     Bookkeeping.referenceCards at printings.
 --   * The turn, phase, priority, result, daytime, signal, supply, printing,
 --     event-group, scan-cursor, subgame and die-roll fields describe the GAME
 --     rather than any object.
