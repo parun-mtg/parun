@@ -109,8 +109,12 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
     wholeGame s matchup [S.bob]
 
   Spec.it s "a whole game with two guests, each answering only its own seat over its own channel, seeing only its own view and told which other seat decides" $ do
-    matchup <- BotSpec.bears s registry
-    wholeGame s (matchup <> pure (S.carol, snd (NonEmpty.head matchup))) [S.bob, S.carol]
+    -- Ten cards a deck, so a game of three decks out in a few rounds,
+    -- inside the test's time budget on every CI runner.
+    bear <- S.printingOf s registry "Grizzly Bears"
+    forest <- S.printingOf s registry "Forest"
+    let deck = Deck.fromCards (Map.fromList [(bear, 6), (forest, 4)])
+    wholeGame s ((S.alice, deck) NonEmpty.:| [(S.bob, deck), (S.carol, deck)]) [S.bob, S.carol]
 
   -- A seat deciding again on a board that moved on, which the whole games
   -- above never reach, every seat always passing (#9704).
