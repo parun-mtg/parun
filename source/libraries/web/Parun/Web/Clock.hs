@@ -5,8 +5,9 @@
 --
 -- WHAT IS NOT IMPLEMENTED:
 --
---   * A seat out of time in a game of three or more leaving it, the others
---     playing on: the game stops (#9757).
+--   * A seat out of time in a game of three or more at a question other
+--     than its priority leaving it, the others playing on: the game stops
+--     (#9646).
 module Parun.Web.Clock where
 
 import qualified Data.Map.Strict as Map
@@ -20,6 +21,7 @@ import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Wording as Wording
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Reply as R
+import qualified Parun.Types.Request as Request
 import qualified Parun.Web.Element as Element
 import qualified Parun.Web.Html as Html
 
@@ -59,11 +61,13 @@ stop at clocks = case running clocks of
 -- | A seat's exchange, `ask`, on its clock where it has one: started as the
 -- seat is asked, read and changed through `clocks` and `change`, at the
 -- times `now` tells, stopped once it answers; `within` gives up waiting at
--- a deadline, which ends the seat's input, the game stopping
--- (Game.wired), and keeps the seat as the one out of time. RemoteSeatSpec's
--- guest out of time is the proof.
-timed :: (Monad m) => m Double -> (Double -> m (Maybe (Either Text.Text R.Reply)) -> m (Maybe (Maybe (Either Text.Text R.Reply)))) -> m Clocks -> ((Clocks -> Clocks) -> m ()) -> PlayerId.PlayerId -> Protocol.Exchange m -> Protocol.Exchange m
-timed now within clocks change seat ask request = do
+-- a deadline, the request going to `expire`, which takes the seat out of a
+-- game playing on where it can (Parun.Play.Command.MkLeaving), else ends
+-- the seat's input, the game stopping (Game.wired), and keeps the seat as
+-- the one out of time. RemoteSeatSpec's guest out of time is the proof,
+-- and its seat out of time at its priority in a game of three.
+timed :: (Monad m) => m Double -> (Double -> m (Maybe (Either Text.Text R.Reply)) -> m (Maybe (Maybe (Either Text.Text R.Reply)))) -> m Clocks -> ((Clocks -> Clocks) -> m ()) -> (Request.Request -> m ()) -> PlayerId.PlayerId -> Protocol.Exchange m -> Protocol.Exchange m
+timed now within clocks change expire seat ask request = do
   begun <- now
   bank <- Map.lookup seat . left <$> clocks
   case bank of
@@ -73,7 +77,7 @@ timed now within clocks change seat ask request = do
       answered <- within (begun + l) (ask request)
       ended <- now
       change (stop ended)
-      maybe (change (\c -> c {out = Just seat}) >> pure Nothing) pure answered
+      maybe (expire request >> change (\c -> c {out = Just seat}) >> pure Nothing) pure answered
 
 -- | The running clock as the page keeps it for a reload
 -- (Parun.Web.Link.savedRunning): its seat, that seat's time left as it

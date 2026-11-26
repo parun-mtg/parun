@@ -6,6 +6,8 @@
 module Parun.RemoteSeatSpec where
 
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Trans.Class as Trans
+import qualified Control.Monad.Trans.Except as Except
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.List as List
@@ -28,6 +30,7 @@ import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.Departure as Departure
 import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
@@ -38,12 +41,14 @@ import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Playout as Playout
+import qualified Parun.Types.Program as Program
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.SearchMethod as SearchMethod
+import qualified Parun.Types.Status as Status
 import qualified Parun.Types.Weights as Weights
 import qualified Parun.Web.Clock as Clock
 import qualified Parun.Web.Ending as Ending
@@ -164,12 +169,40 @@ spec s registry = Spec.describe s "RemoteSeat" $ do
           pure (Just (Right (answer request)))
         -- Waiting gives up once the deadline passed (Browser.within).
         within deadline decide = decide >>= \answered -> State.gets fst >>= \at -> pure (if at >= deadline then Nothing else Just answered)
-        timed request = Clock.timed (State.gets fst) within (State.gets snd) (State.modify' . fmap) (seatOf request) onScreen request
-    (outcome, (_, after)) <- State.runStateT (Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) timed (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept (pure ()) Search.unhurried options Search.known n) | n <- [1, 2]]) (S.seeded 1) Map.empty matchup) (0 :: Double, Clock.starting (Just 2) (Set.fromList [S.alice, S.bob]))
+        timed request = Clock.timed (State.gets fst) within (State.gets snd) (State.modify' . fmap) (const (pure ())) (seatOf request) onScreen request
+    (outcome, (_, after)) <- State.runStateT (Game.run Program.foldProgramM (S.fixtureRegistry []) GameSettings.plain Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) timed (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept (pure ()) Search.unhurried options Search.known n) | n <- [1, 2]]) (S.seeded 1) Map.empty matchup) (0 :: Double, Clock.starting (Just 2) (Set.fromList [S.alice, S.bob]))
     Spec.assertEqWith s "the game stops" (fmap fst outcome) (Left (Text.pack "end of input"))
     Spec.assertEqWith s "Player 2 out of time" (Clock.out after) (Just S.bob)
     Spec.assertEqWith s "each seat charged its own time" (Clock.left after, Clock.running after) (Map.fromList [(S.alice, 120), (S.bob, 0)], Nothing)
     Spec.assertEqWith s "lost to Player 1" (fmap (fst . Ending.leftEarly 2 (Text.pack "ran out of time") S.bob . Just) [S.alice, S.bob]) [Ending.MkWon, Ending.MkLost]
+
+  Spec.it s "CR 104.3a / 800.4 a whole game of three on the clocks: Player 2's running out at its priority takes it out of the game, which plays on to a result" $ do
+    matchup <- BotSpec.bears s registry
+    let decks = NonEmpty.toList matchup <> [(S.carol, snd (NonEmpty.head matchup))]
+        options = Lobby.playOptions Map.empty 3 S.alice (Set.fromList [S.bob, S.carol])
+        seatOf = Question.seat . Request.question
+        -- Player 2 takes half a minute over each priority, the others none;
+        -- a seat out of time answers its concession question, asked again
+        -- (Command.rewinding), yes, off the clock.
+        onScreen request = do
+          Monad.when (seatOf request == S.bob && Question.Web.atPriority request) (Trans.lift (State.modify' (\(at, clocks) -> (at + 30, clocks))))
+          pure (Just (Right (answer request)))
+        within deadline decide = decide >>= \answered -> Trans.lift (State.gets fst) >>= \at -> pure (if at >= deadline then Nothing else Just answered)
+        -- Out of time at its priority, the seat leaves (Command.MkLeaving).
+        expire request = Monad.when (Question.Web.atPriority request) (Except.throwE (seatOf request))
+        timed request = do
+          out <- Trans.lift (State.gets ((== Just 0) . Map.lookup (seatOf request) . Clock.left . snd))
+          if out && Question.kind (Request.question request) == Text.pack "Concede"
+            then pure (Just (Right (R.Text (Text.pack "Concedes"))))
+            else Clock.timed (Trans.lift (State.gets fst)) within (Trans.lift (State.gets snd)) (Trans.lift . State.modify' . fmap) expire (seatOf request) onScreen request
+    let (outcome, (_, after)) = State.runState (Except.runExceptT (Game.run (Command.rewinding Except.catchE) (S.fixtureRegistry []) GameSettings.plain Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) timed (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept (pure ()) Search.unhurried options Search.known n) | n <- [1, 2, 3]]) (S.seeded 1) Map.empty (NonEmpty.fromList decks))) (0 :: Double, Clock.starting (Just 2) (Set.fromList [S.alice, S.bob, S.carol]))
+    case outcome of
+      Right (Right (Result.Won winner, gs)) -> do
+        Spec.assertBool s (winner /= S.bob) "a seat still playing wins"
+        Spec.assertEqWith s "Player 2 left the game, conceding" (fmap Player.status (Map.lookup S.bob (GameState.players gs))) (Just (Status.Departed Departure.Conceded))
+      _ -> Spec.assertBool s False ("the game plays on to a winner: " <> show (fmap (fmap fst) outcome))
+    Spec.assertEqWith s "no seat kept as out of time, so none stops the game" (Clock.out after) Nothing
+    Spec.assertEqWith s "Player 2's time spent" (Map.lookup S.bob (Clock.left after)) (Just 0)
 
   Spec.it s "a guest whose connection drops mid-game rejoins, is sent the match-up, its seat and the request again, and the game finishes" $ do
     matchup <- BotSpec.bears s registry
@@ -278,7 +311,7 @@ onOneScreen s registry = do
   matchup <- BotSpec.bears s registry
   let options = Lobby.playOptions (Map.singleton 0 (Difficulty.MkEasy, Persona.MkBalanced)) 2 S.alice (Set.singleton S.bob)
       onScreen request = State.modify' (request :) >> pure (Just (Right (answer request)))
-  (outcome, requests) <- State.runStateT (Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) onScreen (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept (pure ()) Search.unhurried options Search.known n) | n <- [1, 2]]) (S.seeded 1) Map.empty matchup) []
+  (outcome, requests) <- State.runStateT (Game.run Program.foldProgramM (S.fixtureRegistry []) GameSettings.plain Limits.standard [] (Map.fromList [(Command.idOf n, Command.answerer (S.fixtureRegistry []) onScreen (pure Nothing) (const (pure ())) (pure Map.empty) Search.unkept (pure ()) Search.unhurried options Search.known n) | n <- [1, 2]]) (S.seeded 1) Map.empty matchup) []
   pure (outcome, reverse requests, options)
 
 -- The requests of these, in order, before which the screen is handed
@@ -321,7 +354,7 @@ build = Text.pack "test"
 -- guest told whose decision the game waits on. A guest whose channel drops
 -- rejoins the first time, and not again.
 hosted :: (Monad m) => [PlayerId.PlayerId] -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Wire m (Either Text.Text (Result.Result, GameState.GameState))
-hosted guests matchup = Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [Link.deciding decides] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.seeing (\shown -> State.modify' (\w -> w {hostSeen = seenBy shown (hostSeen w)})) (Link.remote (rejoined g) played (Map.findWithDefault Ending.unseen g . hostSeen <$> State.get) (pure Map.empty) (pure Nothing) (channel g))) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+hosted guests matchup = Game.run Program.foldProgramM (S.fixtureRegistry []) GameSettings.plain Limits.standard [Link.deciding decides] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) (Protocol.bySeat (Map.fromList [(g, Link.seeing (\shown -> State.modify' (\w -> w {hostSeen = seenBy shown (hostSeen w)})) (Link.remote (rejoined g) played (Map.findWithDefault Ending.unseen g . hostSeen <$> State.get) (pure Map.empty) (pure Nothing) (channel g))) | g <- guests]) (page hostPage))) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
   where
     decides seat gs depth = do
       let owing g = if g == seat then Nothing else Just (seat, (PlayerView.Engine.viewFor g gs) {PlayerView.priority = Nothing}, depth)
@@ -358,14 +391,14 @@ data Resumed = MkResumed
   }
 
 resumedGame :: (Monad m) => NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Resumed m (Either Text.Text (Result.Result, GameState.GameState))
-resumedGame matchup = Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) resuming) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+resumedGame matchup = Game.run Program.foldProgramM (S.fixtureRegistry []) GameSettings.plain Limits.standard [] (Map.fromList [(pid, Game.wired (S.fixtureRegistry []) resuming) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
 
 -- resumedGame with Bob's seat the search bot ('searching'), its answers
 -- stored and kept alongside the page's (Game.remembered).
 againstSearch :: (Monad m) => NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.StateT Resumed m (Either Text.Text (Result.Result, GameState.GameState))
 againstSearch matchup =
   let seat pid = if pid == S.bob then Game.remembered nextStored (\reply -> State.modify' (\r -> r {kept = reply : kept r})) searching else Game.wired (S.fixtureRegistry []) resuming
-   in Game.run (S.fixtureRegistry []) GameSettings.plain Limits.standard [] (Map.fromList [(pid, seat pid) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
+   in Game.run Program.foldProgramM (S.fixtureRegistry []) GameSettings.plain Limits.standard [] (Map.fromList [(pid, seat pid) | (pid, _) <- NonEmpty.toList matchup]) (S.seeded 1) Map.empty matchup
 
 -- The search bot, at 2 samples cut off after 40 prompts, noting each search.
 searching :: (Monad m) => Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play (State.StateT Resumed m))

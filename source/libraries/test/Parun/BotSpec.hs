@@ -116,6 +116,7 @@ import qualified Parun.Types.PlayerInstruction as PlayerInstruction
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PrintingId as PrintingId
+import qualified Parun.Types.Program as Program
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
@@ -704,7 +705,7 @@ oid = ObjectId.MkObjectId 7
 data Answered = MkAnswered {within :: Bool, attacked :: Bool}
 
 played :: Word.Word32 -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> ((Result.Result, GameState.GameState), [Answered])
-played seed matchup = State.runState (State.evalStateT (Driver.match [watching] seats GameSettings.plain Limits.standard Map.empty matchup) (S.seeded seed)) []
+played seed matchup = State.runState (State.evalStateT (Driver.match Program.foldProgramM [watching] seats GameSettings.plain Limits.standard Map.empty matchup) (S.seeded seed)) []
 
 -- played's game stopped where turn `turn` ends, with no result to wait for.
 playedTo :: Natural -> Word.Word32 -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (GameState.GameState, [Answered])

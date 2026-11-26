@@ -52,6 +52,7 @@ import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Types.Status as Status
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Web.Attribute as Attribute
 import qualified Parun.Web.Bar as Bar
@@ -85,8 +86,8 @@ data Event
   | -- | Hides the card shown.
     MkClose
   | -- | Concedes the game (CR 104.3a): at once where that decides it
-    -- (decisive), else passes now, and the hotseat answers its next
-    -- concession question yes.
+    -- (decisive) or the seat has priority (atPriority), else passes now,
+    -- and the hotseat answers its next concession question yes.
     MkConcede
   | -- | Leaves the game for the home screen, to resume it later.
     MkHome
@@ -110,8 +111,8 @@ data Outcome
     MkReplied R.Reply
   | -- | Not answered, and why.
     MkRefused Text.Text
-  | -- | Not answered: the seat asked conceded, which ends the game at once
-    -- (decisive).
+  | -- | Not answered: the seat asked conceded, leaving at once where it
+    -- can (decisive, atPriority).
     MkConceded
   deriving (Eq, Show)
 
@@ -406,23 +407,25 @@ eyebrow board = Element.el "p" (["eyebrow", "moment"] <> ["yours" | Board.yours 
 -- offered, so a card's sheet carries no action; in place of a question
 -- what the game is waiting on, the seats of `deciding` if any; and
 -- the auto-pass level, which Hotseat keeps for the seat's next request.
--- While those seats decide, the menu leaves for the home screen, and
--- concedes (CR 104.3a) unless the seat has, `conceded`, which it then does
--- at once where that decides the game (decisive), else at its next
+-- While those seats decide, the menu leaves for the home screen, and,
+-- unless the seat has conceded (`conceded`) or left the game, concedes (CR
+-- 104.3a): at once where that decides the game (decisive), else at its next
 -- priority. Nothing unless the screen faces (the first) the
 -- seat asked, since the board shows that seat's hidden cards.
 watching :: Maybe PlayerId.PlayerId -> [PlayerId.PlayerId] -> Bool -> Request.Request -> Screen -> Maybe (Html.Html Event)
 watching facing deciding conceded request screen = do
   Monad.guard $ facing == Just (Question.seat (Request.question request))
-  let status = case (deciding, Request.view request) of
-        (_ : _, _) -> waitingOn deciding <> (if conceded && not (decisive request) then " You concede when you next have priority." else "")
+  let -- CR 800.4a: a seat that left the game has nothing left to concede.
+      left = any (\b -> any (\seat -> SeatView.player seat == PlayerView.viewer b && SeatView.status seat /= Status.Playing) (PlayerView.seats b)) (Request.view request)
+      status = case (deciding, Request.view request) of
+        (_ : _, _) -> waitingOn deciding <> (if conceded && not left && not (decisive request) then " You concede when you next have priority." else "")
         (_, Just b)
           | not (PlayerView.begun b) -> "Waiting for the game to begin\x2026"
           | not (null (PlayerView.stack b)) -> "Resolving\x2026"
           | PlayerView.active b /= PlayerView.viewer b -> Text.unpack (Wording.player (PlayerView.active b)) <> " is taking their turn\x2026"
         _ -> "Moving on\x2026"
       shown = request {Request.view = fmap (\b -> b {PlayerView.priority = Nothing}) (Request.view request), Request.question = (Request.question request) {Question.offer = R.Null}}
-  pure . table shown screen (autoPass (level screen)) (if null deciding then barControls False Nothing else barControls True (if conceded then Nothing else Just MkConcede)) (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
+  pure . table shown screen (autoPass (level screen)) (if null deciding then barControls False Nothing else barControls True (if conceded || left then Nothing else Just MkConcede)) (Board.MkMarks (\o -> Card.MkCue [] (MkRead (ObjectView.object o)) Nothing) (const Nothing)) $
     foldMap (pure . eyebrow) (Request.view request) <> [Element.el "p" ["waiting"] [] [Icon.loading ["small"], Element.string status]]
 
 -- | What the game waits on while these seats decide, or the other
@@ -689,11 +692,20 @@ handsOver yours facing seat = facing /= Just seat && not (Set.member seat yours 
 -- the other wins (CR 104.3a, 104.2a). The game stands still while a
 -- request is pending, so leaving then is leaving as it was asked.
 --
--- A seat leaving a game of three or more at once is not implemented
--- (#9757, #9646), nor a subgame (CR 730.1a), whose end the main game
--- outlasts (#9791): the seat concedes at its next priority.
+-- A seat leaving a game of three or more at once but at its priority
+-- (atPriority) is not implemented (#9646), nor a subgame (CR 730.1a), whose
+-- end the main game outlasts (#9791): the seat concedes at its next
+-- priority.
 decisive :: Request.Request -> Bool
 decisive request = Request.depth request == 0 && maybe False ((== 2) . length . PlayerView.seats) (Request.view request)
+
+-- | Whether the seat asked leaving while this request is pending is leaving
+-- as it was asked its concession question just before, which a game playing
+-- on asks again (Parun.Play.Command.rewinding): the main game's priority,
+-- the seat's own (CR 724.6), CR 104.3a's question asked of the holder just
+-- before it (Parun.Engine.Engine.priorityDecision).
+atPriority :: Request.Request -> Bool
+atPriority request = Request.depth request == 0 && Question.kind (Request.question request) == Text.pack "ChooseAction" && Maybe.isNothing (Question.for (Request.question request))
 
 -- | What an event does, the options picked so far being `picked`.
 step :: Request.Request -> Set.Set (Natural, Natural) -> Event -> Text.Text -> Outcome
@@ -752,7 +764,7 @@ step request picked event typed = case event of
   MkUnpeek -> MkPicking picked
   MkLevel _ -> MkPicking picked
   MkConcede
-    | decisive request -> MkConceded
+    | decisive request || atPriority request -> MkConceded
     | otherwise -> maybe (MkRefused $ Text.pack "Concede when you have priority.") (MkReplied . R.Number) $ passIndex request
   MkSkip _ -> maybe (MkRefused $ Text.pack "There is no pass to make.") (MkReplied . R.Number) $ passIndex request
   MkAuto -> maybe (MkRefused $ Text.pack "Auto can't pay the rest of this cost. Choose a source.") MkReplied $ auto request

@@ -42,16 +42,19 @@ play page lookUp levelRef channel link rejoin seat seen leave = do
   Hotseat.keepingLevel levelRef seatRef . Exception.handle (\Hotseat.MkAbandonedGame -> pure Ending.MkAbandoned) $ do
     -- The seat the host last said decides, until the guest's own is asked.
     decidingRef <- IORef.newIORef Nothing
-    let -- A concession that decides the game (Web.Question.decisive) is
-        -- the host's to end it with.
+    let -- A concession that leaves at once (Web.Question.MkConceded) is
+        -- the host's to take the seat out with.
         concede _ = Link.send channel Link.MkConcede
+        -- One the guest's own question asks leaves at once (the host
+        -- rewinds where the seat has priority, Command.rewinding).
+        conceded seat = True <$ concede seat
         -- The clocks as the host says they read, the seat's own running
         -- until it answers.
         clocked deciding banks = Clock.getMonotonicTime >>= \at -> IORef.modifyIORef' seatRef (\s -> s {Hotseat.clocks = Web.Clock.heard at deciding banks})
         local banks request = do
           IORef.writeIORef decidingRef Nothing
           clocked seat banks
-          answered <- Browser.heeding page link (Hotseat.exchange lookUp page seatRef leave concede request)
+          answered <- Browser.heeding page link (Hotseat.exchange lookUp page seatRef leave conceded request)
           at <- Clock.getMonotonicTime
           IORef.modifyIORef' seatRef (\s -> s {Hotseat.clocks = Web.Clock.stop at (Hotseat.clocks s)})
           pure (Monad.join answered)

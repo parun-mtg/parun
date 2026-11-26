@@ -1,9 +1,13 @@
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
+
 -- | `parun play`: a game whose seats are each the search bot or, with --json,
 -- a program speaking the line protocol on standard input and output.
 module Parun.Play.Command where
 
 import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Trans.Except as Except
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.ByteString as ByteString
@@ -61,6 +65,8 @@ import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingTable as PrintingTable
+import qualified Parun.Types.Program as Program
+import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Scenario as Scenario
@@ -254,7 +260,7 @@ game client send stored kept watchers breathe options prior registry settings de
             asked <- IORef.readIORef pending
             Monad.forM_ asked $ \(gs, depth) -> IORef.modifyIORef' entries (Seq.|> Record.conceding (labels count) gs depth pid)
             pure (Left (Text.pack "conceded"))
-      outcome <- Game.run reference settings (PlayOptions.limits options) observers seats generator orders matchup `Exception.catches` [Exception.Handler interrupted, Exception.Handler conceded]
+      outcome <- Game.run (rewinding leavingIO) reference settings (PlayOptions.limits options) observers seats generator orders matchup `Exception.catches` [Exception.Handler interrupted, Exception.Handler conceded]
       timeline <- IORef.readIORef entries
       pure (outcome, record matchup timeline)
 
@@ -290,6 +296,38 @@ newtype Conceded = MkConceded PlayerId.PlayerId
   deriving (Show)
 
 instance Exception.Exception Conceded
+
+-- | CR 104.3a / 800.4: this seat leaving a game of more than two while asked
+-- at its priority (Parun.Web.Question.atPriority), thrown from whatever waits
+-- on that prompt: 'game' asks the seat's concession question again
+-- ('rewinding'), which its exchange must then answer Concedes, and plays on.
+-- PlaySpec's "a seat leaving a game of three at its priority" is the proof.
+newtype Leaving = MkLeaving PlayerId.PlayerId
+  deriving (Show)
+
+instance Exception.Exception Leaving
+
+-- | Each prompt answered once, but for a seat leaving, which `catchLeaving`
+-- catches (MkLeaving in IO): asked again the main game's concession question
+-- asked of it just before (Engine.priorityDecision asks it right before the
+-- seat's priority), the game standing still since, so leaving then is
+-- leaving as it was asked. A seat leaving with no such question just before
+-- stops play.
+rewinding :: (Monad m) => (forall b. m b -> (PlayerId.PlayerId -> m b) -> m b) -> Driver.Fold (Game.Play m)
+rewinding catchLeaving = Program.foldProgramResuming conceding (playCatching catchLeaving) (const (Game.stop (Text.pack "a player left the game at no concession question")))
+  where
+    conceding :: Asked.Asked GameState.GameState r -> Maybe PlayerId.PlayerId
+    conceding asked = case Asked.prompt asked of
+      Prompt.Concede pid | null (Asked.enclosing asked) -> Just pid
+      _ -> Nothing
+
+-- | A seat leaving caught in play, the generator as the play started.
+playCatching :: (forall c. m c -> (PlayerId.PlayerId -> m c) -> m c) -> Game.Play m b -> (PlayerId.PlayerId -> Game.Play m b) -> Game.Play m b
+playCatching catchLeaving = State.liftCatch (\run caught -> Except.ExceptT (catchLeaving (Except.runExceptT run) (Except.runExceptT . caught)))
+
+-- | A seat leaving in IO (MkLeaving), caught.
+leavingIO :: IO b -> (PlayerId.PlayerId -> IO b) -> IO b
+leavingIO act handler = Exception.catch act (\(MkLeaving pid) -> handler pid)
 
 -- | Each prompt's deciding seat, if it has one (Driver.deciderOf), given to
 -- `asked` before it is answered, whoever answers it, with the game then and
