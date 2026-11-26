@@ -1,5 +1,6 @@
 module Parun.Types.ChooseNumber where
 
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
@@ -18,6 +19,15 @@ import qualified Parun.Types.SlotName as SlotName
 data ChooseNumber = MkChooseNumber
   { slot :: SlotName.SlotName,
     upTo :: Maybe Quantity.Quantity,
-    chooser :: PlayerRef.PlayerRef
+    chooser :: PlayerRef.PlayerRef,
+    -- | Whether the chooser picks the number or randomness does, each number
+    -- from zero to the bound equally likely (Jaya Ballard Avatar's "an amount
+    -- of damage chosen at random from 0 to X"); at random, nobody chooses and
+    -- the chooser is unread.
+    --
+    -- Unprinted: a random number with no bound, or with a chooser; Parun.FilterPositionLintSpec's
+    -- "no card writes a random ChooseNumber with no bound or a chooser" keeps
+    -- both out of card data.
+    selection :: CardSelection.CardSelection
   }
   deriving (Eq, Ord, Show)

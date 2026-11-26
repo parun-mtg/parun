@@ -123,11 +123,11 @@ data Response
     -- point -- a transcript of a player ANNOUNCING a number must not satisfy a
     -- prompt that asked randomness, which is CR 706.1a's equally likely outcomes.
     RolledDie Natural.Natural
-  | -- | The place randomness put a conjured card at, for Parun.Types.Prompt's
-    -- RandomDepth. Its own constructor rather than RolledDie reused, for that
-    -- constructor's reason: no die was rolled, and a transcript of one must not
-    -- satisfy this prompt.
-    PlacedAtRandomDepth Natural.Natural
+  | -- | The number randomness named, for Parun.Types.Prompt's RandomNumber. Its
+    -- own constructor rather than RolledDie reused, for that constructor's
+    -- reason: no die was rolled, and a transcript of one must not satisfy this
+    -- prompt.
+    PickedRandomNumber Natural.Natural
   | -- | CR 108.1: the card the Oracle card reference answered a name with,
     -- for Parun.Types.Prompt's LookUpCard.
     LookedUpCard (Maybe Card.Card)

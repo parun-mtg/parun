@@ -86,6 +86,7 @@ import qualified Parun.Types.ChoiceDistinct as ChoiceDistinct
 import qualified Parun.Types.ChoiceOrdinal as ChoiceOrdinal
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChooseCardName as ChooseCardName
+import qualified Parun.Types.ChooseNumber as ChooseNumber
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.ChooseQuality as ChooseQuality
 import qualified Parun.Types.Chooser as Chooser
@@ -3938,6 +3939,25 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
           _ -> ta
         planted = (S.combinedFace cult) {Face.triggeredAbilities = fmap intoItself (Face.triggeredAbilities (S.combinedFace cult))}
     Spec.assertEqWith s "a planted Matching into itself is seen" (length (found planted)) 1
+  -- Parun.Types.ChooseNumber's selection at random reads a bound and no
+  -- chooser: every random number printed ranges from 0 to a stated most, and
+  -- nobody chooses it.
+  Spec.it s "no card writes a random ChooseNumber with no bound or a chooser" $ do
+    ps <- S.allPrintings s corpus
+    jaya <- S.printingOf s registry "Jaya Ballard Avatar"
+    let randoms face = [n | Effect.ChooseNumber n <- cardAuthoredEffects face, ChooseNumber.selection n == CardSelection.AtRandom]
+        unprinted n = Maybe.isNothing (ChooseNumber.upTo n) || ChooseNumber.chooser n /= PlayerRef.Relative PlayerRelation.You
+        found = filter unprinted . randoms
+        offenders = filter (anyFace (not . null . found) . Printing.card) ps
+    Spec.assertEqWith s "no card writes either" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous: Jaya's random number is read, and each shape planted is seen.
+    Spec.assertEqWith s "Jaya's random number is read" (length (randoms (S.combinedFace jaya))) 1
+    let plant n = (S.combinedFace jaya) {Face.spell = Mint.oneModeTargeting Map.empty (Seq.singleton (Effect.ChooseNumber n))}
+        number = SlotName.MkSlotName (Text.pack "number")
+        unbounded = ChooseNumber.MkChooseNumber number Nothing (PlayerRef.Relative PlayerRelation.You) CardSelection.AtRandom
+        chosen = ChooseNumber.MkChooseNumber number (Just (Quantity.Type.Literal 4)) (PlayerRef.InSlot number) CardSelection.AtRandom
+    Spec.assertEqWith s "a planted unbounded random number is seen" (length (found (plant unbounded))) 1
+    Spec.assertEqWith s "a planted random number with a chooser is seen" (length (found (plant chosen))) 1
   -- CR 601.2c's baked "that player's graveyard", for HeldByPlayer's reason:
   -- Parun.Engine.Target.bakePerPlayer writes it, and no card may name a seat.
   Spec.it s "CR 601.2c no card writes ZoneScope.BoundPlayer" $ do

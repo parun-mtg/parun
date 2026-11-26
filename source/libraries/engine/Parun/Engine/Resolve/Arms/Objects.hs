@@ -356,7 +356,7 @@ conjure settle resolving source controller legal payload = do
           -- A stated library DEPTH is settled per card, as each lands, so a later
           -- card of the same conjure is placed in a library already holding the
           -- earlier ones; unproven, since no card in data/cards/ conjures more
-          -- than one card to a depth. A random depth is ASKED (Prompt.RandomDepth), over the places the
+          -- than one card to a depth. A random depth is ASKED (Prompt.RandomNumber), over the places the
           -- library has -- a library of k other cards has k + 1 -- and never
           -- raised for one place. Parun.ConjureSpec's Calim and Mine Security cases
           -- prove the two. The clamp of an answer outside the places is a
@@ -467,7 +467,7 @@ conjure settle resolving source controller legal payload = do
               LibraryDepth.AtRandomInTop k -> case min k places of
                 reach
                   | reach < 2 -> pure 1
-                  | otherwise -> fmap (max 1 . min reach) (Game.ask (Prompt.RandomDepth reach))
+                  | otherwise -> fmap (max 1 . min reach) (Game.ask (Prompt.RandomNumber 1 reach))
             State.modify' (Game.sinkInLibrary (Natural.toIntSaturating ordinal - 1) conjuring oid)
           onto entry n (card, copied) = do
             made <- Foldable.toList <$> Event.conjureOntoBattlefield settle conjuring card copied (Integer.toNaturalSaturating n) (ConjureEntry.tapped entry)

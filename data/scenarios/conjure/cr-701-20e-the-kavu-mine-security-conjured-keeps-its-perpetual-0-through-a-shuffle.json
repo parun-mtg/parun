@@ -109,7 +109,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "RandomDepth",
+          "prompt": "RandomNumber",
           "with": 1
         }
       }

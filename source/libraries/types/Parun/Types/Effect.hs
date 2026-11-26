@@ -480,8 +480,9 @@ data Effect card ability
     -- Parun.VariableEffectSpec's "CR 118.12 paying nothing declines the offer" is
     -- what proves paying zero does not take a gate hung off this opcode.
     PayAnyEnergy SlotName.SlotName
-  | -- | CR 107.1c / 608.2d: the resolving controller chooses a number, zero
-    -- included and at most the payload's bound, bound for a later effect to read.
+  | -- | CR 107.1c / 608.2d: the resolving controller, or randomness, names a
+    -- number, zero included and at most the payload's bound, bound for a later
+    -- effect to read.
     ChooseNumber ChooseNumber.ChooseNumber
   | -- | CR 608.2h: bind the quantity's value, determined once, under the slot
     -- for a later effect to read.

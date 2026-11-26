@@ -26,6 +26,6 @@ chance = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.RandomPlayer candidates -> Generator.pick candidates
   Prompt.RandomCard candidates -> Generator.pick candidates
   Prompt.RollDie sides -> Generator.between 1 sides
-  Prompt.RandomDepth depth -> Generator.between 1 depth
+  Prompt.RandomNumber low high -> Generator.between low high
   Prompt.FlipCoin -> Generator.pick (CoinFace.Heads NonEmpty.:| [CoinFace.Tails])
   prompt -> pure (Replay.defaultAnswer prompt)

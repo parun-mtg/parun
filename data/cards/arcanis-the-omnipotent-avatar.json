@@ -1,0 +1,103 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "ReturnPermanents",
+                "value": {
+                  "count": 1,
+                  "whichPermanents": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "You"
+                        }
+                      },
+                      {
+                        "type": "Measures",
+                        "value": {
+                          "comparison": "Exactly",
+                          "measure": "ManaValue",
+                          "operand": {
+                            "type": "AmountInSlot",
+                            "value": "X"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "VariableAtLeast",
+                "value": 1
+              }
+            ],
+            "mana": [
+              {
+                "type": "Variable"
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ChooseNumber",
+                        "value": {
+                          "selection": "AtRandom",
+                          "slot": "number",
+                          "upTo": {
+                            "type": "InSlot",
+                            "value": "X"
+                          }
+                        }
+                      },
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "InSlot",
+                            "value": "number"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Arcanis, the Omnipotent Avatar",
+      "oracleText": "{X}, Return a creature you control with mana value X to its owner's hand: Draw a number of cards chosen at random between 0 and X. X can't be 0.",
+      "typeLine": {
+        "types": [
+          "Vanguard"
+        ]
+      },
+      "vanguard": {
+        "handModifier": 1,
+        "lifeModifier": -3
+      }
+    }
+  ]
+}

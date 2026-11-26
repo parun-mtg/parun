@@ -611,14 +611,14 @@ libraryIndexOf :: CardName.CardName -> GameState.GameState -> Maybe Int
 libraryIndexOf name gs = Seq.findIndexL (\oid -> S.soleFaceName oid gs == name) (libraryOf gs)
 
 -- Settle the pending trigger and resolve it, looking card names up in
--- `reference` and answering every Prompt.RandomDepth with `depth`. The reaches
+-- `reference` and answering every Prompt.RandomNumber with `depth`. The reaches
 -- randomness was asked over come back in order.
 conjureDepthRun :: [Card.Card] -> Numeric.Natural.Natural -> GameState.GameState -> (GameState.GameState, [Numeric.Natural.Natural])
 conjureDepthRun reference depth board =
   let fixture = S.fixtureRegistry reference
       answer :: Asked.Asked GameState.GameState r -> State.State [Numeric.Natural.Natural] r
       answer asked = case Asked.prompt asked of
-        Prompt.RandomDepth reach -> do
+        Prompt.RandomNumber _ reach -> do
           State.modify' (reach :)
           pure depth
         p -> pure (S.identityAnswer p)

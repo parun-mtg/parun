@@ -1394,6 +1394,7 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.ChooseSacrifices _ _ _ objects _ _ -> all (`elem` objects) chosen
   Prompt.Type.ChooseOfferedCastSpell _ _ offers -> chosen `elem` offers
   Prompt.Type.RollDie sides -> 1 <= chosen && chosen <= sides
+  Prompt.Type.RandomNumber low high -> low <= chosen && chosen <= high
   Prompt.Type.ChooseMixedCounterRemoval _ _ _ _ _ bearers -> Map.isSubmapOfBy (Map.isSubmapOfBy (<=)) chosen bearers
   Prompt.Type.ChooseWordSwap _ _ _ _ families forbidden -> Engine.TextWord.swappable families forbidden chosen
   Prompt.Type.RandomFirstPlayer players -> chosen `elem` players
@@ -1576,7 +1577,6 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.LookUpCard {} -> True
   Prompt.Type.ReferenceCards {} -> True
   Prompt.Type.ReferenceNames {} -> True
-  Prompt.Type.RandomDepth {} -> True
 
 -- Whether an index answer points into the list offered.
 indexInto :: [a] -> Natural -> Bool

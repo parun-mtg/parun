@@ -141,11 +141,13 @@ data Prompt r where
   -- RandomCard deliberately does not. Asked only for two or more candidates,
   -- and the caller filters the answer back to one.
   ChooseConjuredCard :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty CardName.CardName -> Prompt CardName.CardName
-  -- | Which of the top N places of a library randomness put a conjured card at,
-  -- 1 being the top (Parun.Types.LibraryDepth.AtRandomInTop). RandomObject's
-  -- reasons for carrying neither Decider nor PlayerId; asked only for two or
-  -- more places, and the caller clamps the answer into range.
-  RandomDepth :: Natural.Natural -> Prompt Natural.Natural
+  -- | Which number randomness named from the first Natural to the second, each
+  -- equally likely: which of the top N places of a library a conjured card goes
+  -- to, 1 being the top (Parun.Types.LibraryDepth.AtRandomInTop), or the number
+  -- an Effect.ChooseNumber at random binds. RandomObject's reasons for carrying
+  -- neither Decider nor PlayerId; asked only for two or more numbers, and the
+  -- caller clamps the answer into range.
+  RandomNumber :: Natural.Natural -> Natural.Natural -> Prompt Natural.Natural
   -- | Which player randomness named out of the offered set
   -- (Parun.Types.Effect.ChoosePlayerAtRandom, Parun.Engine.Setup.randomSeating's
   -- next seat, CR 806.3 / 807.3); RandomObject's shape, asked only for two or

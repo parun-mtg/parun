@@ -141,7 +141,8 @@ import qualified Parun.Types.Zone as Zone
 --
 -- Every prompt not listed here sends null: Concede, which the client answers
 -- from its seat's standing choice, and the random prompts no seat answers,
--- which are never sent. RollDie is never sent either; a scenario reads it.
+-- which are never sent. RollDie and RandomNumber are never sent either; a
+-- scenario reads them.
 offerOf :: Reply.Namer -> GameState.GameState -> Prompt.Prompt r -> R.Reply
 offerOf namer gs prompt = case prompt of
   -- What passing gives up is marked, for a client's reminder.
@@ -418,6 +419,8 @@ offerOf namer gs prompt = case prompt of
   Prompt.ChooseTokenKind _ _ source kinds -> indexing namer prompt (Just source) [] (fmap (R.Text . CardName.unwrap) (NonEmpty.toList kinds))
   -- CR 706.1a: the die by its sides.
   Prompt.RollDie sides -> fields [("sides", natural sides)]
+  -- The range randomness draws from, both ends included.
+  Prompt.RandomNumber low high -> fields [("least", natural low), ("greatest", natural high)]
   -- CR 706.4: each result as its number and, where any was thrown by another
   -- player or carries events, each one's thrower and events under "carries",
   -- in the same order, with the places of the rerolls it carries under

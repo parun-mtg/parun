@@ -342,7 +342,7 @@ shapeOf prompt = case prompt of
   Prompt.RandomStickerSheet {} -> natural
   Prompt.RandomCard {} -> viaCodec Codec.CardName.codec
   Prompt.ChooseConjuredCard {} -> viaCodec Codec.CardName.codec
-  Prompt.RandomDepth {} -> natural
+  Prompt.RandomNumber {} -> natural
   Prompt.RandomPlayer {} -> player
   Prompt.RollDie {} -> natural
   Prompt.LookUpCard {} -> unsupported (Text.pack "a card")
