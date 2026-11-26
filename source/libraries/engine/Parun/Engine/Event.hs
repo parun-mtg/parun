@@ -12595,6 +12595,7 @@ lastKnownFrom gs oid obj =
     -- CR 400.7d's cost record.
     (Object.paidCosts obj)
     (Object.castUsing obj)
+    (Object.enteredUsing obj)
     -- CR 719.3d's record, for the same reason.
     (Object.prototyped obj)
     -- CR 107.3m's, for the same reason.

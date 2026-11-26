@@ -894,6 +894,10 @@ data View = MkView
     -- that has left its zone (CR 608.2h).
     -- Parun.Engine.Quantity's CastUsing arm and Filter.Paid are the readers.
     castUsing :: Maybe Keyword.Type.Keyword,
+    -- CR 400.7 / 608.2h: the keyword whose ability put this candidate onto the
+    -- battlefield, read off Object.enteredUsing, or LastKnown.enteredUsing for
+    -- an object that has left it. Filter.EnteredUsing is the reader.
+    enteredUsing :: Maybe Keyword.Type.Keyword,
     -- CR 702.143c: is this candidate a foretold card, or a spell that was one
     -- before it was cast? Read off Object.foretold, which Parun.Engine.Cast
     -- carries onto the stack, and False where there is no live object, as
@@ -1304,6 +1308,7 @@ nobodyView =
       -- one -- `designations` above, same sentence.
       tributePaid = False,
       castUsing = Nothing,
+      enteredUsing = Nothing,
       foretold = False,
       prototyped = False,
       preparedSpell = False,
@@ -3219,6 +3224,9 @@ matches context view predicate = case predicate of
   -- alternative cost the candidate was cast for (Henzie "Toolbox" Torre's
   -- "blitz costs you pay").
   Filter.Paid designator -> Keyword.timesPaid designator (paidCosts view) > 0 || any (Keyword.designates designator) (castUsing view)
+  -- CR 400.7: a stamp written as the object arrived, so it answers the same way
+  -- for as long as the object lasts, and off LastKnown once it has left.
+  Filter.EnteredUsing designator -> any (Keyword.designates designator) (enteredUsing view)
   Filter.IsPrototyped -> prototyped view
   Filter.IsPreparedSpell -> preparedSpell view
   Filter.IsModal -> Maybe.isJust (modesChosen view)
@@ -3349,6 +3357,7 @@ rewrite pairs predicate = case predicate of
   Filter.Unwritten _ -> predicate
   -- Untouched for Quantity.TimesPaid's reason (Parun.Engine.Projection.Rewrite).
   Filter.Paid _ -> predicate
+  Filter.EnteredUsing _ -> predicate
   _ ->
     Identity.runIdentity $
       Children.filterChildren
@@ -3765,6 +3774,7 @@ manaValueThresholds predicate = case predicate of
   Filter.WasCastFrom _ -> []
   Filter.TagWasSpent _ -> []
   Filter.Paid _ -> []
+  Filter.EnteredUsing _ -> []
   Filter.IsPrototyped -> []
   Filter.IsPreparedSpell -> []
   Filter.IsModal -> []
@@ -3979,6 +3989,7 @@ statesAQuality predicate = case predicate of
   -- never paid for.
   Filter.TagWasSpent _ -> True
   Filter.Paid _ -> True
+  Filter.EnteredUsing _ -> True
   Filter.IsPrototyped -> True
   Filter.IsPreparedSpell -> True
   Filter.IsModal -> True
@@ -4145,6 +4156,7 @@ readsSourceValues predicate = case predicate of
   Filter.WasCastFrom _ -> False
   Filter.TagWasSpent _ -> False
   Filter.Paid _ -> False
+  Filter.EnteredUsing _ -> False
   Filter.IsPrototyped -> False
   Filter.IsPreparedSpell -> False
   Filter.IsModal -> False
@@ -4289,6 +4301,7 @@ talliesWhatHappened predicate = case predicate of
   Filter.WasCastFrom {} -> False
   Filter.TagWasSpent {} -> False
   Filter.Paid {} -> False
+  Filter.EnteredUsing {} -> False
   Filter.IsPrototyped {} -> False
   Filter.IsPreparedSpell {} -> False
   Filter.IsModal {} -> False

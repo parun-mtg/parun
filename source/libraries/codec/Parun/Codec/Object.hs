@@ -165,6 +165,7 @@ codec = Fields.object $ do
   castFrom <- Fields.defaulted "castFrom" (Object.castFrom defaults) (Common.maybe CastOrigin.codec) Object.castFrom
   castBy <- Fields.defaulted "castBy" (Object.castBy defaults) (Common.maybe PlayerId.codec) Object.castBy
   castUsing <- Fields.defaulted "castUsing" (Object.castUsing defaults) (Common.maybe Keyword.codec) Object.castUsing
+  enteredUsing <- Fields.defaulted "enteredUsing" (Object.enteredUsing defaults) (Common.maybe Keyword.codec) Object.enteredUsing
   castGrants <- Fields.defaulted "castGrants" (Object.castGrants defaults) (Common.list Keyword.codec) Object.castGrants
   castCostChanges <- Fields.defaulted "castCostChanges" (Object.castCostChanges defaults) (Common.list CostReduction.codec) Object.castCostChanges
   exileLookers <- Fields.defaulted "exileLookers" (Object.exileLookers defaults) (Common.set ExileLooker.codec) Object.exileLookers
@@ -244,6 +245,7 @@ codec = Fields.object $ do
         Object.castFrom = castFrom,
         Object.castBy = castBy,
         Object.castUsing = castUsing,
+        Object.enteredUsing = enteredUsing,
         Object.castGrants = castGrants,
         Object.castCostChanges = castCostChanges,
         Object.exileLookers = exileLookers,

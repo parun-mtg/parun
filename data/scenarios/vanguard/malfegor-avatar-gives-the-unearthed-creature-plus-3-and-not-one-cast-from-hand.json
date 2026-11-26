@@ -1,0 +1,117 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "s1",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "s2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "s3",
+            "ready": true
+          }
+        ],
+        "command": [
+          {
+            "card": "Malfegor Avatar"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Dregscape Zombie",
+            "label": "gy"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Dregscape Zombie",
+            "label": "twin"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Malfegor Avatar gives the unearthed creature +3/+0 and not one cast from hand",
+  "note": "The twin is the same card, entering under the same controller by a cast rather than by unearth, so a trigger that ignored its \"if it was unearthed\" pumps both. Object ids grow with creation, and the twin is cast first, so \"Dregscape Zombie\" is the twin and \"Dregscape Zombie#2\" the unearthed permanent.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s1",
+            "$s2",
+            null
+          ],
+          "object": "$twin"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$s3"
+          ],
+          "object": "$gy"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Dregscape Zombie",
+          "power": 2,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Dregscape Zombie#2",
+          "power": 5,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    }
+  ]
+}

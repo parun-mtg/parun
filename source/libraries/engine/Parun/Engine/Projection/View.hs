@@ -349,6 +349,7 @@ viewOfCardLapsed lapsed face =
           -- sentence.
           Filter.tributePaid = False,
           Filter.castUsing = Nothing,
+          Filter.enteredUsing = Nothing,
           -- CR 702.143c asks about a card in exile or a spell, and this builder
           -- describes a printed face.
           Filter.foretold = False,
@@ -968,6 +969,9 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- CR 400.7d: read live off the object. For one that has left its zone,
       -- Count.lastKnownView overrides this with LastKnown.castUsing.
       Filter.castUsing = Object.castUsing =<< Game.lookupObject oid gs,
+      -- CR 400.7: read live off the object. For one that has left its zone,
+      -- Count.lastKnownView overrides this with LastKnown.enteredUsing.
+      Filter.enteredUsing = Object.enteredUsing =<< Game.lookupObject oid gs,
       -- CR 702.143c: read live off the object, `tributePaid`'s posture.
       Filter.foretold = any (Maybe.isJust . Object.foretold) (Game.lookupObject oid gs),
       -- CR 719.3c / 719.3d: a copy's answer rides its copiable values (CR

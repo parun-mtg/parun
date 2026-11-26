@@ -752,6 +752,10 @@ data Filter keyword
     -- -- Hallar's "if that spell was kicked", Henzie "Toolbox" Torre's "blitz
     -- costs you pay".
     Paid (KeywordDesignator.KeywordDesignator keyword)
+  | -- | CR 400.7: the candidate, as this object, was put onto the battlefield by
+    -- an ability of a keyword the designator names -- Malfegor Avatar's "if it
+    -- was unearthed" (CR 702.84a). Read off Object.enteredUsing.
+    EnteredUsing (KeywordDesignator.KeywordDesignator keyword)
   | -- | CR 719.3c / 719.3d: the candidate is a prototyped spell or a permanent
     -- that was one, a copy of either included. Not Paid above: a Clone of a
     -- kicked permanent was not kicked (CR 707.2), where CR 719.3d makes a copy

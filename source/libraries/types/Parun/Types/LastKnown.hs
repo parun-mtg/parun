@@ -253,6 +253,10 @@ data LastKnown = MkLastKnown
     -- data/scenarios/karai-future-of-the-foot-still-returns-the-card-to-the-
     -- battlefield-after-she-dies.json is the proof.
     castUsing :: !(Maybe Keyword.Keyword),
+    -- | CR 400.7 / 608.2h: the keyword whose ability put it onto the battlefield
+    -- -- Object.enteredUsing as it left, for Malfegor Avatar's "is exiled, if it
+    -- was unearthed".
+    enteredUsing :: !(Maybe Keyword.Keyword),
     -- | CR 719.3d: was it a permanent that was a prototyped spell --
     -- Object.prototyped as it left. Not a characteristic, so a face-down one's
     -- `characteristics` above cannot say; Count.lastKnownView reads it.

@@ -4892,6 +4892,7 @@ filterReads f = case f of
   -- on this atom.
   Filter.Type.TagWasSpent _ -> Set.empty
   Filter.Type.Paid _ -> Set.empty
+  Filter.Type.EnteredUsing _ -> Set.empty
   -- CR 719.2a: a copiable value, which only layer 1 writes and no Aspect names,
   -- HasName's reason.
   Filter.Type.IsPrototyped -> Set.empty
@@ -5117,6 +5118,7 @@ filterReadsPeers f = case f of
   Filter.Type.WasCastFrom _ -> False
   Filter.Type.TagWasSpent _ -> False
   Filter.Type.Paid _ -> False
+  Filter.Type.EnteredUsing _ -> False
   Filter.Type.IsPrototyped -> False
   Filter.Type.IsPreparedSpell -> False
   Filter.Type.IsModal -> False

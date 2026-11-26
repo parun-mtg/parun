@@ -2080,6 +2080,7 @@ stubView table oid =
                 Filter.paidCosts = Map.empty,
                 Filter.tributePaid = False,
                 Filter.castUsing = Nothing,
+                Filter.enteredUsing = Nothing,
                 Filter.foretold = False,
                 Filter.prototyped = False,
                 Filter.preparedSpell = False,

@@ -722,6 +722,7 @@ filterChildren children predicate = case predicate of
   Filter.WasCastFrom _ -> pure predicate
   Filter.TagWasSpent _ -> pure predicate
   Filter.Paid designator -> fmap Filter.Paid (designatorChildren children designator)
+  Filter.EnteredUsing designator -> fmap Filter.EnteredUsing (designatorChildren children designator)
   Filter.IsPrototyped -> pure predicate
   Filter.IsPreparedSpell -> pure predicate
   Filter.IsModal -> pure predicate
