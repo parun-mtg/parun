@@ -362,6 +362,17 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s Nothing (Oracle.render partly)
     Spec.assertBool s (not (Oracle.says partly spark (Text.pack "Flying\n{T}: Add {G}. Spark deals 2 damage to you."))) "a card not rendered in full said"
 
+  Spec.it s "described says which part of a face each ability is read from" $ do
+    let ring = activated (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.TapThis]) (addMana 1)
+        kinds change = foldMap (fmap (\a -> (Oracle.kind a, null (Oracle.wordings a))) . Oracle.described) (Card.faces (withFace change))
+    Spec.assertEq s [(Oracle.Keyword, False), (Oracle.Keyword, False), (Oracle.Activated, False)] (kinds (\f -> f {Face.keywords = Map.fromList [(Keyword.Flying, 1), (Keyword.Vigilance, 1)], Face.activatedAbilities = [ring]}))
+    Spec.assertEq s [(Oracle.Unread, True)] (kinds (\f -> f {Face.anteOnly = True}))
+  Spec.it s "constructors skips string literals" $ do
+    Spec.assertEq s (Set.fromList ["MkFoo", "Just", "Qux"]) (Oracle.constructors "MkFoo {name = \"Bar \\\"Baz\\\"\", x = Just Qux, y = fromList []}")
+  Spec.it s "blockers counts constructors only unworded abilities hold" $ do
+    let ability shown worded = Oracle.MkDescribed Oracle.Static shown [Text.pack "Worded." | worded]
+    Spec.assertEq s (Map.fromList [("C", (1, 2)), ("D", (0, 1))]) (Oracle.blockers [ability "A B" True, ability "A C" False, ability "C D" False, ability "B" False, Oracle.MkDescribed Oracle.Unread "E" []])
+
   -- A second instruction for the same player drops the subject; for another
   -- player it is joined by "and" (Vampiric Feast), starts a sentence (Soul
   -- Shred), one opened by "Then" (Return of the Nightstalkers), or starts a
