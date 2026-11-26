@@ -768,6 +768,23 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "over the most, dropped" (tap (Set.fromList [(0, 0), (0, 1)]) "2 of Forest \x00d7\&3") (Just (Question.Web.MkToggle 0 1))
     Spec.assertEqWith s "start over" (tap (Set.singleton (0, 0)) "Start over") (Just Question.Web.MkClear)
 
+  Spec.it s "CR 701.23b a search over a long library picks through a box filtering the cards, those picked kept in view" $ do
+    let names = ["Shock", "Llanowar Elves", "Giant Growth", "Counterspell", "Dark Ritual", "Serra Angel", "Shivan Dragon", "Air Elemental", "Craw Wurm", "Demonic Tutor", "Wrath of God", "Disenchant", "Healing Salve", "Ancestral Recall", "Sol Ring", "Giant Spider", "Hill Giant", "Grizzly Bears", "Plains", "Island", "Mountain", "Forest", "Black Knight", "White Knight", "Pacifism", "Terror", "Unsummon"] <> replicate 4 "Swamp"
+    printings <- traverse (S.printingOf s registry) names
+    let (library, gs) = foldr (\printing (ids, g) -> let (oid, g') = S.addObjectIn Zone.Library printing S.alice g in (oid : ids, g')) ([], Setup.emptyGame S.bothPlayers) printings
+        request = requestFor gs (Prompt.Search (Decider.MkDecider S.alice) S.alice library 2)
+        page picked typed = Question.Web.view request Question.Web.blank {Question.Web.selected = picked, Question.Web.query = Text.pack typed}
+        tap picked typed label = Html.labelled (Text.pack "button") (Text.pack label) (page picked typed) >>= \path -> Html.handler (Text.pack "click") path (page picked typed)
+        shock = Maybe.fromMaybe 0 (List.elemIndex "Shock" names)
+        tutor = Maybe.fromMaybe 0 (List.elemIndex "Demonic Tutor" names)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "id=\"combo-filter\"") (Html.toText (page Set.empty ""))) "a box"
+    Spec.assertBool s (Text.isInfixOf (Text.pack "4 more match.") (Html.content (page Set.empty ""))) "a button for at most comboPast"
+    Spec.assertEqWith s "typed, then tapped" (tap Set.empty "tutor" "Demonic Tutor") (Just (Question.Web.MkToggle 0 (Int.toNaturalSaturating tutor)))
+    Spec.assertBool s (Text.isInfixOf (Text.pack "data-enter=\"combo-first\"") (Html.toText (page Set.empty "tutor")) && Text.isInfixOf (Text.pack "id=\"combo-first\"") (Html.toText (page Set.empty "tutor"))) "Enter takes the match"
+    Spec.assertEqWith s "filtered out" (tap Set.empty "tutor" "Shock") Nothing
+    Spec.assertEqWith s "picked, kept in view" (tap (Set.singleton (0, Int.toNaturalSaturating shock)) "tutor" "\x2713 Shock") (Just (Question.Web.MkToggle 0 (Int.toNaturalSaturating shock)))
+    Spec.assertEqWith s "alike cards share a button" (tap Set.empty "swa" "Swamp \x00d7\&4") (Just (Question.Web.MkToggle 0 (Int.toNaturalSaturating (length names - 4))))
+
   Spec.it s "the log heads each turn the seat reads into, once" $ do
     let view = PlayerView.viewFor S.alice (Setup.emptyGame S.bothPlayers)
         (marks, first) = Log.unseen Map.empty view

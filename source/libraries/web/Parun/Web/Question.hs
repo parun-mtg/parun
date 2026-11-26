@@ -1203,7 +1203,7 @@ form request texts picked focused typed = case Text.unpack (Question.kind questi
       Just shown <- Request.view request ->
         let count = Set.size picked
          in [ heading "Declare attackers: choose the creatures to attack with.",
-              Element.el "div" ["actions"] [] (toggles 0 (Natural.length attackers) [(i, Offer.listedName shown option) | (i, option) <- zip [0 ..] attackers]),
+              Element.el "div" ["actions"] [] (toggles Nothing 0 (Natural.length attackers) [(i, Offer.listedName shown option) | (i, option) <- zip [0 ..] attackers]),
               Element.el "div" ["passes"] [] $
                 [primary MkSubmit (Text.pack (if count == 0 then "No attack" else "Attack with " <> show count))]
                   <> [shortcut [] "A" (MkAnswer (R.Array attackers)) (Text.pack "Attack with all") | count < length attackers]
@@ -1270,24 +1270,27 @@ form request texts picked focused typed = case Text.unpack (Question.kind questi
                   then Element.el "h3" ["subhead", "focused"] [Element.attr "aria-current" (Text.pack "true")] (Mana.rich (title group <> Text.pack ": choose the attacker it blocks"))
                   else Element.el "h3" ["subhead"] [] (Mana.rich (title group))
               )
-                : toggles g (most group) [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
+                : toggles Nothing g (most group) [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
             | (g, group) <- zip [0 ..] (groups chooser)
             ]
             <> [primary MkSubmit (Text.pack (if Set.null picked then "No blocks" else "Block"))]
   _
     | Just chooser <- picker request ->
-        concat
-          [ Html.element (Text.pack "h2") [] (Mana.rich $ title group <> (if Text.any Char.isDigit (title group) then Text.empty else Text.pack (" (choose " <> bounds group <> ")")))
-              : toggles g (most group) [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
-          | (g, group) <- zip [0 ..] (groups chooser)
-          ]
-          -- Answering waits on picks within every group's bounds, the refusal
-          -- in `step` a fence behind it.
-          <> [ Element.el "div" ["passes"] [] $
-                 Element.el "button" ["primary"] ([Element.attr "type" (Text.pack "button"), Element.on "click" MkSubmit] <> [Element.attr "disabled" Text.empty | not (all fits (zip [0 ..] (groups chooser)))]) (Mana.rich (send chooser))
-                   : [button MkClear (Text.pack "Start over") | not (Set.null picked)]
-                     <> [cancel withdrawal | Just withdrawal <- [Question.withdraw question]]
-             ]
+        -- One box per screen: the first group too long for a button each
+        -- filters through it, any later one shows them all.
+        let boxed = Maybe.listToMaybe [g | (g, group) <- zip [0 ..] (groups chooser), length (collapsed (const True) (options group)) > comboPast]
+         in concat
+              [ Html.element (Text.pack "h2") [] (Mana.rich $ title group <> (if Text.any Char.isDigit (title group) then Text.empty else Text.pack (" (choose " <> bounds group <> ")")))
+                  : (if boxed == Just g then comboToggles else toggles Nothing) g (most group) [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
+              | (g, group) <- zip [0 ..] (groups chooser)
+              ]
+              -- Answering waits on picks within every group's bounds, the refusal
+              -- in `step` a fence behind it.
+              <> [ Element.el "div" ["passes"] [] $
+                     Element.el "button" ["primary"] ([Element.attr "type" (Text.pack "button"), Element.on "click" MkSubmit] <> [Element.attr "disabled" Text.empty | not (all fits (zip [0 ..] (groups chooser)))]) (Mana.rich (send chooser))
+                       : [button MkClear (Text.pack "Start over") | not (Set.null picked)]
+                         <> [cancel withdrawal | Just withdrawal <- [Question.withdraw question]]
+                 ]
   _ -> typedReply request
   where
     question = Request.question request
@@ -1295,30 +1298,43 @@ form request texts picked focused typed = case Text.unpack (Question.kind questi
     -- CR 734.1: takes back the spell or ability being announced.
     cancel withdrawal = button (MkAnswer withdrawal) (Text.pack "Cancel")
     -- The check mark is drawn only: aria-pressed says it.
-    toggle g i label =
+    toggle attrs g i label =
       let on = Set.member (g, i) picked
-       in pressable [] [] (pressedIf on) (MkToggle g i) ([Element.el "span" [] [Element.attr "aria-hidden" (Text.pack "true")] [Element.string "\x2713 "] | on] <> Mana.rich label)
+       in pressable [] attrs (pressedIf on) (MkToggle g i) ([Element.el "span" [] [Element.attr "aria-hidden" (Text.pack "true")] [Element.string "\x2713 "] | on] <> Mana.rich label)
     -- Options the seat can't tell apart share a button: a tap picks the
     -- first unpicked while the group has room, else drops the last picked.
     -- Once it holds a pick, a minus beside it drops the last picked, so
-    -- every count down to none is reachable.
-    toggles g room labelled =
+    -- every count down to none is reachable. The first button takes the id
+    -- given, if any.
+    toggles marked g room labelled =
       concat
-        [ case indices of
-            [i] -> [toggle g i label]
-            _ ->
-              let chosen = filter (\i -> Set.member (g, i) picked) indices
-                  full = Natural.length (filter ((== g) . fst) (Set.toList picked)) >= room
-                  next = case filter (\i -> not (Set.member (g, i) picked)) indices of
-                    i : _ | null chosen || not full -> i
-                    _ -> List.last chosen
-                  named = label <> many (length indices)
-               in pressable [] [] (if null chosen then "false" else if length chosen == length indices then "true" else "mixed") (MkToggle g next) (Mana.rich ((if null chosen then Text.empty else Text.pack (show (length chosen) <> " of ")) <> named))
-                    : [ Element.el "button" [] [Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (Text.pack "One fewer " <> foldMap Html.spoken (Mana.rich named)), Element.on "click" (MkToggle g (List.last chosen))] [Element.string "\x2212"]
-                      | not (null chosen)
-                      ]
-        | (indices, label, _) <- collapsed (const True) labelled
+        [ let attrs = [Element.attr "id" mark | k == 0, Just mark <- [marked]]
+           in case indices of
+                [i] -> [toggle attrs g i label]
+                _ ->
+                  let chosen = filter (\i -> Set.member (g, i) picked) indices
+                      full = Natural.length (filter ((== g) . fst) (Set.toList picked)) >= room
+                      next = case filter (\i -> not (Set.member (g, i) picked)) indices of
+                        i : _ | null chosen || not full -> i
+                        _ -> List.last chosen
+                      named = label <> many (length indices)
+                   in pressable [] attrs (if null chosen then "false" else if length chosen == length indices then "true" else "mixed") (MkToggle g next) (Mana.rich ((if null chosen then Text.empty else Text.pack (show (length chosen) <> " of ")) <> named))
+                        : [ Element.el "button" [] [Element.attr "type" (Text.pack "button"), Element.attr "aria-label" (Text.pack "One fewer " <> foldMap Html.spoken (Mana.rich named)), Element.on "click" (MkToggle g (List.last chosen))] [Element.string "\x2212"]
+                          | not (null chosen)
+                          ]
+        | (k, (indices, label, _)) <- zip [0 :: Int ..] (collapsed (const True) labelled)
         ]
+    -- A long group as a combo box (combo): its buttons holding a pick always
+    -- shown, the rest only where they match what is typed.
+    comboToggles g room labelled =
+      let entries = collapsed (const True) labelled
+          (on, off) = List.partition (\(indices, _, _) -> any (\i -> Set.member (g, i) picked) indices) entries
+          matching = matches typed [(indices, label) | (indices, label, _) <- off]
+          shown = take comboPast matching
+          spread es = [(i, label) | (indices, label) <- es, i <- indices]
+       in comboFilter typed (length entries) (not (null shown))
+            : Element.el "div" ["actions"] [Element.attr "id" (Text.pack "combo-options")] (toggles Nothing g room (spread [(indices, label) | (indices, label, _) <- on]) <> toggles (Just comboFirst) g room (spread shown))
+            : comboNudges (length matching) (length shown)
     many n = if n > 1 then Text.pack (" \x00d7" <> show n) else Text.empty
     fits (g, group) = let n = Natural.length (filter ((== g) . fst) (Set.toList picked)) in least group <= n && n <= most group
     makes yields = if null yields then Text.empty else Text.pack " (makes " <> Text.intercalate (Text.pack " or ") (fmap (foldMap (\m -> Text.pack "{" <> Wording.manaType m <> Text.pack "}")) yields) <> Text.pack ")"
@@ -1329,38 +1345,56 @@ form request texts picked focused typed = case Text.unpack (Question.kind questi
 comboPast :: Int
 comboPast = 24
 
--- | A long choice as a combo box: a box filtering the options, case blind,
--- to those whose label holds what is typed, an exact match first, then those
--- it begins; at most comboPast show, and Enter takes the first.
+-- | A long choice as a combo box: a box filtering the options (matches); at
+-- most comboPast show, and Enter takes the first.
 combo :: Text.Text -> [(Event, Text.Text)] -> [Html.Html Event]
 combo typed choices =
+  let matching = matches typed choices
+      shown = take comboPast matching
+   in [ comboFilter typed (length choices) (not (null shown)),
+        Element.el "div" ["actions"] [Element.attr "id" (Text.pack "combo-options")] [Element.el "button" [] ([Element.attr "type" (Text.pack "button")] <> [Element.attr "id" comboFirst | i == 0] <> [Element.on "click" event]) (Mana.rich label) | (i, (event, label)) <- zip [0 :: Int ..] shown]
+      ]
+        <> comboNudges (length matching) (length shown)
+
+-- | The options whose label holds what is typed, case blind, an exact match
+-- first, then those it begins.
+matches :: Text.Text -> [(a, Text.Text)] -> [(a, Text.Text)]
+matches typed choices =
   let needle = Text.toCaseFold (Text.strip typed)
       rank (_, label) = let folded = Text.toCaseFold label in (folded /= needle, not (Text.isPrefixOf needle folded))
-      matching = List.sortOn rank (filter (Text.isInfixOf needle . Text.toCaseFold . snd) choices)
-      shown = take comboPast matching
-      unshown = length matching - length shown
-      first = Text.pack "combo-first"
-   in [ Element.el
-          "input"
-          ["combo"]
-          ( [ Element.attr "id" (Text.pack "combo-filter"),
-              Element.attr "type" (Text.pack "search"),
-              Element.attr "aria-controls" (Text.pack "combo-options"),
-              Element.attr "aria-label" (Text.pack "Filter the options"),
-              Element.attr "placeholder" (Text.pack ("Type to find one of " <> show (length choices))),
-              Element.attr "autocomplete" (Text.pack "off"),
-              Element.attr "spellcheck" (Text.pack "false"),
-              Element.attr "value" typed,
-              Element.attr "data-focus" Text.empty,
-              Element.on "input" MkFilter
-            ]
-              <> [Element.attr "data-enter" first | not (null shown)]
-          )
-          [],
-        Element.el "div" ["actions"] [Element.attr "id" (Text.pack "combo-options")] [Element.el "button" [] ([Element.attr "type" (Text.pack "button")] <> [Element.attr "id" first | i == 0] <> [Element.on "click" event]) (Mana.rich label) | (i, (event, label)) <- zip [0 :: Int ..] shown]
+   in List.sortOn rank (filter (Text.isInfixOf needle . Text.toCaseFold . snd) choices)
+
+-- | The id of the button Enter in a combo box presses.
+comboFirst :: Text.Text
+comboFirst = Text.pack "combo-first"
+
+-- | A combo box's filter, holding what is typed, over this many options,
+-- Enter pressing comboFirst where one shows.
+comboFilter :: Text.Text -> Int -> Bool -> Html.Html Event
+comboFilter typed total entered =
+  Element.el
+    "input"
+    ["combo"]
+    ( [ Element.attr "id" (Text.pack "combo-filter"),
+        Element.attr "type" (Text.pack "search"),
+        Element.attr "aria-controls" (Text.pack "combo-options"),
+        Element.attr "aria-label" (Text.pack "Filter the options"),
+        Element.attr "placeholder" (Text.pack ("Type to find one of " <> show total)),
+        Element.attr "autocomplete" (Text.pack "off"),
+        Element.attr "spellcheck" (Text.pack "false"),
+        Element.attr "value" typed,
+        Element.attr "data-focus" Text.empty,
+        Element.on "input" MkFilter
       ]
-        <> [nudge (Text.pack "Nothing matches.") | null matching]
-        <> [nudge (Text.pack (show unshown <> " more match. Keep typing to narrow them.")) | unshown > 0]
+        <> [Element.attr "data-enter" comboFirst | entered]
+    )
+    []
+
+-- | What a combo box says of this many matches, this many shown.
+comboNudges :: Int -> Int -> [Html.Html msg]
+comboNudges matching shown =
+  [nudge (Text.pack "Nothing matches.") | matching == 0]
+    <> [nudge (Text.pack (show (matching - shown) <> " more match. Keep typing to narrow them.")) | matching > shown]
 
 -- | A field to type a number into, answering with it.
 numberInput :: Html.Html Event
