@@ -3465,18 +3465,19 @@ Entries are ordered by the first rule each cites.
   opening-hand action. Where among CR 103's steps does the token arrive: before
   or after CR 103.6's opening-hand actions, so that a Leyline of Vitality put
   onto the battlefield there does or does not see it enter?
-- **Rules**: CR 103.6, 103.6a, 103.7, 103.8, 302.6, 902.7; the card has no
-  ruling; CR of 2026-11-06.
-- **Decision**: Once every CR 103 step before the first turn is done, after
-  CR 103.7's starting plane, the starting player's first, then each other
-  player's in turn order (CR 103.6's order), and before the game-start event
-  "at the beginning of the game" triggers on.
-- **Rejected**: Before CR 103.5's opening hands, beside the vanguard's own
-  modifiers (CR 902.4, 902.5): the card speaks of the game's beginning, and
-  every other "begin the game with" action (CR 103.6a) comes after the hands.
-  Inside CR 103.6's window: that window is for cards in an opening hand.
-- **Site**: `Parun.Engine.Setup.beginGame`; `Parun.VanguardSpec`'s "a
-  vanguard's game-start Elf enters after the opening-hand Leylines".
+- **Rules**: CR 103.4, 103.4b, 103.6, 103.6a, 103.7, 103.8, 302.6, 401.1,
+  402.1, 613.7i, 902.7; the card has no ruling; CR of 2026-11-06.
+- **Decision**: With the starting life totals (CR 103.4, 103.4b), before CR
+  103.5's opening hands, the starting player's first, then each other
+  player's in turn order (CR 103.6's order). The beginning of the game spans
+  CR 103's setup (CR 401.1, 402.1, 613.7i), so no Leyline is out yet to see
+  the Elf enter.
+- **Rejected**: After every CR 103 step before the first turn, once CR 103.7's
+  starting plane is set: each Leyline put out from an opening hand would see
+  the Elf enter. Inside CR 103.6's window: that window is for cards in an
+  opening hand.
+- **Site**: `Parun.Engine.Setup.takeGameStartActions`; `Parun.VanguardSpec`'s
+  "a vanguard's game-start Elf enters before the opening-hand Leylines".
 - **Issue**: none.
 
 ## Whether a vanguard's draw prohibition reaches the opening hand

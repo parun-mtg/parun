@@ -2562,11 +2562,13 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   TriggerCondition.ChaosEnsues -> case event of
     GameEvent.ChaosEnsued on -> maybe True (== bearer) on
     _ -> False
-  -- CR 732.1a: either direction, never the game's first designation, which
-  -- Parun.Engine.Daytime.becomes records no event for.
+  -- "At the beginning of the game": a new game, a restart (CR 728.1) or a
+  -- subgame (CR 730.2) began (Parun.Engine.Setup.beginGame).
   TriggerCondition.GameBegins -> case event of
     GameEvent.GameBegan -> True
     _ -> False
+  -- CR 732.1a: either direction, never the game's first designation, which
+  -- Parun.Engine.Daytime.becomes records no event for.
   TriggerCondition.DaytimeChanges -> case event of
     GameEvent.DaytimeChanged _ -> True
     _ -> False
