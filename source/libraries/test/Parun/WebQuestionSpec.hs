@@ -537,7 +537,7 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         stepped pending = fmap (\event -> Question.Web.step pending Set.empty event Text.empty) (conceding (Question.Web.view pending Question.Web.blank))
     Spec.assertEqWith s "the menu's Concede leaves at once" (stepped request) (Just Question.Web.MkConceded)
     Spec.assertEqWith s "CR 724.6 but passes where the seat decides for another" (stepped request {Request.question = (Request.question request) {Question.for = Just S.bob}}) (Just (Question.Web.MkReplied (R.Number 0)))
-    Spec.assertEqWith s "CR 730.1a and in a subgame" (stepped request {Request.depth = 1}) (Just (Question.Web.MkReplied (R.Number 0)))
+    Spec.assertEqWith s "CR 730.1a in a subgame too" (stepped request {Request.depth = 1}) (Just Question.Web.MkConceded)
     Spec.assertEqWith s "no concession while watching" (conceding watched) Nothing
     Spec.assertEqWith s "the level is chosen in the turn bar" (level asked) (Just (Question.Web.MkLevel Question.Web.MkAutoPass))
     Spec.assertEqWith s "and while watching" (level watched) (Just (Question.Web.MkLevel Question.Web.MkAutoPass))

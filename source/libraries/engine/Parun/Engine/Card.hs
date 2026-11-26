@@ -179,6 +179,7 @@ faceDownFace listed =
       Face.counterLimits = RuleAbilities.counterLimits listedRules,
       Face.mulliganActions = [],
       Face.openingHandActions = [],
+      Face.gameStartActions = [],
       Face.specialActions = []
     }
   where
@@ -551,6 +552,7 @@ merge2 l r =
           Face.blockCosts = Face.blockCosts l <> Face.blockCosts r,
           Face.mulliganActions = Face.mulliganActions l <> Face.mulliganActions r,
           Face.openingHandActions = Face.openingHandActions l <> Face.openingHandActions r,
+          Face.gameStartActions = Face.gameStartActions l <> Face.gameStartActions r,
           -- CR 709.4c: "each ability in the text box of each half", so a permission
           -- printed on either half survives into the combined view. No printed split
           -- card grants a CR 116.2 special action; the line is here for the reason
@@ -1738,6 +1740,7 @@ subtractHalf face =
       Face.counterLimits = [],
       Face.mulliganActions = [],
       Face.openingHandActions = [],
+      Face.gameStartActions = [],
       Face.specialActions = []
     }
 
@@ -1765,9 +1768,9 @@ faceNamed n card = List.find (\f -> Face.name f == n) (NonEmpty.toList (Card.fac
 -- dataflow lint and the text-change scan range over all of them regardless of
 -- what is chosen.
 --
--- Face.mulliganActions and Face.openingHandActions are deliberately NOT
--- included: neither is part of the spell, and CR 103.5b's and CR 103.6's actions
--- are performed from the hand rather than cast. Parun.CardSpec's handActions
+-- Face.mulliganActions, Face.openingHandActions and Face.gameStartActions are
+-- deliberately NOT included: none is part of the spell, and each is performed
+-- before the game rather than cast. Parun.CardSpec's handActions
 -- reaches them instead, and holds them to the dataflow rule on their own terms
 -- -- they declare no target slots -- so leaving them out here costs no lint
 -- coverage.

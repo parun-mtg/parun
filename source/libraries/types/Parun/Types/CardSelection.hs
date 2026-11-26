@@ -1,7 +1,8 @@
 module Parun.Types.CardSelection where
 
 -- | How a card is picked where the rules leave it open: at random or by a
--- player's choice. CR 701.9b's "at random" is not a choice, so the two raise
+-- player's choice. A CR 608.2d branch is picked the same two ways
+-- (Parun.Types.OrElse's selection). CR 701.9b's "at random" is not a choice, so the two raise
 -- different prompts and a transcript of one must not satisfy the other.
 data CardSelection
   = -- | Nobody decides: Coral Helm's "discard a card at random", Tome of the

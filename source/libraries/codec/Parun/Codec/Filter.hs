@@ -161,7 +161,7 @@ codec keywordCodec =
       Arm.payload "IsAttackingPlaneswalker" PlayerRelation.codec Filter.IsAttackingPlaneswalker (\x -> case x of Filter.IsAttackingPlaneswalker y -> Just y; _ -> Nothing),
       Arm.payload "IsAttackingBattle" PlayerRelation.codec Filter.IsAttackingBattle (\x -> case x of Filter.IsAttackingBattle y -> Just y; _ -> Nothing),
       Arm.optionalPayload "DeclaredAttackedThisCombat" SlotName.codec Filter.DeclaredAttackedThisCombat (\x -> case x of Filter.DeclaredAttackedThisCombat y -> Just y; _ -> Nothing),
-      Arm.nullary "IsBlocking" Filter.IsBlocking,
+      Arm.optionalPayload "IsBlocking" (codec keywordCodec) Filter.IsBlocking (\x -> case x of Filter.IsBlocking y -> Just y; _ -> Nothing),
       Arm.payload "HasBlockStatus" BlockStatus.codec Filter.HasBlockStatus (\x -> case x of Filter.HasBlockStatus y -> Just y; _ -> Nothing),
       Arm.payload "DeclaredThisTurn" DeclaredRole.codec Filter.DeclaredThisTurn (\x -> case x of Filter.DeclaredThisTurn y -> Just y; _ -> Nothing),
       Arm.nullary "CouldAttackThisTurn" Filter.CouldAttackThisTurn,

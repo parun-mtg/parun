@@ -616,6 +616,7 @@ import qualified Parun.Codec.MovedBetweenSpec
 import qualified Parun.Codec.MovedKindsSpec
 import qualified Parun.Codec.MovedSpec
 import qualified Parun.Codec.NameChooserSpec
+import qualified Parun.Codec.NamedCopySourceSpec
 import qualified Parun.Codec.NamesAreSpec
 import qualified Parun.Codec.NextDamageOutcomeSpec
 import qualified Parun.Codec.NextStepOfSpec
@@ -636,6 +637,7 @@ import qualified Parun.Codec.ObjectSnapshotSpec
 import qualified Parun.Codec.ObjectSpec
 import qualified Parun.Codec.ObjectViewSpec
 import qualified Parun.Codec.OfferCastSpec
+import qualified Parun.Codec.OfferNamedCopySpec
 import qualified Parun.Codec.OnePerSpec
 import qualified Parun.Codec.OnsetSpec
 import qualified Parun.Codec.OperandSpec
@@ -1834,6 +1836,8 @@ spec s reference corpus = do
   Parun.Codec.ObjectSnapshotSpec.spec s
   Parun.Codec.ObjectSpec.spec s
   Parun.Codec.OfferCastSpec.spec s
+  Parun.Codec.OfferNamedCopySpec.spec s
+  Parun.Codec.NamedCopySourceSpec.spec s
   Parun.Codec.NumberFloorSpec.spec s
   Parun.Codec.OnePerSpec.spec s
   Parun.Codec.OnsetSpec.spec s

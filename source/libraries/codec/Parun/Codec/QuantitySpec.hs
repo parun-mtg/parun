@@ -398,6 +398,12 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       (Quantity.TurnsBegun TurnKind.ExtraTurn (PlayerRef.Relative PlayerRelation.You))
       " {\"type\":\"ExtraTurnsBegun\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
+  Spec.it s "IsFirstTurnOfGame is nullary" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      Quantity.IsFirstTurnOfGame
+      " {\"type\":\"IsFirstTurnOfGame\"} "
   -- CR 702.112b, CR 701.37b and CR 701.60b: WHICH designation is on the wire and
   -- nothing else, the object it is asked of riding the evaluation rather than a
   -- reference -- so this is Power's shape rather than IsMonarch's.

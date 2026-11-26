@@ -350,6 +350,7 @@ import qualified Parun.Types.MoveDuration as MoveDuration
 import qualified Parun.Types.MoveMana as MoveMana
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.NamedCopySource as NamedCopySource
 import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextStepOf as NextStepOf
@@ -361,6 +362,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.ObjectRestriction as ObjectRestriction
 import qualified Parun.Types.OfferCast as OfferCast
+import qualified Parun.Types.OfferNamedCopy as OfferNamedCopy
 import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
@@ -659,7 +661,7 @@ filterChildren children predicate = case predicate of
   Filter.IsAttackingBattle _ -> pure predicate
   -- MANY: `matches` asks whether any of the slot's players declared it.
   Filter.DeclaredAttackedThisCombat name -> fmap Filter.DeclaredAttackedThisCombat (traverse (slot children SlotArity.Many) name)
-  Filter.IsBlocking -> pure predicate
+  Filter.IsBlocking f -> fmap Filter.IsBlocking (traverse (nest children) f)
   Filter.HasBlockStatus _ -> pure predicate
   Filter.DeclaredAttackerThisCombat -> pure predicate
   Filter.DeclaredBlockerThisCombat -> pure predicate
@@ -849,6 +851,7 @@ quantityChildren children quantity = case quantity of
   Quantity.IsStartingPlayer ref -> fmap Quantity.IsStartingPlayer (player children ref)
   Quantity.IsActivePlayer ref -> fmap Quantity.IsActivePlayer (player children ref)
   Quantity.TurnsBegun kind ref -> fmap (Quantity.TurnsBegun kind) (player children ref)
+  Quantity.IsFirstTurnOfGame -> pure quantity
   Quantity.Devotion (Devotion.MkDevotion ref colors) -> fmap (\renamed -> Quantity.Devotion (Devotion.MkDevotion renamed colors)) (player children ref)
   Quantity.PartySize ref -> fmap Quantity.PartySize (player children ref)
   Quantity.PlayerCounters (PlayerCounterTally.MkPlayerCounterTally ref kind) -> fmap (\renamed -> Quantity.PlayerCounters (PlayerCounterTally.MkPlayerCounterTally renamed kind)) (player children ref)
@@ -1397,7 +1400,8 @@ effectChildren c effect = case effect of
           <*> pure controlWhileResolving
           <*> traverse (onSlot c) named
       )
-  Effect.OfferNamedCopy _ -> pure effect
+  Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy names count offer) ->
+    fmap Effect.OfferNamedCopy (OfferNamedCopy.MkOfferNamedCopy <$> namedCopySourceChildren c names <*> pure count <*> castOfferChildren c offer)
   Effect.OfferNotedCopy offer -> fmap Effect.OfferNotedCopy (castOfferChildren c offer)
   Effect.GrantCopyCast (GrantCopyCast.MkGrantCopyCast duration who spending recopy) ->
     fmap Effect.GrantCopyCast (GrantCopyCast.MkGrantCopyCast <$> onDuration c duration <*> onPlayer c who <*> pure spending <*> traverse (onCondition c) recopy)
@@ -1500,6 +1504,12 @@ copyOriginalChildren c original = case original of
   CopyOriginal.Named name -> pure (CopyOriginal.Named name)
   CopyOriginal.Defined card -> fmap CopyOriginal.Defined (onCard c card)
   CopyOriginal.AtRandom from -> fmap CopyOriginal.AtRandom (fromReferenceChildren c from)
+
+-- | Where a named copy's names come from: a list, or a reference pick.
+namedCopySourceChildren :: (Applicative f) => EffectChildren card ability f -> NamedCopySource.NamedCopySource -> f NamedCopySource.NamedCopySource
+namedCopySourceChildren c names = case names of
+  NamedCopySource.Unchosen _ -> pure names
+  NamedCopySource.AtRandom from -> fmap NamedCopySource.AtRandom (fromReferenceChildren c from)
 
 -- | CR 108.1: a reference pick's filter and the bound it reads.
 fromReferenceChildren :: (Applicative f) => EffectChildren card ability f -> FromReference.FromReference -> f FromReference.FromReference
@@ -3069,7 +3079,7 @@ clauseChildren :: (Applicative f) => ModalChildren card ability f -> Clause.Clau
 clauseChildren c (Clause.MkClause ifTaken condition orElse optionality payGate effects) =
   Clause.MkClause ifTaken
     <$> traverse (modalCondition c) condition
-    <*> traverse (\(OrElse.MkOrElse siblings chooser villainous) -> (\who -> OrElse.MkOrElse siblings who villainous) <$> modalPlayer c chooser) orElse
+    <*> traverse (\(OrElse.MkOrElse siblings chooser villainous selection count) -> (\who -> OrElse.MkOrElse siblings who villainous selection count) <$> modalPlayer c chooser) orElse
     <*> optionalityChildren c optionality
     <*> traverse (modalPayGate c) payGate
     <*> traverse (modalEffect c) effects
@@ -3224,7 +3234,7 @@ faceLeaves =
 
 -- | A face's children. A delayed ability's name and a mode cost's index are keys, left as they are.
 faceChildren :: (Applicative f) => FaceChildren card f -> Face.Face card -> f (Face.Face card)
-faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer additionalHand anteOnly circlesTwo deckLimit commanderDeckRules pregameExile keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities lentKeywords rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions objectRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts counterLimits mulliganActions openingHandActions specialActions) =
+faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer additionalHand anteOnly circlesTwo deckLimit commanderDeckRules pregameExile keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities lentKeywords rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions objectRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts counterLimits mulliganActions openingHandActions gameStartActions specialActions) =
   Face.MkFace name oracleText manaCost typeLine
     <$> traverse (facePower c) power
     <*> traverse (faceToughness c) toughness
@@ -3285,6 +3295,7 @@ faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness lo
     <*> traverse (faceCounterLimit c) counterLimits
     <*> traverse (faceHandAction c) mulliganActions
     <*> traverse (faceHandAction c) openingHandActions
+    <*> traverse (faceHandAction c) gameStartActions
     <*> traverse (faceSpecialAction c) specialActions
 
 -- | A card's children: each of its faces (CR 712.6), whole.

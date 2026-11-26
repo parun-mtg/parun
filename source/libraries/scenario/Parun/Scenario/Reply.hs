@@ -344,6 +344,7 @@ shapeOf prompt = case prompt of
   Prompt.ChooseConjuredCard {} -> viaCodec Codec.CardName.codec
   Prompt.RandomNumber {} -> natural
   Prompt.RandomPlayer {} -> player
+  Prompt.RandomClause {} -> wrapped ClauseIndex.MkClauseIndex ClauseIndex.unwrap
   Prompt.RollDie {} -> natural
   Prompt.LookUpCard {} -> unsupported (Text.pack "a card")
   Prompt.ReferenceCards {} -> list (viaCodec Codec.CardName.codec)

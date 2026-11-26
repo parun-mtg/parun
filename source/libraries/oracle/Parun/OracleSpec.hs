@@ -540,6 +540,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "At the beginning of your upkeep, if you haven't begun an extra turn this game, you gain 1 life.")) (Oracle.render (gated (upkeeps (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))) unextended [gainLife 1]))
     let whales = compares (countOf (Filter.And [Filter.HasSubtype Subtype.Whale, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)]) (onBattlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) Comparison.AtLeast 1
     Spec.assertEq s (Just (Text.pack "At the beginning of your upkeep, if you control a Whale and haven't begun an extra turn this game, you gain 1 life.")) (Oracle.render (gated (upkeeps (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))) (Condition.All [whales, unextended]) [gainLife 1]))
+    -- CR 103.8: not the game's first turn (Necropotence Avatar).
+    Spec.assertEq s (Just (Text.pack "At the beginning of your end step, if it's not the first turn of the game, you gain 1 life.")) (Oracle.render (gated endStep (compares Quantity.IsFirstTurnOfGame Comparison.Exactly 0) [gainLife 1]))
 
   -- A creature type names creatures alone ("target attacking Goblin you
   -- control", Boggart Prankster); a change to each of several objects reads
@@ -597,9 +599,12 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s [[Text.pack "Destroy two target white and/or blue creatures.", Text.pack "Destroy two target creatures that are white and/or blue."]] (Oracle.abilities ignite)
     let decree = spell [clause [destroy (ObjectRef.InSlot target) Regenerability.Regenerable]] [(target, TargetSlot.required Pool.Creatures (Just colours))]
     Spec.assertEq s [[Text.pack "Destroy target white or blue creature.", Text.pack "Destroy target creature that's white or blue."]] (Oracle.abilities decree)
-    let combatants = Filter.Or [Filter.IsAttacking Nothing, Filter.IsBlocking]
+    let combatants = Filter.Or [Filter.IsAttacking Nothing, Filter.IsBlocking Nothing]
         fire = spell [clause [destroy (ObjectRef.InSlot target) Regenerability.Regenerable]] [(target, (TargetSlot.required Pool.Creatures (Just combatants)) {TargetSlot.count = SlotCount.Printed (TargetCount.MkTargetCount 2 (Just 2))})]
     Spec.assertEq s [[Text.pack "Destroy two target attacking or blocking creatures."]] (Oracle.abilities fire)
+    let yours = Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller (ControllerRelation.Related PlayerRelation.You)]
+        sisters = spell [clause [destroy (ObjectRef.InSlot target) Regenerability.Regenerable]] [(target, TargetSlot.required Pool.Creatures (Just (Filter.IsBlocking (Just yours))))]
+    Spec.assertEq s (Just (Text.pack "Destroy target creature that's blocking a creature you control.")) (Oracle.render sisters)
 
   -- CR 611.2a: a change to an object "until end of turn", the duration ending
   -- the sentence (Giant Growth) or opening it (Aspirant's Ascent), ending it
@@ -990,7 +995,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     let notDone = (clause [sacrifice]) {Clause.ifTaken = Just (IfTaken.NoneTaken (NonEmpty.singleton (ClauseIndex.MkClauseIndex 0)))}
         horde = triggered (TriggerCondition.Enters EntersTrigger.defaultValue) [mayDiscard, notDone] []
     Spec.assertEq s [[Text.pack "When Spark enters, sacrifice it unless you discard a card.", Text.pack "When Spark enters, sacrifice Spark unless you discard a card."]] (Oracle.abilities (withFace (\f -> (typed [CardType.Creature] [] f) {Face.triggeredAbilities = [horde]})))
-    let either' i c = (clause [c]) {Clause.optionality = Optionality.Optional (PlayerRef.Relative PlayerRelation.You) MayPass.AllSeatsFirst, Clause.orElse = Just (OrElse.MkOrElse (Set.singleton (ClauseIndex.MkClauseIndex i)) (PlayerRef.Relative PlayerRelation.You) False)}
+    let either' i c = (clause [c]) {Clause.optionality = Optionality.Optional (PlayerRef.Relative PlayerRelation.You) MayPass.AllSeatsFirst, Clause.orElse = Just (OrElse.MkOrElse (Set.singleton (ClauseIndex.MkClauseIndex i)) (PlayerRef.Relative PlayerRelation.You) False CardSelection.ByChoice 1)}
         twiddle = spell [either' 1 (Effect.Tap (Tap.plain (ObjectRef.InSlot target))), either' 0 (Effect.Untap (ObjectRef.InSlot target))] [(target, TargetSlot.required Pool.Permanents Nothing)]
     Spec.assertEq s (Just (Text.pack "You may tap or untap target permanent.")) (Oracle.render twiddle)
 

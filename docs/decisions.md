@@ -1966,6 +1966,19 @@ Entries are ordered by the first rule each cites.
   and "CR 807.5b a player with priority for several stacks chooses one".
 - **Issue**: #6117.
 
+## Which Grand Melee turn is the first turn of the game
+
+- **Question**: CR 807.4b starts every marker's turn at once. Is each of those
+  "the first turn of the game" (Necropotence Avatar)?
+- **Rules**: CR 103.8, 807.4b; CR of 2026-11-06.
+- **Decision**: Only the starting player's, the turn numbered 1.
+- **Rejected**: Every opening marker's turn. CR 103.8 names the starting
+  player's turn as the one the game begins with; the others are their
+  takers' first turns, which `Quantity.TurnsBegun` already reads.
+- **Site**: `Parun.Engine.Turn.isFirstTurnOfGame`. `Parun.GrandMeleeSpec`'s
+  "CR 103.8 only the starting player's opening turn is the game's first".
+- **Issue**: #9846.
+
 ## Which turn a Grand Melee read of the active player means
 
 - **Question**: CR 102.1's active player is "the player whose turn it is",
@@ -3457,3 +3470,24 @@ Entries are ordered by the first rule each cites.
   `cr-805-10a-an-emperor-team-s-shared-turn-attacks-from-each-general-s-seat`
   and its `-unrestricted` control.
 - **Issue**: #9806.
+
+## When a vanguard's game-start actions are taken
+
+- **Question**: Elvish Champion Avatar's "You begin the game with a 1/1 green
+  Elf creature token on the battlefield" is no triggered ability and no
+  opening-hand action. Where among CR 103's steps does the token arrive: before
+  or after CR 103.6's opening-hand actions, so that a Leyline of Vitality put
+  onto the battlefield there does or does not see it enter?
+- **Rules**: CR 103.6, 103.6a, 103.7, 103.8, 302.6, 902.7; the card has no
+  ruling; CR of 2026-11-06.
+- **Decision**: Once every CR 103 step before the first turn is done, after
+  CR 103.7's starting plane, the starting player's first, then each other
+  player's in turn order (CR 103.6's order), and before the game-start event
+  "at the beginning of the game" triggers on.
+- **Rejected**: Before CR 103.5's opening hands, beside the vanguard's own
+  modifiers (CR 902.4, 902.5): the card speaks of the game's beginning, and
+  every other "begin the game with" action (CR 103.6a) comes after the hands.
+  Inside CR 103.6's window: that window is for cards in an opening hand.
+- **Site**: `Parun.Engine.Setup.beginGame`; `Parun.VanguardSpec`'s "a
+  vanguard's game-start Elf enters after the opening-hand Leylines".
+- **Issue**: none.

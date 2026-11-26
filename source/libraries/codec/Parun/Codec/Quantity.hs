@@ -130,6 +130,7 @@ codec =
       -- per TurnKind.
       Arm.payload "TurnsBegun" PlayerRef.codec (Quantity.TurnsBegun TurnKind.AnyTurn) (\x -> case x of Quantity.TurnsBegun TurnKind.AnyTurn y -> Just y; _ -> Nothing),
       Arm.payload "ExtraTurnsBegun" PlayerRef.codec (Quantity.TurnsBegun TurnKind.ExtraTurn) (\x -> case x of Quantity.TurnsBegun TurnKind.ExtraTurn y -> Just y; _ -> Nothing),
+      Arm.nullary "IsFirstTurnOfGame" Quantity.IsFirstTurnOfGame,
       Arm.payload "PlayerCounters" PlayerCounterTally.codec Quantity.PlayerCounters (\x -> case x of Quantity.PlayerCounters y -> Just y; _ -> Nothing),
       -- CR 700.5's number: a PlayerRef and the colours it is measured to, which
       -- Parun.Types.Devotion holds as a SET so "to black and green" is one reading
@@ -351,6 +352,7 @@ tagOf x = case x of
   Quantity.IsActivePlayer {} -> "IsActivePlayer"
   Quantity.TurnsBegun TurnKind.AnyTurn _ -> "TurnsBegun"
   Quantity.TurnsBegun TurnKind.ExtraTurn _ -> "ExtraTurnsBegun"
+  Quantity.IsFirstTurnOfGame {} -> "IsFirstTurnOfGame"
   Quantity.PlayerCounters {} -> "PlayerCounters"
   Quantity.Devotion {} -> "Devotion"
   Quantity.PartySize {} -> "PartySize"

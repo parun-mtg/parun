@@ -30,7 +30,6 @@ import qualified Parun.Codec.BindAmount as BindAmount
 import qualified Parun.Codec.BindLeaders as BindLeaders
 import qualified Parun.Codec.BindPlayers as BindPlayers
 import qualified Parun.Codec.Blight as Blight
-import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.CastOffer as CastOffer
 import qualified Parun.Codec.ChangeTargets as ChangeTargets
 import qualified Parun.Codec.ChangeText as ChangeText
@@ -100,6 +99,7 @@ import qualified Parun.Codec.NextDamageInstance as NextDamageInstance
 import qualified Parun.Codec.NoteKind as NoteKind
 import qualified Parun.Codec.ObjectRef as ObjectRef
 import qualified Parun.Codec.OfferCast as OfferCast
+import qualified Parun.Codec.OfferNamedCopy as OfferNamedCopy
 import qualified Parun.Codec.PermanentActed as PermanentActed
 import qualified Parun.Codec.Phase as Phase
 import qualified Parun.Codec.PhaseOut as PhaseOut
@@ -346,7 +346,7 @@ codec cardCodec abilityCodec =
           Arm.payload "ExchangeOwnership" ExchangeOwnership.codec Effect.ExchangeOwnership (\x -> case x of Effect.ExchangeOwnership y -> Just y; _ -> Nothing),
           Arm.payload "Shuffle" PlayerRef.codec Effect.Shuffle (\x -> case x of Effect.Shuffle y -> Just y; _ -> Nothing),
           Arm.payload "OfferCast" OfferCast.codec Effect.OfferCast (\x -> case x of Effect.OfferCast y -> Just y; _ -> Nothing),
-          Arm.payload "OfferNamedCopy" (Common.nonEmpty CardName.codec) Effect.OfferNamedCopy (\x -> case x of Effect.OfferNamedCopy y -> Just y; _ -> Nothing),
+          Arm.payload "OfferNamedCopy" OfferNamedCopy.codec Effect.OfferNamedCopy (\x -> case x of Effect.OfferNamedCopy y -> Just y; _ -> Nothing),
           Arm.payload "OfferNotedCopy" CastOffer.codec Effect.OfferNotedCopy (\x -> case x of Effect.OfferNotedCopy y -> Just y; _ -> Nothing),
           Arm.payload "GrantPlayFromExile" GrantPlayFromExile.codec Effect.GrantPlayFromExile (\x -> case x of Effect.GrantPlayFromExile y -> Just y; _ -> Nothing),
           Arm.payload "GrantCopyCast" GrantCopyCast.codec Effect.GrantCopyCast (\x -> case x of Effect.GrantCopyCast y -> Just y; _ -> Nothing),

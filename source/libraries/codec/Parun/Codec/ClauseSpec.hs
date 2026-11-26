@@ -9,6 +9,7 @@ import qualified Parun.Json.Value as Value
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.Compares as Compares
@@ -108,7 +109,7 @@ spec s = Spec.describe s "Parun.Codec.Clause" $ do
       s
       toJson
       fromJson
-      (Clause.MkClause Nothing Nothing (Just (OrElse.MkOrElse (Set.singleton (ClauseIndex.MkClauseIndex 1)) (PlayerRef.Relative PlayerRelation.You) False)) Optionality.Mandatory Nothing Seq.empty)
+      (Clause.MkClause Nothing Nothing (Just (OrElse.MkOrElse (Set.singleton (ClauseIndex.MkClauseIndex 1)) (PlayerRef.Relative PlayerRelation.You) False CardSelection.ByChoice 1)) Optionality.Mandatory Nothing Seq.empty)
       " {\"orElse\":{\"siblings\":[1]}} "
   -- CR 118.12a: Mana Leak's "unless its controller pays {3}" is what the
   -- payGate key encodes, and it is emitted only when there is one.

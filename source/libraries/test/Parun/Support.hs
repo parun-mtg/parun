@@ -2009,6 +2009,7 @@ stubView table oid =
                 Filter.blockStatus = Nothing,
                 Filter.blockers = Set.empty,
                 Filter.blocked = Set.empty,
+                Filter.blockedViews = [],
                 Filter.declaredThisTurn = Set.empty,
                 Filter.couldAttackThisTurn = False,
                 Filter.declaredAttackerThisCombat = False,

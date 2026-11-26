@@ -297,34 +297,36 @@ newtype Conceded = MkConceded PlayerId.PlayerId
 
 instance Exception.Exception Conceded
 
--- | CR 104.3a / 800.4: this seat leaving a game of more than two while asked
--- at its priority (Parun.Web.Question.atPriority), thrown from whatever waits
--- on that prompt: 'game' asks the seat's concession question again
--- ('rewinding'), which its exchange must then answer Concedes, and plays on.
--- PlaySpec's "a seat leaving a game of three at its priority" is the proof.
+-- | CR 104.3a / 800.4: this seat leaving a game of more than two, or a
+-- subgame (CR 730.1a), while a priority is asked
+-- (Parun.Web.Question.atPriority), thrown from whatever waits on that
+-- prompt: 'game' asks the seat's concession question again ('rewinding'),
+-- which its exchange must then answer Concedes, and plays on. PlaySpec's "a seat leaving a game of three
+-- at its priority" and RemoteSeatSpec's Shahrazad cases are the proof.
 newtype Leaving = MkLeaving PlayerId.PlayerId
   deriving (Show)
 
 instance Exception.Exception Leaving
 
 -- | Each prompt answered once, but for a seat leaving, which `catchLeaving`
--- catches (MkLeaving in IO): asked again the main game's concession question
--- asked of it just before (Engine.priorityDecision asks every still-playing
--- seat's right before each priority), the game standing still since, so
--- leaving then is leaving as it was asked. A seat leaving with no such
--- question just before stops play.
+-- catches (MkLeaving in IO): asked again the concession question asked of it
+-- just before (Engine.priorityDecision asks every still-playing seat's right
+-- before each priority), in the main game or a subgame (CR 730.1a), whose
+-- program is the main game's suspended (Engine.playSubgame), the game
+-- standing still since, so leaving then is leaving as it was asked. A seat
+-- leaving with no such question just before stops play.
 rewinding :: (Monad m) => (forall b. m b -> (PlayerId.PlayerId -> m b) -> m b) -> Driver.Fold (Game.Play m)
 rewinding catchLeaving = Program.foldProgramResuming conceding (playCatching catchLeaving) (const (Game.stop (Text.pack "a player left the game at no concession question")))
 
--- | The seat a main game's concession question asks, which 'rewinding' can
--- ask again.
+-- | The seat a concession question asks, at any depth, which 'rewinding'
+-- can ask again.
 conceding :: Asked.Asked g r -> Maybe PlayerId.PlayerId
 conceding asked = case Asked.prompt asked of
-  Prompt.Concede pid | null (Asked.enclosing asked) -> Just pid
+  Prompt.Concede pid -> Just pid
   _ -> Nothing
 
--- | `run` moved on by the prompt `asked`: the seats asked the main game's
--- concession questions one after another, in order, up to the prompt
+-- | `run` moved on by the prompt `asked`: the seats asked concession
+-- questions one after another, in order, up to the prompt
 -- pending, and whether one other than those follows them. Leaving at that
 -- prompt, a seat is asked its own again ('rewinding'), and each after it.
 concessionRun :: Asked.Asked g r -> ([PlayerId.PlayerId], Bool) -> ([PlayerId.PlayerId], Bool)

@@ -1001,6 +1001,15 @@ combatReplaySpec s =
         Spec.it s "an opponent CHOICE does not decode as a random selection" $ do
           let p = Prompt.RandomPlayer (S.bob NonEmpty.:| [S.carol])
           Spec.assertEqWith s "mismatch" (Replay.decode p (Response.ChoseOpponent S.bob)) Nothing
+        -- Master of the Wild Hunt Avatar's "chosen at random" over its printed
+        -- branches. RandomPlayer's reasons, over clause ordinals.
+        Spec.it s "RandomClause round-trips through the transcript" $ do
+          let p = Prompt.RandomClause (ClauseIndex.MkClauseIndex 0 NonEmpty.:| [ClauseIndex.MkClauseIndex 3])
+          Spec.assertEqWith s "the last round trips" (Replay.decode p (Replay.encode p (ClauseIndex.MkClauseIndex 3))) (Just (ClauseIndex.MkClauseIndex 3))
+          Spec.assertEqWith s "the first round trips" (Replay.decode p (Replay.encode p (ClauseIndex.MkClauseIndex 0))) (Just (ClauseIndex.MkClauseIndex 0))
+        Spec.it s "a branch CHOICE does not decode as a random draw" $ do
+          let p = Prompt.RandomClause (ClauseIndex.MkClauseIndex 0 NonEmpty.:| [ClauseIndex.MkClauseIndex 3])
+          Spec.assertEqWith s "mismatch" (Replay.decode p (Response.ChoseClause (Just (ClauseIndex.MkClauseIndex 0)))) Nothing
         -- The fifth Decider-less prompt: Tome of the Infinite's "conjure a
         -- random card from Tome of the Infinite's spellbook". RandomObject's
         -- reasons over NAMES, the candidates being card data rather than

@@ -42,7 +42,7 @@ import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Resolve.Common as Common
-import Parun.Engine.Resolve.Slots (battlefieldMatching, conditionSlots, effectContext, effectViewOf, legalOne, objectRefObjects, overRelations, playerEffectFilterSlots, playerRefPlayers, replacementRowSlots, resolvingAbilityName, slotBindings, slotGroup)
+import Parun.Engine.Resolve.Slots (battlefieldMatching, conditionSlots, effectContext, effectViewOf, legalOne, matchingFromAmong, objectRefObjects, overRelations, playerEffectFilterSlots, playerRefPlayers, replacementRowSlots, resolvingAbilityName, slotBindings, slotGroup)
 import qualified Parun.Engine.Room as Room
 import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Turn as Turn
@@ -75,7 +75,6 @@ import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.BlockChoice as BlockChoice
 import qualified Parun.Types.Card as Card.Type
-import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChangeTargets as ChangeTargets
@@ -125,7 +124,6 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.InitiativeTarget as InitiativeTarget
-import qualified Parun.Types.Keyword as KeywordType
 import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.LibraryDepth as LibraryDepth
@@ -243,7 +241,7 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
   -- several for Dunbarrow Revivalist's "one of them", whose CR 608.2d choice
   -- among the legal hosts Event.createTokens makes once the token exists.
   --
-  -- EntryHost.Chosen is the MoveToZone's alone (moveOne), which
+  -- EntryHost.Chosen is MoveToZone's (moveOne) and CreateCopy's, which
   -- Parun.EffectLintSpec fences, so a Create reads it as naming no host.
   mAttached <- case EntryRiders.attachedTo entry of
     Nothing -> pure Nothing
@@ -438,7 +436,7 @@ conjure settle resolving source controller legal payload = do
           -- nothing conjures nothing.
           referenceAmount from = FromReference.amount from >>= Common.evaluateForRecipient viewOf context gs resolving source conjuring
           pickReference predicate amount names = do
-            found <- pickName names >>= admittedReferenceCard predicate amount
+            found <- pickName names >>= Common.admittedReferenceCard predicate amount
             g <- State.get
             pure (fmap (\card -> (card, Nothing)) (found >>= (`Game.cardOfPrinting` g)))
           referencePickers from count = do
@@ -600,11 +598,29 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
                 -- away with the read. ONE pick for every creator and the whole
                 -- count: no card in data/cards/ copies a reference card more than
                 -- once per resolution, so this reading is a regression fence.
-                originals = fmap (\src -> (src, gs)) sources <> foldMap (\printingId -> [Event.mintOutside controller printingId gs]) outside
+                counterfactual = fmap (\printingId -> Event.mintOutside controller printingId gs) outside
+                originals = fmap (\src -> (src, gs)) sources <> Maybe.maybeToList counterfactual
+            -- CR 303.4f's "any other applicable effects": the host the effect
+            -- describes, drawn at random (Peacekeeper Avatar's "a creature that
+            -- player controls chosen at random") from the Aura's own
+            -- entryHostsFor off the counterfactual board, narrowed by the
+            -- filter, MoveToZone's chosenHost offer. Handed to createTokens as
+            -- the one host it names, so CR 303.4g / 303.4i's "isn't created"
+            -- is the funnel's own where none is legal.
+            --
+            -- Unprinted: a chosen host for an object in the game, or chosen by
+            -- a player; Parun.EffectLintSpec keeps both out of card data, and a
+            -- CreateCopy reads them as naming no host, Create's reading.
+            attached <- case (EntryRiders.attachedTo entry, counterfactual) of
+              (Just (EntryHost.Chosen CardSelection.AtRandom Nothing filter_), Just (subject, board)) -> do
+                let offered = Maybe.mapMaybe Recipient.objectOf (Attach.entryHostsFor creating subject board)
+                drawn <- Game.drawAmong Prompt.RandomObject (matchingFromAmong legal resolving controller source gs filter_ offered)
+                pure (Just (fmap Recipient.ToObject (Maybe.maybeToList drawn)))
+              _ -> pure Nothing
             case NonEmpty.nonEmpty (Maybe.mapMaybe shapeOf originals) of
               Nothing -> pure []
               -- CR 508.4 / 509.4, Create's road.
-              Just shapes -> Common.creatingIntoCombat mAttack mBlocked (Event.createTokens settle creating shapes Nothing (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) Nothing (Common.resolvingMarks resolving gs))
+              Just shapes -> Common.creatingIntoCombat mAttack mBlocked (Event.createTokens settle creating shapes Nothing (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) attached (Common.resolvingMarks resolving gs))
     _ -> pure []
   -- Dance of Many's later abilities mean this token.
   Monad.when linked (State.modify' (\g -> foldr (Common.linkEntrant resolving source) g minted))
@@ -621,38 +637,15 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
 
 -- | CR 108.1: the card a copy's original names outside the game, interned --
 -- the Oracle reference's card of that name, the effect's own defined card, or
--- one the reference admits chosen at random -- and Nothing for an object in
--- the game. A random pick asks the interpreter which cards the filter admits,
--- off the pre-effect board like conjure's reference road, and is filtered back:
--- a reference admitting nothing copies nothing (CR 111.12).
+-- one the reference admits chosen at random (Common.drawReferenceCards) -- and
+-- Nothing for an object in the game. A reference admitting nothing copies
+-- nothing (CR 111.12).
 referenceOriginal :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> CopyOriginal.CopyOriginal Card.Type.Card -> Game (Maybe PrintingId.PrintingId)
 referenceOriginal resolving source controller legal original = case original of
   CopyOriginal.Named name -> Game.lookUpCard name
   CopyOriginal.Defined card -> fmap Just (State.state (Game.intern (Printing.ofCard card)))
   CopyOriginal.OfObject _ -> pure Nothing
-  CopyOriginal.AtRandom from -> do
-    gs <- State.get
-    let predicate = FromReference.filter from
-        context = effectContext gs resolving controller source legal (slotBindings resolving gs)
-        amount = FromReference.amount from >>= Common.evaluateForRecipient (effectViewOf resolving source legal gs) context gs resolving source controller
-    names <- Game.ask (Prompt.ReferenceCards predicate amount)
-    case NonEmpty.nonEmpty (ListUtils.nubOrd names) of
-      Nothing -> pure Nothing
-      Just offered -> do
-        answer <- Maybe.fromMaybe (NonEmpty.head offered) <$> Game.drawAmong Prompt.RandomCard (NonEmpty.toList offered)
-        admittedReferenceCard predicate amount answer
-
--- | CR 108.1: the reference card of this name, interned, provided the filter
--- admits it -- an answer outside what the filter admits is not taken.
-admittedReferenceCard :: Filter.Type.Filter KeywordType.Keyword -> Maybe Integer -> CardName.CardName -> Game (Maybe PrintingId.PrintingId)
-admittedReferenceCard predicate amount answer = do
-  found <- Game.lookUpCard answer
-  g <- State.get
-  pure $ do
-    printingId <- found
-    card <- Game.cardOfPrinting printingId g
-    Monad.guard (Projection.referenceAdmits (Game.teams g) amount predicate card)
-    Just printingId
+  CopyOriginal.AtRandom from -> Maybe.listToMaybe <$> Common.drawReferenceCards resolving source controller legal 1 from
 
 becomeCopy :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> BecomeCopy.BecomeCopy Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 becomeCopy resolving source controller legal chosen (BecomeCopy.MkBecomeCopy original subjectRef duration exceptions newTargets) = do

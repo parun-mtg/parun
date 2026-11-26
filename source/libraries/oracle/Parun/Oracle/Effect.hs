@@ -25,6 +25,7 @@ import qualified Parun.Oracle.Target as Target
 import qualified Parun.Oracle.Trigger as Trigger
 import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Card as Card
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChooseInstead as ChooseInstead
@@ -274,6 +275,8 @@ steps context cs = case cs of
       OrElse.siblings o == Set.singleton j,
       OrElse.chooser o == PlayerRef.Relative PlayerRelation.You,
       not (OrElse.villainous o),
+      OrElse.selection o == CardSelection.ByChoice,
+      OrElse.count o == 1,
       o' == o {OrElse.siblings = Set.singleton i},
       Clause.optionality c == Clause.optionality d,
       c == (unridden c) {Clause.optionality = Clause.optionality c, Clause.orElse = Clause.orElse c},

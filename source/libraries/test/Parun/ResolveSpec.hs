@@ -2193,6 +2193,7 @@ subgameSpellOn borrowed name effects gs0 =
             Face.counterLimits = [],
             Face.mulliganActions = [],
             Face.openingHandActions = [],
+            Face.gameStartActions = [],
             Face.specialActions = [],
             Face.additionalCosts = [],
             Face.additionalCostChoices = [],

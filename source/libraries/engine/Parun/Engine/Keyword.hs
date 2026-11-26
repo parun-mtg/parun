@@ -7092,6 +7092,7 @@ spiritToken =
               Face.counterLimits = [],
               Face.mulliganActions = [],
               Face.openingHandActions = [],
+              Face.gameStartActions = [],
               Face.specialActions = []
             }
     }
@@ -7342,6 +7343,7 @@ servoToken =
               Face.counterLimits = [],
               Face.mulliganActions = [],
               Face.openingHandActions = [],
+              Face.gameStartActions = [],
               Face.specialActions = []
             }
     }
@@ -7547,6 +7549,7 @@ tokenCard name typeLine colors stats abilities =
               Face.counterLimits = [],
               Face.mulliganActions = [],
               Face.openingHandActions = [],
+              Face.gameStartActions = [],
               Face.specialActions = []
             }
     }

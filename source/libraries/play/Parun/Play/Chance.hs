@@ -24,6 +24,7 @@ chance = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.RandomObject candidates -> Generator.pick candidates
   Prompt.RandomStickerSheet slots -> Generator.pick slots
   Prompt.RandomPlayer candidates -> Generator.pick candidates
+  Prompt.RandomClause branches -> Generator.pick branches
   Prompt.RandomCard candidates -> Generator.pick candidates
   Prompt.RollDie sides -> Generator.between 1 sides
   Prompt.RandomNumber low high -> Generator.between low high

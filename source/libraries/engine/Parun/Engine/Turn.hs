@@ -231,6 +231,12 @@ duringRunningTurn :: (PlayerRef.PlayerRef -> Maybe [PlayerId]) -> GameState -> M
 duringRunningTurn named gs window scope own =
   any (\(active, phase) -> maybe True (`inWindow` phase) window && turnScopeAdmits named gs scope active own) (runningTurns gs)
 
+-- | CR 103.8: is the turn being worked the game's first, numbered 1 at setup?
+-- In Grand Melee, the starting player's alone (docs/decisions.md, "Which Grand
+-- Melee turn is the first turn of the game").
+isFirstTurnOfGame :: GameState -> Bool
+isFirstTurnOfGame gs = TurnRegisters.turnNumber (GameState.turn gs) == 1
+
 -- | CR 500.7: how many turns of this kind this player has begun this game.
 turnsBegun :: TurnKind.TurnKind -> PlayerId -> GameState -> Natural
 turnsBegun kind pid gs = maybe 0 (Map.findWithDefault 0 pid) (Map.lookup kind (GameState.turnsBegun gs))
