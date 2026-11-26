@@ -281,6 +281,28 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
       Spec.assertEqWith s "a new variant forgets the emperors" (Lobby.emperors (set Lobby.MkVariant "emperor" (set (Lobby.MkEmperorSeat 1) "5" six))) Map.empty
       Spec.assertEqWith s "an emperor change clears ready" (Lobby.ready (set (Lobby.MkEmperorSeat 1) "5" (Lobby.update Lobby.MkReady Text.empty six))) False
 
+    Spec.it s "CR 804.1 offers the deploy creatures option in a game between teams only" $ do
+      let set event value = Lobby.update event (Text.pack value)
+          three = withBots 2
+          four = withBots 3
+          versus = set Lobby.MkVariant "team-vs-team" three
+          handled prefix l = Html.search (Text.isPrefixOf (Text.pack prefix) . Html.toText) (Lobby.view l) >>= \path -> Html.handler (Text.pack "change") path (Lobby.view l)
+          deploys = fmap GameSettings.deployCreatures . Lobby.settings
+          told = lookup (Text.pack "Deploy creatures") . Lobby.told
+      Spec.assertEqWith s "the switch" (handled "<input id=\"option-deploy-creatures\"" versus) (Just Lobby.MkDeployCreatures)
+      Spec.assertEqWith s "off unless told otherwise" (deploys versus) (Right False)
+      Spec.assertEqWith s "CR 804.2: Team vs. Team" (deploys (set Lobby.MkDeployCreatures "" versus)) (Right True)
+      Spec.assertEqWith s "CR 804.2: Two-Headed Giant" (deploys (set Lobby.MkDeployCreatures "" (set Lobby.MkVariant "two-headed-giant" four))) (Right True)
+      Spec.assertEqWith s "CR 804.2: Alternating Teams" (deploys (set Lobby.MkDeployCreatures "" (set Lobby.MkVariant "alternating-teams" four))) (Right True)
+      Spec.assertEqWith s "a switch toggles off" (deploys (set Lobby.MkDeployCreatures "" (set Lobby.MkDeployCreatures "" versus))) (Right False)
+      Spec.assertEqWith s "told it" (told (set Lobby.MkDeployCreatures "" versus)) (Just (Text.pack "Yes"))
+      Spec.assertEqWith s "a change clears ready" (Lobby.ready (set Lobby.MkDeployCreatures "" (Lobby.update Lobby.MkReady Text.empty versus))) False
+      Spec.assertEqWith s "no switch in Free-for-All" (handled "<input id=\"option-deploy-creatures\"" three) Nothing
+      Spec.assertEqWith s "no switch in Grand Melee" (handled "<input id=\"option-deploy-creatures\"" (set Lobby.MkVariant "grand-melee" (withBots 9))) Nothing
+      Spec.assertEqWith s "CR 804.1: no switch in Emperor, which always uses it" (handled "<input id=\"option-deploy-creatures\"" (set Lobby.MkVariant "emperor" (withBots 5))) Nothing
+      Spec.assertEqWith s "not told without teams" (told three) Nothing
+      Spec.assertEqWith s "not played without teams, switched on before" (deploys (set Lobby.MkVariant "free-for-all" (set Lobby.MkDeployCreatures "" versus))) (Right False)
+
     Spec.it s "CR 807 plays Grand Melee, on no teams, with its own options" $ do
       let set event value = Lobby.update event (Text.pack value)
           ten = set Lobby.MkVariant "grand-melee" (withBots 9)
