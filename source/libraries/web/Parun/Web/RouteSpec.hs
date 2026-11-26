@@ -1,11 +1,7 @@
 module Parun.Web.RouteSpec where
 
-import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import qualified Parun.Spec as Spec
-import qualified Parun.Types.Difficulty as Difficulty
-import qualified Parun.Types.Persona as Persona
-import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Web.Replay as Web.Replay
 import qualified Parun.Web.Route as Route
 
@@ -22,10 +18,9 @@ spec s = Spec.describe s "Parun.Web.Route" $ do
           Route.MkBuild (Just (Text.pack "starter/red")),
           Route.MkReplays,
           Route.MkReplay Route.MkWatching (Web.Replay.MkScenario (Text.pack "cards/lightning-bolt")) 3,
-          Route.MkReplay (Route.MkPlayingOn (filled [Web.Replay.MkHere])) (Web.Replay.MkScenario (Text.pack "a&b=c")) 0,
-          Route.MkReplay (Route.MkPlayingOn (filled [Web.Replay.MkBot Difficulty.MkEasy Persona.MkControl, Web.Replay.MkHere, Web.Replay.MkGoldfish])) (Web.Replay.MkScenario (Text.pack "a&b=c")) 4,
+          Route.MkReplay Route.MkPlayingOn (Web.Replay.MkScenario (Text.pack "a&b=c")) 4,
           Route.MkReplay Route.MkWatching (Web.Replay.MkPlayed (Text.pack "1795364751000")) 12,
-          Route.MkReplay (Route.MkPlayingOn (filled [Web.Replay.MkHere, Web.Replay.MkHere])) (Web.Replay.MkPlayed (Text.pack "1795364751000")) 1
+          Route.MkReplay Route.MkPlayingOn (Web.Replay.MkPlayed (Text.pack "1795364751000")) 1
         ]
 
   Spec.describe s "render" $ do
@@ -35,8 +30,8 @@ spec s = Spec.describe s "Parun.Web.Route" $ do
     Spec.it s "names a scenario's replay by its link, at its position" $ do
       Spec.assertEq s (Route.render (Route.MkReplay Route.MkWatching (Web.Replay.MkScenario (Text.pack "cards/lightning-bolt")) 3)) (Text.pack "?scenario=cards%2flightning-bolt&at=3")
 
-    Spec.it s "names a game played on from a position by branch, valued by each seat's filling" $ do
-      Spec.assertEq s (Route.render (Route.MkReplay (Route.MkPlayingOn (filled [Web.Replay.MkHere, Web.Replay.MkBot Difficulty.MkHard Persona.MkAggro, Web.Replay.MkGoldfish])) (Web.Replay.MkPlayed (Text.pack "17")) 2)) (Text.pack "?game=17&at=2&branch=here.bot-hard-aggro.goldfish")
+    Spec.it s "names a game played on from a position by branch" $ do
+      Spec.assertEq s (Route.render (Route.MkReplay Route.MkPlayingOn (Web.Replay.MkPlayed (Text.pack "17")) 2)) (Text.pack "?game=17&at=2&branch")
 
     Spec.it s "names the join screen by join, the offer left to the fragment" $ do
       Spec.assertEq s (Route.render (Route.MkJoin Route.MkGathering)) (Text.pack "?join")
@@ -54,12 +49,8 @@ spec s = Spec.describe s "Parun.Web.Route" $ do
     Spec.it s "reads a scenario with no position at its first" $ do
       Spec.assertEq s (Route.parse (Text.pack "?scenario=foo&level=Standard")) (Route.MkReplay Route.MkWatching (Web.Replay.MkScenario (Text.pack "foo")) 0)
 
-    Spec.it s "reads a branch whose fillings do not all read as watched" $ do
-      Spec.assertEq s (fmap (Route.parse . Text.pack) ["?game=17&branch", "?game=17&branch=2", "?game=17&branch=here.x", "?game=17&branch=bot-hard"]) (replicate 4 (Route.MkReplay Route.MkWatching (Web.Replay.MkPlayed (Text.pack "17")) 0))
+    Spec.it s "reads a branch as played on, an older link's fillings passed over" $ do
+      Spec.assertEq s (fmap (Route.parse . Text.pack) ["?game=17&branch", "?game=17&branch=here.bot-hard-aggro"]) (replicate 2 (Route.MkReplay Route.MkPlayingOn (Web.Replay.MkPlayed (Text.pack "17")) 0))
 
     Spec.it s "reads a query naming no screen as the home screen" $ do
       Spec.assertEq s (fmap (Route.parse . Text.pack) ["", "?level=Standard&offer=xyz", "?at=nope"]) [Route.MkHome, Route.MkHome, Route.MkHome]
-
--- | Each seat filled so, in seating order.
-filled :: [Web.Replay.Filling] -> Map.Map PlayerId.PlayerId Web.Replay.Filling
-filled = Map.fromList . zip (fmap PlayerId.MkPlayerId [0 ..])

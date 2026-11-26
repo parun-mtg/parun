@@ -4,20 +4,15 @@
 -- engine writes back as the page moves between screens.
 module Parun.Web.Route where
 
-import qualified Control.Monad as Monad
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LazyByteString
 import qualified Data.Foldable as Foldable
-import qualified Data.List as List
-import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
 import qualified Data.Text.Encoding.Error as Error
 import Numeric.Natural (Natural)
-import qualified Parun.Play.Opponent as Opponent
-import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Uri.Query as Query
 import qualified Parun.Web.Replay as Web.Replay
 import qualified Text.Read as Read
@@ -49,15 +44,13 @@ data Stage
 -- | What a replay's route does at its position.
 data Way
   = MkWatching
-  | -- | Played on, each seat filled so (Web.Replay.MkBranch).
-    MkPlayingOn (Map.Map PlayerId.PlayerId Web.Replay.Filling)
+  | -- | Played on, its seats filled in the lobby (Parun.Web.Lobby.PlayOn).
+    MkPlayingOn
   deriving (Eq, Show)
 
 -- | The route's fields: a scenario by its name (scenario=, and at=), a game
--- finished here by its key (game=), played on with branch, valued by each
--- seat's filling in seating order ('fillingToken'), dot-separated; the
--- replays as replays, though the empty scenario= of an older link reads so
--- too.
+-- finished here by its key (game=), played on with branch; the replays as
+-- replays, though the empty scenario= of an older link reads so too.
 fields :: Route -> [(Text.Text, Text.Text)]
 fields route =
   let named key = maybe [(Text.pack key, Text.empty)] (\name -> [(Text.pack key, name)])
@@ -75,24 +68,8 @@ fields route =
                 Web.Replay.MkPlayed key -> (Text.pack "game", key)
               branch = case way of
                 MkWatching -> []
-                MkPlayingOn filled -> [(Text.pack "branch", Text.intercalate (Text.pack ".") (fmap fillingToken (Map.elems filled)))]
+                MkPlayingOn -> [(Text.pack "branch", Text.empty)]
            in [which, (Text.pack "at", Text.pack (show at))] <> branch
-
--- | A seat's filling as a route names it: here, goldfish, or a bot as bot,
--- its difficulty and its persona (Parun.Play.Opponent), dash-separated.
-fillingToken :: Web.Replay.Filling -> Text.Text
-fillingToken filling = Text.pack $ case filling of
-  Web.Replay.MkHere -> "here"
-  Web.Replay.MkGoldfish -> "goldfish"
-  Web.Replay.MkBot level style -> List.intercalate "-" ["bot", fst (Opponent.difficultyName level), fst (Opponent.personaName style)]
-
--- | The filling a route's token names ('fillingToken').
-fillingFromToken :: Text.Text -> Maybe Web.Replay.Filling
-fillingFromToken token = case Text.unpack <$> Text.splitOn (Text.pack "-") token of
-  ["here"] -> Just Web.Replay.MkHere
-  ["goldfish"] -> Just Web.Replay.MkGoldfish
-  ["bot", level, style] -> Web.Replay.MkBot <$> Opponent.named Opponent.difficultyName level <*> Opponent.named Opponent.personaName style
-  _ -> Nothing
 
 -- | The query naming the route, empty for the home screen.
 render :: Route -> Text.Text
@@ -113,9 +90,8 @@ parse query =
       field key = lookup (Text.pack key) given
       named key = fmap (\value -> if Text.null value then Nothing else Just value) (field key)
       at = Maybe.fromMaybe (0 :: Natural) (field "at" >>= Read.readMaybe . Text.unpack)
-      -- A branch whose fillings do not all read is only watched.
-      filledBy value = Map.fromList . zip (fmap PlayerId.MkPlayerId [0 ..]) <$> (Monad.mfilter (not . null) . traverse fillingFromToken $ Text.splitOn (Text.pack ".") value)
-      way = Maybe.fromMaybe MkWatching (field "branch" >>= fmap MkPlayingOn . filledBy)
+      -- An older link's value, each seat's filling, is passed over.
+      way = maybe MkWatching (const MkPlayingOn) (field "branch")
       replay source = MkReplay way source at
    in Maybe.fromMaybe MkHome $
         Foldable.asum

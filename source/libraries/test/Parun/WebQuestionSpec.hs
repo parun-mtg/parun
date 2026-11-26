@@ -1639,8 +1639,7 @@ frameAt stop =
       Replay.failure = Nothing,
       Replay.reading = Nothing,
       Replay.written = Map.empty,
-      Replay.kept = Nothing,
-      Replay.chosenFillings = Map.empty
+      Replay.kept = Nothing
     }
 
 -- | The turn bar of the replay page at the stop.

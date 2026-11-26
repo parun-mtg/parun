@@ -35,6 +35,7 @@ import qualified Parun.Web.Html as Html
 import qualified Parun.Web.Link as Link
 import qualified Parun.Web.Lobby as Lobby
 import qualified Parun.Web.Patch as Patch
+import qualified Parun.Web.Replay as Replay
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Web.Lobby" $ do
@@ -529,6 +530,53 @@ spec s = Spec.describe s "Parun.Web.Lobby" $ do
 
     Spec.it s "starts at once with no game paused" $ do
       Spec.assertEq s (Lobby.abandoning (Lobby.update Lobby.MkStart Text.empty (Lobby.update (Lobby.MkPick a) Text.empty lobby))) Nothing
+
+  Spec.describe s "playing on" $ do
+    let three = Lobby.playingOnFrom (Link.playedOn (Replay.MkScenario (Text.pack "rules/601 cast")) 3 (PlayerId.MkPlayerId 0)) [Text.pack "Elves", Text.pack "Goblins", Text.pack "Merfolk"]
+        at = fmap Lobby.begun . Lobby.playingOn
+        filled n = fmap (`Link.fillingAt` PlayerId.MkPlayerId n) . at
+        set event value = Lobby.update event (Text.pack value)
+        tapping label l = Html.search (\node -> Text.isPrefixOf (Text.pack "<button") (Html.toText node) && Html.spoken node == Text.pack label) (Lobby.view l) >>= \path -> Html.handler (Text.pack "click") path (Lobby.view l)
+        changed prefix l = Html.search (Text.isPrefixOf (Text.pack prefix) . Html.toText) (Lobby.view l) >>= \path -> Html.handler (Text.pack "change") path (Lobby.view l)
+        has text l = Text.isInfixOf (Text.pack text) (Html.toText (Lobby.view l))
+
+    Spec.it s "seats as the replay does, each seat's deck fixed, no seat added or deck picked" $ do
+      Spec.assertEqWith s "each seat and its deck" (fmap (`has` three) ["Player 1", "Player 2", "Player 3", "Elves", "Goblins", "Merfolk"]) (replicate 6 True)
+      Spec.assertEqWith s "no seat to add, no deck to pick" (fmap (`has` three) ["Add a seat", "Deck for", "Remove"]) [False, False, False]
+      let unchanged = foldr (\(event, value) l -> set event value l) three [(Lobby.MkAdd Lobby.MkBot, ""), (Lobby.MkPick a, ""), (Lobby.MkDrop 0, ""), (Lobby.MkAnte, ""), (Lobby.MkVariant, "team-vs-team"), (Lobby.MkChoose (Lobby.MkTheirs 0), "")]
+      Spec.assertEqWith s "a new game's events change nothing" unchanged three
+      Spec.assertEqWith s "starts with no deck chosen" (Lobby.pressable three, tapping "Start game" three) (True, Just Lobby.MkStart)
+
+    Spec.it s "takes its options from the replay, offering only the clock" $ do
+      Spec.assertEqWith s "no option but the clock" (fmap (`has` three) ["option-ante", "option-planechase", "option-archenemy", "option-variant"]) [False, False, False, False]
+      Spec.assertEqWith s "the clock" (changed "<select class=\"deck-menu\" id=\"option-clock\"" three) (Just Lobby.MkClock)
+      Spec.assertEqWith s "played with the clock chosen" (Link.minutes <$> Lobby.playedOn (set Lobby.MkClock "10" three)) (Just (Just 10))
+
+    Spec.it s "fills each seat but the host's by a bot, a player here, the host too, or the goldfish" $ do
+      let bot = Link.MkFilledByBot Difficulty.MkEasy Persona.MkAggro
+          styled = set (Lobby.MkPersona 1) "aggro" (set (Lobby.MkDifficulty 1) "easy" three)
+      Spec.assertEqWith s "the default bot" (filled 1 three, filled 2 three) (Just Link.defaultFilling, Just Link.defaultFilling)
+      Spec.assertEqWith s "each menu" (fmap (`changed` three) ["<select class=\"deck-menu\" id=\"play-on-1\"", "<select class=\"bot-difficulty deck-menu\" id=\"bot-difficulty-play-on-2\""]) [Just (Lobby.MkFill 1), Just (Lobby.MkDifficulty 2)]
+      Spec.assertEqWith s "a bot's settings" (filled 1 styled) (Just bot)
+      Spec.assertEqWith s "a bot chosen again keeps them" (filled 1 (set (Lobby.MkFill 1) "bot" styled)) (Just bot)
+      Spec.assertEqWith s "each other kind" [filled 1 (set (Lobby.MkFill 1) value three) | value <- ["here", "yours", "goldfish"]] (fmap Just [Link.MkFilledHere Link.MkHandedOver, Link.MkFilledHere Link.MkYours, Link.MkFilledByGoldfish])
+      Spec.assertEqWith s "no bot menus for the goldfish" (has "bot-difficulty-play-on-1" (set (Lobby.MkFill 1) "goldfish" three)) False
+      Spec.assertEqWith s "the host's seat, a seat past the last and a kind unknown, unfilled" (fmap (\l -> at l == at three) [set (Lobby.MkFill 0) "goldfish" three, set (Lobby.MkFill 3) "goldfish" three, set (Lobby.MkFill 1) "nobody" three]) [True, True, True]
+      Spec.assertEqWith s "the host's seat has no menu" (has "id=\"play-on-0\"" three) False
+
+    Spec.it s "lets the host take any seat, the seat left filled as that one was" $ do
+      let goldfish = set (Lobby.MkFill 2) "goldfish" three
+          moved = set (Lobby.MkTakeSeat 2) "" goldfish
+      Spec.assertEqWith s "the way to take it" (tapping "Take Player 3" goldfish) (Just (Lobby.MkTakeSeat 2))
+      Spec.assertEqWith s "the host's seat" (Link.host <$> at moved) (Just (PlayerId.MkPlayerId 2))
+      Spec.assertEqWith s "the seat left" (filled 0 moved) (Just Link.MkFilledByGoldfish)
+      Spec.assertEqWith s "the seat taken holds no filling" (Map.member (PlayerId.MkPlayerId 2) . Link.fillings <$> at moved) (Just False)
+      Spec.assertEqWith s "the host's own seat, and one past the last, not taken" (fmap (\place -> at (set (Lobby.MkTakeSeat place) "" goldfish) == at goldfish) [0, 3, -1]) [True, True, True]
+
+    Spec.it s "asks at Start before abandoning a game paused" $ do
+      let asked = Lobby.update Lobby.MkStart Text.empty three {Lobby.paused = True}
+      Spec.assertEqWith s "asks" (Lobby.abandoning asked) (Just Lobby.MkStart)
+      Spec.assertEqWith s "abandoned, then started" (Lobby.abandoned asked) (Just (three, Lobby.MkStart))
 
   Spec.describe s "edit" $ do
     Spec.it s "offers Edit under a saved deck shown" $ do
