@@ -697,19 +697,20 @@ handsOver yours facing seat = facing /= Just seat && not (Set.member seat yours 
 -- request is pending, so leaving then is leaving as it was asked.
 --
 -- A seat leaving a game of three or more at once but at a priority
--- (atPriority) is not implemented (#9646), nor a subgame (CR 730.1a), whose
--- end the main game outlasts (#9791): the seat concedes at its next
--- priority.
+-- (atPriority) is not implemented (#9646): the seat concedes at its next
+-- priority. A subgame is never decided so, since the main game outlasts its
+-- end (CR 730.1a); a seat leaves it at a priority (atPriority).
 decisive :: Request.Request -> Bool
 decisive request = Request.depth request == 0 && maybe False ((== 2) . length . PlayerView.seats) (Request.view request)
 
 -- | Whether a seat leaving while this request is pending is leaving as it
 -- was asked its concession question just before, which a game playing on
--- asks again (Parun.Play.Command.rewinding): the main game's priority, a
--- seat's own (CR 724.6), CR 104.3a's question asked of every still-playing
--- seat just before it (Parun.Engine.Engine.priorityDecision).
+-- asks again (Parun.Play.Command.rewinding): a priority, a seat's own (CR
+-- 724.6), in the main game or a subgame (CR 730.1a), CR 104.3a's question
+-- asked of every still-playing seat just before it
+-- (Parun.Engine.Engine.priorityDecision).
 atPriority :: Request.Request -> Bool
-atPriority request = Request.depth request == 0 && Question.kind (Request.question request) == Text.pack "ChooseAction" && Maybe.isNothing (Question.for (Request.question request))
+atPriority request = Question.kind (Request.question request) == Text.pack "ChooseAction" && Maybe.isNothing (Question.for (Request.question request))
 
 -- | What an event does, the options picked so far being `picked`.
 step :: Request.Request -> Set.Set (Natural, Natural) -> Event -> Text.Text -> Outcome
