@@ -416,7 +416,7 @@ resolveSpellWith runSubgame oid = do
                   -- INSTANCE's CR 118.12 answers and the clauses whose
                   -- instructions ran, per instance because CR 700.2d makes a mode
                   -- chosen twice make its offer twice.
-                  Monad.foldM_
+                  foldActions_
                     ( \(answers, picked, ran) (cIdx, clause) -> do
                         -- CR 118.12's "If you do" first: a clause hanging off one
                         -- the fold has not recorded is skipped entirely, so no
@@ -934,7 +934,7 @@ resolveChosenModes runSubgame stackId srcId modes = do
                       pure (answers2, recordTaken limb admitted before after limbIdx ran)
                in -- CR 608.2e's clause is what each gate covers. Run only when
                   -- `fizzles` is False. Its last component is the clauses taken.
-                  Monad.foldM
+                  foldActions
                     ( \(answers, picked, ran) (cIdx, clause) -> do
                         -- CR 118.12's "If you do" first, off the same fold the
                         -- spell path keeps. Proved on this path, not merely
@@ -1259,9 +1259,6 @@ chosenBranch resolving source controller idx cIdx legal eligible limbOf picked c
         -- instructions say "the players who chose it" (The Pit's "each player
         -- creates their choice of"). Mid-resolution, so `exercises` and
         -- `payGateAdmits` see the plain set instead.
-        --
-        -- Not implemented: performing the branches different seats announced
-        -- as one event (#10045).
         answer memo picked' = do
           let (announced, committed) = settled memo
           State.modify' (bindPlayersSlot resolving Binding.facingPlayers (won (snd memo)))
@@ -1337,6 +1334,50 @@ gatesOnPayment chooser gate =
 -- answer is filed under, which every limb computes alike.
 orElseLimbs :: ClauseIndex -> OrElse.OrElse -> NonEmpty.NonEmpty ClauseIndex
 orElseLimbs cIdx orElse = NonEmpty.sort (cIdx NonEmpty.:| Set.toList (Set.delete cIdx (OrElse.siblings orElse)))
+
+-- CR 608.2e: fold a mode's clauses in printed order (CR 608.2c), running each
+-- ACTION as one event. A clause is its own action, except a CR 608.2d group
+-- whose every limb is one plain instruction: that is one sentence, so the
+-- branches the seats announced are processed simultaneously, inside one
+-- Event.simultaneously / Event.together bracket, and the tokens The Pit's
+-- players chose enter at the same time (its ruling of 2023-04-14). The scenario
+-- "The Pit's tokens enter as one event, so Kambal copies both opponents'" proves
+-- the event half. The Event.together half, CR 613.7m's one APNAP timestamp order
+-- across the seats, is kept because the rule states it: no pool card observes
+-- the relative timestamps of The Pit's tokens.
+--
+-- Plain means mandatory and unconditional, with no cost paid on resolution and
+-- no "If you do" (CR 118.12): such a limb has no decline or payment to take
+-- mid-action. A
+-- limb of several instructions is several actions of its own, and a villainous
+-- pair is performed seat by seat (CR 701.55d), so neither is bracketed.
+foldActions :: (acc -> (ClauseIndex, Clause.Clause card ability) -> Game acc) -> acc -> [(ClauseIndex, Clause.Clause card ability)] -> Game acc
+foldActions step = go
+  where
+    go acc clauses = case clauses of
+      [] -> pure acc
+      (cIdx, clause) : _
+        | Just orElse <- Clause.orElse clause,
+          not (OrElse.villainous orElse),
+          let limbs = NonEmpty.toList (orElseLimbs cIdx orElse)
+              (action, rest) = List.splitAt (length limbs) clauses,
+          fmap fst action == limbs,
+          all (plain . snd) action -> do
+            acc2 <- Event.simultaneously (Event.together (Monad.foldM step acc action))
+            go acc2 rest
+      next : rest -> step acc next >>= (`go` rest)
+    plain limb =
+      Maybe.isNothing (Clause.ifTaken limb)
+        && Maybe.isNothing (Clause.condition limb)
+        && Maybe.isNothing (Clause.payGate limb)
+        && length (Clause.effects limb) == 1
+        && case Clause.optionality limb of
+          Optionality.Mandatory -> True
+          Optionality.Optional _ _ -> False
+
+-- `foldActions`, its answer discarded.
+foldActions_ :: (acc -> (ClauseIndex, Clause.Clause card ability) -> Game acc) -> acc -> [(ClauseIndex, Clause.Clause card ability)] -> Game ()
+foldActions_ step acc = Monad.void . foldActions step acc
 
 -- CR 701.55a: is this clause half of a villainous pair whose process has not yet
 -- been performed? An empty answer map filed under the pair's ordinal is what
