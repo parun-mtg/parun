@@ -1005,14 +1005,18 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "elsewhere it is Stop paying" (clicked "Stop paying" nested) (Just (Question.Web.MkAnswer R.Null))
     Spec.assertEqWith s "with no Cancel" (clicked "Cancel" nested) Nothing
 
-  Spec.it s "a payment with one source offers no Pay automatically, which would be the same tap" $ do
+  Spec.it s "a payment one tap of its one source pays offers no Pay automatically, which would be the same tap" $ do
     mountain <- S.printingOf s registry "Mountain"
     let (one, g1) = S.addPermanent mountain S.alice (Setup.emptyGame S.bothPlayers)
         (two, gs) = S.addPermanent mountain S.alice g1
-        paying sources = Question.Web.view (requestFor gs (Prompt.ChooseManaSource (Decider.MkDecider S.alice) S.alice (ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.Red)]) sources Nothing)) Question.Web.blank
+        red = ManaSymbol.OfType (ManaType.Colored Color.Red)
+        paying symbols sources = Question.Web.view (requestFor gs (Prompt.ChooseManaSource (Decider.MkDecider S.alice) S.alice (ManaCost.MkManaCost symbols) sources Nothing)) Question.Web.blank
         offersAuto = Maybe.isJust . Html.labelled (Text.pack "button") (Text.pack "Pay automatically")
-    Spec.assertBool s (not (offersAuto (paying (one NonEmpty.:| [])))) "one source"
-    Spec.assertBool s (offersAuto (paying (one NonEmpty.:| [two]))) "two sources"
+    Spec.assertBool s (not (offersAuto (paying [red] (one NonEmpty.:| [])))) "one source"
+    Spec.assertBool s (offersAuto (paying [red] (one NonEmpty.:| [two]))) "two sources"
+    -- Two Mountains are offered as one where nothing tells them apart.
+    Spec.assertBool s (offersAuto (paying [red, red] (one NonEmpty.:| []))) "one source offered for two taps"
+    Spec.assertBool s (offersAuto (paying [ManaSymbol.Generic 1, red] (one NonEmpty.:| []))) "and for generic"
 
   Spec.it s "CR 605.3b paying automatically chooses the mana of an any-color source it tapped" $ do
     brass <- S.printingOf s registry "City of Brass"

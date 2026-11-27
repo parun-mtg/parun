@@ -344,6 +344,17 @@ auto request = do
   shown <- Request.view request
   fst <$> Offer.autoSource shown (Question.offer $ Request.question request)
 
+-- | Whether a payment offers one source and any tap of it pays what the pool
+-- leaves owed, so that paying automatically is that tap. One source offered
+-- can still be several taps: the engine offers one of each class of
+-- interchangeable sources (Parun.Engine.Cost's chooseSource).
+oneTap :: PlayerView.PlayerView -> R.Reply -> [(R.Reply, [[ManaType.ManaType]])] -> Bool
+oneTap shown offer sources = case (sources, Offer.owing shown offer) of
+  ([(_, yields)], Just (colored, generic)) -> all (pays colored generic) yields
+  _ -> False
+  where
+    pays colored generic yield = null (colored List.\\ yield) && Natural.length yield >= Natural.length colored + generic
+
 -- | What the question screen shows besides the request: the options picked
 -- so far, the card the seat is reading, and the game log.
 data Screen = MkScreen
@@ -1109,8 +1120,7 @@ form request texts picked focused typed = case Text.unpack (Question.kind questi
               pure (ManaCost.MkManaCost symbols)
             need = foldMap (\left -> Text.pack " (need " <> Wording.manaCost left <> Text.pack ")") (Monad.mfilter ((/= cost) . Just) owed)
          in Html.element (Text.pack "h2") [] (Mana.rich $ foldMap (\whole -> Text.pack "Paying " <> Wording.manaCost whole <> need <> Text.pack ". ") cost <> Text.pack (if kind == "ChooseManaSource" then "Choose a source." else "The cost is covered. Activate another source, or pay now."))
-              -- With one source, paying automatically is tapping it.
-              : [primary MkAuto (Text.pack "Pay automatically") | Maybe.isJust (auto request), length sources > 1]
+              : [primary MkAuto (Text.pack "Pay automatically") | Maybe.isJust (auto request), not (oneTap shown offer sources)]
                 -- Sources the seat can't tell apart are one button, for the first.
                 <> [button (MkAnswer source) (label <> many count) | (source : _, label, count) <- collapsed (const True) [(source, Offer.listedName shown source <> makes yields) | (source, yields) <- sources]]
                 -- CR 734.1: where stopping takes the cast back, it is its Cancel.
