@@ -5585,10 +5585,10 @@ payGateAgreed resolving source offer earlier payer gate slots owed options = do
 -- matches: a fixed number sacrificed, no mana and no "different" axes, which
 -- each sharer then pays from what they control. Nothing for every other cost.
 --
+-- A joint TapForTotalPower, Bow to My Command's, is not implemented (#9939).
+--
 -- Unprinted: a joint offer of any other cost, which Parun.CardSpec's "no card
--- writes a joint offer the team cannot split" keeps out of card data. Bow to My
--- Command's joint TapForTotalPower is card-driven work for #9939, which deletes
--- that leg of the lint.
+-- writes a joint offer the team cannot split" keeps out of card data.
 jointSacrifice :: Cost.Type.Cost keyword -> Maybe (Natural, Filter.Type.Filter keyword)
 jointSacrifice cost = case Cost.Type.components cost of
   [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed n)) criterion axes)]
