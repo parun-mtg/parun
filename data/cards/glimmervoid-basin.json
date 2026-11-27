@@ -1,0 +1,186 @@
+{
+  "faces": [
+    {
+      "name": "Glimmervoid Basin",
+      "oracleText": "Whenever a player casts an instant or sorcery spell with a single target, that player copies that spell for each other spell, permanent, card not on the battlefield, and/or player the spell could target. Each copy targets a different one of them.\nWhenever chaos ensues, choose target creature. Each player except that creature's controller creates a token that's a copy of that creature.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Instant"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Sorcery"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "HasSingleTarget"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "CopyStackObject",
+                        "value": {
+                          "copier": {
+                            "type": "InSlot",
+                            "value": "thatPlayer"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "thatSpell"
+                          },
+                          "targets": {
+                            "type": "ForEach",
+                            "value": {
+                              "type": "AllOf",
+                              "value": [
+                                {
+                                  "type": "EachSpell",
+                                  "value": {
+                                    "type": "And",
+                                    "value": []
+                                  }
+                                },
+                                {
+                                  "type": "EachMatching",
+                                  "value": {
+                                    "type": "And",
+                                    "value": []
+                                  }
+                                },
+                                {
+                                  "type": "EachCard",
+                                  "value": {
+                                    "type": "Not",
+                                    "value": {
+                                      "type": "IsInZone",
+                                      "value": "Battlefield"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "Players",
+                                  "value": {
+                                    "players": {
+                                      "type": "Relative",
+                                      "value": "AnyPlayer"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "CreateCopy",
+                              "value": {
+                                "creator": {
+                                  "type": "InSlot",
+                                  "value": "player"
+                                },
+                                "original": {
+                                  "type": "OfObject",
+                                  "value": {
+                                    "type": "InSlot",
+                                    "value": "creature"
+                                  }
+                                }
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "Players",
+                            "value": {
+                              "players": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              },
+                              "who": {
+                                "type": "Not",
+                                "value": {
+                                  "type": "IsControllerOfBound",
+                                  "value": "creature"
+                                }
+                              }
+                            }
+                          },
+                          "slot": "player"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "creature": {
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Mirrodin"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}

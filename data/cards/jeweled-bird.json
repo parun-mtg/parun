@@ -39,10 +39,17 @@
                         "type": "MoveToZone",
                         "value": {
                           "ref": {
-                            "type": "EachCardYouOwn",
+                            "type": "EachCard",
                             "value": {
                               "type": "And",
                               "value": [
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Owner",
+                                    "relation": "You"
+                                  }
+                                },
                                 {
                                   "type": "IsInZone",
                                   "value": "Ante"

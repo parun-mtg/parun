@@ -54,11 +54,11 @@ data ObjectRef
     -- by Parun.MassEffectSpec's "CR 701.23a a sweep is not a search, and CR 701.24
     -- shuffles nothing".
     EachCardInYourLibrary (Maybe (Filter.Filter Keyword.Keyword))
-  | -- | CR 108.2 / 108.3 / Static Discharge: every card the resolving controller
-    -- owns that the Filter matches, in every zone at once -- Alchemy's "cards you
-    -- own named Static Discharge". Never a token or a copy, which CR 108.2 keeps
-    -- out of "card".
-    EachCardYouOwn (Filter.Filter Keyword.Keyword)
+  | -- | CR 108.2: every card the Filter matches, in every zone at once --
+    -- Static Discharge's "cards you own" (HeldBy Owner) and Glimmervoid Basin's
+    -- "card not on the battlefield". Never a token or a copy, which CR 108.2
+    -- keeps out of "card".
+    EachCard (Filter.Filter Keyword.Keyword)
   | -- | CR 607.2a / Hoarding Dragon, Synthetic Split Reliquary: every card in
     -- exile in one of this effect's source's linked piles, narrowed by the
     -- optional Filter.
