@@ -124,6 +124,7 @@ import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffec
 import qualified Parun.Types.PendingTrigger as PendingTrigger
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermissionVerb as PermissionVerb
+import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerControl as PlayerControl
@@ -1545,18 +1546,23 @@ throwSettled runSubgame roll perDie = do
       recordRerolls pending = Foldable.for_ (groups Set.empty pending) $ \(event, landed) ->
         State.modify' (Event.recordEventOver landed event)
         where
+          -- A reroll of the planar die is a roll of the planar die too, with no
+          -- result of its own: it modifies the roll's, which
+          -- Parun.Engine.Planechase.roll records (docs/decisions.md, "Whether a
+          -- reroll of the planar die is a roll of the planar die").
           rolled by number =
             if numbered
-              then GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice by number)
-              else GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice by)
+              then [GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice by number)]
+              else [GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice by), GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled by Nothing)]
+          over landed = fmap (\event -> (event, landed))
           settled by face landed = [(Common.settledResult RollReading.FinalResult by face, landed) | numbered]
           groups seen entries = case entries of
             [] -> []
             (_, _, Left event, landed) : rest -> (event, landed) : groups seen rest
-            (_, Nothing, Right (by, face), landed) : rest -> (rolled by face, landed) : settled by face landed <> groups seen rest
+            (_, Nothing, Right (by, face), landed) : rest -> over landed (rolled by face) <> settled by face landed <> groups seen rest
             (_, Just key, Right (by, face), landed) : rest
               | Set.member key seen -> settled by face landed <> groups seen rest
-              | otherwise -> (rolled by (Foldable.foldl' max face [other | (_, Just k, Right (_, other), _) <- rest, k == key]), landed) : settled by face landed <> groups (Set.insert key seen) rest
+              | otherwise -> over landed (rolled by (Foldable.foldl' max face [other | (_, Just k, Right (_, other), _) <- rest, k == key])) <> settled by face landed <> groups (Set.insert key seen) rest
       rethrowOne by = fmap (Maybe.fromMaybe (DoneDie (by, 1, [], [])) . Maybe.listToMaybe) (rethrow by Nothing (1 :: Natural))
       readBack again natural = if Throw.instead again then maybe natural Event.resultOfFace (Event.faceOfResult natural) else natural
       -- Whether an offer can still go through: a static offer's budget admits

@@ -2147,8 +2147,9 @@ representativeEvents cond =
         -- CR 732.1a's own event, day becoming night.
         TriggerCondition.DaytimeChanges -> one (GameEvent.DaytimeChanged Daytime.Night)
         TriggerCondition.GameBegins -> one GameEvent.GameBegan
-        -- CR 901.9c's own event, a planar die showing the Planeswalker symbol.
-        TriggerCondition.PlayerRollsPlanarDie _ -> one (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled S.bob PlanarDieFace.Planeswalker))
+        -- CR 901.9's own event, carrying the stated face as the roll's result,
+        -- or none, a reroll's, where the condition states none.
+        TriggerCondition.PlayerRollsPlanarDie wanted -> one (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled S.bob (PlanarDieTrigger.face wanted)))
         -- CR 701.32's own event, and the only one this condition admits.
         TriggerCondition.TurnedUpOffDeck _ -> one (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Scheme S.bob departed Set.empty))
         -- CR 701.31d's own event, naming the bearer among the planes walked
@@ -2535,6 +2536,8 @@ everyTriggerCondition =
     TriggerCondition.DaytimeChanges,
     TriggerCondition.GameBegins,
     TriggerCondition.PlayerRollsPlanarDie (PlanarDieTrigger.MkPlanarDieTrigger PlayerRelation.You (Just PlanarDieFace.Planeswalker)),
+    -- Pompeii's blank roll.
+    TriggerCondition.PlayerRollsPlanarDie (PlanarDieTrigger.MkPlanarDieTrigger PlayerRelation.You (Just PlanarDieFace.Blank)),
     TriggerCondition.PlayerRollsPlanarDie (PlanarDieTrigger.MkPlanarDieTrigger PlayerRelation.Opponent Nothing),
     TriggerCondition.TurnedUpOffDeck ActingPermanent.Self,
     TriggerCondition.TurnedUpOffDeck (ActingPermanent.Matching (Filter.Type.And [])),

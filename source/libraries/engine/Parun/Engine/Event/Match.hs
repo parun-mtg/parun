@@ -2602,9 +2602,11 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     GameEvent.DaytimeChanged _ -> True
     _ -> False
   -- CR 901.8 / 901.9c: the roller, read against CR 109.5's "you" as
-  -- PlayerActs does, rolled the Planeswalker symbol.
+  -- PlayerActs does, rolled the planar die, or rolled the stated face as the
+  -- roll's result, which a reroll's event carries none of (docs/decisions.md,
+  -- "Whether a reroll of the planar die is a roll of the planar die").
   TriggerCondition.PlayerRollsPlanarDie wanted -> case event of
-    GameEvent.PlanarDieRolled rolled -> all (== PlanarDieRolled.face rolled) (PlanarDieTrigger.face wanted) && PlayerRelation.holds (Game.teams gs) (PlanarDieTrigger.player wanted) you (PlanarDieRolled.roller rolled)
+    GameEvent.PlanarDieRolled rolled -> all ((== PlanarDieRolled.face rolled) . Just) (PlanarDieTrigger.face wanted) && PlayerRelation.holds (Game.teams gs) (PlanarDieTrigger.player wanted) you (PlanarDieRolled.roller rolled)
     _ -> False
   -- CR 701.32b / 904.9: "When you set this scheme in motion", against the
   -- event naming this very scheme -- and CR 312.5's encounter and CR 701.31d's

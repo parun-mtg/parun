@@ -13,7 +13,13 @@ spec s = Spec.describe s "Parun.Codec.PlanarDieRolled" $ do
     Common.assertCodec
       s
       PlanarDieRolled.codec
-      (PlanarDieRolled.MkPlanarDieRolled (PlayerId.MkPlayerId 1) PlanarDieFace.Planeswalker)
+      (PlanarDieRolled.MkPlanarDieRolled (PlayerId.MkPlayerId 1) (Just PlanarDieFace.Planeswalker))
       " {\"roller\":1,\"face\":\"Planeswalker\"} "
+  Spec.it s "omits the face of a reroll" $
+    Common.assertCodec
+      s
+      PlanarDieRolled.codec
+      (PlanarDieRolled.MkPlanarDieRolled (PlayerId.MkPlayerId 1) Nothing)
+      " {\"roller\":1} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s PlanarDieRolled.codec

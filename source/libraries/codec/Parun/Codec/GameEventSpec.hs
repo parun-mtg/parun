@@ -729,7 +729,7 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled (PlayerId.MkPlayerId 2) PlanarDieFace.Chaos))
+      (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled (PlayerId.MkPlayerId 2) (Just PlanarDieFace.Chaos)))
       " {\"type\":\"PlanarDieRolled\",\"value\":{\"roller\":2,\"face\":\"Chaos\"}} "
   -- CR 717.2a. The object then the level BEFORE then the level AFTER, and the two
   -- levels deliberately differ by more than one: a level bar can only step N-1 to

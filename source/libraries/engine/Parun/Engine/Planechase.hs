@@ -400,15 +400,16 @@ toBottom :: ObjectId -> Game ()
 toBottom oid = State.modify' $ \gs ->
   maybe gs (\obj -> Event.turnFaceDownToBottom SideDeck.Planar (Plane.planarDeckHolder (Object.owner obj) gs) oid gs) (Game.lookupObject oid gs)
 
--- | CR 901.9: how many times this player has rolled the planar die this turn.
--- A fold over the event log, which is exactly "this turn"
--- (Parun.Engine.Coin.flipsThisTurn's reason). Every roll is the special action's
+-- | CR 901.9: how many times this player has taken the special action this
+-- turn. A fold over the event log, which is exactly "this turn"
+-- (Parun.Engine.Coin.flipsThisTurn's reason). Each action records one roll with
+-- a result, and its rerolls none (`roll`), and no effect rolls the planar die
 -- today, so the count is CR 901.9's "times they have previously taken this
 -- action".
 rollsThisTurn :: PlayerId -> GameState -> Natural
 rollsThisTurn pid gs =
   let rolled logged = case LoggedEvent.event logged of
-        GameEvent.PlanarDieRolled r -> PlanarDieRolled.roller r == pid
+        GameEvent.PlanarDieRolled r -> PlanarDieRolled.roller r == pid && Maybe.isJust (PlanarDieRolled.face r)
         _ -> False
    in Natural.length (filter rolled (Foldable.toList (Turn.eventsThisTurn gs)))
 
@@ -443,7 +444,9 @@ faceOf n = case n of
 -- PlayerAction.RollDice, CR 901.9d). The performer's Settle always carries a
 -- thrower (Resolve.Effect.settleWith), so a road with none rolls nothing. The final face records
 -- PlanarDieRolled, which CR 901.8's planeswalking ability triggers on, and for
--- the chaos symbol ChaosEnsued, which CR 311.7's chaos abilities trigger on.
+-- the chaos symbol ChaosEnsued, which CR 311.7's chaos abilities trigger on;
+-- each reroll recorded a PlanarDieRolled with no face first
+-- (Resolve.Effect.throwSettled's `recordRerolls`).
 -- A payment that fails restores the state, Parun.Engine.Companion.take's
 -- posture, and nothing is rolled.
 roll :: ManaAbilityPerformer.ManaAbilityPerformer -> PlayerId -> Game ()
@@ -458,7 +461,7 @@ roll perform pid = do
       Foldable.for_ (Maybe.listToMaybe kept) $ \rolled -> do
         let face = faceOf rolled
         chaos <- State.gets (PlayerEffect.isChaosRoll pid face)
-        State.modify' (Event.recordEvent (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled pid face)))
+        State.modify' (Event.recordEvent (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled pid (Just face))))
         -- CR 901.9b: the chaos symbol makes chaos ensue, and so does a blank
         -- roll Chaotic Aether makes a chaos roll, which stays a blank roll
         -- (docs/decisions.md, "Whether Chaotic Aether's chaos roll is still a

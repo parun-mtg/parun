@@ -3443,6 +3443,30 @@ Entries are ordered by the first rule each cites.
   `critical-hit-triggers-twice-for-a-20-rerolled-to-20`.
 - **Issue**: none.
 
+## Whether a reroll of the planar die is a roll of the planar die
+
+- **Question**: Monitor Monitor rerolls a blank on the planar die to a blank.
+  Does Stairs to Infinity ("Whenever you roll the planar die") draw once or
+  twice? Does Pompeii ("Whenever you roll a blank on the planar die") scry
+  once or twice?
+- **Rules**: CR 706.2, 706.2b, 706.7, 901.9, 901.9a-c; Pippa, Duchess of
+  Dice's and Wall of Fortune's rulings; CR of 2026-11-06.
+- **Decision**: Stairs draws twice, Pompeii scries once. Each reroll is a roll
+  of the planar die, as it is a die roll ("Whether a natural 20 rerolled away
+  was rolled"). The planar die has no natural result to read (CR 706.7), so a
+  face is read once, off the roll's result after its rerolls (CR 706.2, 901.9c),
+  which is also what keeps a Planeswalker symbol rerolled away from
+  planeswalking. CR 901.9's cost counts the special action, not the rerolls.
+- **Rejected**: Each roll read at the face it came up, as numbered dice are: it
+  planeswalks for a Planeswalker symbol rerolled away, against CR 901.9c's "If
+  the die roll is the Planeswalker symbol". And one roll in all: it parts the
+  planar die from every other die a reroll reaches.
+- **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `recordRerolls`,
+  `Parun.Engine.Planechase.roll` and `rollsThisTurn`; the scenarios
+  `cr-706-2b-stairs-to-infinity-draws-for-a-reroll-of-the-planar-die` and
+  `cr-706-2b-pompeii-scries-once-for-a-blank-rerolled-to-a-blank`.
+- **Issue**: none.
+
 ## Which board a roll's trigger is checked against
 
 - **Question**: Grave Endeavor's d10s come up 2 and 5; Wall of Fortune
