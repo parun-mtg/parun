@@ -3205,7 +3205,7 @@ reconfigureOff cost =
 -- named and never TARGETED (CR 115.10a).
 auraSwap :: Cost Keyword -> ActivatedAbility Card (GrantedAbility.GrantedAbility Card)
 auraSwap cost =
-  let chosen = ChosenCardInHand.MkChosenCardInHand (PlayerRef.Relative PlayerRelation.You) (Filter.HasSubtype Subtype.Aura) HowMany.one
+  let chosen = ChosenCardInHand.MkChosenCardInHand (PlayerRef.Relative PlayerRelation.You) (Filter.HasSubtype Subtype.Aura) HowMany.one Nothing
       effect = Effect.ExchangeCardZones (ExchangeCardZones.MkExchangeCardZones (ObjectRef.InSlot Binding.triggerSource) (ObjectRef.ChosenCardInHand chosen))
    in ActivatedAbility.MkActivatedAbility
         { ActivatedAbility.costChoices = [],

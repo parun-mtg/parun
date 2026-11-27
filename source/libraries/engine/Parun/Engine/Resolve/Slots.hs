@@ -647,9 +647,9 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   -- reason, and with the Filter's, EachCardInGraveyard's.
   ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser scope filter_ count total) -> joinSlots ([chooserSlots chooser, zoneScopeSlots scope, filterSlotsOf filter_] <> fmap quantitySlots (Foldable.toList (HowMany.quantity count) <> totalCapQuantities total))
   -- CR 402.3: the choosers own the hands, so the PlayerRef is reported by
-  -- objectRefPlayerRefs rather than here; the COUNT's slots and the Filter's
-  -- are this arm's.
-  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand _ filter_ count) -> joinTwo (filterSlotsOf filter_) (maybe Map.empty quantitySlots (HowMany.quantity count))
+  -- objectRefPlayerRefs rather than here; the COUNT's slots, the Filter's and
+  -- the onePer's are this arm's.
+  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand _ filter_ count onePer) -> joinSlots (filterSlotsOf filter_ : foldMap onePerSlotsOf onePer : fmap quantitySlots (Foldable.toList (HowMany.quantity count)))
   -- The first of the two arms whose CANDIDATES come from a slot -- the plural is
   -- below -- where the two chosen arms above name a slot only through their
   -- chooser. Reported for EachCardInGraveyard's
@@ -739,7 +739,7 @@ objectRefQuantities ref = case ref of
   -- ChosenCardFromAmong arm below's reason: every count in the pool is a
   -- Literal, which reads no slot.
   ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard _ _ _ count total) -> Foldable.toList (HowMany.quantity count) <> totalCapQuantities total
-  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand _ _ count) -> Foldable.toList (HowMany.quantity count)
+  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand _ _ count _) -> Foldable.toList (HowMany.quantity count)
   -- How many cards are picked out of the group -- Ancestral Memories' printed
   -- two, the library walks' counts above being the only other ObjectRef numbers.
   -- A REGRESSION FENCE rather than proven behaviour: every count in the pool is a
@@ -792,7 +792,7 @@ objectRefPlayerRefs ref = case ref of
   -- per-player zone.
   ObjectRef.TopOfGraveyard player -> [player]
   ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard _ _ _ _ _) -> []
-  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand player _ _) -> [player]
+  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand player _ _ _) -> [player]
   -- The seat that picks out of the group -- Animal Magnetism's opponent, and by
   -- default CR 608.2c's resolving controller -- and the one that takes a pile
   -- (CR 700.3).

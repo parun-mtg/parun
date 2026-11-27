@@ -2392,7 +2392,10 @@ controlledTeam controller target gs =
 -- handChoosers. Every card comes back in ONE list, so the instruction moves them
 -- as one event (CR 608.2f) -- proved by the scenarios "CR 608.2f Aquatic
 -- Subtlety bottoms its two cards in one event" and "CR 101.4 The Great Aurora
--- puts each player's chosen lands onto the battlefield together".
+-- puts each player's chosen lands onto the battlefield together". A onePer
+-- bounds the picks as chooseCardFromAmong's does (onePerAdmits): proved by the
+-- scenario "Only I Know What Awaits offers no second card of a card type
+-- already answered for".
 --
 -- askingObjects' ChosenCardInHand arm.
 chooseCardsInHand ::
@@ -2402,7 +2405,7 @@ chooseCardsInHand ::
   Map.Map SlotName (Set Recipient) ->
   ChosenCardInHand.ChosenCardInHand ->
   Game [ObjectId]
-chooseCardsInHand resolving source controller legal (ChosenCardInHand.MkChosenCardInHand player filter_ count) = do
+chooseCardsInHand resolving source controller legal (ChosenCardInHand.MkChosenCardInHand player filter_ count onePer) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
@@ -2416,9 +2419,30 @@ chooseCardsInHand resolving source controller legal (ChosenCardInHand.MkChosenCa
             (\decider who pool ceiling_ -> Prompt.ChooseAnyNumber decider who source AnyNumberOf.CardsInHand pool ceiling_ Seq.empty)
             amount
             count
-            Nothing
+            (fmap (onePerAdmits legal resolving source controller gs) onePer)
             (handCardsOf context gs pid filter_)
   fmap concat . Monad.mapM pick $ handChoosers legal resolving source controller gs player
+
+-- CR 608.2d: may a candidate join the picks so far under a OnePer? Each pick
+-- answers for one value of its own that no other pick answers for: the colors
+-- (CR 105.1) of the permanents a ColorAmong's Filter matches, read here off the
+-- projection, or every card type (CR 205.2a), or those among a CardType tally's
+-- members. A card of two of them answers for either (CR 105.2b, 205.2a).
+-- Shared by chooseCardFromAmong and chooseCardsInHand.
+onePerAdmits :: Map.Map SlotName (Set Recipient) -> ObjectId -> ObjectId -> PlayerId -> GameState -> OnePer.OnePer -> [ObjectId] -> ObjectId -> Bool
+onePerAdmits legal resolving source controller gs per = case per of
+  OnePer.ColorAmong among ->
+    let palette = foldMap colorsOf (battlefieldMatching legal resolving controller source gs among)
+     in \taken oid -> distinctlyAssigned (fmap (Set.toList . Set.intersection palette . colorsOf) (oid : taken))
+  OnePer.CardType among ->
+    let present (KeywordTally.MkKeywordTally within inner) cardType = maybe False (> 0) (weighs source (Quantity.Type.Count (Count.Type.MkCount within (Filter.Type.And [inner, Filter.Type.HasCardType cardType]) Aggregation.Members)))
+        answerable = maybe id (\tally -> Set.intersection (Set.fromList (List.filter (present tally) [minBound .. maxBound]))) among
+     in \taken oid -> distinctlyAssigned (fmap (Set.toList . answerable . foldMap Filter.cardTypes . viewOf) (oid : taken))
+  where
+    viewOf = effectViewOf resolving source legal gs
+    context = effectContext gs resolving controller source legal (slotBindings resolving gs)
+    weighs = Quantity.evaluateFor viewOf context gs resolving
+    colorsOf = foldMap Filter.colors . viewOf
 
 -- The printed "from among them", a CR 608.2d choice: the candidates are the
 -- members of a GROUP an earlier clause of this resolution bound rather than a
@@ -2452,12 +2476,8 @@ chooseCardsInHand resolving source controller legal (ChosenCardInHand.MkChosenCa
 -- count that will not evaluate, or evaluates negative, is zero cards (CR
 -- 107.2, 107.1b). pickCounted asks it, and holds the picks within the ref's
 -- total where it states one, and to a card for each value where it states a
--- onePer: the colors (CR 105.1) of the permanents a ColorAmong's Filter
--- matches, read here off the projection, or every card type (CR 205.2a), or
--- those among a CardType tally's members (Hurkyl, Master Wizard's), each
--- pick answering for one value of its own that no other pick answers for. A
--- card of two of them answers for either (CR 105.2b, 205.2a): an artifact
--- creature beside a creature, Portent of Calamity's. And to picks sharing no value on a differentIn axis, read off the
+-- onePer (onePerAdmits): Hurkyl, Master Wizard's card types, or Portent of
+-- Calamity's artifact creature beside a creature. And to picks sharing no value on a differentIn axis, read off the
 -- projection as a search's are (differing): Rip, Spawn Hunter's "with
 -- different powers".
 --
@@ -2491,15 +2511,7 @@ chooseCardFromAmong offered resolving source controller legal chosen (ChosenCard
         LastKnown -> members
       matching = matchingFromAmong legal resolving controller source gs filter_ candidates
       weighs = Quantity.evaluateFor viewOf context gs resolving
-      colorsOf = foldMap Filter.colors . viewOf
-      oneEach per = case per of
-        OnePer.ColorAmong among ->
-          let palette = foldMap colorsOf (battlefieldMatching legal resolving controller source gs among)
-           in \taken oid -> distinctlyAssigned (fmap (Set.toList . Set.intersection palette . colorsOf) (oid : taken))
-        OnePer.CardType among ->
-          let present (KeywordTally.MkKeywordTally within inner) cardType = maybe False (> 0) (weighs source (Quantity.Type.Count (Count.Type.MkCount within (Filter.Type.And [inner, Filter.Type.HasCardType cardType]) Aggregation.Members)))
-              answerable = maybe id (\tally -> Set.intersection (Set.fromList (List.filter (present tally) [minBound .. maxBound]))) among
-           in \taken oid -> distinctlyAssigned (fmap (Set.toList . answerable . foldMap Filter.cardTypes . viewOf) (oid : taken))
+      oneEach = onePerAdmits legal resolving source controller gs
       apart taken oid = length (differing differentIn gs (oid : taken)) == length taken + 1
       bounds = Foldable.toList (fmap (withinTotal weighs amount) total) <> Foldable.toList (fmap oneEach onePer) <> [apart | not (Set.null differentIn)]
       admits = if null bounds then Nothing else Just (\taken oid -> all (\bound -> bound taken oid) bounds)
@@ -4109,7 +4121,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
     -- same pick with randomness choosing; a ref naming no chooser, a choice
     -- the empty answer satisfies, and every ref that reads, answers False.
     choosesFromNothing ref = case ref of
-      ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand player filter_ count) ->
+      ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand player filter_ count _) ->
         let choosers = handChoosers legal resolving source controller gs player
          in mustPick count && not (null choosers) && all (\pid -> null (handCardsOf context gs pid filter_)) choosers
       -- randomCards' pool over a hand: Pillaging Horde's "unless you discard a

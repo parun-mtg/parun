@@ -26,7 +26,7 @@ spec s = Spec.describe s "Parun.Codec.Guess" $ do
       s
       Guess.codec
       Guess.MkGuess
-        { Guess.subject = ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand (PlayerRef.Relative PlayerRelation.You) (Filter.And []) HowMany.one),
+        { Guess.subject = ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand (PlayerRef.Relative PlayerRelation.You) (Filter.And []) HowMany.one Nothing),
           Guess.slot = SlotName.MkSlotName (Text.pack "chosen"),
           Guess.guesser = PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "thatPlayer")),
           Guess.proposition = Filter.Measures (Measures.MkMeasures Measure.ManaValue Comparison.GreaterThan (Operand.Literal 4)),
