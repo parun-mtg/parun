@@ -1516,6 +1516,8 @@ carrierEffects =
 -- list per action: every faceHandAction child, the two fields
 -- Parun.Engine.Mulligan passes to handWindow and the vanguard's
 -- Face.gameStartActions, which Parun.Engine.Setup.takeGameStartActions performs.
+-- And CR 307.5's sorcery-timed special action (Talon Gates), the same shape: a
+-- bare effect list performed on its own, with nothing announced.
 --
 -- A list of ACTIONS rather than one flat list, because each action is performed
 -- on its own (Parun.Engine.Mulligan.handWindow performs one and asks again), so a
@@ -1526,7 +1528,13 @@ carrierEffects =
 -- list would hand a dozen lints a slot-sharing claim that is false of them. The
 -- sweep below and ownBoundSlots are the two readers, and both want the split.
 handActions :: Face.Face Card.Type.Card -> [[Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]]
-handActions = Const.getConst . Children.faceChildren Children.faceLeaves {Children.faceHandAction = \action -> Const.Const [HandAction.effects action]}
+handActions =
+  Const.getConst
+    . Children.faceChildren
+      Children.faceLeaves
+        { Children.faceHandAction = \action -> Const.Const [HandAction.effects action],
+          Children.faceSpecialAction = \action -> Const.Const [Foldable.toList effects | SpecialAction.PerformAsASorcery effects <- [action]]
+        }
 
 -- Every effect a card AUTHORS, its pregame actions included: what
 -- cardResolutionEffects reaches, plus the hand actions it deliberately leaves
@@ -1591,7 +1599,8 @@ cardCounts =
           Children.faceAttackCost = Children.attackCostChildren ruleCounts,
           Children.faceBlockCost = Children.blockCostChildren ruleCounts,
           Children.faceCounterLimit = Children.counterLimitChildren ruleCounts,
-          Children.faceHandAction = Const.Const . concatMap effectCounts . HandAction.effects
+          Children.faceHandAction = Const.Const . concatMap effectCounts . HandAction.effects,
+          Children.faceSpecialAction = Children.specialActionChildren (Const.Const . effectCounts)
         }
 
 -- The Count sweep's visitor for a CR 613.11 rule row: its gate (CR 604.2,
@@ -3466,10 +3475,20 @@ alternativeCostFilters alternative =
 
 -- CR 116.2: which spells a printed special action names -- only through the cost
 -- CR 116.2d's ignore carries.
-specialActionFilters :: SpecialAction.SpecialAction -> [Filter.Type.Filter Keyword.Keyword]
+specialActionFilters :: SpecialAction.SpecialAction effect -> [Filter.Type.Filter Keyword.Keyword]
 specialActionFilters specialAction = case specialAction of
   SpecialAction.IgnoreThisUntilEndOfTurn _ cost -> costFilters cost
   -- CR 116.2e names one card and nothing about it.
+  SpecialAction.DiscardThisAnyTime -> []
+  -- CR 307.5's effects, walked by specialActionEffectFilters.
+  SpecialAction.PerformAsASorcery _ -> []
+
+-- CR 307.5: the Filter positions a sorcery-timed special action's effects hold,
+-- handActionFilters' effect half.
+specialActionEffectFilters :: SpecialAction.SpecialAction (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
+specialActionEffectFilters specialAction = case specialAction of
+  SpecialAction.PerformAsASorcery effects -> concatMap effectFilters effects
+  SpecialAction.IgnoreThisUntilEndOfTurn {} -> []
   SpecialAction.DiscardThisAnyTime -> []
 
 costComponentFilters :: CostComponent.CostComponent Keyword.Keyword -> [Filter.Type.Filter Keyword.Keyword]
@@ -6375,6 +6394,7 @@ cardFilters card =
     <> concatMap handActionFilters (Face.mulliganActions card)
     <> concatMap handActionFilters (Face.openingHandActions card)
     <> concatMap handActionFilters (Face.gameStartActions card)
+    <> concatMap specialActionEffectFilters (Face.specialActions card)
 
 -- A lint fixture built as a FACE, put back into the one-face card an
 -- Effect.Create's token payload has to be.

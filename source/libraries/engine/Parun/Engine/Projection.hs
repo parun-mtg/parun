@@ -1292,7 +1292,7 @@ ruleAbilitiesOf oid gs = maybe (copiableRuleAbilitiesOf oid gs) PC.ruleAbilities
 -- so an object granting none costs no projection. Parun.SpecialActionSpec's "CR
 -- 613.1f a Circling Vultures that perpetually lost all abilities cannot be
 -- discarded" proves it.
-specialActionsOf :: ObjectId -> GameState -> [SpecialAction.SpecialAction]
+specialActionsOf :: ObjectId -> GameState -> [SpecialAction.SpecialAction (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))]
 specialActionsOf oid gs = case maybe (copiableSpecialActionsOf oid gs) PC.specialActions (fullTextOf oid gs) of
   [] -> []
   actions -> if PC.lostAllAbilities (project oid gs) then [] else actions

@@ -296,6 +296,7 @@ import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SourcePlayer as SourcePlayer
+import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.Superlative as Superlative
 import qualified Parun.Types.Supertype as Supertype
@@ -4158,6 +4159,18 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let gate = foldMap (Maybe.maybeToList . HandAction.condition) (Face.openingHandActions caverns)
     Spec.assertBool s (not (null gate)) "Gemstone Caverns prints a gate"
     Spec.assertBool s (offends avatar {Face.gameStartActions = fmap (\action -> action {HandAction.condition = Maybe.listToMaybe gate}) (Face.gameStartActions avatar)}) "Gemstone Caverns' gate on it is rejected"
+  -- CR 307.5: Parun.Engine.Action.sorcerySpeedGrants reads a sorcery-timed
+  -- special action off a face-up plane alone.
+  Spec.it s "only a plane grants a sorcery-timed special action" $ do
+    ps <- S.allPrintings s corpus
+    let grants c = not (null [() | SpecialAction.PerformAsASorcery _ <- Face.specialActions c])
+        offends c = grants c && not (Set.member CardType.Plane (TypeLine.types (Face.typeLine c)))
+        offenders = filter (anyFace offends . Printing.card) ps
+    Spec.assertEqWith s "no card in the pool but a plane grants a sorcery-timed special action" (fmap (S.nameOf . Printing.card) offenders) []
+    gates <- S.combinedFace <$> S.printingOf s registry "Talon Gates"
+    bears <- S.combinedFace <$> S.printingOf s registry "Grizzly Bears"
+    Spec.assertBool s (grants gates && not (offends gates)) "the real Talon Gates is accepted"
+    Spec.assertBool s (offends bears {Face.specialActions = Face.specialActions gates}) "Grizzly Bears granting it is rejected"
   -- CR 310.4 / 210.1: the same biconditional one rule number over. "Defense is a
   -- characteristic that battles have", so a battle without one has nothing for CR
   -- 310.4b's intrinsic replacement to place and would enter with no defense

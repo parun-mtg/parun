@@ -86,7 +86,7 @@ codec = Fields.object $ do
   grantedPlayerAbilities <- Fields.defaulted "grantedPlayerAbilities" [] (Common.list (Common.keyValue Timestamp.codec PlayerStaticAbility.codec)) PC.grantedPlayerAbilities
   grantedStaticAbilities <- Fields.defaulted "grantedStaticAbilities" [] (Common.list (Common.keyValue Timestamp.codec (StaticAbility.codec (GrantedAbility.codec Card.codec)))) PC.grantedStaticAbilities
   grantedRuleAbilities <- Fields.defaulted "grantedRuleAbilities" mempty RuleAbilities.codec PC.grantedRuleAbilities
-  specialActions <- Fields.defaulted "specialActions" [] (Common.list SpecialAction.codec) PC.specialActions
+  specialActions <- Fields.defaulted "specialActions" [] (Common.list (SpecialAction.codec (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))) PC.specialActions
   activatedAbilities <- Fields.defaulted "activatedAbilities" [] (Common.list (ActivatedAbility.codec Card.codec (GrantedAbility.codec Card.codec))) PC.activatedAbilities
   replacementEffects <- Fields.defaulted "replacementEffects" [] (Common.list (PrintedReplacement.codec Card.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))) PC.replacementEffects
   triggeredAbilities <- Fields.defaulted "triggeredAbilities" [] (Common.list (TriggeredAbility.codec Card.codec (GrantedAbility.codec Card.codec))) PC.triggeredAbilities

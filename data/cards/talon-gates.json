@@ -1,0 +1,169 @@
+{
+  "faces": [
+    {
+      "name": "Talon Gates",
+      "oracleText": "Any time you could cast a sorcery, you may exile a nonland card from your hand with X time counters on it, where X is its mana value. If the exiled card doesn't have suspend, it gains suspend. (At the beginning of its owner's upkeep, they remove a time counter. When the last is removed, the player may cast it without paying its mana cost. If it's a creature, it has haste.)\nWhenever chaos ensues, remove two time counters from each suspended card you own.",
+      "specialActions": [
+        {
+          "type": "PerformAsASorcery",
+          "value": [
+            {
+              "type": "MoveToZone",
+              "value": {
+                "ref": {
+                  "type": "ChosenCardInHand",
+                  "value": {
+                    "filter": {
+                      "type": "Not",
+                      "value": {
+                        "type": "HasCardType",
+                        "value": "Land"
+                      }
+                    },
+                    "player": {
+                      "type": "Relative",
+                      "value": "You"
+                    }
+                  }
+                },
+                "slot": "exiled",
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "PutCounters",
+              "value": {
+                "kind": {
+                  "type": "Time"
+                },
+                "quantity": {
+                  "type": "Count",
+                  "value": {
+                    "aggregation": {
+                      "type": "Total",
+                      "value": {
+                        "type": "Measure",
+                        "value": "ManaValue"
+                      }
+                    },
+                    "filter": {
+                      "type": "IsBound",
+                      "value": "exiled"
+                    },
+                    "scope": {
+                      "type": "OverBound",
+                      "value": "exiled"
+                    }
+                  }
+                },
+                "ref": {
+                  "type": "InSlot",
+                  "value": "exiled"
+                }
+              }
+            },
+            {
+              "type": "ModifyTarget",
+              "value": {
+                "duration": {
+                  "type": "Indefinite"
+                },
+                "modification": {
+                  "type": "GainKeyword",
+                  "value": {
+                    "type": "Suspend"
+                  }
+                },
+                "ref": {
+                  "type": "EachCardFromAmong",
+                  "value": {
+                    "filter": {
+                      "type": "Not",
+                      "value": {
+                        "type": "HasKeywordFamily",
+                        "value": "Suspend"
+                      }
+                    },
+                    "slot": "exiled"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "RemoveCounters",
+                              "value": {
+                                "kind": {
+                                  "type": "Time"
+                                },
+                                "quantity": {
+                                  "type": "Literal",
+                                  "value": 2
+                                },
+                                "slot": "suspended"
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "EachCardYouOwn",
+                            "value": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "IsInZone",
+                                  "value": "Exile"
+                                },
+                                {
+                                  "type": "HasKeywordFamily",
+                                  "value": "Suspend"
+                                },
+                                {
+                                  "type": "HasCounters",
+                                  "value": {
+                                    "kind": {
+                                      "type": "Time"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "suspended"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Dominaria"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}
