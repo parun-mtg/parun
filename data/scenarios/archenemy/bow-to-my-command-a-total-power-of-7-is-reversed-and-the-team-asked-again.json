@@ -23,7 +23,8 @@
             "key": "Scheme",
             "value": [
               {
-                "card": "Bow to My Command"
+                "card": "Bow to My Command",
+                "label": "bow"
               },
               {
                 "card": "Mortal Flesh Is Weak"
@@ -45,7 +46,7 @@
           },
           {
             "card": "Llanowar Elves",
-            "label": "le"
+            "label": "elf"
           }
         ],
         "library": [
@@ -97,7 +98,7 @@
     "sharedTeamTurns": true,
     "step": "Upkeep"
   },
-  "description": "CR 118.3 Bow to My Command stays up when its opposing team answers with creatures totalling 7 power, and none of them is tapped",
+  "description": "CR 734.1 a total power of 7 tapped for Bow to My Command is reversed and the team asked again, and declining then leaves the scheme in motion",
   "timeline": [
     {
       "do": {
@@ -144,9 +145,19 @@
         "Answer": {
           "prompt": "ChooseTapsForTotalPower",
           "with": [
-            "$le",
+            "$elf",
             "$cw1"
           ]
+        }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "ChooseToPay": {
+          "decision": "Declines"
         }
       },
       "player": "bob",
@@ -157,33 +168,11 @@
       "check": {
         "View": {
           "is": [
-            "Bow to My Command"
+            "$bow"
           ],
           "of": "Zone",
           "player": "alice",
           "zone": "Command"
-        }
-      },
-      "player": "bob",
-      "step": "EndStep",
-      "turn": 2
-    },
-    {
-      "check": {
-        "Tapped": {
-          "object": "$le",
-          "tapped": false
-        }
-      },
-      "player": "bob",
-      "step": "EndStep",
-      "turn": 2
-    },
-    {
-      "check": {
-        "Tapped": {
-          "object": "$cw1",
-          "tapped": false
         }
       },
       "player": "bob",
@@ -215,7 +204,29 @@
     {
       "check": {
         "Tapped": {
+          "object": "$cw1",
+          "tapped": false
+        }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
           "object": "$cw2",
+          "tapped": false
+        }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$elf",
           "tapped": false
         }
       },
