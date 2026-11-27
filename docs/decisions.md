@@ -610,7 +610,8 @@ Entries are ordered by the first rule each cites.
   flying off a card nobody may see, and Snoop's ruling refuses the like.
 - **Site**: `Parun.Engine.Game.atPosition` through `Game.shownTop`, proved by
   `Parun.CastSpec`'s "Vampire Nocturnus reads no top card the cast itself
-  exposed".
+  exposed"; `Parun.Engine.SourceContext.framedWith`'s library-top pool
+  (Skybreen) reads `Game.shownTop` too.
 - **Issue**: #6408.
 
 ## Whether a reversed cast turns a face-down card back down
