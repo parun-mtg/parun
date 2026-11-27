@@ -1427,14 +1427,20 @@ playSubgame runSubgame resolving slot = do
 -- (CR 607.2d), under the acquisition its abilities read, replacing an earlier
 -- one; choosing nobody leaves it as it was. Proved by the scenario
 -- imprison-this-insolent-wretch-keeps-the-chosen-opponent-s-permanents-tapped.
-choosePlayer :: ObjectId -> ObjectId -> PlayerId -> ChoosePlayer.ChoosePlayer -> Game ()
-choosePlayer resolving source controller choice = do
+--
+-- The `chooser` picks (CR 608.2d); the offer is still read against "you", the
+-- controller. Proved by the scenario
+-- choose-your-champion-lets-only-you-and-the-chosen-player-cast-and-attack.
+choosePlayer :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ChoosePlayer.ChoosePlayer -> Game ()
+choosePlayer resolving source controller legal choice = do
+  -- CR 608.2d: the seat the chooser names picks; one naming nobody picks nothing (CR 101.3).
+  seat <- Common.askedChooser resolving source controller legal (ChoosePlayer.chooser choice)
   gs <- State.get
   let slot = ChoosePlayer.slot choice
       excluded = foldMap (\name -> Map.findWithDefault Set.empty name (Binding.slotPlayers (slotBindings resolving gs))) (ChoosePlayer.excluding choice)
       hosts pid = not (ChoosePlayer.attaching choice) || Attach.canHostPlayer source pid gs
       offered = filter (\pid -> Set.notMember pid excluded && hosts pid) (Maybe.fromMaybe [] (PlayerEffect.playersInScope (Plane.rangePerspective source controller gs) (Just controller) gs (ChoosePlayer.scope choice)))
-  chosenPlayer <- Players.chooseOne controller source Nothing offered
+  chosenPlayer <- maybe (pure Nothing) (\who -> Players.chooseOne who source Nothing offered) seat
   Monad.forM_ chosenPlayer $ \pid -> do
     State.modify' (Common.bindPlayerSlot resolving slot (Set.singleton pid))
     Monad.when (ChoosePlayer.linked choice) $

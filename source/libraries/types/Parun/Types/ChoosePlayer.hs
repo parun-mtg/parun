@@ -1,5 +1,6 @@
 module Parun.Types.ChoosePlayer where
 
+import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.SlotName as SlotName
 
@@ -25,6 +26,9 @@ data ChoosePlayer = MkChoosePlayer
     -- | CR 607.2d: whether the choice is also written to the source as its
     -- PlayerChoice.ChosenPlayer, which its other abilities read as "the chosen
     -- player" (Imprison This Insolent Wretch).
-    linked :: Bool
+    linked :: Bool,
+    -- | CR 608.2d: who chooses, You by default; Choose Your Champion's "target
+    -- opponent chooses a player". The scope is still read against "you".
+    chooser :: PlayerRef.PlayerRef
   }
   deriving (Eq, Ord, Show)

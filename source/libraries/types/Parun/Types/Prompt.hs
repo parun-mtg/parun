@@ -778,7 +778,7 @@ data Prompt r where
   -- | CR 614.1c with CR 614.12a: which player the entering permanent's
   -- controller chooses (Stuffy Doll), or an entering Aura enchants (CR
   -- 303.4f; Curse of Death's Hold), or, at resolution, which player a
-  -- resolving effect's controller chooses (CR 608.2d; Stadium Vendors), or which
+  -- resolving effect's chooser picks (CR 608.2d; Stadium Vendors), or which
   -- active player a banding creature's controller names under CR 805.9
   -- (Parun.Engine.Damage.blockerChooser), or which winner takes an ante card
   -- after a team's win (CR 407.2 / 104.2c, Parun.Engine.Ante.payOut), or which

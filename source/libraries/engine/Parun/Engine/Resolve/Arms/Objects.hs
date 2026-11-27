@@ -1633,7 +1633,8 @@ affectPlayers resolving source controller legal (AffectPlayers.MkAffectPlayers d
   -- rules-modifying effect reach objects it did not begin with, so it is
   -- re-resolved on every read. A NAMED set is baked, the bindings that answer a
   -- target slot (CR 601.2c) being gone once this resolution is over; an
-  -- unfilled or illegal slot stores nothing (CR 608.2b).
+  -- unfilled or illegal slot stores nothing (CR 608.2b). An AllBut set is baked
+  -- the same way.
   State.modify' $ \gs ->
     let baked = case affected of
           AffectedPlayers.Scoped scope -> [AffectedPlayers.Scoped scope]
@@ -1641,6 +1642,8 @@ affectPlayers resolving source controller legal (AffectPlayers.MkAffectPlayers d
           -- other opcode reads one, CR 608.2b's empty answer included.
           AffectedPlayers.Named slot ->
             fmap AffectedPlayers.Named (playerRefPlayers legal resolving source controller gs (PlayerRef.InSlot slot))
+          AffectedPlayers.AllBut slot ->
+            fmap AffectedPlayers.AllBut (playerRefPlayers legal resolving source controller gs (PlayerRef.InSlot slot))
         -- CR 601.2c / 608.2b: a zone reference inside the payload is a read of
         -- this resolution's bindings, so it is baked here for the reason the
         -- Named set above is -- Sen Triplets' "that player's hand" is the

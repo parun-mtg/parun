@@ -1713,7 +1713,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
           _ -> effect
         respellMode mode = mode {Mode.clauses = fmap (\clause -> clause {Clause.effects = fmap respell (Clause.effects clause)}) (Mode.clauses mode)}
         respellAbility ability = ability {TriggeredAbility.modal = (TriggeredAbility.modal ability) {Modal.modes = fmap respellMode (Modal.modes (TriggeredAbility.modal ability))}}
-        unlooped = Effect.ChoosePlayer (ChoosePlayer.MkChoosePlayer (PlayerScope.Related PlayerRelation.Opponent) (SlotName.MkSlotName (Text.pack "opponent")) (Just Binding.chosenForOthers) False False)
+        unlooped = Effect.ChoosePlayer (ChoosePlayer.MkChoosePlayer (PlayerScope.Related PlayerRelation.Opponent) (SlotName.MkSlotName (Text.pack "opponent")) (Just Binding.chosenForOthers) False False (PlayerRef.Relative PlayerRelation.You))
     Spec.assertBool s (not (any triggeredAbilityOffends (Face.triggeredAbilities dack))) "Dack Fayden, Helping Hand's exclusion inside its ForEach is accepted"
     Spec.assertBool s (any (triggeredAbilityOffends . respellAbility) (Face.triggeredAbilities dack)) "a misspelt exclusion slot is rejected"
     Spec.assertBool s (triggeredAbilityOffends (modalTrigger (TriggerCondition.Enters EntersTrigger.defaultValue) [lintMode [unlooped] []])) "the loop's reserved slot outside a ForEach is rejected"
