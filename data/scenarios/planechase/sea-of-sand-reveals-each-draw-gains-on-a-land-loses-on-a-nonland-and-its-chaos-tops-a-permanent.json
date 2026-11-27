@@ -1,0 +1,51 @@
+{
+  "description": "Sea of Sand reveals each draw, gains on a land, loses on a nonland, and its chaos tops a permanent",
+  "note": "alice controls Sea of Sand and casts Vision Skeins: she draws Forest and Plains, each revealed, and gains 3 twice; bob draws two Lightning Bolts, each revealed, and loses 3 twice -- 'that player' is the drawer, not the plane's controller. Then chaos puts bob's Forest, a noncreature permanent, on top of his library.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Island", "label": "i1" },
+          { "card": "Island", "label": "i2" }
+        ],
+        "command": [{ "card": "Sea of Sand", "label": "sea" }],
+        "sideDecks": [{ "key": "Planar", "value": [{ "card": "Academy at Tolaria West" }] }],
+        "hand": [{ "card": "Vision Skeins", "label": "skeins" }],
+        "library": [{ "card": "Forest" }, { "card": "Plains" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Forest", "label": "bf" }],
+        "library": [{ "card": "Lightning Bolt" }, { "card": "Lightning Bolt" }, { "card": "Swamp" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$skeins", "mana": ["$i1", "$i2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "OrderTriggers", "with": [0, 1, 2, 3] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $sea", "trigger of $sea", "trigger of $sea", "trigger of $sea"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Witnessed", "player": "bob", "is": ["Forest", "Plains", "Lightning Bolt", "Lightning Bolt"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Witnessed", "player": "alice", "is": ["Forest", "Plains", "Lightning Bolt", "Lightning Bolt"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 26 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 14 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "RollPlanarDie" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "RollDie", "with": 5 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseTargets", "with": [["target", [["Object", "$bf"]]]] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Forest", "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Library", "card": "Forest", "count": 1 } } }
+  ],
+  "final": [
+    { "Life": { "player": "alice", "life": 26 } },
+    { "Life": { "player": "bob", "life": 14 } },
+    { "Count": { "player": "bob", "zone": "Hand", "card": "Lightning Bolt", "count": 2 } }
+  ]
+}
