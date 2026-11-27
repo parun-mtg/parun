@@ -3126,8 +3126,14 @@ attemptAttackDeclaration perform pid asked forced rejected = do
               --
               -- Last of the three, the batch above's reason: CR 508.2b puts every
               -- trigger from this declaration on the stack together.
-              Monad.forM_ side $ \p ->
-                Monad.when (any ((== p) . attackerOf) survivors) (State.modify' (Event.recordEvent (GameEvent.AttackersDeclared p)))
+              --
+              -- One event group, the BecameAttacked batch's reason: CR 805.10b's
+              -- combined attack is the team's one declaration, which a team's
+              -- trigger reads once (Parun.Engine.Event.Binding.teamDeclaration).
+              State.modify'
+                ( Event.simultaneouslyPure
+                    (\g -> List.foldl' (\h p -> Event.recordEvent (GameEvent.AttackersDeclared p) h) g (filter (\p -> any ((== p) . attackerOf) survivors) side))
+                )
 
 -- CR 702.22c / 702.22d: whether these attackers may be declared one band --
 -- two or more of them, all attacking the same thing, and either at most one

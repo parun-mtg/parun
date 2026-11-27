@@ -7,6 +7,7 @@
 module Parun.Engine.Event.Match where
 
 import qualified Data.Foldable as Foldable
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
@@ -16,7 +17,7 @@ import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Defender as Defender
-import Parun.Engine.Event.Binding (admitsAttacker, admitsDeparture, admittedAt, admittedAttackers, admittedDepartures, admittedPreventedSources, attackedBy, combatDamagerOn, postEventView)
+import Parun.Engine.Event.Binding (admitsAttacker, admitsDeparture, admittedAt, admittedAttackers, admittedDepartures, admittedPreventedSources, attackedBy, combatDamagerOn, declaringPlayers, postEventView, teamDeclaration)
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
@@ -230,8 +231,8 @@ declarationsOf bearer gs =
 -- CR 508.1k has already made it attacking, so an Equipment CR 704.5n has
 -- unattached since still equips it (data/scenarios's
 -- super-soldier-serum-fires-though-the-attack-toll-knocks-it-off-its-host).
-attacks :: Filter.Context -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> GameState -> ObjectId -> PlayerId -> AttackTrigger.AttackTrigger -> GameEvent -> Bool
-attacks context board atEvent gs bearer you trigger event = case (trigger, event) of
+attacks :: Filter.Context -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> [GameEvent] -> GameState -> ObjectId -> PlayerId -> AttackTrigger.AttackTrigger -> GameEvent -> Bool
+attacks context board atEvent groupEvents gs bearer you trigger event = case (trigger, event) of
   (AttackTrigger.Attacker t, GameEvent.AttackerDeclared d) ->
     let attacker = AttackerDeclared.attacker d
      in admittedAt context board gs attacker (AttackerTrigger.creature t)
@@ -280,30 +281,41 @@ attacks context board atEvent gs bearer you trigger event = case (trigger, event
   -- event rather than TurnRegisters.activePlayer: under the shared team turns
   -- option each player on the active team is an attacking player (CR 805.10a).
   -- A count's creatures are admittedAttackers, the set eventBindings stamps.
+  -- A team's combined attack (CR 805.10b; Event.Binding.teamDeclaration) is
+  -- one occurrence, matched off its first admitted declarer's event, which
+  -- Combat.declareAttackers groups with its teammates'; its count is the
+  -- team's.
+  -- Parun.PlanechaseSpec's "CR 805.10b City of the Daleks triggers once for
+  -- the planar team's combined attack" proves the one occurrence, and
+  -- data/scenarios/planechase/cr-805-10b-valor-s-reach-counts-the-team-s-two-attackers-across-both-members.json
+  -- the team's count.
   (AttackTrigger.Declaration t, GameEvent.AttackersDeclared attacker) ->
-    PlayerRelation.holds (Game.teams gs) (DeclarationTrigger.player t) you attacker
-      && case DeclarationTrigger.attackers t of
-        Nothing -> True
-        Just count -> reachesFloor count (fmap (declaredPower gs) (Foldable.toList (admittedAttackers board gs bearer you (AttackCount.filter count) attacker)))
-      && case DeclarationTrigger.frequency t of
-        TriggerFrequency.EveryTime -> True
-        -- "For the first time each turn" narrows the EVENT, so an earlier
-        -- declaration that fell short of the count spends nothing
-        -- (docs/decisions.md, "What a short attack spends of Desert Were-Worm's
-        -- first time"). The one
-        -- being matched is already in the log, so "the first" is "the only
-        -- one so far"; an earlier one's creatures are each read off this
-        -- event's sample (admitsAttacker), their power as stamped then.
-        TriggerFrequency.FirstTimeEachTurn ->
-          let qualifies declared = case DeclarationTrigger.attackers t of
-                Nothing -> True
-                Just count -> reachesFloor count [stampedPower d | d <- declared, admitsAttacker board gs bearer you (AttackCount.filter count) (AttackerDeclared.attacker d)]
-           in length (filter qualifies (declarationsBy attacker gs)) <= 1
-      -- As the Attacker arm's: asked of the game the event left, never re-checked
-      -- (CR 603.4). data/scenarios's
-      -- the-chief-warg-triggers-though-the-big-attacker-dies-before-the-trigger-is-put
-      -- proves it.
-      && maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere atEvent) context atEvent bearer) (DeclarationTrigger.while t)
+    let relation = DeclarationTrigger.player t
+        leads = not (teamDeclaration context relation) || List.find (Filter.relationHolds context relation you) [p | GameEvent.AttackersDeclared p <- groupEvents] == Just attacker
+     in Filter.relationHolds context relation you attacker
+          && leads
+          && case DeclarationTrigger.attackers t of
+            Nothing -> True
+            Just count -> reachesFloor count (fmap (declaredPower gs) (Foldable.toList (admittedAttackers board gs bearer you (AttackCount.filter count) (declaringPlayers context relation you attacker))))
+          && case DeclarationTrigger.frequency t of
+            TriggerFrequency.EveryTime -> True
+            -- "For the first time each turn" narrows the EVENT, so an earlier
+            -- declaration that fell short of the count spends nothing
+            -- (docs/decisions.md, "What a short attack spends of Desert Were-Worm's
+            -- first time"). The one
+            -- being matched is already in the log, so "the first" is "the only
+            -- one so far"; an earlier one's creatures are each read off this
+            -- event's sample (admitsAttacker), their power as stamped then.
+            TriggerFrequency.FirstTimeEachTurn ->
+              let qualifies declared = case DeclarationTrigger.attackers t of
+                    Nothing -> True
+                    Just count -> reachesFloor count [stampedPower d | d <- declared, admitsAttacker board gs bearer you (AttackCount.filter count) (AttackerDeclared.attacker d)]
+               in length (filter qualifies (declarationsBy attacker gs)) <= 1
+          -- As the Attacker arm's: asked of the game the event left, never re-checked
+          -- (CR 603.4). data/scenarios's
+          -- the-chief-warg-triggers-though-the-big-attacker-dies-before-the-trigger-is-put
+          -- proves it.
+          && maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere atEvent) context atEvent bearer) (DeclarationTrigger.while t)
   -- CR 508.3f / 509.1h: the event alone answers it. Combat.blockers would
   -- answer for the board at scan time, and rule 509.1h's last sentence keeps
   -- an attacker whose blockers all left combat blocked. The attacker is read
@@ -1445,7 +1457,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     _ -> False
   -- CR 508.3, as a function of Parun.Types.AttackTrigger's arity and fields:
   -- attacks.
-  TriggerCondition.Attacks t -> attacks bearerContext board atEvent gs bearer you t event
+  TriggerCondition.Attacks t -> attacks bearerContext board atEvent groupEvents gs bearer you t event
   -- CR 509.3, as a function of Parun.Types.BlockTrigger's fields: blocks. Its
   -- condition is asked of the game the event left (CR 603.2), never re-checked
   -- as TriggeredAbility.intervening would be (CR 603.4). data/scenarios's

@@ -17,6 +17,7 @@ import qualified Parun.Engine.Foretell as Foretell
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Ignore as Ignore
 import qualified Parun.Engine.LaterPayment as LaterPayment
+import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.Planechase as Planechase
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Plot as Plot
@@ -183,9 +184,12 @@ discardableCards pid gs =
    in filter grantsIt (Game.zoneMembers Zone.Hand pid gs)
 
 -- CR 307.5: the objects granting this player a sorcery-timed special action
--- (SpecialAction.PerformAsASorcery) they may take now: a face-up plane they
--- control (CR 311.4, 901.6), in their main phase with the stack empty. Read
--- through Projection.specialActionsOf, discardableCards' reason.
+-- (SpecialAction.PerformAsASorcery) they may take now: a face-up plane whose
+-- "you" they are (CR 311.4, 901.6; under CR 901.12c either member of the
+-- planar team, Plane.planarYous), in their main phase with the stack empty.
+-- Read through Projection.specialActionsOf, discardableCards' reason.
+-- data/scenarios/planechase/cr-901-12c-talon-gates-lets-the-planar-controller-s-teammate-suspend-a-card.json
+-- proves the teammate's.
 --
 -- Unprinted: such an action on anything but a plane, which this does not read;
 -- Parun.EffectLintSpec's "only a plane grants a sorcery-timed special action"
@@ -195,7 +199,7 @@ discardableCards pid gs =
 -- anything (Talon Gates with no nonland card in hand); the CR is silent.
 sorcerySpeedGrants :: PlayerId -> GameState -> [ObjectId]
 sorcerySpeedGrants pid gs =
-  let grantsIt oid = Planechase.controllerOfFaceUp oid gs == Just pid && any isSorcerySpeed (Projection.specialActionsOf oid gs)
+  let grantsIt oid = any (\controller -> List.elem pid (Plane.planarYous oid controller gs)) (Planechase.controllerOfFaceUp oid gs) && any isSorcerySpeed (Projection.specialActionsOf oid gs)
       isSorcerySpeed action = case action of
         SpecialAction.PerformAsASorcery _ -> True
         _ -> False
