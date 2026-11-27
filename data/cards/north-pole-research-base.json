@@ -17,7 +17,7 @@
                         "value": {
                           "ref": {
                             "type": "InSlot",
-                            "value": "target"
+                            "value": "creature"
                           }
                         }
                       },
@@ -33,7 +33,7 @@
                           },
                           "ref": {
                             "type": "InSlot",
-                            "value": "target"
+                            "value": "creature"
                           }
                         }
                       }
@@ -41,7 +41,7 @@
                   }
                 ],
                 "targetSlots": {
-                  "target": {
+                  "creature": {
                     "filter": {
                       "type": "And",
                       "value": [

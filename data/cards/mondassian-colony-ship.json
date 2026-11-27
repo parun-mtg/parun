@@ -67,11 +67,18 @@
                                         }
                                       },
                                       {
-                                        "type": "ControllerRelatesToBound",
+                                        "type": "Shares",
                                         "value": {
-                                          "hop": "Itself",
-                                          "relation": "You",
-                                          "slot": "thatAttackingCreature"
+                                          "anchor": {
+                                            "type": "AnyPermanent",
+                                            "value": {
+                                              "type": "IsBound",
+                                              "value": "thatAttackingCreature"
+                                            }
+                                          },
+                                          "trait": {
+                                            "type": "Controller"
+                                          }
                                         }
                                       }
                                     ]
@@ -123,11 +130,18 @@
                                         }
                                       },
                                       {
-                                        "type": "ControllerRelatesToBound",
+                                        "type": "Shares",
                                         "value": {
-                                          "hop": "Itself",
-                                          "relation": "You",
-                                          "slot": "thatAttackingCreature"
+                                          "anchor": {
+                                            "type": "AnyPermanent",
+                                            "value": {
+                                              "type": "IsBound",
+                                              "value": "thatAttackingCreature"
+                                            }
+                                          },
+                                          "trait": {
+                                            "type": "Controller"
+                                          }
                                         }
                                       }
                                     ]
