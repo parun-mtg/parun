@@ -32,6 +32,7 @@ import qualified Parun.Engine.Modal as Engine.Modal
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
+import qualified Parun.Engine.Replay as Replay
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Legality as Legality
 import qualified Parun.Play.Command as Command
@@ -400,6 +401,12 @@ spec s registry = Spec.describe s "Search" $ do
     declared <- traverse (searched s (Asked.MkAsked [] (atOneLife pid gs) (Prompt.DeclareBlockers decider pid blockers attackers))) [1 .. 4]
     Spec.assertBool s (all (\declaration -> all (\attacker -> any (Set.member attacker) (Map.elems declaration)) attackers) declared) "blocked in every seed"
 
+  Spec.it s "the search bot blocks both of two attackers with three creatures at 2 life, past the declarations it searches exhaustively" $ do
+    (gs, decider, pid, blockers, attackers) <- maybe (Spec.assertFailure s "no declaration of blockers") pure . untilBlocks . State.runStateT Engine.resumeTurnBasedAction =<< twoIntoThree s registry
+    Spec.assertBool s ((length attackers + 1) ^ length blockers > Search.widest) "past the exhaustive declarations"
+    declared <- traverse (searched s (Asked.MkAsked [] gs (Prompt.DeclareBlockers decider pid blockers attackers))) [1 .. 4]
+    Spec.assertBool s (all (\declaration -> all (\attacker -> any (Set.member attacker) (Map.elems declaration)) attackers) declared) ("both blocked in every seed: " <> show declared)
+
   Spec.it s "the greedy policy plays a land where it may, else casts a permanent spell" $ do
     let greedily asked seed = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Answerer.unwrap (Search.greedy (S.fixtureRegistry [])) asked) (S.seeded seed))
     (_, landed) <- capturing s registry 3 "a menu offering a land play" $ \asked -> case Asked.prompt asked of
@@ -690,6 +697,27 @@ intoOpenMana s registry = do
   built <- S.buildBoardOrFail s registry (S.board (alice NonEmpty.:| [bob]) S.alice S.declareAttackers)
   attacker <- maybe (Spec.assertFailure s "no attacker") pure (Map.lookup (Label.MkLabel (Text.pack "attacker")) (Staged.objects built))
   pure (Asked.MkAsked [] (Staged.state built) (Prompt.DeclareAttackers (Decider.MkDecider S.alice) S.alice [attacker]))
+
+-- Alice's declaration of attackers with two Grizzly Bears, Bob at 2 life
+-- with three: the game as built.
+twoIntoThree :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m GameState.GameState
+twoIntoThree s registry = do
+  let cards :: [String] -> [Placement.Placement]
+      cards = fmap S.cardSetup
+      bears name = [S.settled (name <> show i) "Grizzly Bears" | i <- [1 :: Int .. 3]]
+      alice = (S.battlefield S.alice (take 2 (bears "attacker"))) {Seat.library = Seq.fromList (cards (replicate 5 "Forest"))}
+      bob = (S.battlefield S.bob (bears "blocker")) {Seat.life = 2, Seat.library = Seq.fromList (cards (replicate 5 "Forest"))}
+  Staged.state <$> S.buildBoardOrFail s registry (S.board (alice NonEmpty.:| [bob]) S.alice S.declareAttackers)
+
+-- The first declaration of blockers a program asks, every creature offered
+-- attacking and every other prompt answered by its default.
+untilBlocks :: Program.Program (Asked.Asked GameState.GameState) a -> Maybe (GameState.GameState, Decider.Decider, PlayerId.PlayerId, [ObjectId.ObjectId], [ObjectId.ObjectId])
+untilBlocks program = case program of
+  Program.Then asked k -> case Asked.prompt asked of
+    Prompt.DeclareBlockers decider pid blockers attackers -> Just (Asked.game asked, decider, pid, blockers, attackers)
+    Prompt.DeclareAttackers _ _ offered -> untilBlocks (k offered)
+    prompt -> untilBlocks (k (Replay.defaultAnswer prompt))
+  Program.Return _ -> Nothing
 
 -- Alice in her precombat main phase with an untapped Mountain and a Shock
 -- in hand; Bob at 2 life with a Grizzly Bears, his hand empty: the game as
