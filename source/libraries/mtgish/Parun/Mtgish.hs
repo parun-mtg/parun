@@ -149,6 +149,8 @@ import qualified Parun.Types.PayObligation as PayObligation
 import qualified Parun.Types.PayerGrouping as PayerGrouping
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseSelector as PhaseSelector
+import qualified Parun.Types.PlanarDieFace as PlanarDieFace
+import qualified Parun.Types.PlanarDieTrigger as PlanarDieTrigger
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -854,6 +856,10 @@ trigger n = case Node.tag n of
     Right (TriggerCondition.SelfPlaneswalkedAwayFrom, outermost)
   -- CR 311.7: "Whenever chaos ensues".
   "WhenChaosEnsues" -> Right (TriggerCondition.ChaosEnsues, outermost)
+  -- CR 901.9: "Whenever you roll the planar die" (Stairs to Infinity) and "a
+  -- blank on" it (Pompeii).
+  "WhenAPlayerRollsThePlanarDie" -> rollsPlanarDie Nothing
+  "WhenAPlayerRollsABlankOnThePlanarDie" -> rollsPlanarDie (Just PlanarDieFace.Blank)
   -- CR 603.1b: several events, the rest of the ability naming only what
   -- every one of them names.
   "Or" -> do
@@ -865,6 +871,10 @@ trigger n = case Node.tag n of
   _ -> Node.untranslated n
   where
     bound pairs = outermost {bindings = Map.fromList pairs}
+    rollsPlanarDie face = do
+      relation <- Node.argument n >>= players
+      Monad.unless (relation == PlayerRelation.You) (Node.untranslated n)
+      Right (TriggerCondition.PlayerRollsPlanarDie (PlanarDieTrigger.MkPlanarDieTrigger relation face), outermost)
     -- CR 509.3's one condition, from its three fields.
     blocks role creature count = TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role creature count Batching.EachOccurrence Nothing)
     -- The source's own event, which calls the source "that creature" too.

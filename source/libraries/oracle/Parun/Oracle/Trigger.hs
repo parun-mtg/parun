@@ -54,6 +54,8 @@ import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.OwnedZone as OwnedZone
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.PlanarDieFace as PlanarDieFace
+import qualified Parun.Types.PlanarDieTrigger as PlanarDieTrigger
 import qualified Parun.Types.PlayerExpends as PlayerExpends
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -250,6 +252,13 @@ event context creature c = case c of
   -- CR 311.7: a plane's chaos ability. Free: "Whenever" or "When" (Bad Wolf
   -- Bay).
   TriggerCondition.ChaosEnsues -> [other (opening' <> " chaos ensues") [] | opening' <- recurring]
+  -- CR 901.8 / 901.9: any face, a blank (Pompeii), or CR 901.8's own
+  -- Planeswalker symbol. A chaos roll is printed as "chaos ensues".
+  TriggerCondition.PlayerRollsPlanarDie (PlanarDieTrigger.MkPlanarDieTrigger PlayerRelation.You face) -> case face of
+    Nothing -> [other "Whenever you roll the planar die" []]
+    Just PlanarDieFace.Blank -> [other "Whenever you roll a blank on the planar die" []]
+    Just PlanarDieFace.Planeswalker -> [other "Whenever you roll the Planeswalker symbol on the planar die" []]
+    Just PlanarDieFace.Chaos -> []
   TriggerCondition.PlayerFacesDilemma PlayerRelation.You -> [other "Whenever you face a dilemma" []]
   TriggerCondition.PlayerExpends (PlayerExpends.MkPlayerExpends PlayerRelation.You n) -> [other ("Whenever you expend " <> show n) []]
   _ -> []

@@ -185,6 +185,7 @@ import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlacesSticker as PlacesSticker
 import qualified Parun.Types.PlanarDieFace as PlanarDieFace
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
+import qualified Parun.Types.PlanarDieTrigger as PlanarDieTrigger
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
@@ -2147,7 +2148,7 @@ representativeEvents cond =
         TriggerCondition.DaytimeChanges -> one (GameEvent.DaytimeChanged Daytime.Night)
         TriggerCondition.GameBegins -> one GameEvent.GameBegan
         -- CR 901.9c's own event, a planar die showing the Planeswalker symbol.
-        TriggerCondition.PlayerRollsPlaneswalker _ -> one (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled S.bob PlanarDieFace.Planeswalker))
+        TriggerCondition.PlayerRollsPlanarDie _ -> one (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled S.bob PlanarDieFace.Planeswalker))
         -- CR 701.32's own event, and the only one this condition admits.
         TriggerCondition.TurnedUpOffDeck _ -> one (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Scheme S.bob departed Set.empty))
         -- CR 701.31d's own event, naming the bearer among the planes walked
@@ -2533,8 +2534,8 @@ everyTriggerCondition =
     TriggerCondition.ChaosEnsues,
     TriggerCondition.DaytimeChanges,
     TriggerCondition.GameBegins,
-    TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.You,
-    TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.Opponent,
+    TriggerCondition.PlayerRollsPlanarDie (PlanarDieTrigger.MkPlanarDieTrigger PlayerRelation.You (Just PlanarDieFace.Planeswalker)),
+    TriggerCondition.PlayerRollsPlanarDie (PlanarDieTrigger.MkPlanarDieTrigger PlayerRelation.Opponent Nothing),
     TriggerCondition.TurnedUpOffDeck ActingPermanent.Self,
     TriggerCondition.TurnedUpOffDeck (ActingPermanent.Matching (Filter.Type.And [])),
     TriggerCondition.SelfPlaneswalkedAwayFrom,

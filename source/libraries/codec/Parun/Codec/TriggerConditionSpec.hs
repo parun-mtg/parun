@@ -70,6 +70,8 @@ import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlacesSticker as PlacesSticker
+import qualified Parun.Types.PlanarDieFace as PlanarDieFace
+import qualified Parun.Types.PlanarDieTrigger as PlanarDieTrigger
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
@@ -784,13 +786,14 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       TriggerCondition.codec
       TriggerCondition.GameBegins
       " {\"type\":\"GameBegins\"} "
-  -- CR 901.8: the planeswalking ability's condition, PlayerBecomesMonarch's shape.
-  Spec.it s "PlayerRollsPlaneswalker round-trips" $
+  -- CR 901.8: the planeswalking ability's condition.
+  -- Parun.Codec.PlanarDieTriggerSpec has the fields.
+  Spec.it s "PlayerRollsPlanarDie round-trips" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.You)
-      " {\"type\":\"PlayerRollsPlaneswalker\",\"value\":\"You\"} "
+      (TriggerCondition.PlayerRollsPlanarDie (PlanarDieTrigger.MkPlanarDieTrigger PlayerRelation.You (Just PlanarDieFace.Planeswalker)))
+      " {\"type\":\"PlayerRollsPlanarDie\",\"value\":{\"player\":\"You\",\"face\":\"Planeswalker\"}} "
   -- CR 705.2: Tavern Scoundrel's "you win", then the other relation and the
   -- other outcome together. Parun.Codec.CoinFlipTriggerSpec has the fields.
   Spec.it s "FlipsCoin round-trips your won flip" $

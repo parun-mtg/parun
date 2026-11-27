@@ -4297,7 +4297,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   TriggerCondition.ChaosEnsues -> []
   TriggerCondition.DaytimeChanges -> []
   TriggerCondition.GameBegins -> []
-  TriggerCondition.PlayerRollsPlaneswalker _ -> []
+  TriggerCondition.PlayerRollsPlanarDie _ -> []
   TriggerCondition.TurnedUpOffDeck subject -> actingFilters subject
   TriggerCondition.SelfPlaneswalkedAwayFrom -> []
   TriggerCondition.FlipsCoin _ -> []

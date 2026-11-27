@@ -950,7 +950,7 @@ looksBack condition = case condition of
   TriggerCondition.ChaosEnsues -> False
   TriggerCondition.DaytimeChanges -> False
   TriggerCondition.GameBegins -> False
-  TriggerCondition.PlayerRollsPlaneswalker _ -> False
+  TriggerCondition.PlayerRollsPlanarDie _ -> False
   TriggerCondition.TurnedUpOffDeck _ -> False
   -- CR 603.10g: on the rule's list of exceptions, though no zone change of a
   -- permanent. eventTriggersGiven's `walkedAwayFrom` is the source it decides for.
@@ -1176,7 +1176,7 @@ batchScoped condition = case condition of
   TriggerCondition.ChaosEnsues -> False
   TriggerCondition.DaytimeChanges -> False
   TriggerCondition.GameBegins -> False
-  TriggerCondition.PlayerRollsPlaneswalker _ -> False
+  TriggerCondition.PlayerRollsPlanarDie _ -> False
   TriggerCondition.TurnedUpOffDeck _ -> False
   TriggerCondition.SelfPlaneswalkedAwayFrom -> False
   TriggerCondition.FlipsCoin _ -> False
@@ -2980,7 +2980,7 @@ zonesTriggeredFrom cond =
         TriggerCondition.PlacesSticker _ -> battlefield
         -- CR 113.6's default again: nothing about rolling a die is a condition
         -- that cannot trigger from the battlefield.
-        TriggerCondition.PlayerRollsPlaneswalker _ -> battlefield
+        TriggerCondition.PlayerRollsPlanarDie _ -> battlefield
         TriggerCondition.PlayerRollsResult _ -> battlefield
         -- CR 311.7 / 901.7: a chaos ability triggers from the face-up plane.
         TriggerCondition.ChaosEnsues -> Set.singleton Zone.Command
@@ -3362,7 +3362,7 @@ stateTriggersOn gs
             TriggerCondition.ChaosEnsues -> False
             TriggerCondition.DaytimeChanges -> False
             TriggerCondition.GameBegins -> False
-            TriggerCondition.PlayerRollsPlaneswalker _ -> False
+            TriggerCondition.PlayerRollsPlanarDie _ -> False
             TriggerCondition.TurnedUpOffDeck _ -> False
             TriggerCondition.SelfPlaneswalkedAwayFrom -> False
             TriggerCondition.FlipsCoin _ -> False

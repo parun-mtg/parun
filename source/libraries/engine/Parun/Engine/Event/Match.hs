@@ -152,8 +152,8 @@ import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlacesSticker as PlacesSticker
-import qualified Parun.Types.PlanarDieFace as PlanarDieFace
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
+import qualified Parun.Types.PlanarDieTrigger as PlanarDieTrigger
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
@@ -2584,8 +2584,8 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     _ -> False
   -- CR 901.8 / 901.9c: the roller, read against CR 109.5's "you" as
   -- PlayerActs does, rolled the Planeswalker symbol.
-  TriggerCondition.PlayerRollsPlaneswalker relation -> case event of
-    GameEvent.PlanarDieRolled rolled -> PlanarDieRolled.face rolled == PlanarDieFace.Planeswalker && PlayerRelation.holds (Game.teams gs) relation you (PlanarDieRolled.roller rolled)
+  TriggerCondition.PlayerRollsPlanarDie wanted -> case event of
+    GameEvent.PlanarDieRolled rolled -> all (== PlanarDieRolled.face rolled) (PlanarDieTrigger.face wanted) && PlayerRelation.holds (Game.teams gs) (PlanarDieTrigger.player wanted) you (PlanarDieRolled.roller rolled)
     _ -> False
   -- CR 701.32b / 904.9: "When you set this scheme in motion", against the
   -- event naming this very scheme -- and CR 312.5's encounter and CR 701.31d's
