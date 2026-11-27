@@ -429,8 +429,9 @@ searched context s
         SearchDestination.Hand -> [Text.pack ", put that card into your hand, then shuffle", Text.pack ", put it into your hand, then shuffle"]
         SearchDestination.RevealThenHand -> fmap (\r -> Text.pack ", " <> r <> Text.pack ", put it into your hand, then shuffle") revealed
         -- Free besides: "and" and a sentence of its own for the shuffle
-        -- (Spoils of Victory) or commas (Nature's Lore).
-        SearchDestination.Battlefield -> fmap (\o -> Text.pack ", " <> o <> Text.pack ", then shuffle") onto <> [Text.pack " and put that card onto the battlefield. Then shuffle"]
+        -- (Spoils of Victory), commas (Nature's Lore), or "shuffle your
+        -- library" (Perhaps You've Met My Cohort).
+        SearchDestination.Battlefield -> fmap (\o -> Text.pack ", " <> o <> Text.pack ", then shuffle") onto <> [Text.pack " and put that card onto the battlefield. Then shuffle", Text.pack ", put it onto the battlefield, then shuffle your library"]
         SearchDestination.BattlefieldTapped -> fmap (\o -> Text.pack ", " <> o <> Text.pack " tapped, then shuffle") onto
         SearchDestination.Top -> fmap (\c -> Text.pack ", then shuffle and put " <> c <> Text.pack " on top") onTop
         SearchDestination.RevealThenTop -> fmap (\c -> Text.pack ", reveal it, then shuffle and put " <> c <> Text.pack " on top") onTop

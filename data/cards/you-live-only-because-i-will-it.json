@@ -1,0 +1,38 @@
+{
+  "faces": [
+    {
+      "name": "You Live Only Because I Will It",
+      "oracleText": "When you set this scheme in motion, you may redistribute any number of life totals. (Each affected player or team gets one of those life totals back.)",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "RedistributeLifeTotals"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Scheme"
+        ]
+      }
+    }
+  ]
+}
