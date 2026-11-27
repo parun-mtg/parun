@@ -23,6 +23,7 @@ kindOf prompt = Text.pack $ case prompt of
   Prompt.RandomObject {} -> "RandomObject"
   Prompt.RandomStickerSheet {} -> "RandomStickerSheet"
   Prompt.RandomPlayer {} -> "RandomPlayer"
+  Prompt.RandomTarget {} -> "RandomTarget"
   Prompt.RandomClause {} -> "RandomClause"
   Prompt.RandomCard {} -> "RandomCard"
   Prompt.ChooseConjuredCard {} -> "ChooseConjuredCard"

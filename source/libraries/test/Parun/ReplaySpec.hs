@@ -1001,6 +1001,17 @@ combatReplaySpec s =
         Spec.it s "an opponent CHOICE does not decode as a random selection" $ do
           let p = Prompt.RandomPlayer (S.bob NonEmpty.:| [S.carol])
           Spec.assertEqWith s "mismatch" (Replay.decode p (Response.ChoseOpponent S.bob)) Nothing
+        -- Goblin Test Pilot's "any target chosen at random": RandomPlayer's
+        -- reasons, over players and objects at once.
+        Spec.it s "RandomTarget round-trips through the transcript" $ do
+          let creature = Recipient.ToCreature (ObjectId.MkObjectId 7)
+              p = Prompt.RandomTarget (Recipient.ToPlayer S.bob NonEmpty.:| [creature])
+          Spec.assertEqWith s "the creature round trips" (Replay.decode p (Replay.encode p creature)) (Just creature)
+          Spec.assertEqWith s "bob round trips" (Replay.decode p (Replay.encode p (Recipient.ToPlayer S.bob))) (Just (Recipient.ToPlayer S.bob))
+          Spec.assertEqWith s "the head" (Replay.defaultAnswer p) (Recipient.ToPlayer S.bob)
+        Spec.it s "a random player does not decode as a random target" $ do
+          let p = Prompt.RandomTarget (Recipient.ToPlayer S.bob NonEmpty.:| [Recipient.ToPlayer S.carol])
+          Spec.assertEqWith s "mismatch" (Replay.decode p (Response.SelectedPlayerAtRandom S.bob)) Nothing
         -- Master of the Wild Hunt Avatar's "chosen at random" over its printed
         -- branches. RandomPlayer's reasons, over clause ordinals.
         Spec.it s "RandomClause round-trips through the transcript" $ do

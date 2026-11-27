@@ -101,6 +101,9 @@ data Response
   | -- | The branch of a CR 608.2d group randomness drew; ChoseClause's
     -- payload, its own constructor for SelectedPlayerAtRandom's reason.
     SelectedClauseAtRandom ClauseIndex.ClauseIndex
+  | -- | The target randomness named for a slot filled at random; ChoseTargets'
+    -- recipients, its own constructor for SelectedPlayerAtRandom's reason.
+    SelectedTargetAtRandom Recipient.Recipient
   | -- | The card randomness named out of a printed spellbook (Tome of the
     -- Infinite's "conjure a random card from Tome of the Infinite's
     -- spellbook").

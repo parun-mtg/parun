@@ -161,6 +161,12 @@ data Prompt r where
   -- Sontaran Nurse) or leave them out (Ruhan of the Fomori), and Parun.CardSpec's
   -- Strax case proves the first.
   RandomPlayer :: NonEmpty.NonEmpty PlayerId.PlayerId -> Prompt PlayerId.PlayerId
+  -- | Which target randomness named for a slot filled at random
+  -- (Parun.Types.TargetSlot's selection), one draw per target over every
+  -- recipient the slot is offered, players and objects alike, so an "any
+  -- target" draw is uniform over both kinds. RandomObject's reasons for carrying
+  -- neither Decider nor PlayerId; asked only for two or more.
+  RandomTarget :: NonEmpty.NonEmpty Recipient.Recipient -> Prompt Recipient.Recipient
   -- | Which branch of a CR 608.2d group randomness drew, by its ordinal
   -- (Parun.Types.OrElse's selection), one draw per branch the group runs.
   -- RandomObject's reasons for carrying neither Decider nor PlayerId; asked only
