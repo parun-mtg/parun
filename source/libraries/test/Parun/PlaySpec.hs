@@ -340,6 +340,22 @@ spec s registry = Spec.describe s "Play" $ do
         left = S.runPure S.identityAnswer board (Departure.leaveGame Departure.Type.Conceded S.alice >> Departure.leaveGame Departure.Type.Lost S.bob)
     Spec.assertEq s (Wording.departures Nothing left) [Text.pack "Player 1 conceded.", Text.pack "Player 2 lost the game to an effect."]
 
+  Spec.it s "CR 800.4a the permanents a losing player takes with them are told without an object number" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    forest <- S.printingOf s registry "Forest"
+    let (bear, g1) = S.addPermanent bears S.bob S.threePlayerGame
+        (land, g2) = S.addPermanent forest S.bob g1
+        (_, board) = S.addPermanent bears S.carol g2
+        leaves = leavesAs S.bob
+        leavesAs pid g = S.runPure S.identityAnswer g (Departure.leaveGame Departure.Type.Lost pid)
+        departing = filter (Text.isInfixOf (Text.pack "leave"))
+        called name = S.emptyCharacteristics {ProjectedCharacteristics.names = Set.singleton (CardName.MkCardName (Text.pack name))}
+        arrived oid name = GameEvent.Moved (Moved.moved (ZoneChange.MkZoneChange oid oid Zone.Hand Zone.Battlefield) (called name)) {Moved.seenArriving = True}
+        seen = witnessing (inOneGroup [arrived bear "Grizzly Bears", arrived land "Forest"]) board
+    Spec.assertEqWith s "told to Player 1, counted where it never saw them arrive" (departing (told (PlayerView.viewFor S.alice (leaves board)))) [Text.pack "2 permanents leave the game."]
+    Spec.assertEqWith s "told to Player 3, named where it saw them arrive" (departing (told (PlayerView.viewFor S.carol (leaves seen)))) [Text.pack "Grizzly Bears and Forest leave the game."]
+    Spec.assertEqWith s "told to Player 1, one" (departing (told (PlayerView.viewFor S.alice (leavesAs S.carol board)))) [Text.pack "A permanent leaves the game."]
+
   Spec.it s "CR 104.2a a win is told to its reader as the board names the seat" $
     Spec.assertEq s (fmap (\reader -> Wording.result reader (Result.Won S.alice)) [Nothing, Just S.alice, Just S.bob]) [Text.pack "Player 1 wins.", Text.pack "You win.", Text.pack "Player 1 wins."]
 
