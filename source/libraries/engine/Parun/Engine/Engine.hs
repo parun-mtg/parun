@@ -311,8 +311,8 @@ passPriorityFrom gs pid =
 -- determination before any untaps, CR 805.6's "once all choices have been
 -- made, the actions happen simultaneously". Beside theirs, what a
 -- UntapHold.DuringOthersSteps rule untaps of a non-active player's permanents
--- (Seedborn Muse) joins the same simultaneous untap, with no choice in it (its
--- ruling of 2007-07-15). None of the carriers above holds it back or is spent
+-- (Seedborn Muse, Horizon Boughs) joins the same simultaneous untap, with no
+-- choice in it (its ruling of 2007-07-15). None of the carriers above holds it back or is spent
 -- by it: each is worded against its controller's own untap step, which this
 -- one is not (its ruling of 2004-10-04). UntapHold.Never is the exception,
 -- worded against every untap and asked in Event.proposeUntap. A stun counter
