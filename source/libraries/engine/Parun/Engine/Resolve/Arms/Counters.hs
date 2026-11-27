@@ -2011,8 +2011,8 @@ meld settle resolving source controller legal (Meld.MkMeld ref resultCard riders
   -- is made an instruction earlier.
   --
   -- Event.meld is the whole of CR 701.42a, gate included: it refuses (CR
-  -- 701.42b) by writing nothing, which is CR 701.42c's "they stay in their
-  -- current zone" -- the cards are wherever the exile left them, and this
+  -- 701.42b, or a CR 101.2 "can't enter") by writing nothing, which is CR
+  -- 701.42c's "they stay in their current zone" -- the cards are wherever the exile left them, and this
   -- resolution simply had no effect. Nothing is bound and no slot is filled: no
   -- printing names the melded permanent later in its own instruction list.
   --

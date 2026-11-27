@@ -10,9 +10,10 @@
 -- Prohibition.EnterFrom row. Each caller asks a Bool about one entry and never
 -- learns which card produced it.
 --
--- THREE places ask. Parun.Engine.Event.runEntry asks of the permanent as it
+-- FOUR places ask. Parun.Engine.Event.runEntry asks of the permanent as it
 -- would exist on the battlefield (CR 614.17d), before and after CR 616.1's entry
--- loop, for every entry but a meld's.
+-- loop, for every entry but a meld's; Event.meld asks of the melded permanent
+-- the same way, before its entry loop, and rolls the meld back on a refusal.
 -- Parun.Engine.Event.changeZoneAttaching is the funnel every battlefield MOVE
 -- reaches -- a resolving permanent spell, a resolving Effect.MoveToZone, a land
 -- play, a search that puts a card onto the battlefield, CR 701.40a's manifest --
@@ -54,8 +55,8 @@ import Parun.Types.Zone (Zone)
 -- which entry is being judged: Parun.Engine.Event.changeZoneAttaching asks after CR
 -- 616.1's replacement loop has settled the event (CR 614.6), where the object is
 -- still in the zone it is leaving, Event.runEntry about an object materialized on
--- the battlefield but still entering from `origin`, and Event.createTokens about a token that
--- is already on the battlefield -- see there for why that reading also decides
+-- the battlefield but still entering from `origin` (Event.meld likewise), and
+-- Event.createTokens about a token that is already on the battlefield -- see there for why that reading also decides
 -- which printings can reach a token at all.
 prohibited :: ObjectId -> Zone -> GameState -> Bool
 prohibited oid origin gs =
