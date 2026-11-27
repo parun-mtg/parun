@@ -363,7 +363,11 @@ reports that could not have reddened the named assertion; a new constructor,
 field or hand-kept list that should have been a parameter ("Parameters, not
 siblings"); a test that does not prove what it claims. Prose is not a
 finding: leave a wording nit, or a stale citation still pointing at the right
-rule, to the next unit editing the file. Report each finding as board, action
+rule, to the next unit editing the file. Nor is an open reading: where no rule
+or ruling picks one, apply the `docs/decisions.md` entries; a finding there is
+the engine contradicting an entry, or a board the entries leave absurd (a
+player's cards lost, a choice made for them), never two entries read against
+each other. Report each finding as board, action
 sequence, engine behaviour, CR or ruling, file and identifier, confidence. "I
 found nothing" is a result.
 
