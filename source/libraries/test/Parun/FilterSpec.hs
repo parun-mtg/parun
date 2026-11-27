@@ -2122,7 +2122,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
   -- player 0 the perspective, and player 1 someone else. Parun.DamageSpec's
   -- Brine Hag and Reciprocate cases are where a real board fills the field.
   Spec.describe s "DealtDamageTo" $ do
-    let damaged rs = blackCreature {Filter.dealtDamageTo = Set.fromList (fmap (\r -> (r, DamageKind.Noncombat, Set.empty)) rs)}
+    let damaged rs = blackCreature {Filter.dealtDamageTo = Set.fromList (fmap (\r -> (r, DamageKind.Noncombat, Set.empty, False)) rs)}
         asked n = self {Filter.source = Just (ObjectId.MkObjectId n)}
         to party = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = party, DealtDamageTo.kind = Nothing, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = Actor.Candidate}
         toSource = to DamagedParty.Source
@@ -2144,7 +2144,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- CR 510.2: combat damage alone, Witch-king of Angmar's narrowing.
     Spec.it s "a combat kind admits only combat damage" $ do
       let combatToYou = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.Related PlayerRelation.You, DealtDamageTo.kind = Just DamageKind.Combat, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = Actor.Candidate}
-          dealt k = blackCreature {Filter.dealtDamageTo = Set.singleton (player 0, k, Set.empty)}
+          dealt k = blackCreature {Filter.dealtDamageTo = Set.singleton (player 0, k, Set.empty, False)}
       Spec.assertBool s (Filter.matches self (dealt DamageKind.Combat) combatToYou) "combat damage"
       Spec.assertBool s (not (Filter.matches self (dealt DamageKind.Noncombat) combatToYou)) "noncombat damage"
       Spec.assertBool s (Filter.matches self (dealt DamageKind.Combat) toYou) "and any damage admits combat"
@@ -2164,6 +2164,29 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
       Spec.assertBool s (Filter.matches self (damaged [creature 33]) ever) "this turn's"
       Spec.assertBool s (not (Filter.matches self earlier (to DamagedParty.Anyone))) "this turn only"
 
+    -- CR 506.1: Glen Elendra's "this combat", the combat phase's damage alone.
+    Spec.it s "ThisCombat admits only the combat phase's damage" $ do
+      let thisCombat = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.Anyone, DealtDamageTo.kind = Nothing, DealtDamageTo.window = Lookback.ThisCombat, DealtDamageTo.dealer = Actor.Candidate}
+          dealt during = blackCreature {Filter.dealtDamageTo = Set.singleton (player 1, DamageKind.Combat, Set.empty, during)}
+      Spec.assertBool s (Filter.matches self (dealt True) thisCombat) "this combat's"
+      Spec.assertBool s (not (Filter.matches self (dealt False) thisCombat)) "earlier this turn"
+      Spec.assertBool s (Filter.matches self (dealt False) (to DamagedParty.Anyone)) "and this turn admits both"
+
+    -- CR 120.1: Glen Elendra's "that player", the player the object a slot
+    -- binds dealt damage to. Its scenarios under data/scenarios/planechase fill
+    -- the context off a real log.
+    Spec.it s "an InSlot dealer reads the slot's objects' damage" $ do
+      let yours = SlotName.MkSlotName (Text.pack "yours")
+          bySlot = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.HolderOfCandidate Holder.Controller, DealtDamageTo.kind = Just DamageKind.Combat, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = Actor.InSlot yours}
+          slotHit r = self {Filter.slotDealtDamage = Map.singleton yours [(ObjectId.MkObjectId 33, Set.singleton (r, DamageKind.Combat, Set.empty, True), Set.empty)]}
+          quiet = self {Filter.slotDealtDamage = Map.singleton yours [(ObjectId.MkObjectId 33, Set.empty, Set.empty)]}
+      Spec.assertBool s (Filter.matches (slotHit (player 0)) blackCreature bySlot) "the slot's object hit the candidate's controller"
+      Spec.assertBool s (not (Filter.matches (slotHit (player 1)) blackCreature bySlot)) "another player"
+      Spec.assertBool s (not (Filter.matches quiet (blackCreature {Filter.dealtDamageTo = Set.singleton (player 0, DamageKind.Combat, Set.empty, True)}) bySlot)) "the candidate's own damage is not asked"
+      Spec.assertBool s (not (Filter.matches (quiet {Filter.sourceDealtDamage = Set.singleton (player 0, DamageKind.Combat, Set.empty, True)}) blackCreature bySlot)) "nor the source's"
+      Spec.assertBool s (not (Filter.matches (self {Filter.slotDealtDamage = Map.singleton yours []}) blackCreature bySlot)) "a slot bound to nothing"
+      Spec.assertBool s (Filter.matches self blackCreature bySlot) "CR 601.2c: a slot not yet chosen constrains nothing"
+
     -- CR 120.1: Steel Hellkite's "whose controller was dealt combat damage by this
     -- creature". Its scenarios under data/scenarios/damage fill the context off a
     -- real log; the earlier turns' half has no card, so this is its only proof.
@@ -2171,10 +2194,10 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
       let bySource party window = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = party, DealtDamageTo.kind = Just DamageKind.Combat, DealtDamageTo.window = window, DealtDamageTo.dealer = Actor.Source}
           controllerHit = bySource (DamagedParty.HolderOfCandidate Holder.Controller) Lookback.ThisTurn
           ownerHit = bySource (DamagedParty.HolderOfCandidate Holder.Owner) Lookback.ThisTurn
-          hit r k = self {Filter.sourceDealtDamage = Set.singleton (r, k, Set.empty)}
+          hit r k = self {Filter.sourceDealtDamage = Set.singleton (r, k, Set.empty, False)}
       Spec.it s "reads the source's damage, not the candidate's" $ do
         Spec.assertBool s (Filter.matches (hit (player 0) DamageKind.Combat) blackCreature controllerHit) "the source hit its controller"
-        Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.dealtDamageTo = Set.singleton (player 0, DamageKind.Combat, Set.empty)}) controllerHit)) "the candidate's own damage is not asked"
+        Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.dealtDamageTo = Set.singleton (player 0, DamageKind.Combat, Set.empty, False)}) controllerHit)) "the candidate's own damage is not asked"
       Spec.it s "tells the holder apart from other players and objects" $ do
         Spec.assertBool s (not (Filter.matches (hit (player 1) DamageKind.Combat) blackCreature controllerHit)) "another player"
         Spec.assertBool s (not (Filter.matches (hit (creature 0) DamageKind.Combat) blackCreature controllerHit)) "an object is no player"
@@ -2192,7 +2215,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- card types the recipient had as it was dealt the damage.
     Spec.it s "the Another party admits an object of the card type other than the dealer" $ do
       let toAnother = to (DamagedParty.Another CardType.Creature)
-          dealtTo r types = blackCreature {Filter.identity = Just (ObjectId.MkObjectId 31), Filter.dealtDamageTo = Set.singleton (r, DamageKind.Noncombat, types)}
+          dealtTo r types = blackCreature {Filter.identity = Just (ObjectId.MkObjectId 31), Filter.dealtDamageTo = Set.singleton (r, DamageKind.Noncombat, types, False)}
       Spec.assertBool s (Filter.matches self (dealtTo (creature 33) (Set.singleton CardType.Creature)) toAnother) "another creature"
       Spec.assertBool s (Filter.matches self (dealtTo (Recipient.ToPlaneswalker (ObjectId.MkObjectId 33)) (Set.fromList [CardType.Creature, CardType.Planeswalker])) toAnother) "a creature planeswalker, whatever its tag"
       Spec.assertBool s (not (Filter.matches self (dealtTo (creature 33) (Set.singleton CardType.Planeswalker)) toAnother)) "no creature as it was dealt the damage"

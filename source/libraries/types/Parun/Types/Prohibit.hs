@@ -6,11 +6,12 @@ import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 
 -- | The payload of Parun.Types.Effect's Prohibit arm: CR 101.2's "can't",
--- standing over the permanents 'affected' describes for 'duration' (CR 611.2a).
+-- standing over the objects 'affected' describes for 'duration' (CR 611.2a).
 --
 -- Hurr Jackal's is @Prohibit Regenerate UntilEndOfTurn (Named (InSlot
 -- target))@; Deadlock Trap, Zirda, the Dawnwaker and Wall of Stolen Identity
--- write the other three Named. Exhaustion's is @Prohibit (Untap UntapStep)
+-- write the other three Named. Bad Wolf Bay's is @Prohibit (EnterFrom Exile)
+-- UntilEndOfTurn (Matching IsCard)@, a class of cards in exile. Exhaustion's is @Prohibit (Untap UntapStep)
 -- (DuringNextOf UntapStep target) (Matching ...)@.
 --
 -- Teferi, Timeless Voyager's "they can't phase in" is written BEFORE its PhaseOut:

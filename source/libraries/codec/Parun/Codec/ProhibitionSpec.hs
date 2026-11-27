@@ -5,6 +5,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.UntapScope as UntapScope
+import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.Prohibition" $ do
@@ -26,6 +27,12 @@ spec s = Spec.describe s "Parun.Codec.Prohibition" $ do
       Prohibition.codec
       Prohibition.Counters
       " {\"type\":\"Counters\"} "
+  Spec.it s "EnterFrom" $
+    Common.assertCodec
+      s
+      Prohibition.codec
+      (Prohibition.EnterFrom Zone.Exile)
+      " {\"type\":\"EnterFrom\",\"value\":\"Exile\"} "
   Spec.it s "PhaseIn" $
     Common.assertCodec
       s

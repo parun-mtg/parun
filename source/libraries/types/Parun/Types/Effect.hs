@@ -620,7 +620,8 @@ data Effect card ability
     -- rule 508.1d's two axes being a creature and what CR 508.1b lets it attack.
     RequireAttack RequireAttack.RequireAttack
   | -- | CR 611.2a / 613.11: install a stored prohibition over the permanents
-    -- named or a class of them, for a duration (Hurr Jackal, Exhaustion).
+    -- named or a class of objects, for a duration (Hurr Jackal, Exhaustion,
+    -- Bad Wolf Bay).
     Prohibit Prohibit.Prohibit
   | -- | CR 508.1c / 613.11: install a stored attacking restriction for a
     -- duration (Netter en-Dal).

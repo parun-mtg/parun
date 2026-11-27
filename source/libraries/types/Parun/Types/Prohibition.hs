@@ -1,9 +1,10 @@
 module Parun.Types.Prohibition where
 
 import qualified Parun.Types.UntapScope as UntapScope
+import qualified Parun.Types.Zone as Zone
 
 -- | What a stored per-object prohibition forbids: one CR 101.2 "can't" that a
--- resolution puts on the permanents it names (CR 611.2a). The classification
+-- resolution puts on the objects it names (CR 611.2a). The classification
 -- Parun.Engine.RestrictedCreatures.prohibited is asked by; each reader asks for one.
 data Prohibition
   = -- | Its activated abilities can't be activated (CR 602.5).
@@ -12,6 +13,9 @@ data Prohibition
     Block
   | -- | Counters can't be put on it (CR 122.6).
     Counters
+  | -- | It can't enter the battlefield from this zone (CR 101.2, 400.4a) -- Bad
+    -- Wolf Bay's "cards can't enter from exile this turn".
+    EnterFrom Zone.Zone
   | -- | It stays phased out through its untap step (CR 702.26a).
     PhaseIn
   | -- | It can't be regenerated (CR 701.19c).
