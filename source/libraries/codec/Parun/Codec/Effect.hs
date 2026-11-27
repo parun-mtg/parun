@@ -194,6 +194,7 @@ codec cardCodec abilityCodec =
           Arm.payload "Reassemble" ObjectRef.codec Effect.Reassemble (\x -> case x of Effect.Reassemble y -> Just y; _ -> Nothing),
           Arm.nullary "Crank" Effect.Crank,
           Arm.payload "Planeswalk" Planeswalk.codec Effect.Planeswalk (\x -> case x of Effect.Planeswalk y -> Just y; _ -> Nothing),
+          Arm.nullary "RollPlanarDie" Effect.RollPlanarDie,
           Arm.optionalPayload "ChaosEnsues" ObjectRef.codec Effect.ChaosEnsues (\x -> case x of Effect.ChaosEnsues y -> Just y; _ -> Nothing),
           Arm.nullary "Abandon" Effect.Abandon,
           Arm.payload "SetInMotion" ObjectRef.codec Effect.SetInMotion (\x -> case x of Effect.SetInMotion y -> Just y; _ -> Nothing),
@@ -394,6 +395,7 @@ tagOf x = case x of
   Effect.Crank -> "Crank"
   Effect.Planeswalk {} -> "Planeswalk"
   Effect.ChaosEnsues {} -> "ChaosEnsues"
+  Effect.RollPlanarDie -> "RollPlanarDie"
   Effect.Abandon {} -> "Abandon"
   Effect.SetInMotion {} -> "SetInMotion"
   Effect.ClaimPrize {} -> "ClaimPrize"

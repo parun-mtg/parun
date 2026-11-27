@@ -1712,6 +1712,7 @@ effectObjectRefs effect =
         Effect.RollToVisit -> []
         Effect.Planeswalk p -> read_ (Maybe.maybeToList (Planeswalk.to p))
         Effect.ChaosEnsues ref -> read_ (Maybe.maybeToList ref)
+        Effect.RollPlanarDie -> []
         Effect.Abandon -> []
         Effect.SetInMotion ref -> read_ [ref]
         Effect.ClaimPrize -> []

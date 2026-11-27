@@ -366,6 +366,7 @@ manaProduced effect = case effect of
   Effect.RollToVisit -> Nothing
   Effect.Planeswalk {} -> Nothing
   Effect.ChaosEnsues {} -> Nothing
+  Effect.RollPlanarDie -> Nothing
   Effect.Abandon -> Nothing
   Effect.SetInMotion _ -> Nothing
   Effect.ClaimPrize -> Nothing
@@ -586,6 +587,7 @@ playerChoice effect = case effect of
   Effect.RollToVisit -> Nothing
   Effect.Planeswalk {} -> Nothing
   Effect.ChaosEnsues {} -> Nothing
+  Effect.RollPlanarDie -> Nothing
   Effect.Abandon -> Nothing
   Effect.SetInMotion _ -> Nothing
   Effect.ClaimPrize -> Nothing
@@ -860,6 +862,7 @@ movesLibraryCard effect = case effect of
   Effect.Crank -> False
   Effect.Planeswalk {} -> False
   Effect.ChaosEnsues {} -> False
+  Effect.RollPlanarDie -> False
   Effect.Abandon -> False
   Effect.SetInMotion _ -> False
   Effect.ClaimPrize -> False

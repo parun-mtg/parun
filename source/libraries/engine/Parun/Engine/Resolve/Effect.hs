@@ -125,6 +125,7 @@ import qualified Parun.Types.PendingTrigger as PendingTrigger
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
+import qualified Parun.Types.PlanarRollCause as PlanarRollCause
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerControl as PlayerControl
@@ -787,6 +788,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.Crank -> Counters.crank controller
   Effect.Planeswalk p -> Counters.planeswalk resolving source controller legal p
   Effect.ChaosEnsues ref -> Counters.chaosEnsues resolving source controller legal ref
+  Effect.RollPlanarDie -> Counters.rollPlanarDie (throwRecorded runSubgame) controller
   Effect.Abandon -> Counters.abandon source
   Effect.SetInMotion ref -> Counters.setInMotion resolving source controller legal ref
   Effect.ClaimPrize -> Counters.claimPrize controller
@@ -1553,7 +1555,7 @@ throwSettled runSubgame roll perDie = do
           rolled by number =
             if numbered
               then [GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice by number)]
-              else [GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice by), GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled by Nothing)]
+              else [GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice by), GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled by Nothing PlanarRollCause.Instruction)]
           over landed = fmap (\event -> (event, landed))
           settled by face landed = [(Common.settledResult RollReading.FinalResult by face, landed) | numbered]
           groups seen entries = case entries of

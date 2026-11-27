@@ -186,6 +186,7 @@ import qualified Parun.Types.PlacesSticker as PlacesSticker
 import qualified Parun.Types.PlanarDieFace as PlanarDieFace
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
 import qualified Parun.Types.PlanarDieTrigger as PlanarDieTrigger
+import qualified Parun.Types.PlanarRollCause as PlanarRollCause
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
@@ -2149,7 +2150,7 @@ representativeEvents cond =
         TriggerCondition.GameBegins -> one GameEvent.GameBegan
         -- CR 901.9's own event, carrying the stated face as the roll's result,
         -- or none, a reroll's, where the condition states none.
-        TriggerCondition.PlayerRollsPlanarDie wanted -> one (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled S.bob (PlanarDieTrigger.face wanted)))
+        TriggerCondition.PlayerRollsPlanarDie wanted -> one (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled S.bob (PlanarDieTrigger.face wanted) PlanarRollCause.SpecialAction))
         -- CR 701.32's own event, and the only one this condition admits.
         TriggerCondition.TurnedUpOffDeck _ -> one (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Scheme S.bob departed Set.empty))
         -- CR 701.31d's own event, naming the bearer among the planes walked

@@ -5655,6 +5655,7 @@ effectFilters effect = case effect of
   Effect.RollToVisit -> []
   Effect.Planeswalk p -> foldMap (frame SourceHostFramed . objectRefFilters) (Planeswalk.to p)
   Effect.ChaosEnsues ref -> foldMap (frame SourceHostFramed . objectRefFilters) ref
+  Effect.RollPlanarDie -> []
   Effect.Abandon -> []
   Effect.SetInMotion ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.ClaimPrize -> []

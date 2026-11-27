@@ -61,6 +61,7 @@ import qualified Parun.Types.PendingTrigger as PendingTrigger
 import qualified Parun.Types.PlanarDieFace as PlanarDieFace
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
 import qualified Parun.Types.PlanarDieTrigger as PlanarDieTrigger
+import qualified Parun.Types.PlanarRollCause as PlanarRollCause
 import qualified Parun.Types.Planeswalk as Planeswalk
 import qualified Parun.Types.PlaneswalkAway as PlaneswalkAway
 import qualified Parun.Types.PlaneswalkCause as PlaneswalkCause
@@ -402,14 +403,14 @@ toBottom oid = State.modify' $ \gs ->
 
 -- | CR 901.9: how many times this player has taken the special action this
 -- turn. A fold over the event log, which is exactly "this turn"
--- (Parun.Engine.Coin.flipsThisTurn's reason). Each action records one roll with
--- a result, and its rerolls none (`roll`), and no effect rolls the planar die
--- today, so the count is CR 901.9's "times they have previously taken this
--- action".
+-- (Parun.Engine.Coin.flipsThisTurn's reason). Each action records one roll
+-- caused by the special action, and an effect's roll and every reroll are an
+-- instruction's (`rollFor`), so the count is CR 901.9's "times they have
+-- previously taken this action" (Fractured Powerstone's ruling).
 rollsThisTurn :: PlayerId -> GameState -> Natural
 rollsThisTurn pid gs =
   let rolled logged = case LoggedEvent.event logged of
-        GameEvent.PlanarDieRolled r -> PlanarDieRolled.roller r == pid && Maybe.isJust (PlanarDieRolled.face r)
+        GameEvent.PlanarDieRolled r -> PlanarDieRolled.roller r == pid && PlanarDieRolled.cause r == PlanarRollCause.SpecialAction
         _ -> False
    in Natural.length (filter rolled (Foldable.toList (Turn.eventsThisTurn gs)))
 
@@ -439,34 +440,43 @@ faceOf n = case n of
   6 -> PlanarDieFace.Planeswalker
   _ -> PlanarDieFace.Blank
 
--- | CR 116.2i / 901.9: pay, then roll the planar die, through CR 706.2's
--- modifiers from other sources (Settle.throwRecorded, which records
--- PlayerAction.RollDice, CR 901.9d). The performer's Settle always carries a
--- thrower (Resolve.Effect.settleWith), so a road with none rolls nothing. The final face records
--- PlanarDieRolled, which CR 901.8's planeswalking ability triggers on, and for
--- the chaos symbol ChaosEnsued, which CR 311.7's chaos abilities trigger on;
--- each reroll recorded a PlanarDieRolled with no face first
--- (Resolve.Effect.throwSettled's `recordRerolls`).
--- A payment that fails restores the state, Parun.Engine.Companion.take's
--- posture, and nothing is rolled.
+-- | CR 116.2i / 901.9: pay, then roll the planar die (`rollFor`). The
+-- performer's Settle always carries a thrower (Resolve.Effect.settleWith), so a
+-- road with none rolls nothing. A payment that fails restores the state,
+-- Parun.Engine.Companion.take's posture, and nothing is rolled.
 roll :: ManaAbilityPerformer.ManaAbilityPerformer -> PlayerId -> Game ()
 roll perform pid = do
   before <- State.get
   Monad.when (canRoll pid before) $ do
     noSource <- State.state Game.freshObjectId
     paid <- Cost.payAction perform before PaymentSubject.ForNeither 0 pid noSource (rollCost pid before)
-    Monad.forM_ paid $ \_ -> do
-      kept <- maybe (pure []) ($ Throw.MkThrow {Throw.thrower = pid, Throw.kind = ThrowKind.PlanarDie, Throw.units = Seq.singleton 1, Throw.ignored = 0, Throw.instead = False}) (Settle.throwRecorded (ManaAbilityPerformer.settle perform))
-      -- Exactly one: nothing adds a die to the planar die's roll.
-      Foldable.for_ (Maybe.listToMaybe kept) $ \rolled -> do
-        let face = faceOf rolled
-        chaos <- State.gets (PlayerEffect.isChaosRoll pid face)
-        State.modify' (Event.recordEvent (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled pid (Just face))))
-        -- CR 901.9b: the chaos symbol makes chaos ensue, and so does a blank
-        -- roll Chaotic Aether makes a chaos roll, which stays a blank roll
-        -- (docs/decisions.md, "Whether Chaotic Aether's chaos roll is still a
-        -- blank roll").
-        Monad.when chaos (State.modify' (Event.recordEvent (GameEvent.ChaosEnsued Nothing)))
+    Monad.forM_ paid $ \_ -> Foldable.for_ (Settle.throwRecorded (ManaAbilityPerformer.settle perform)) $ \thrown ->
+      rollFor thrown PlanarRollCause.SpecialAction pid
+
+-- | CR 901.9 / 901.9a-d: `pid` rolls the planar die, for the special action or
+-- an effect (Fractured Powerstone), through CR 706.2's modifiers from other
+-- sources (`thrown`, Resolve.Effect.throwRecorded, which records
+-- PlayerAction.RollDice, CR 901.9d). The final face records PlanarDieRolled,
+-- which CR 901.8's planeswalking ability triggers on, and for the chaos symbol
+-- ChaosEnsued, which CR 311.7's chaos abilities trigger on; each reroll
+-- recorded a PlanarDieRolled with no face first
+-- (Resolve.Effect.throwSettled's `recordRerolls`). Outside a Planechase game
+-- nothing is rolled (Fractured Powerstone's ruling).
+rollFor :: (Throw.Throw -> Game [Natural]) -> PlanarRollCause.PlanarRollCause -> PlayerId -> Game ()
+rollFor thrown cause pid = do
+  planechase <- State.gets isPlanechase
+  Monad.when planechase $ do
+    kept <- thrown Throw.MkThrow {Throw.thrower = pid, Throw.kind = ThrowKind.PlanarDie, Throw.units = Seq.singleton 1, Throw.ignored = 0, Throw.instead = False}
+    -- Exactly one: nothing adds a die to the planar die's roll.
+    Foldable.for_ (Maybe.listToMaybe kept) $ \rolled -> do
+      let face = faceOf rolled
+      chaos <- State.gets (PlayerEffect.isChaosRoll pid face)
+      State.modify' (Event.recordEvent (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled pid (Just face) cause)))
+      -- CR 901.9b: the chaos symbol makes chaos ensue, and so does a blank
+      -- roll Chaotic Aether makes a chaos roll, which stays a blank roll
+      -- (docs/decisions.md, "Whether Chaotic Aether's chaos roll is still a
+      -- blank roll").
+      Monad.when chaos (State.modify' (Event.recordEvent (GameEvent.ChaosEnsued Nothing)))
 
 -- | CR 901.8: the planeswalking ability, paired with each player, for
 -- Parun.Engine.Event.Trigger.inherentTriggers. Planechase games have it; it "has
