@@ -1,0 +1,88 @@
+{
+  "faces": [
+    {
+      "name": "Every Hope Shall Vanish",
+      "oracleText": "When you set this scheme in motion, each opponent reveals their hand. Choose a nonland card from each of those hands. Those players discard those cards.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "Reveal",
+                              "value": {
+                                "ref": {
+                                  "type": "EachCardInHand",
+                                  "value": {
+                                    "hands": {
+                                      "type": "InSlot",
+                                      "value": "player"
+                                    }
+                                  }
+                                },
+                                "slot": "revealed"
+                              }
+                            },
+                            {
+                              "type": "Discard",
+                              "value": {
+                                "type": "These",
+                                "value": {
+                                  "cards": {
+                                    "type": "ChosenCardFromAmong",
+                                    "value": {
+                                      "filter": {
+                                        "type": "Not",
+                                        "value": {
+                                          "type": "HasCardType",
+                                          "value": "Land"
+                                        }
+                                      },
+                                      "slot": "revealed"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "Players",
+                            "value": {
+                              "players": {
+                                "type": "Relative",
+                                "value": "Opponent"
+                              }
+                            }
+                          },
+                          "slot": "player"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Scheme"
+        ]
+      }
+    }
+  ]
+}
