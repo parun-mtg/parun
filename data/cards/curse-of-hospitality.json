@@ -38,7 +38,9 @@
                   "type": "IsAttackingPlayer",
                   "value": {
                     "type": "NamedBySource",
-                    "value": "Enchanted"
+                    "value": {
+                      "type": "Enchanted"
+                    }
                   }
                 }
               ]

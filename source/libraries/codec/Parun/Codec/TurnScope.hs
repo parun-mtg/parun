@@ -9,9 +9,11 @@ codec :: Codec.Codec TurnScope.TurnScope
 codec =
   Arm.tagged
     tagOf
-    [ Arm.payload "PlayersTurn" PlayerRef.codec TurnScope.PlayersTurn (\(TurnScope.PlayersTurn y) -> Just y)
+    [ Arm.payload "PlayersTurn" PlayerRef.codec TurnScope.PlayersTurn (\x -> case x of TurnScope.PlayersTurn y -> Just y; _ -> Nothing),
+      Arm.nullary "FirstTurnOfGame" TurnScope.FirstTurnOfGame
     ]
 
 tagOf :: TurnScope.TurnScope -> String
 tagOf x = case x of
   TurnScope.PlayersTurn {} -> "PlayersTurn"
+  TurnScope.FirstTurnOfGame -> "FirstTurnOfGame"

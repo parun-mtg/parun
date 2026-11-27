@@ -206,7 +206,9 @@
             "type": "PlayerLosesGame",
             "value": {
               "type": "NamedBySource",
-              "value": "Chosen"
+              "value": {
+                "type": "Chosen"
+              }
             }
           },
           "modal": {

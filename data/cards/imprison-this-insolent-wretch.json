@@ -42,7 +42,9 @@
               "value": {
                 "attacked": {
                   "type": "NamedBySource",
-                  "value": "Chosen"
+                  "value": {
+                    "type": "Chosen"
+                  }
                 }
               }
             }
@@ -69,7 +71,9 @@
             "value": {
               "subject": {
                 "type": "NamedBySource",
-                "value": "Chosen"
+                "value": {
+                  "type": "Chosen"
+                }
               }
             }
           },
@@ -108,7 +112,9 @@
                 "holder": "Controller",
                 "relation": {
                   "type": "NamedBySource",
-                  "value": "Chosen"
+                  "value": {
+                    "type": "Chosen"
+                  }
                 }
               }
             }

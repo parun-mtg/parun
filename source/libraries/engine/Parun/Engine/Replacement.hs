@@ -193,7 +193,6 @@ import Parun.Types.SkipWindow (SkipWindow)
 import qualified Parun.Types.SkipWindow as SkipWindow
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
-import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Throw as Throw
@@ -1721,7 +1720,7 @@ matchesPutter gs candidate subject cause = case (subject, cause) of
 -- Projection.controllerOf's already, so `theirs` is Nothing only for an id
 -- naming no object, which no proposed event carries.
 --
--- CR 303.4b / 607.2d's source player is read off the SOURCE (Game.sourcePlayerOf)
+-- CR 303.4b / 607.2d's source player is read off the SOURCE (Game.sourcePlayersOf)
 -- rather than supplied, because every reader has the source in hand and no
 -- segment bakes one: a floating row's source has left the battlefield, so it
 -- enchants and chose nobody and the arm admits nothing.
@@ -1732,7 +1731,7 @@ matchesPutter gs candidate subject cause = case (subject, cause) of
 relationHolds :: GameState -> ReplacementCandidate -> ControllerRelation -> Maybe PlayerId -> Bool
 relationHolds gs candidate rel theirs = case rel of
   ControllerRelation.Related relation -> PlayerRelation.holdsFor (Game.teams gs) relation (ReplacementCandidate.controller candidate) theirs
-  ControllerRelation.NamedBySource which -> Maybe.isJust theirs && Game.sourcePlayerOf which (ReplacementCandidate.source candidate) gs == theirs
+  ControllerRelation.NamedBySource which -> any (`Set.member` Game.sourcePlayersOf which (ReplacementCandidate.source candidate) gs) theirs
   -- An InSlot the install never baked names nobody: a printed row has no
   -- resolution whose slots it could read.
   ControllerRelation.InSlot _ -> False
@@ -1887,7 +1886,7 @@ matchesRecipientPlayer gs context de rel = case Recipient.playerOf (DamageEvent.
   Nothing -> False
   Just pid -> case rel of
     ControllerRelation.Related relation -> PlayerRelation.holdsFor (Filter.teams context) relation (Filter.perspective context) (Just pid)
-    ControllerRelation.NamedBySource which -> (Filter.source context >>= \oid -> Game.sourcePlayerOf which oid gs) == Just pid
+    ControllerRelation.NamedBySource which -> any (\oid -> Set.member pid (Game.sourcePlayersOf which oid gs)) (Filter.source context)
     ControllerRelation.InSlot _ -> False
     ControllerRelation.Among players -> Set.member pid players
 
@@ -2138,7 +2137,7 @@ candidateContext gs candidate =
         gs
         (ReplacementCandidate.slots candidate)
         (Projection.framedWith choices source gs (Projection.sourceContext gs (ReplacementCandidate.controller candidate) source))
-          { Filter.carrierChosenPlayer = Game.sourcePlayerOf SourcePlayer.Chosen source gs,
+          { Filter.carrierChosenPlayer = Game.chosenPlayerOf source gs,
             Filter.carrierStickers = Game.stickersOn source gs
           }
 

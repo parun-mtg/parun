@@ -597,6 +597,7 @@ phasePatternOffends replacement = case replacement of
     ControllerRelation.Related _ -> False
     (ControllerRelation.NamedBySource SourcePlayer.Enchanted) -> False
     (ControllerRelation.NamedBySource SourcePlayer.Chosen) -> False
+    (ControllerRelation.NamedBySource (SourcePlayer.LastChoseWord _)) -> False
   ReplacementEffect.CounterR {} -> False
   ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.ZoneChangeR {} -> False
@@ -4908,6 +4909,8 @@ namesOneGraveyard scope = case scope of
   ZoneScope.Scoped (PlayerScope.NamedBySource SourcePlayer.Chosen) -> True
   ZoneScope.Scoped PlayerScope.SourceOwner -> True
   ZoneScope.Scoped (PlayerScope.NamedBySource SourcePlayer.Enchanted) -> True
+  -- Several players may have chosen one word.
+  ZoneScope.Scoped (PlayerScope.NamedBySource (SourcePlayer.LastChoseWord _)) -> False
   -- Several opponents may each have attacked you.
   ZoneScope.Scoped PlayerScope.AttackedYou {} -> False
   ZoneScope.InSlot _ -> True

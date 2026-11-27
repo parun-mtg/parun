@@ -67,6 +67,7 @@ codec = Fields.object $ do
   chosenNames <- Fields.defaulted "chosenNames" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.naturalMap PlayerId.codec (Common.set CardName.codec)))) ObjectView.chosenNames
   chosenPlayers <- Fields.defaulted "chosenPlayers" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.keyedList (Common.keyValue PlayerChoice.codec PlayerId.codec)))) ObjectView.chosenPlayers
   chosenNumber <- Fields.defaulted "chosenNumber" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec Common.natural)) ObjectView.chosenNumber
+  chosenNumberBy <- Fields.defaulted "chosenNumberBy" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.naturalMap PlayerId.codec Common.natural))) ObjectView.chosenNumberBy
   chosenObjects <- Fields.defaulted "chosenObjects" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set ObjectId.codec))) ObjectView.chosenObjects
   ownEffects <- Fields.defaulted "ownEffects" Nothing (Common.maybe ProjectedCharacteristics.codec) ObjectView.ownEffects
   merged <- Fields.defaulted "merged" Seq.empty (Common.seq (Common.maybe CardName.codec)) ObjectView.merged
@@ -104,6 +105,7 @@ codec = Fields.object $ do
         ObjectView.chosenNames = chosenNames,
         ObjectView.chosenPlayers = chosenPlayers,
         ObjectView.chosenNumber = chosenNumber,
+        ObjectView.chosenNumberBy = chosenNumberBy,
         ObjectView.chosenObjects = chosenObjects,
         ObjectView.commanderTax = commanderTax
       }

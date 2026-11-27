@@ -86,7 +86,6 @@ import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.RuleAbilities as RuleAbilities
-import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TextWord as TextWord
@@ -1211,7 +1210,7 @@ cantBeBlockedBy defending blockers attackers gs =
               context attacker = case frame of
                 PairwiseFrame.Attacker ->
                   (Projection.pairwiseContext gs attacker)
-                    { Filter.carrierChosenPlayer = Game.sourcePlayerOf SourcePlayer.Chosen attacker gs,
+                    { Filter.carrierChosenPlayer = Game.chosenPlayerOf attacker gs,
                       Filter.carrierStickers = Game.stickersOn attacker gs
                     }
                 PairwiseFrame.Source -> stating

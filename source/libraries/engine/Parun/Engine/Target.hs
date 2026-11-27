@@ -82,7 +82,6 @@ import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SlotCount as SlotCount
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SlotName as SlotName
-import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.TargetCount as TargetCount
@@ -755,7 +754,7 @@ targetable pcs rowsOf perspective source sourceView gs recipient =
             protects =
               Filter.matches
                 (Filter.contextIn gs controller (Just source))
-                  { Filter.carrierChosenPlayer = Game.sourcePlayerOf SourcePlayer.Chosen oid gs,
+                  { Filter.carrierChosenPlayer = Game.chosenPlayerOf oid gs,
                     Filter.carrierStickers = Game.stickersOn oid gs,
                     Filter.aimingController = Just perspective
                   }

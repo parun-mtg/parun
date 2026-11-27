@@ -185,6 +185,9 @@ data LastKnown = MkLastKnown
     -- | The number last chosen for it, `chosenColors`'s sibling for
     -- Object.chosenNumber.
     chosenNumber :: !(Map.Map Acquisition.Acquisition Natural.Natural),
+    -- | The word each player last chose for it, `chosenColors`'s sibling for
+    -- Object.chosenNumberBy.
+    chosenNumberBy :: !(Map.Map Acquisition.Acquisition (Map.Map PlayerId.PlayerId Natural.Natural)),
     -- | The objects chosen for it, `chosenColors`'s sibling for
     -- Object.chosenObjects: what a leave trigger of a bearer that left beside
     -- the chosen object reads (CR 603.10a).
