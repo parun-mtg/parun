@@ -415,6 +415,8 @@ import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlacesSticker as PlacesSticker
+import qualified Parun.Types.Planeswalk as Planeswalk
+import qualified Parun.Types.PlaneswalkAway as PlaneswalkAway
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
 import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
 import qualified Parun.Types.PlayAsCopy as PlayAsCopy
@@ -846,7 +848,7 @@ objectRefPositions =
         ("explore", Effect.Explore (plantedRef "ex"), [plantedRef "ex"]),
         ("assemble", Effect.Assemble (Just (plantedRef "as")), [plantedRef "as"]),
         ("reassemble", Effect.Reassemble (plantedRef "ra"), [plantedRef "ra"]),
-        ("planeswalk", Effect.Planeswalk (Just (plantedRef "pw")), [plantedRef "pw"]),
+        ("planeswalk", Effect.Planeswalk (Planeswalk.MkPlaneswalk (Just (plantedRef "pw")) PlaneswalkAway.FromEveryCard), [plantedRef "pw"]),
         ("arrange-in-library", Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (plantedRef "al") (PlayerRef.Relative PlayerRelation.You) Nothing Nothing CardSelection.ByChoice), [plantedRef "al"]),
         ("connive", Effect.Connive (Connive.MkConnive (Quantity.Type.Literal 1) (plantedRef "cn")), [plantedRef "cn"]),
         ("set-x", Effect.SetX (SetX.MkSetX (NewX.Becomes (Quantity.Type.Literal 5)) (plantedRef "sx")), [plantedRef "sx"]),
@@ -5623,7 +5625,7 @@ effectFilters effect = case effect of
   Effect.TemptWithTheRing -> []
   Effect.OpenAttraction -> []
   Effect.RollToVisit -> []
-  Effect.Planeswalk ref -> foldMap (frame SourceHostFramed . objectRefFilters) ref
+  Effect.Planeswalk p -> foldMap (frame SourceHostFramed . objectRefFilters) (Planeswalk.to p)
   Effect.ChaosEnsues ref -> foldMap (frame SourceHostFramed . objectRefFilters) ref
   Effect.Abandon -> []
   Effect.SetInMotion ref -> frame SourceHostFramed (objectRefFilters ref)

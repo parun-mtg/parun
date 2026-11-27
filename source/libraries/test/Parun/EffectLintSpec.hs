@@ -234,6 +234,7 @@ import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
 import qualified Parun.Types.PhaseSelector as PhaseSelector
+import qualified Parun.Types.Planeswalk as Planeswalk
 import qualified Parun.Types.PlayAllowance as PlayAllowance
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerEffect as PlayerEffect
@@ -1700,7 +1701,7 @@ effectObjectRefs effect =
         Effect.TemptWithTheRing -> []
         Effect.OpenAttraction -> []
         Effect.RollToVisit -> []
-        Effect.Planeswalk ref -> read_ (Maybe.maybeToList ref)
+        Effect.Planeswalk p -> read_ (Maybe.maybeToList (Planeswalk.to p))
         Effect.ChaosEnsues ref -> read_ (Maybe.maybeToList ref)
         Effect.Abandon -> []
         Effect.SetInMotion ref -> read_ [ref]

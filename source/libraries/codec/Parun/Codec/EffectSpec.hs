@@ -198,6 +198,8 @@ import qualified Parun.Types.PhaseAnchor as PhaseAnchor
 import qualified Parun.Types.PhaseGrant as PhaseGrant
 import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhaseSelector as PhaseSelector
+import qualified Parun.Types.Planeswalk as Planeswalk
+import qualified Parun.Types.PlaneswalkAway as PlaneswalkAway
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerCounters as PlayerCounters
 import qualified Parun.Types.PlayerEffect as PlayerEffect
@@ -2843,21 +2845,14 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (Effect.SetInMotion (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "became"))))
       " {\"type\":\"SetInMotion\",\"value\":{\"type\":\"InSlot\",\"value\":\"became\"}} "
-  -- CR 701.31: null for the top card, or the cards to planeswalk to (Spatial
-  -- Merging).
-  Spec.it s "Planeswalk" $ do
+  -- CR 701.31: the payload is Parun.Codec.Planeswalk's.
+  Spec.it s "Planeswalk" $
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.Planeswalk Nothing)
-      " {\"type\":\"Planeswalk\",\"value\":null} "
-    Common.assertJsonCodec
-      s
-      toJson
-      fromJson
-      (Effect.Planeswalk (Just (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "revealed")))))
-      " {\"type\":\"Planeswalk\",\"value\":{\"type\":\"InSlot\",\"value\":\"revealed\"}} "
+      (Effect.Planeswalk (Planeswalk.MkPlaneswalk Nothing PlaneswalkAway.FromEveryCard))
+      " {\"type\":\"Planeswalk\",\"value\":{}} "
   Spec.it s "ChaosEnsues" $
     Common.assertJsonCodec
       s

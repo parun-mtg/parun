@@ -1503,12 +1503,16 @@ library codec
     Parun.Codec.PlanarDieFaceSpec
     Parun.Codec.PlanarDieRolled
     Parun.Codec.PlanarDieRolledSpec
+    Parun.Codec.Planeswalk
+    Parun.Codec.PlaneswalkAway
+    Parun.Codec.PlaneswalkAwaySpec
     Parun.Codec.PlaneswalkCause
     Parun.Codec.PlaneswalkCauseSpec
     Parun.Codec.PlaneswalkR
     Parun.Codec.PlaneswalkRewrite
     Parun.Codec.PlaneswalkRewriteSpec
     Parun.Codec.PlaneswalkRSpec
+    Parun.Codec.PlaneswalkSpec
     Parun.Codec.PlayAllowance
     Parun.Codec.PlayAllowanceSpec
     Parun.Codec.PlayAsCopy
@@ -3817,6 +3821,8 @@ library types
     Parun.Types.PlacesSticker
     Parun.Types.PlanarDieFace
     Parun.Types.PlanarDieRolled
+    Parun.Types.Planeswalk
+    Parun.Types.PlaneswalkAway
     Parun.Types.PlaneswalkCause
     Parun.Types.PlaneswalkR
     Parun.Types.PlaneswalkRewrite

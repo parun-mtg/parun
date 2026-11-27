@@ -130,6 +130,7 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseGrant as PhaseGrant
 import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhaseSelector as PhaseSelector
+import qualified Parun.Types.Planeswalk as Planeswalk
 import qualified Parun.Types.PlaneswalkCause as PlaneswalkCause
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
@@ -1576,11 +1577,11 @@ crank = Contraption.crank
 
 -- CR 701.31c: the cause is the planar die's exactly when this is CR 901.8's
 -- planeswalking ability resolving.
-planeswalk :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Maybe ObjectRef -> Game ()
-planeswalk resolving source controller legal ref = do
+planeswalk :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Planeswalk.Planeswalk -> Game ()
+planeswalk resolving source controller legal p = do
   gs <- State.get
   let cause = if Planechase.isPlaneswalkingAbility resolving gs then PlaneswalkCause.PlanarDie else PlaneswalkCause.Instruction
-  Planechase.planeswalk cause (fmap (objectRefObjects legal resolving controller source gs) ref) controller
+  Planechase.planeswalk cause (Planeswalk.away p) (fmap (objectRefObjects legal resolving controller source gs) (Planeswalk.to p)) controller
 
 -- CR 311.7: chaos ensues, or ensues for each object the ObjectRef names as
 -- this instruction is reached (CR 608.2c), one event each.

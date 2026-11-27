@@ -57,6 +57,7 @@ import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
+import qualified Parun.Types.PlaneswalkAway as PlaneswalkAway
 import qualified Parun.Types.PlaneswalkCause as PlaneswalkCause
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
@@ -1246,5 +1247,5 @@ checkOnce instead boards = do
   Monad.unless (null spentPhenomena) $ do
     settled <- State.get
     let walkers = ListUtils.nubOrd (Maybe.mapMaybe (`Planechase.controllerOfFaceUp` settled) spentPhenomena)
-    Monad.forM_ walkers (Planechase.planeswalk PlaneswalkCause.Phenomenon Nothing)
+    Monad.forM_ walkers (Planechase.planeswalk PlaneswalkCause.Phenomenon PlaneswalkAway.FromEveryCard Nothing)
   pure (acted, thenExile)

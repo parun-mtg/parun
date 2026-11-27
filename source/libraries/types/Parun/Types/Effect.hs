@@ -91,6 +91,7 @@ import qualified Parun.Types.PayAny as PayAny
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseOut as PhaseOut
+import qualified Parun.Types.Planeswalk as Planeswalk
 import qualified Parun.Types.PlayerCounters as PlayerCounters
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -814,10 +815,8 @@ data Effect card ability
     -- performed by Parun.Engine.Contraption.crank.
     Crank
   | -- | CR 701.31: the resolving controller planeswalks, performed by
-    -- Parun.Engine.Planechase.planeswalk; to the cards the ObjectRef names
-    -- still in their planar deck, at once (Spatial Merging), or Nothing for its
-    -- top card.
-    Planeswalk (Maybe ObjectRef.ObjectRef)
+    -- Parun.Engine.Planechase.planeswalk.
+    Planeswalk Planeswalk.Planeswalk
   | -- | CR 311.7: chaos ensues, which a face-up plane's chaos ability triggers
     -- on; for each object the ObjectRef names, where it ensues for a
     -- particular object (Pools of Becoming).
