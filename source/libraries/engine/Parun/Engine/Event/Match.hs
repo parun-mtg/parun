@@ -806,9 +806,9 @@ leaves bindings context before gs bearer you t event = case event of
 -- - Matching reads its Filter off CR 608.2h's last known information: the card
 --   is no longer in the zone it left by the time CR 603.10 checks. A bearer
 --   absent from the board sees the move only where all players could see it
---   (Moved.revealed), CR 603.10a's look-back reaching such a move only then.
---   Parun.LeavesTriggerSpec's "CR 603.10a an exiled Kithkin Brinefarer" cases
---   are the proof.
+--   (Moved.revealed), CR 603.10a's look-back reaching such a move only then
+--   (standsThrough). Parun.LeavesTriggerSpec's "CR 603.10a an exiled Kithkin
+--   Brinefarer" cases are the proof.
 --
 -- The turn comes from the GAME STATE: no characteristic of the departing card
 -- says whose turn it is, and CR 109.5 with CR 603.3a fixes "you" as the
@@ -839,7 +839,7 @@ leavesZone before board gs bearer you admitsTurn t event = case event of
   where
     seen revealed = case LeavesZoneTrigger.card t of
       ActingPermanent.Self -> True
-      ActingPermanent.Matching _ -> Map.member bearer board || revealed
+      ActingPermanent.Matching _ -> standsThrough board gs bearer || revealed
 
 -- CR 603.6: a card was put into the zone the trigger names, from a zone it
 -- admits, on a turn the scope admits, and -- for CR 702.55a's haunt -- as the
@@ -874,9 +874,10 @@ leavesZone before board gs bearer you admitsTurn t event = case event of
 --   source, and its controller is CR 109.5's "you".
 --
 -- Whether a Matching trigger sees a move its bearer did not stand through is
--- CR 603.10a's question, `putIntoZoneLooksBack`. One that looks back sees a
--- move all players could see (Moved.revealed), its bearer's own departure
--- included. One that does not never sees its bearer's own departure from the
+-- CR 603.10a's question, `putIntoZoneLooksBack`. A bearer that stood through
+-- the move (standsThrough) sees it whether or not anyone could. One that looks
+-- back sees a move all players could see (Moved.revealed), its bearer's own
+-- departure included. One that does not never sees its bearer's own departure from the
 -- battlefield: by CR 603.10's first sentence the bearer is not among the
 -- objects that exist immediately after the event, though eventTriggers offers
 -- it its own move, and `Not IsSource` (Planar Void's "another") cannot exclude
@@ -908,10 +909,18 @@ putIntoZone context board atEvent before gs bearer you admitsTurn t event = case
     watched revealed zc = case PutIntoZoneTrigger.card t of
       ActingPermanent.Self -> ZoneChange.object zc == bearer
       ActingPermanent.Matching f ->
-        (Map.member bearer board || revealed)
+        (standsThrough board gs bearer || revealed)
           && (putIntoZoneLooksBack t || ZoneChange.departed zc /= bearer)
           && let arrived = ZoneChange.object zc
               in maybe False (\view -> Filter.matches context view f) (Projection.viewWithLastKnown arrived gs arrived)
+
+-- CR 603.10 / 113.6p: did the bearer stand through the event -- on the board
+-- immediately after it, or a command-zone object whose abilities function
+-- there (PlayerEffect.commandCarrier), which no such move takes away?
+-- data/scenarios/planechase/the-dark-barony-sees-a-discarded-nonblack-card.json
+-- is the proof of the second.
+standsThrough :: Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> Bool
+standsThrough board gs bearer = Map.member bearer board || PlayerEffect.commandCarrier bearer gs
 
 -- CR 603.10a's third and fourth families for a card leaving a zone: a card
 -- leaving a graveyard, or one put into a hand or library (CR 400.2's hidden

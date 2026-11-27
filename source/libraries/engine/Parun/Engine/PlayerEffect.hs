@@ -459,7 +459,13 @@ printedRows gs =
 -- CR 113.6 / 113.6p: whether printedRows walks this object -- a battlefield
 -- permanent, or a command-zone object whose abilities function there.
 printedCarrier :: ObjectId -> GameState -> Bool
-printedCarrier oid gs = Set.member oid (GameState.battlefield gs) || (Set.member oid (GameState.command gs) && Vanguard.functionsFromCommandZone oid gs)
+printedCarrier oid gs = Set.member oid (GameState.battlefield gs) || commandCarrier oid gs
+
+-- CR 113.6p: printedCarrier's command-zone half -- a face-up plane or
+-- phenomenon, an emblem, a vanguard -- which stands through any event moving
+-- no command-zone object.
+commandCarrier :: ObjectId -> GameState -> Bool
+commandCarrier oid gs = Set.member oid (GameState.command gs) && Vanguard.functionsFromCommandZone oid gs
 
 -- CR 113.6 / 113.6b: whether this ability of this object functions where the
 -- object is -- its stated zones, or printedCarrier's default where it states
