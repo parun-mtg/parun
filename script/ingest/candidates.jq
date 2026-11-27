@@ -1,6 +1,6 @@
 # Reduces MTGJSON's AtomicCards.json to what `parun ingest` reads (#9): every
 # single-faced card, a scheme card (CR 314) and a plane or phenomenon card
-# (CR 310, CR 312) included, as a record it may build, and every preparation
+# (CR 311, CR 312) included, as a record it may build, and every preparation
 # card (CR 723) as a record of its faces' records, which it leaves out, and
 # every vanguard card (CR 313) with its hand and life modifiers; each with the sets
 # it was printed in for `parun translate --set`; every face's Oracle

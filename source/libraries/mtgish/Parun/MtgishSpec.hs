@@ -249,7 +249,7 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
       ]
       [[(Clause.optionality c, Clause.ifTaken c, Foldable.toList (Clause.effects c)) | c <- Foldable.toList (Mode.clauses m)] | t <- Face.triggeredAbilities (translated realityIsMineToControl), m <- Foldable.toList (Modal.modes (TriggeredAbility.modal t))]
 
-  -- CR 310, CR 311.7, CR 701.31d: a plane card is read as one face, its
+  -- CR 311, CR 311.7, CR 701.31d: a plane card is read as one face, its
   -- chaos ability, its arrival joined to an upkeep, and its leaving each a
   -- trigger.
   Spec.it s "reads a plane card as one face, with chaos, arrival and leaving triggers" $ do
@@ -530,7 +530,7 @@ theVerySoilShallShake =
     "Creatures you control get +2/+2 and have trample.\nWhen a creature you control dies, abandon this scheme."
   )
 
--- | Lethe Lake's AST, a plane card's (CR 310), and its Oracle text.
+-- | Lethe Lake's AST, a plane card's (CR 311), and its Oracle text.
 letheLake :: (String, String)
 letheLake =
   ( "{\"_OracleCard\":\"Planar\",\"Name\":\"Lethe Lake\",\"Typeline\":{\"Supertypes\":[],\"Cardtypes\":[\"Plane\"],\"Subtypes\":[\"Arkhos\"]},\"Rules\":[{\"_Rule\":\"TriggerA\",\"args\":[{\"_Trigger\":\"AtTheBeginningOfAPlayersUpkeep\",\"args\":{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"You\"}}},{\"_Actions\":\"ActionList\",\"args\":[{\"_Action\":\"MillNumberCards\",\"args\":{\"_GameNumber\":\"Integer\",\"args\":10}}]}]},{\"_Rule\":\"TriggerA\",\"args\":[{\"_Trigger\":\"WhenChaosEnsues\"},{\"_Actions\":\"Targeted\",\"args\":[[{\"_Target\":\"TargetPlayer\",\"args\":{\"_Players\":\"AnyPlayer\"}}],{\"_Actions\":\"ActionList\",\"args\":[{\"_Action\":\"PlayerAction\",\"args\":[{\"_Player\":\"Ref_TargetPlayer\"},{\"_Action\":\"MillNumberCards\",\"args\":{\"_GameNumber\":\"Integer\",\"args\":10}}]}]}]}]}]}",
