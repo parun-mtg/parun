@@ -40,7 +40,9 @@
           },
           "scope": {
             "type": "NamedBySource",
-            "value": "Enchanted"
+            "value": {
+              "type": "Enchanted"
+            }
           }
         }
       ],
@@ -52,7 +54,9 @@
               "dealt": {
                 "recipient": {
                   "type": "NamedBySource",
-                  "value": "Enchanted"
+                  "value": {
+                    "type": "Enchanted"
+                  }
                 }
               }
             }

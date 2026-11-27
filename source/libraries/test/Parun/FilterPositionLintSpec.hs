@@ -215,6 +215,7 @@ import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.Protection as Protection
 import qualified Parun.Types.PutCounters as PutCounters
 import qualified Parun.Types.PutCountersFrom as PutCountersFrom
+import qualified Parun.Types.QualityChooser as QualityChooser
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.RemovalCount as RemovalCount
@@ -1330,6 +1331,7 @@ pooledAtom atom = case atom of
           AnchorPool.Permanents -> True
           AnchorPool.GraveyardCards -> True
           AnchorPool.ExiledCards -> False
+          AnchorPool.LibraryTops -> False
         pooledTrait = case trait of
           Trait.Name -> True
           Trait.Controller -> True
@@ -1681,25 +1683,33 @@ attackedPlayerOffends card =
         || framed + elsewhere /= relationAtomsIn sourceRelation encoded
         || relationAtomsIn baked encoded /= 0
 
--- CR 406.1's exiled pool as Filter.Shares anchors it, in an encoding:
--- Anchor.AnyObject's ExiledCards (Cemetery Illuminator's "a card exiled with
--- this creature"). IsAttachedTo at that anchor reads no pool.
-exiledAnchorAtoms :: Value.Value -> Int
-exiledAnchorAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares _ (Anchor.AnyObject AnchorPool.ExiledCards _ _) -> True; _ -> False)
+-- The pools Parun.Engine.SourceContext.framedWith fills as Filter.Shares
+-- anchors them, in an encoding: Anchor.AnyObject's ExiledCards (CR 406.1,
+-- Cemetery Illuminator's "a card exiled with this creature") and LibraryTops
+-- (CR 401.2, Skybreen). IsAttachedTo at that anchor reads no pool.
+sourcePoolAnchorAtoms :: Value.Value -> Int
+sourcePoolAnchorAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares _ (Anchor.AnyObject pool _ _) -> sourceFramedPool pool; _ -> False)
 
--- How many exiled-pool atoms this card asks where `sourceFramed` admits them,
--- and how many elsewhere.
-exiledAnchorCounts :: Surveyed -> (Int, Int)
-exiledAnchorCounts card =
-  let atoms framing = sum [exiledAnchorAtoms (atomJson f) | (position, f) <- surveyedFilters card, framing position]
+sourceFramedPool :: AnchorPool.AnchorPool -> Bool
+sourceFramedPool pool = case pool of
+  AnchorPool.ExiledCards -> True
+  AnchorPool.LibraryTops -> True
+  AnchorPool.Permanents -> False
+  AnchorPool.GraveyardCards -> False
+
+-- How many source-framed-pool atoms this card asks where `sourceFramed` admits
+-- them, and how many elsewhere.
+sourcePoolAnchorCounts :: Surveyed -> (Int, Int)
+sourcePoolAnchorCounts card =
+  let atoms framing = sum [sourcePoolAnchorAtoms (atomJson f) | (position, f) <- surveyedFilters card, framing position]
    in (atoms sourceFramed, atoms (not . sourceFramed))
 
 -- The atom asked outside `sourceFramed`, or the traversal and the codec
 -- disagreeing about how many the card holds (hostOfSourceOffends' fence).
-exiledAnchorOffends :: Surveyed -> Bool
-exiledAnchorOffends card =
-  let (framed, elsewhere) = exiledAnchorCounts card
-   in elsewhere /= 0 || framed + elsewhere /= exiledAnchorAtoms (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
+sourcePoolAnchorOffends :: Surveyed -> Bool
+sourcePoolAnchorOffends card =
+  let (framed, elsewhere) = sourcePoolAnchorCounts card
+   in elsewhere /= 0 || framed + elsewhere /= sourcePoolAnchorAtoms (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- How many atoms aimed at a quantity's object an encoding carries:
 -- Filter.IsEvaluated by tag, and Filter.Shares and Filter.IsAttachedTo at the
@@ -2845,7 +2855,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "CR 303.4b no card asks IsAttackingPlayer or HeldBy of a player the filter cannot read" $ do
     let offenders = fmap fst (filter (any attackedPlayerOffends . snd) pool)
     Spec.assertEqWith s "the atom names only a player its position supplies" (fmap (S.nameOf . Printing.card) offenders) []
-    assertAuthors s registry pool "each author's atoms are framed" enchantedAttackedCounts [("Bow to My Command", 1), ("Curse of Clinging Webs", 1), ("Curse of Hospitality", 1), ("Curse of Shaken Faith", 3), ("Curse of Silence", 1), ("Imprison This Insolent Wretch", 1), ("Radiant Grace", 1), ("Sawhorn Nemesis", 1)]
+    assertAuthors s registry pool "each author's atoms are framed" enchantedAttackedCounts [("Bow to My Command", 1), ("Curse of Clinging Webs", 1), ("Curse of Hospitality", 1), ("Curse of Shaken Faith", 3), ("Curse of Silence", 1), ("Imprison This Insolent Wretch", 1), ("Radiant Grace", 1), ("Sawhorn Nemesis", 1), ("Two Streams Facility", 1)]
     -- The rejected side: the atom in a spell's life-gain amount, which no source
     -- frames, and an InSlot relation in a target slot, which one does.
     piker <- S.printingOf s registry "Goblin Piker"
@@ -2870,14 +2880,15 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (attackedPlayerOffends (survey (counting (Filter.Type.HeldBy Holder.Controller (ControllerRelation.NamedBySource SourcePlayer.Chosen))))) "and so is the chosen player's"
     Spec.assertBool s (attackedPlayerOffends (survey (slotted (Filter.Type.HeldBy Holder.Controller (ControllerRelation.InSlot (SlotName.MkSlotName (Text.pack "target"))))))) "as is HeldBy's InSlot relation"
     Spec.assertBool s (not (attackedPlayerOffends (survey (S.combinedFace curse)))) "and the Curse itself is not"
-  -- CR 406.1's exiled pool is answerable only where Filter.Context.exiledViews
-  -- is filled, which Parun.Engine.SourceContext.framedWith fills: the positions
-  -- `sourceFramed` admits. Filter.contextFor leaves it empty, so the anchor
-  -- elsewhere is a silent False. See exiledAnchorOffends.
-  Spec.it s "CR 406.1 no card anchors Shares at the exiled pool outside a source-framed position" $ do
-    let offenders = fmap fst (filter (any exiledAnchorOffends . snd) pool)
-    Spec.assertEqWith s "the anchor sits only where the exiled pool is supplied" (fmap (S.nameOf . Printing.card) offenders) []
-    assertAuthors s registry pool "each author's anchors are framed" exiledAnchorCounts [("Cemetery Gatekeeper", 1), ("Cemetery Illuminator", 1), ("Cemetery Protector", 1), ("Circle of Confinement", 1)]
+  -- CR 406.1's exiled pool and CR 401.2's library tops are answerable only
+  -- where Filter.Context.exiledViews and libraryTopViews are filled, which
+  -- Parun.Engine.SourceContext.framedWith fills: the positions `sourceFramed`
+  -- admits. Filter.contextFor leaves them empty, so the anchor elsewhere is a
+  -- silent False. See sourcePoolAnchorOffends.
+  Spec.it s "CR 406.1 / 401.2 no card anchors Shares at the exiled pool or the library tops outside a source-framed position" $ do
+    let offenders = fmap fst (filter (any sourcePoolAnchorOffends . snd) pool)
+    Spec.assertEqWith s "the anchor sits only where its pool is supplied" (fmap (S.nameOf . Printing.card) offenders) []
+    assertAuthors s registry pool "each author's anchors are framed" sourcePoolAnchorCounts [("Cemetery Gatekeeper", 1), ("Cemetery Illuminator", 1), ("Cemetery Protector", 1), ("Circle of Confinement", 1), ("Skybreen", 1)]
     -- The rejected side: the anchor in a spell's life-gain amount, which no source
     -- frames, beside the same anchor in a target slot, which one does.
     piker <- S.printingOf s registry "Goblin Piker"
@@ -2892,10 +2903,17 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             { Face.spell =
                 Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures (Just exiled))) Seq.empty
             }
-    Spec.assertEqWith s "a planted anchor in a life-gain amount is an offence" (exiledAnchorCounts (survey counting)) (0, 1)
-    Spec.assertBool s (exiledAnchorOffends (survey counting)) "and the lint says so"
-    Spec.assertEqWith s "the same anchor in a target slot is not" (exiledAnchorCounts (survey slotted)) (1, 0)
-    Spec.assertBool s (not (exiledAnchorOffends (survey slotted))) "and the lint accepts it"
+    Spec.assertEqWith s "a planted anchor in a life-gain amount is an offence" (sourcePoolAnchorCounts (survey counting)) (0, 1)
+    Spec.assertBool s (sourcePoolAnchorOffends (survey counting)) "and the lint says so"
+    Spec.assertEqWith s "the same anchor in a target slot is not" (sourcePoolAnchorCounts (survey slotted)) (1, 0)
+    Spec.assertBool s (not (sourcePoolAnchorOffends (survey slotted))) "and the lint accepts it"
+    let tops = Filter.Type.Shares Trait.Color (Anchor.AnyObject AnchorPool.LibraryTops SelfInclusion.IncludesCandidate (Filter.Type.And []))
+        countingTops =
+          (S.combinedFace piker)
+            { Face.spell =
+                Mint.oneMode (Seq.singleton (Effect.GainLife (PlayerQuantity.MkPlayerQuantity (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) (Filter.Type.And [Filter.Type.Not tops]) Aggregation.Members)))))
+            }
+    Spec.assertBool s (sourcePoolAnchorOffends (survey countingTops)) "a planted library-top anchor in a life-gain amount is an offence too"
   -- CR 303.4b's Filter.IsHostOfSource is CR 709.4a's atom one axis over again:
   -- answerable only in the positions `hostFramed` admits. See hostOfSourceOffends for the two offences.
   Spec.it s "CR 303.4b no card asks IsHostOfSource where the source's host is unknown" $ do
@@ -3761,6 +3779,65 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 ]
             }
     Spec.assertEqWith s "a planted atom in an affected set is seen" (outside planted) 1
+  -- CR 120.1: what a SLOT's object dealt is filled by
+  -- Parun.Engine.Projection.framedBySlots, and an absent key is vacuously True
+  -- for CR 601.2c's offer, so anywhere but a target slot the atom would admit
+  -- everything. Glen Elendra's "that player" is the one position admitted.
+  Spec.it s "CR 120.1 no card asks what a slot's object dealt outside a target slot" $ do
+    ps <- S.allPrintings s corpus
+    let bySlot atom = case atom of
+          Filter.Type.DealtDamageTo asked -> case DealtDamageTo.dealer asked of
+            Actor.InSlot _ -> True
+            Actor.Candidate -> False
+            Actor.Source -> False
+          _ -> False
+        atoms = decodedAtoms "DealtDamageTo" bySlot
+        admitted c = sum [atoms (atomJson f) | (framing, f) <- cardFilters c, framing == InTargetSlot]
+        outside c = atoms (Codec.encode (Face.Codec.codec Card.codec) c) - admitted c
+        offenders = filter (anyFace (\c -> outside c /= 0) . Printing.card) ps
+    Spec.assertEqWith s "the atom sits only in a target slot" (fmap (S.nameOf . Printing.card) offenders) []
+    glen <- S.printingOf s registry "Glen Elendra"
+    Spec.assertEqWith s "NOT vacuous: Glen Elendra's is accepted" (admitted (S.combinedFace glen), outside (S.combinedFace glen)) (1, 0)
+    let atom = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.Anyone, DealtDamageTo.kind = Nothing, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = Actor.InSlot (SlotName.MkSlotName (Text.pack "yours"))}
+        planted =
+          (S.combinedFace glen)
+            { Face.staticAbilities =
+                [ StaticAbility.MkStaticAbility
+                    (Affected.Matching (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, atom]))
+                    Nothing
+                    Set.empty
+                    Nothing
+                    Nothing
+                    (NonEmpty.singleton Modification.LoseAllAbilities)
+                ]
+            }
+    Spec.assertEqWith s "a planted atom in an affected set is seen" (outside planted) 1
+  -- Unprinted: a crewer naming a slot ("crewed by that creature"), which no
+  -- context fills (Parun.Engine.Filter's CrewedThisTurn arm).
+  Spec.it s "CR 702.122c no card names a slot as a crewer" $ do
+    ps <- S.allPrintings s corpus
+    let bySlot atom = case atom of
+          Filter.Type.CrewedThisTurn (Actor.InSlot _) -> True
+          _ -> False
+        atoms = decodedAtoms "CrewedThisTurn" bySlot
+        offenders = filter (anyFace (\c -> atoms (Codec.encode (Face.Codec.codec Card.codec) c) /= 0) . Printing.card) ps
+    Spec.assertEqWith s "no crewer names a slot" (fmap (S.nameOf . Printing.card) offenders) []
+    balthier <- S.printingOf s registry "Balthier and Fran"
+    let face = S.combinedFace balthier
+        planted =
+          face
+            { Face.staticAbilities =
+                [ StaticAbility.MkStaticAbility
+                    (Affected.Matching (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.CrewedThisTurn (Actor.InSlot (SlotName.MkSlotName (Text.pack "it")))]))
+                    Nothing
+                    Set.empty
+                    Nothing
+                    Nothing
+                    (NonEmpty.singleton Modification.LoseAllAbilities)
+                ]
+            }
+    Spec.assertEqWith s "NOT vacuous: the real Balthier and Fran is accepted" (atoms (Codec.encode (Face.Codec.codec Card.codec) face)) 0
+    Spec.assertEqWith s "a planted slot crewer is seen" (atoms (Codec.encode (Face.Codec.codec Card.codec) planted)) 1
   -- CR 400.7: what the SOURCE was before its move is filled where what it
   -- crewed is (Projection.withCharacteristicsOf), so the same positions admit it.
   Spec.it s "CR 400.7 no card asks what its source was before its move outside the positions that fill it" $ do
@@ -4832,18 +4909,18 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         rejected quality f =
           [ ("a spell's target slot", base {Face.spell = spellOf [] (aimed f)}),
             ("a spell's own filter", base {Face.spell = spellOf [destroying f] Map.empty}),
-            ("a spell's own filter before its own choice", base {Face.spell = spellOf [destroying f, Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False)] Map.empty}),
+            ("a spell's own filter before its own choice", base {Face.spell = spellOf [destroying f, Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False QualityChooser.Controller)] Map.empty}),
             ("a spell's draw count with no choice", base {Face.spell = spellOf [drawing f] Map.empty}),
-            ("a spell's draw count before its own choice", base {Face.spell = spellOf [drawing f, Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False)] Map.empty}),
+            ("a spell's draw count before its own choice", base {Face.spell = spellOf [drawing f, Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False QualityChooser.Controller)] Map.empty}),
             ("an activated ability's life-gain amount with no entry choice", withAbility (\a -> a {ActivatedAbility.modal = spellOf [gaining f] Map.empty})),
             ( "a spell's own filter in another mode than its choice",
-              base {Face.spell = (spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False)] Map.empty) {Modal.modes = Modal.modes (spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False)] Map.empty) <> Modal.modes (spellOf [destroying f] Map.empty)}}
+              base {Face.spell = (spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False QualityChooser.Controller)] Map.empty) {Modal.modes = Modal.modes (spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False QualityChooser.Controller)] Map.empty) <> Modal.modes (spellOf [destroying f] Map.empty)}}
             )
           ]
         accepted quality f =
           [ ("a static ability's affected set", affecting f),
-            ("a spell's own filter after its own choice", base {Face.spell = spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False), destroying f] Map.empty}),
-            ("a spell's draw count after its own choice", base {Face.spell = spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False), drawing f] Map.empty}),
+            ("a spell's own filter after its own choice", base {Face.spell = spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False QualityChooser.Controller), destroying f] Map.empty}),
+            ("a spell's draw count after its own choice", base {Face.spell = spellOf [Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality False False QualityChooser.Controller), drawing f] Map.empty}),
             ("an activated ability's target slot", withAbility (\a -> a {ActivatedAbility.modal = spellOf [] (aimed f)})),
             ("an activated ability's draw count after CR 614.1c's entry choice", (withAbility (\a -> a {ActivatedAbility.modal = spellOf [drawing f] Map.empty})) {Face.replacementEffects = choosingAsItEnters quality}),
             ("an activated ability's sacrifice cost", withAbility (\a -> a {ActivatedAbility.cost = (ActivatedAbility.cost a) {Cost.Type.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) f Set.empty)]}})),

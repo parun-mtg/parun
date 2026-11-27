@@ -32,10 +32,22 @@
                             "value": "target"
                           },
                           {
-                            "type": "EachCardYouOwn",
+                            "type": "EachCard",
                             "value": {
-                              "type": "IsInZone",
-                              "value": "Exile"
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Owner",
+                                    "relation": "You"
+                                  }
+                                },
+                                {
+                                  "type": "IsInZone",
+                                  "value": "Exile"
+                                }
+                              ]
                             }
                           }
                         ]

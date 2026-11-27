@@ -30,7 +30,7 @@ spec s = Spec.describe s "Parun.Codec.AttackedTrigger" $ do
       s
       AttackedTrigger.codec
       (AttackedTrigger.MkAttackedTrigger Nothing (AttackedSubject.NamedBySource SourcePlayer.Enchanted) Nothing)
-      " {\"attacked\":{\"type\":\"NamedBySource\",\"value\":\"Enchanted\"}} "
+      " {\"attacked\":{\"type\":\"NamedBySource\",\"value\":{\"type\":\"Enchanted\"}}} "
   -- Attuma, Atlantean Warlord's "whenever one or more Merfolk you control
   -- attack a player".
   Spec.it s "a count writes its attackers" $

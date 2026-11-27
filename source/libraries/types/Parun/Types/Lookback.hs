@@ -4,6 +4,9 @@ module Parun.Types.Lookback where
 data Lookback
   = -- | The turn in progress, TurnRegisters.events.
     ThisTurn
+  | -- | CR 506.1 / 511.3: the combat phase in progress, the turn's log since
+    -- its beginning of combat step began -- Glen Elendra's "this combat".
+    ThisCombat
   | -- | Since the candidate became the object it is (CR 400.7) -- Palladia-Mors,
     -- the Ruiner's "hasn't dealt damage yet".
     AsThisObject

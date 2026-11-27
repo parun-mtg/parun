@@ -49,6 +49,7 @@ import qualified Parun.Engine.Saga as Saga
 import qualified Parun.Engine.Sector as Sector
 import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Subtype as Subtype
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
@@ -73,6 +74,7 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.ChangeWord as ChangeWord
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
@@ -104,11 +106,13 @@ import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EnteredZone as EnteredZone
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
+import qualified Parun.Types.EventShape as EventShape
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.FullText as FullText
+import qualified Parun.Types.GameEvent as GameEvent
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
@@ -175,6 +179,8 @@ import qualified Parun.Types.TriggerLimit as TriggerLimit
 import Parun.Types.TriggeredAbility (TriggeredAbility)
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnOrdinal as TurnOrdinal
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpEvent as TurnUpEvent
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.UntapR as UntapR
@@ -1470,10 +1476,10 @@ affectsFramed frame grants peers source oid a partial gs = case a of
   -- Matching's body without the battlefield conjunct.
   Affected.MatchingAnywhere f -> inReach && matchesForSome f
   -- Matching's body with that conjunct NEGATED rather than dropped.
-  Affected.MatchingOffBattlefield f ->
+  Affected.MatchingOffBattlefield f onlyNth ->
     not (Set.member oid (GameState.battlefield gs))
       && inReach
-      && matchesForSome f
+      && maybe (matchesForSome f) (nthCastFor f) onlyNth
   -- CR 303.4b / 303.4m: the source's attachment again, read for the PLAYER it
   -- names. The Filter's perspective stays the source's controller (CR 109.5), not
   -- the enchanted player's. The candidate's controller is bound once and used
@@ -1506,6 +1512,25 @@ affectsFramed frame grants peers source oid a partial gs = case a of
     matchesForSome f =
       let view = viewOfCharacteristics peers oid partial (controllerOfGiven grants oid gs) (countersOf oid gs) gs
        in any (\perspective -> Filter.matches (frame (affectedContext peers source perspective gs)) view f) perspectives
+    -- CR 601.2i: the candidate is the turn's nth cast matching the Filter, on a
+    -- turn the scope admits, as Parun.Engine.PlayerEffect.nthCast reads
+    -- CostModifier.onlyNth: each earlier cast as it was cast (CR 608.2i), and
+    -- POSITIONALLY (Game.castsBefore), so a spell never cast matches nothing.
+    -- Only casts the Filter admits count (docs/decisions.md, "Which spell TARDIS
+    -- Bay's ..."). data/scenarios/planechase/tardis-bay-* prove it.
+    nthCastFor f (TurnOrdinal.MkTurnOrdinal scope n) = case Game.castsBefore oid gs of
+      Nothing -> False
+      Just earlier ->
+        let view = viewOfCharacteristics peers oid partial (controllerOfGiven grants oid gs) (countersOf oid gs) gs
+            active = TurnRegisters.activePlayer (GameState.turn gs)
+            admits context = maybe False (Turn.turnScopeAdmits (Count.scopePlayers peers context gs) gs scope active) (Filter.perspective context)
+            -- CR 601.2a: the snapshot records no zone, and the cast put it on the stack.
+            onStack cast' = cast' {Filter.zone = Just Zone.Stack}
+            castMatches context cast = maybe False (\cast' -> Filter.matches context (onStack cast') f) (Count.snapshotView peers context gs (EventShape.SpellCast CastWindow.ThisTurn) (GameEvent.SpellCast cast))
+            nth perspective =
+              let context = frame (affectedContext peers source perspective gs)
+               in admits context && Filter.matches context view f && Natural.length (filter (castMatches context) earlier) + 1 == n
+         in any nth perspectives
     -- CR 801.10: a static ability's effect reaches only objects within its
     -- controller's range of influence. Parun.RangeOfInfluenceSpec's "CR 801.10 a
     -- static ability does not reach a permanent outside its controller's range"
@@ -1678,6 +1703,9 @@ framedBySlots gs recipients context =
           Filter.slotColors = over Filter.colors,
           Filter.slotMeasures = measures,
           Filter.slotHostControllers = fmap (foldMap hostController . objectsOf) recipients,
+          -- CR 120.1: by id, as withCharacteristicsOf fills the source's, so a
+          -- departed target still answers.
+          Filter.slotDealtDamage = fmap (\named -> [(oid, Count.dealtDamageTo oid gs, Count.dealtDamageEarlier oid gs) | oid <- Set.toList named]) objects,
           -- CR 614.12: less a batch still entering (Scratch.enteringBeside),
           -- Resolve.Slots.battlefieldMatching's reading.
           Filter.battlefieldViews = fmap (viewsOf gs) (Seq.fromList (Set.toList (Set.difference (GameState.battlefield gs) (Scratch.enteringBeside (GameState.scratch gs))))),
@@ -3584,7 +3612,7 @@ candidatesFor a gs = case a of
   Affected.AttachedPlayerControls _ -> GameState.battlefield gs
   Affected.MatchingAnywhere _ -> Map.keysSet (GameState.objects gs)
   -- Every object the battlefield does NOT hold, which is the arm's own gate.
-  Affected.MatchingOffBattlefield _ -> Set.difference (Map.keysSet (GameState.objects gs)) (GameState.battlefield gs)
+  Affected.MatchingOffBattlefield _ _ -> Set.difference (Map.keysSet (GameState.objects gs)) (GameState.battlefield gs)
   -- Already fixed (CR 611.2c), so freezing it is the identity. Returned rather
   -- than special-cased away, so the caller has one shape to filter.
   Affected.TheseObjects s -> s
@@ -5151,7 +5179,7 @@ affectedReadsPeers a = case a of
   Affected.Attached -> False
   Affected.Matching f -> filterReadsPeers f
   Affected.MatchingAnywhere f -> filterReadsPeers f
-  Affected.MatchingOffBattlefield f -> filterReadsPeers f
+  Affected.MatchingOffBattlefield f _ -> filterReadsPeers f
   Affected.AttachedPlayerControls f -> filterReadsPeers f
   Affected.PlayedThisWay _ -> False
 
@@ -5569,7 +5597,7 @@ movableAspects c =
         Affected.Attached -> Nothing
         Affected.Matching f -> readsOf f
         Affected.MatchingAnywhere f -> readsOf f
-        Affected.MatchingOffBattlefield f -> readsOf f
+        Affected.MatchingOffBattlefield f _ -> readsOf f
         -- Always movable, whatever the filter reads: the set is narrowed by WHO
         -- CONTROLS each candidate, and layer 2 writes Controller (CR 613.1b).
         Affected.AttachedPlayerControls f -> Just (Set.insert Controller (filterReads f))
@@ -5582,7 +5610,7 @@ staticallyMovable :: Gathered -> Bool
 staticallyMovable c = case gAffected c of
   Affected.Matching _ -> True
   Affected.MatchingAnywhere _ -> True
-  Affected.MatchingOffBattlefield _ -> True
+  Affected.MatchingOffBattlefield _ _ -> True
   Affected.TheseObjects _ -> False
   Affected.Attached -> False
   -- Movable, unlike Attached: WHO CONTROLS a candidate is a layer-2 effect's

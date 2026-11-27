@@ -146,7 +146,8 @@ rewriteAffected pairs =
       Children.MkAffectedChildren
         { Children.affectedObjects = pure,
           Children.affectedFilter = Identity.Identity . Filter.rewrite pairs,
-          Children.affectedDuration = pure
+          Children.affectedDuration = pure,
+          Children.affectedOrdinal = pure
         }
 
 -- CR 612.1's word swap over a PlayerEffect, rewriteModification's sibling

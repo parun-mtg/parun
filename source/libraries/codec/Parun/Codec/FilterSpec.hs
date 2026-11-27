@@ -230,7 +230,7 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       s
       codec
       (Filter.HeldBy Holder.Controller (ControllerRelation.NamedBySource SourcePlayer.Enchanted))
-      " {\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":{\"type\":\"NamedBySource\",\"value\":\"Enchanted\"}}} "
+      " {\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":{\"type\":\"NamedBySource\",\"value\":{\"type\":\"Enchanted\"}}}} "
   Spec.it s "IsPlayer" $
     Common.assertCodec
       s
@@ -450,7 +450,7 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       s
       codec
       (Filter.IsAttackingPlayer (ControllerRelation.NamedBySource SourcePlayer.Enchanted))
-      " {\"type\":\"IsAttackingPlayer\",\"value\":{\"type\":\"NamedBySource\",\"value\":\"Enchanted\"}} "
+      " {\"type\":\"IsAttackingPlayer\",\"value\":{\"type\":\"NamedBySource\",\"value\":{\"type\":\"Enchanted\"}}} "
   Spec.it s "IsAttackingPlaneswalker" $
     Common.assertCodec
       s
@@ -498,7 +498,7 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       s
       codec
       (Filter.CrewedThisTurn Actor.Source)
-      " {\"type\":\"CrewedThisTurn\",\"value\":\"Source\"} "
+      " {\"type\":\"CrewedThisTurn\",\"value\":{\"type\":\"Source\"}} "
   Spec.it s "ConvokedSourceThisTurn" $
     Common.assertCodec
       s

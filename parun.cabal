@@ -1628,6 +1628,8 @@ library codec
     Parun.Codec.PutIntoZoneTrigger
     Parun.Codec.PutIntoZoneTriggerSpec
     Parun.Codec.PutSticker
+    Parun.Codec.QualityChooser
+    Parun.Codec.QualityChooserSpec
     Parun.Codec.Quantity
     Parun.Codec.QuantitySpec
     Parun.Codec.Question
@@ -3890,6 +3892,7 @@ library types
     Parun.Types.PutCountersFrom
     Parun.Types.PutIntoZoneTrigger
     Parun.Types.PutSticker
+    Parun.Types.QualityChooser
     Parun.Types.Quantity
     Parun.Types.Question
     Parun.Types.Quotient

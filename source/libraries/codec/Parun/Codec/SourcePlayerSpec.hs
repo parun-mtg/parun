@@ -12,13 +12,18 @@ spec s = Spec.describe s "Parun.Codec.SourcePlayer" $ do
       s
       SourcePlayer.codec
       SourcePlayer.Enchanted
-      " \"Enchanted\" "
+      " {\"type\":\"Enchanted\"} "
   Spec.it s "Chosen" $
     Common.assertCodec
       s
       SourcePlayer.codec
       SourcePlayer.Chosen
-      " \"Chosen\" "
-  Spec.it s "round trips every constructor" $ Common.assertEnumCodec s SourcePlayer.codec
+      " {\"type\":\"Chosen\"} "
+  Spec.it s "LastChoseWord" $
+    Common.assertCodec
+      s
+      SourcePlayer.codec
+      (SourcePlayer.LastChoseWord 2)
+      " {\"type\":\"LastChoseWord\",\"value\":2} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s SourcePlayer.codec

@@ -9,7 +9,11 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.PlayerRef as PlayerRef
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.TurnOrdinal as TurnOrdinal
+import qualified Parun.Types.TurnScope as TurnScope
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.Affected" $ do
@@ -35,8 +39,14 @@ spec s = Spec.describe s "Parun.Codec.Affected" $ do
     Common.assertCodec
       s
       Affected.codec
-      (Affected.MatchingOffBattlefield (Filter.HasCardType CardType.Creature))
-      " {\"type\":\"MatchingOffBattlefield\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+      (Affected.MatchingOffBattlefield (Filter.HasCardType CardType.Creature) Nothing)
+      " {\"type\":\"MatchingOffBattlefield\",\"value\":{\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
+  Spec.it s "MatchingOffBattlefield, TARDIS Bay's ordinal" $
+    Common.assertCodec
+      s
+      Affected.codec
+      (Affected.MatchingOffBattlefield (Filter.HasCardType CardType.Creature) (Just (TurnOrdinal.MkTurnOrdinal (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)) 1)))
+      " {\"type\":\"MatchingOffBattlefield\",\"value\":{\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"onlyNth\":{\"ordinal\":1,\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}}}}} "
   -- An "each other" card text as Not IsSource nested inside Matching -- the
   -- composed form the bare atom cases above do not exercise.
   Spec.it s "Matching, Opalescence's \"each other\" shape" $

@@ -52,10 +52,22 @@
                         }
                       },
                       "ref": {
-                        "type": "EachCardYouOwn",
+                        "type": "EachCard",
                         "value": {
-                          "type": "HasName",
-                          "value": "Static Discharge"
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Owner",
+                                "relation": "You"
+                              }
+                            },
+                            {
+                              "type": "HasName",
+                              "value": "Static Discharge"
+                            }
+                          ]
                         }
                       }
                     }

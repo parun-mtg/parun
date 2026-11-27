@@ -140,6 +140,7 @@ hidden =
       ObjectView.chosenNames = Map.empty,
       ObjectView.chosenPlayers = Map.empty,
       ObjectView.chosenNumber = Map.empty,
+      ObjectView.chosenNumberBy = Map.empty,
       ObjectView.chosenObjects = Map.empty,
       ObjectView.commanderTax = 0
     }

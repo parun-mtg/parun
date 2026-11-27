@@ -21,9 +21,9 @@ spec s = Spec.describe s "Parun.Codec.AttackedSubject" $ do
   Spec.it s "rejects a battle" $ rejects "{\"type\":\"Related\",\"value\":{\"kinds\":[\"OfPlayer\",\"OfBattle\"],\"relation\":\"AnyPlayer\"}}"
   Spec.it s "rejects no kind" $ rejects "{\"type\":\"Related\",\"value\":{\"kinds\":[],\"relation\":\"AnyPlayer\"}}"
   Spec.it s "NamedBySource Enchanted" $
-    Common.assertCodec s AttackedSubject.codec (AttackedSubject.NamedBySource SourcePlayer.Enchanted) " {\"type\":\"NamedBySource\",\"value\":\"Enchanted\"} "
+    Common.assertCodec s AttackedSubject.codec (AttackedSubject.NamedBySource SourcePlayer.Enchanted) " {\"type\":\"NamedBySource\",\"value\":{\"type\":\"Enchanted\"}} "
   Spec.it s "NamedBySource Chosen" $
-    Common.assertCodec s AttackedSubject.codec (AttackedSubject.NamedBySource SourcePlayer.Chosen) " {\"type\":\"NamedBySource\",\"value\":\"Chosen\"} "
+    Common.assertCodec s AttackedSubject.codec (AttackedSubject.NamedBySource SourcePlayer.Chosen) " {\"type\":\"NamedBySource\",\"value\":{\"type\":\"Chosen\"}} "
   Spec.it s "Source" $
     Common.assertCodec s AttackedSubject.codec AttackedSubject.Source " {\"type\":\"Source\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s AttackedSubject.codec

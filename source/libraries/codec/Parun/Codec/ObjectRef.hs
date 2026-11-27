@@ -59,7 +59,7 @@ codec =
           Arm.nullary "EachCardInYourHand" ObjectRef.EachCardInYourHand,
           Arm.payload "EachCardInHand" EachCardInHand.codec ObjectRef.EachCardInHand (\x -> case x of ObjectRef.EachCardInHand y -> Just y; _ -> Nothing),
           Arm.optionalPayload "EachCardInYourLibrary" filterCodec ObjectRef.EachCardInYourLibrary (\x -> case x of ObjectRef.EachCardInYourLibrary y -> Just y; _ -> Nothing),
-          Arm.payload "EachCardYouOwn" filterCodec ObjectRef.EachCardYouOwn (\x -> case x of ObjectRef.EachCardYouOwn y -> Just y; _ -> Nothing),
+          Arm.payload "EachCard" filterCodec ObjectRef.EachCard (\x -> case x of ObjectRef.EachCard y -> Just y; _ -> Nothing),
           Arm.payload "EachCardInExiledPile" EachCardInExiledPile.codec ObjectRef.EachCardInExiledPile (\x -> case x of ObjectRef.EachCardInExiledPile y -> Just y; _ -> Nothing),
           Arm.optionalPayload "EachCardEncodedOnSource" filterCodec ObjectRef.EachCardEncodedOnSource (\x -> case x of ObjectRef.EachCardEncodedOnSource y -> Just y; _ -> Nothing),
           Arm.payload "EachSpell" filterCodec ObjectRef.EachSpell (\x -> case x of ObjectRef.EachSpell y -> Just y; _ -> Nothing),
@@ -99,7 +99,7 @@ tagOf x = case x of
   ObjectRef.EachCardInYourHand {} -> "EachCardInYourHand"
   ObjectRef.EachCardInHand {} -> "EachCardInHand"
   ObjectRef.EachCardInYourLibrary {} -> "EachCardInYourLibrary"
-  ObjectRef.EachCardYouOwn {} -> "EachCardYouOwn"
+  ObjectRef.EachCard {} -> "EachCard"
   ObjectRef.EachCardInExiledPile {} -> "EachCardInExiledPile"
   ObjectRef.EachCardEncodedOnSource {} -> "EachCardEncodedOnSource"
   ObjectRef.EachSpell {} -> "EachSpell"

@@ -92,7 +92,9 @@
                                 {
                                   "type": "DealtDamageTo",
                                   "value": {
-                                    "dealer": "Source",
+                                    "dealer": {
+                                      "type": "Source"
+                                    },
                                     "kind": "Combat",
                                     "party": {
                                       "type": "HolderOfCandidate",

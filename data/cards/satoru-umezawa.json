@@ -32,24 +32,26 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "HasCardType",
-                  "value": "Creature"
-                },
-                {
-                  "type": "IsInZone",
-                  "value": "Hand"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Owner",
-                    "relation": "You"
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  {
+                    "type": "IsInZone",
+                    "value": "Hand"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Owner",
+                      "relation": "You"
+                    }
                   }
-                }
-              ]
+                ]
+              }
             }
           },
           "modifications": [

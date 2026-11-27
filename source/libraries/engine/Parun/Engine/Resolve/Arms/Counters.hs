@@ -77,6 +77,7 @@ import qualified Parun.Types.ChooseNumber as ChooseNumber
 import qualified Parun.Types.ChooseQuality as ChooseQuality
 import qualified Parun.Types.ChoseSecretly as ChoseSecretly
 import qualified Parun.Types.Chosen as Chosen
+import qualified Parun.Types.ChosenQuality as ChosenQuality
 import qualified Parun.Types.Cloak as Cloak.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.ControlSides as ControlSides
@@ -144,6 +145,7 @@ import qualified Parun.Types.ProposedEvent as ProposedEvent
 import qualified Parun.Types.PutCounterOfEachKind as PutCounterOfEachKind
 import qualified Parun.Types.PutCounters as PutCounters
 import qualified Parun.Types.PutCountersFrom as PutCountersFrom
+import qualified Parun.Types.QualityChooser as QualityChooser
 import qualified Parun.Types.Quantity as Quantity.Type
 import Parun.Types.Recipient (Recipient)
 import qualified Parun.Types.Recipient as Recipient
@@ -522,7 +524,7 @@ chooseCardName resolving source controller legal (ChooseCardName.MkChooseCardNam
 
 -- CR 608.2d: Mystic Compass's "the basic land type of your choice" and
 -- Persecute's "choose a color", the resolving controller's, through
--- Event.chooseQuality. Written to the SOURCE, ChooseCardName's road above,
+-- Event.chooseQuality, or each player's word (Event.chooseWordEach). Written to the SOURCE, ChooseCardName's road above,
 -- under the acquisition its reader asks for (CR 607.5), and read back by the
 -- next instruction's freeze (Projection.freezeQuantities' arm for
 -- Modification.ChosenSubtype), so a later activation's choice
@@ -538,7 +540,11 @@ chooseQuality :: ObjectId -> ObjectId -> PlayerId -> ChooseQuality.ChooseQuality
 chooseQuality resolving source controller choice = do
   gs <- State.get
   let acquisition = Game.readingAcquisition resolving source gs source
-  Event.chooseQuality (ChooseQuality.quality choice) controller (resolvingAbilityName resolving gs) acquisition source
+  case (ChooseQuality.chooser choice, ChooseQuality.quality choice) of
+    (QualityChooser.EachPlayer distinct, ChosenQuality.Word offered) -> Event.chooseWordEach distinct offered acquisition source
+    -- Unprinted (ChooseQuality.chooser): each player choosing another quality.
+    (QualityChooser.EachPlayer _, _) -> pure ()
+    (QualityChooser.Controller, quality) -> Event.chooseQuality quality controller (resolvingAbilityName resolving gs) acquisition source
   -- A Killer Among Us's ruling: a secret choice remembers its chooser, the one
   -- player who may reveal it (CostComponent.RevealSecretChoice), and is shown
   -- to them and whoever controls them (CR 724.4) alone.

@@ -1084,7 +1084,7 @@ refReachesLibrary ref = case ref of
   ObjectRef.EachCardInYourLibrary _ -> True
   -- TRUE for the arm above's reason, among the other zones it names; a
   -- regression fence for the same reason too.
-  ObjectRef.EachCardYouOwn _ -> True
+  ObjectRef.EachCard _ -> True
   ObjectRef.InSlot _ -> False
   ObjectRef.EachMatching _ -> False
   ObjectRef.EachCardInGraveyard {} -> False

@@ -31,6 +31,7 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.SourceChoices as SourceChoices
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 
 -- | Filter.contextFor framed by `source`, with every source-derived field
 -- filled (framedBy), objects read through `viewOf`.
@@ -57,7 +58,12 @@ framedWith viewOf choices source gs context =
     { -- CR 608.2h / 113.7a: a source that has left still names the host it
       -- had as it left.
       Filter.sourceAttachedTo = Game.hostWithLastKnown source gs,
-      Filter.sourcePlayers = Map.fromList (Maybe.mapMaybe (\which -> fmap ((,) which) (Game.sourcePlayerWithLastKnown which source gs)) [minBound .. maxBound]),
+      -- CR 607.2f: a word's choosers under the choices' acquisition (CR 607.5).
+      Filter.sourcePlayers =
+        let acquisition = SourceChoices.acquisition choices
+            positions = foldMap (Set.fromList . Map.elems) (Game.choiceWithLastKnown Chosen.NumberBy acquisition source gs)
+            named = [SourcePlayer.Enchanted, SourcePlayer.Chosen] <> fmap SourcePlayer.LastChoseWord (Set.toList positions)
+         in Map.filter (not . Set.null) (Map.fromList (fmap (\which -> (which, Game.sourcePlayersWithLastKnown acquisition which source gs)) named)),
       -- CR 108.3 fixes an owner when the game starts, so a live read; a source
       -- the state no longer holds answers Nothing.
       Filter.sourceOwner = fmap Object.owner (Game.lookupObject source gs),
@@ -73,6 +79,11 @@ framedWith viewOf choices source gs context =
       -- CR 406.1: every card in exile, for a group anchor over that pool,
       -- whose nest reads sourceExiled above.
       Filter.exiledViews = Seq.fromList (Maybe.mapMaybe viewOf (Foldable.toList (GameState.exile gs))),
+      -- CR 401.2: the top card of every library, for a group anchor over that
+      -- pool (Skybreen); a top CR 401.5 holds back is none, per the
+      -- docs/decisions.md entry "Whether a library's held-back top card is its
+      -- top card".
+      Filter.libraryTopViews = Seq.fromList (Maybe.mapMaybe (\pid -> Game.shownTop pid gs >>= viewOf) (Map.keys (GameState.players gs))),
       -- CR 607.2d: the objects the source last chose under the choices'
       -- acquisition, read off the board as sourceExiled is.
       Filter.sourceChosenObjects = Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Objects (SourceChoices.acquisition choices) source gs),

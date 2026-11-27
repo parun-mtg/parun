@@ -60,7 +60,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerScope" $ do
       s
       PlayerScope.codec
       (PlayerScope.NamedBySource SourcePlayer.Chosen)
-      " {\"type\":\"NamedBySource\",\"value\":\"Chosen\"} "
+      " {\"type\":\"NamedBySource\",\"value\":{\"type\":\"Chosen\"}} "
   -- Elrond of the White Council's "its owner" (CR 108.3).
   Spec.it s "SourceOwner" $
     Common.assertCodec
@@ -74,7 +74,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerScope" $ do
       s
       PlayerScope.codec
       (PlayerScope.NamedBySource SourcePlayer.Enchanted)
-      " {\"type\":\"NamedBySource\",\"value\":\"Enchanted\"} "
+      " {\"type\":\"NamedBySource\",\"value\":{\"type\":\"Enchanted\"}} "
   -- Weathered Sentinels' "players who attacked you during their last turn" (CR 508.1b).
   Spec.it s "AttackedYou TheirLastTurn" $
     Common.assertCodec

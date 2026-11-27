@@ -37,13 +37,13 @@ spec s = Spec.describe s "Parun.Codec.ControllerRelation" $ do
       s
       ControllerRelation.codec
       (ControllerRelation.NamedBySource SourcePlayer.Enchanted)
-      " {\"type\":\"NamedBySource\",\"value\":\"Enchanted\"} "
+      " {\"type\":\"NamedBySource\",\"value\":{\"type\":\"Enchanted\"}} "
   Spec.it s "NamedBySource Chosen" $
     Common.assertCodec
       s
       ControllerRelation.codec
       (ControllerRelation.NamedBySource SourcePlayer.Chosen)
-      " {\"type\":\"NamedBySource\",\"value\":\"Chosen\"} "
+      " {\"type\":\"NamedBySource\",\"value\":{\"type\":\"Chosen\"}} "
   -- CR 601.2c: Plagiarize's "target player".
   Spec.it s "InSlot" $
     Common.assertCodec
@@ -69,9 +69,9 @@ spec s = Spec.describe s "Parun.Codec.ControllerRelation" $ do
   Spec.it s "bare Opponent" $
     Common.assertCodec s ControllerRelation.bare (ControllerRelation.Related PlayerRelation.Opponent) " \"Opponent\" "
   Spec.it s "bare NamedBySource Enchanted" $
-    Common.assertCodec s ControllerRelation.bare (ControllerRelation.NamedBySource SourcePlayer.Enchanted) " {\"type\":\"NamedBySource\",\"value\":\"Enchanted\"} "
+    Common.assertCodec s ControllerRelation.bare (ControllerRelation.NamedBySource SourcePlayer.Enchanted) " {\"type\":\"NamedBySource\",\"value\":{\"type\":\"Enchanted\"}} "
   Spec.it s "bare NamedBySource Chosen" $
-    Common.assertCodec s ControllerRelation.bare (ControllerRelation.NamedBySource SourcePlayer.Chosen) " {\"type\":\"NamedBySource\",\"value\":\"Chosen\"} "
+    Common.assertCodec s ControllerRelation.bare (ControllerRelation.NamedBySource SourcePlayer.Chosen) " {\"type\":\"NamedBySource\",\"value\":{\"type\":\"Chosen\"}} "
   Spec.it s "bare InSlot" $
     Common.assertCodec s ControllerRelation.bare (ControllerRelation.InSlot (SlotName.MkSlotName (Text.pack "target"))) " {\"type\":\"InSlot\",\"value\":\"target\"} "
   Spec.it s "bare reads a tagged nullary arm" $

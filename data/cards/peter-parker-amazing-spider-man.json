@@ -202,41 +202,43 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "IsInZone",
-                  "value": "Stack"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Controller",
-                    "relation": "You"
-                  }
-                },
-                {
-                  "type": "Not",
-                  "value": {
-                    "type": "IsAbility"
-                  }
-                },
-                {
-                  "type": "HasSupertype",
-                  "value": "Legendary"
-                },
-                {
-                  "type": "Measures",
-                  "value": {
-                    "comparison": "AtLeast",
-                    "measure": "ColorCount",
-                    "operand": {
-                      "type": "Literal",
-                      "value": 1
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "IsInZone",
+                    "value": "Stack"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  },
+                  {
+                    "type": "Not",
+                    "value": {
+                      "type": "IsAbility"
+                    }
+                  },
+                  {
+                    "type": "HasSupertype",
+                    "value": "Legendary"
+                  },
+                  {
+                    "type": "Measures",
+                    "value": {
+                      "comparison": "AtLeast",
+                      "measure": "ColorCount",
+                      "operand": {
+                        "type": "Literal",
+                        "value": 1
+                      }
                     }
                   }
-                }
-              ]
+                ]
+              }
             }
           },
           "modifications": [

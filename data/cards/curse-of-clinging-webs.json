@@ -54,7 +54,9 @@
                         "holder": "Controller",
                         "relation": {
                           "type": "NamedBySource",
-                          "value": "Enchanted"
+                          "value": {
+                            "type": "Enchanted"
+                          }
                         }
                       }
                     }

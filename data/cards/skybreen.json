@@ -1,0 +1,110 @@
+{
+  "faces": [
+    {
+      "name": "Skybreen",
+      "oracleText": "Players play with the top card of their libraries revealed.\nSpells that share a card type with the top card of a library can't be cast.\nWhenever chaos ensues, target player loses life equal to the number of cards in their hand.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "Shows",
+            "value": {
+              "cards": "TopOfLibrary",
+              "to": "Everyone"
+            }
+          },
+          "scope": {
+            "type": "AnyPlayer"
+          }
+        },
+        {
+          "effect": {
+            "type": "CantCastMatching",
+            "value": {
+              "type": "Shares",
+              "value": {
+                "anchor": {
+                  "type": "AnyLibraryTop",
+                  "value": {
+                    "type": "And",
+                    "value": []
+                  }
+                },
+                "trait": {
+                  "type": "CardType"
+                }
+              }
+            }
+          },
+          "scope": {
+            "type": "AnyPlayer"
+          }
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Members"
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": []
+                              },
+                              "scope": {
+                                "type": "InZone",
+                                "value": {
+                                  "player": {
+                                    "type": "InSlot",
+                                    "value": "target"
+                                  },
+                                  "zone": "Hand"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "Players"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Kaldheim"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}

@@ -6583,6 +6583,31 @@ chooseQuality quality chooser reader acquisition oid = case quality of
     picked <- Game.chooseAmong (\decider who -> Prompt.ChooseCardFromAmong decider who oid) chooser candidates
     Foldable.for_ picked $ \card -> State.modify' (Game.markChosenExile (Set.fromList whole) (Just card))
 
+-- CR 101.4 / 607.2f: each player in APNAP order chooses one of `offered` for
+-- `oid`, its position written under its chooser and `acquisition` to
+-- Object.chosenNumberBy, replacing that player's last. Distinct asks only the
+-- players who chose before, each offered every word but their last: Two Streams
+-- Facility's "each player who last chose green anchor chooses red waterfall,
+-- and vice versa", where the one word left is forced and so not asked
+-- (Game.chooseAmong). Each player's exclusion is read before anyone answers,
+-- the choices happening simultaneously (CR 101.4).
+chooseWordEach :: ChoiceDistinct.ChoiceDistinct -> NonEmpty.NonEmpty Text.Text -> Acquisition.Acquisition -> ObjectId -> Game ()
+chooseWordEach distinct offered acquisition oid = do
+  gs <- State.get
+  let earlier = Maybe.fromMaybe Map.empty (Game.choiceWithLastKnown Chosen.NumberBy acquisition oid gs)
+      numbered = zip [1 :: Natural ..] (NonEmpty.toList offered)
+      choosers = case distinct of
+        ChoiceDistinct.MayRepeat -> Game.apnapOrder gs
+        ChoiceDistinct.Distinct -> filter (`Map.member` earlier) (Game.apnapOrder gs)
+      open chooser = case distinct of
+        ChoiceDistinct.MayRepeat -> numbered
+        ChoiceDistinct.Distinct -> filter (\(n, _) -> Just n /= Map.lookup chooser earlier) numbered
+  Foldable.for_ choosers $ \chooser -> do
+    let offer = open chooser
+    picked <- Game.chooseAmong (\decider who anchors -> Prompt.ChooseWord decider who oid anchors) chooser (fmap snd offer)
+    Foldable.for_ (picked >>= \word -> fst <$> List.find ((== word) . snd) offer) $ \n ->
+      State.modify' (Game.recordChoice Chosen.NumberBy acquisition (Just . Map.insert chooser n . Maybe.fromMaybe Map.empty) oid)
+
 -- CR 607.2d: the field chooseQuality writes `quality` to, put back on `oid` as
 -- `before` held it (Game.restoreChoice).
 restoreQuality :: ChosenQuality.ChosenQuality -> Acquisition.Acquisition -> ObjectId -> GameState -> GameState -> GameState
@@ -6592,7 +6617,7 @@ restoreQuality quality acquisition oid before = case quality of
   ChosenQuality.CardType _ _ -> Game.restoreChoice Chosen.CardType acquisition oid before
   ChosenQuality.Number _ _ -> Game.restoreChoice Chosen.Number acquisition oid before
   ChosenQuality.Parity -> Game.restoreChoice Chosen.Number acquisition oid before
-  ChosenQuality.Word _ -> Game.restoreChoice Chosen.Number acquisition oid before
+  ChosenQuality.Word _ -> Game.restoreChoice Chosen.Number acquisition oid before . Game.restoreChoice Chosen.NumberBy acquisition oid before
   ChosenQuality.Letter -> Game.restoreChoice Chosen.Number acquisition oid before
   -- Every card `oid` exiled under the acquisition, whichever pile was offered.
   ChosenQuality.ExiledCard _ _ -> \gs ->
@@ -12625,6 +12650,7 @@ lastKnownFrom gs oid obj =
     (Object.chosenSubtype obj)
     (Object.chosenCardType obj)
     (Object.chosenNumber obj)
+    (Object.chosenNumberBy obj)
     (Object.chosenObjects obj)
     -- CR 607.5: which of its abilities' links a leave trigger reads.
     (Game.acquisitionOf oid gs)

@@ -32,5 +32,7 @@ data Chosen a where
   Players :: Chosen (Map.Map PlayerChoice.PlayerChoice PlayerId.PlayerId)
   -- | CR 607.2d / 607.2g: the last chosen number, or the life paid as it entered or with it (Object.chosenNumber).
   Number :: Chosen Natural.Natural
+  -- | CR 101.4 / 607.2f: the word each player last chose, by chooser (Object.chosenNumberBy).
+  NumberBy :: Chosen (Map.Map PlayerId.PlayerId Natural.Natural)
   -- | CR 607.2d: the last chosen objects (Object.chosenObjects).
   Objects :: Chosen (Set.Set ObjectId.ObjectId)

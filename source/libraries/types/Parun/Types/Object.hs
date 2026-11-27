@@ -240,13 +240,13 @@ data Object = MkObject
     -- and makes its own new choice (CR 707.5, CR 707.6).
     -- Per-incarnation: reset by newIncarnation (CR 400.7).
     --
-    -- One of EIGHT `chosen` fields -- chosenColorless, chosenSubtype, chosenCardType, chosenNames,
-    -- chosenPlayers, chosenNumber and chosenObjects below are the others -- whose shared property is that each is read back OFF
+    -- One of NINE `chosen` fields -- chosenColorless, chosenSubtype, chosenCardType, chosenNames,
+    -- chosenPlayers, chosenNumber, chosenNumberBy and chosenObjects below are the others -- whose shared property is that each is read back OFF
     -- THE EFFECT'S SOURCE; an emblem starts with its maker's
     -- (Parun.Engine.Game.handChoices). `protector` below is chosen as the object enters too
     -- and is not one of them, being a designation rule 310 reads directly.
     --
-    -- All eight are KEYED BY THE ACQUISITION of the choosing ability, as
+    -- All nine are KEYED BY THE ACQUISITION of the choosing ability, as
     -- `storedResults` is (CR 607.5): a pair of linked abilities a copy effect
     -- brings never made the choice its reading ability asks after, so that
     -- reference is undefined (CR 607.5a) until the copy ends. An absent key is
@@ -315,6 +315,13 @@ data Object = MkObject
     -- off the effect's SOURCE. Not a copiable value and per-incarnation, for
     -- chosenColors's reasons.
     chosenNumber :: Map.Map Acquisition.Acquisition Natural.Natural,
+    -- | CR 101.4 / 607.2f: chosenNumber's per-chooser sibling, for a word each
+    -- player chooses (ChooseQuality.chooser's EachPlayer): the 1-based
+    -- position of the word each player last chose for this object, ASSIGNED
+    -- per player by each choice. Read by SourcePlayer.LastChoseWord off the
+    -- effect's SOURCE (Two Streams Facility). Not a copiable value and
+    -- per-incarnation, for chosenColors's reasons.
+    chosenNumberBy :: Map.Map Acquisition.Acquisition (Map.Map PlayerId.PlayerId Natural.Natural),
     -- | CR 607.2d: the objects last chosen for this object by a
     -- ChoosePermanents.linked choice (Zenos yae Galvus's "choose a creature an
     -- opponent controls"), ASSIGNED by each choice, chosenNames's posture. Read
@@ -1081,6 +1088,7 @@ new o s z t =
       chosenNames = Map.empty,
       chosenPlayers = Map.empty,
       chosenNumber = Map.empty,
+      chosenNumberBy = Map.empty,
       chosenObjects = Map.empty,
       face = Nothing,
       turnedOverAt = Nothing,
