@@ -966,7 +966,7 @@ effect context e = case e of
   Effect.Conjure {} -> []
   Effect.CreateCopy {} -> []
   Effect.BecomeCopy {} -> []
-  Effect.CopyStackObject {} -> []
+  Effect.CopyStackObject c -> Object.copied context c
   Effect.SetX {} -> []
   Effect.Replace r -> Object.regenerated context r
   Effect.Counter c -> Object.countered context c
