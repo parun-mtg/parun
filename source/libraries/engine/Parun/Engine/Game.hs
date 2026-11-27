@@ -3744,8 +3744,9 @@ turnLog which perspective gs = case which of
 -- PastTurn.draws, since the log's GameEvent.Drew counts CR 103.5's opening
 -- hands into the first turn's.
 --
--- Unprinted: a draw tally reading WhichTurn.SinceOwnLastTurn; no lint keeps it
--- out of card data.
+-- Unprinted: a draw tally reading WhichTurn.SinceOwnLastTurn, which
+-- Parun.FilterPositionLintSpec's "no card writes a draw or life tally since its
+-- own last turn" keeps out of card data.
 drawsDuring :: WhichTurn.WhichTurn -> Maybe PlayerId -> PlayerId -> GameState -> Natural
 drawsDuring which perspective pid gs = case which of
   WhichTurn.ThisTurn -> live

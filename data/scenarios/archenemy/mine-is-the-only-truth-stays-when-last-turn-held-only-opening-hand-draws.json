@@ -1,0 +1,287 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Karn Liberated",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 17
+              }
+            ],
+            "label": "karn"
+          },
+          {
+            "card": "Timesifter",
+            "label": "sifter"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Island",
+            "label": "i5"
+          },
+          {
+            "card": "Island",
+            "label": "i6"
+          },
+          {
+            "card": "Island",
+            "label": "i7"
+          },
+          {
+            "card": "Island",
+            "label": "i8"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves"
+          }
+        ],
+        "name": "alice",
+        "sideDecks": [
+          {
+            "key": "Scheme",
+            "value": [
+              {
+                "card": "Mine Is the Only Truth",
+                "label": "mine"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "library": [
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          },
+          {
+            "card": "Forest",
+            "label": "f5"
+          },
+          {
+            "card": "Forest",
+            "label": "f6"
+          },
+          {
+            "card": "Forest",
+            "label": "f7"
+          },
+          {
+            "card": "Forest",
+            "label": "f8"
+          },
+          {
+            "card": "Forest",
+            "label": "f9"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain",
+    "turn": 5
+  },
+  "description": "Mine Is the Only Truth stays at its archenemy's upkeep when last turn was the game's first, whose log holds the opening hands' draws",
+  "note": "CR 103.5 / 121.1: alice's -3 exiles her own Timesifter and her -14 restarts the game (CR 728.1a: she starts it), putting Timesifter onto the battlefield. She skips her first draw (CR 103.8a), sets Mine in motion and exiles Karn to Timesifter for an extra turn, so last turn is the new game's first: no draws, though its log holds her opening seven.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "object": "$karn",
+          "targets": [
+            "$sifter"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 2,
+          "object": "$karn"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Island",
+            "Island#2",
+            "Island#3",
+            "Island#4",
+            "Island#5",
+            "Island#6",
+            "Island#7",
+            "Karn Liberated",
+            "Llanowar Elves",
+            "Island#8"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Forest",
+            "Forest#2",
+            "Forest#3",
+            "Forest#4",
+            "Forest#5",
+            "Forest#6",
+            "Forest#7",
+            "Forest#8",
+            "Forest#9"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$mine"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      },
+      "player": "bob",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 7,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$mine"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Command"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "alice",
+          "of": "ActivePlayer"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$mine"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Command"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    }
+  ]
+}

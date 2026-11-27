@@ -249,6 +249,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRole as TurnRole
+import qualified Parun.Types.TurnTally as TurnTally
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
 import qualified Parun.Types.UntilPaid as UntilPaid
 import qualified Parun.Types.WhichCounters as WhichCounters
@@ -408,6 +409,26 @@ unbakedAtGrants face = atGrants face - sum (fmap baked grants)
         ]
     count = jsonAtoms (Text.pack "AtGrant") . Codec.encode (Modification.Codec.codec (GrantedAbility.Codec.codec Card.codec))
     baked m = count m - count (Common.bakeAtGrant (const (Just (PlayerId.MkPlayerId 1))) m)
+
+-- Every encoded draw or life tally reading WhichTurn.SinceOwnLastTurn:
+-- Parun.Engine.Game.drawsDuring's and the life tally's unprinted window.
+sinceOwnLastTurnTallies :: Value.Value -> Int
+sinceOwnLastTurnTallies value = case value of
+  Value.Object o ->
+    let pairs = Object.unwrap o
+        named v k = case v of
+          Value.Object inner -> [Pair.value p | p <- Object.unwrap inner, String.unwrap (Pair.name p) == Text.pack k]
+          _ -> []
+        isText t v = v == Value.String (String.MkString (Text.pack t))
+        here =
+          any (\t -> isText "CardsDrawn" t || isText "LifeChanged" t) (named value "type")
+            && any (any (isText "SinceOwnLastTurn") . (`named` "turn")) (named value "value")
+     in fromEnum here + sum (fmap (sinceOwnLastTurnTallies . Pair.value) pairs)
+  Value.Array a -> sum (fmap sinceOwnLastTurnTallies (Array.unwrap a))
+  Value.String _ -> 0
+  Value.Null _ -> 0
+  Value.Boolean _ -> 0
+  Value.Number _ -> 0
 
 -- Every encoded BecomesTapState condition watching a OneOrMore untap.
 batchedUntaps :: Value.Value -> [Value.Value]
@@ -3956,6 +3977,26 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "a planted atom is seen" (atoms planted) 1
     let owned = (S.combinedFace piker) {Face.spell = Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures (Just (Filter.Type.HeldByPlayer Holder.Owner (PlayerId.MkPlayerId 1))))) Seq.empty}
     Spec.assertEqWith s "and its owner holder" (atoms owned) 1
+  -- Unprinted: a draw or life tally "since your last turn"; no printed card
+  -- reads either (Game.drawsDuring, WhichTurn.SinceOwnLastTurn).
+  Spec.it s "CR 608.2i no card writes a draw or life tally since its own last turn" $ do
+    ps <- S.allPrintings s corpus
+    let tallies = sinceOwnLastTurnTallies . Codec.encode (Face.Codec.codec Card.codec)
+        offenders = filter (anyFace ((/= 0) . tallies) . Printing.card) ps
+    Spec.assertEqWith s "no tally reads the window" (fmap (S.nameOf . Printing.card) offenders) []
+    mine <- S.printingOf s registry "Mine Is the Only Truth"
+    burial <- S.printingOf s registry "Premature Burial"
+    piker <- S.printingOf s registry "Goblin Piker"
+    let you = PlayerRef.Relative PlayerRelation.You
+        drawing quantity = (S.combinedFace piker) {Face.spell = Mint.oneMode (Seq.singleton (Effect.Draw (Draw.MkDraw you quantity Nothing Nothing)))}
+        drawn which = drawing (Quantity.Type.Tallied (TurnTally.CardsDrawn which) you)
+        life which = drawing (Quantity.Type.LifeChanged (LifeTally.MkLifeTally you LifeDirection.Gained which))
+    Spec.assertEqWith s "Mine Is the Only Truth's last turn is accepted" (tallies (S.combinedFace mine)) 0
+    Spec.assertEqWith s "Premature Burial's entry window is accepted" (tallies (S.combinedFace burial)) 0
+    Spec.assertEqWith s "a draw tally since your last turn is rejected" (tallies (drawn WhichTurn.SinceOwnLastTurn)) 1
+    Spec.assertEqWith s "a life tally since your last turn is rejected" (tallies (life WhichTurn.SinceOwnLastTurn)) 1
+    Spec.assertEqWith s "a draw tally last turn is accepted" (tallies (drawn WhichTurn.LastTurn)) 0
+    Spec.assertEqWith s "a life tally last turn is accepted" (tallies (life WhichTurn.LastTurn)) 0
   -- CR 603.2c's batched untap is one event only where the untap is one: CR
   -- 502.3's turn-based untap brackets its batch, and Effect.Untap does not
   -- (Parun.Engine.Resolve.Arms.Counters.untap). So every OneOrMore untap trigger
