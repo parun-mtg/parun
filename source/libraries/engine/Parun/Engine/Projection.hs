@@ -1520,7 +1520,7 @@ affectsFramed frame grants peers source oid a partial gs = case a of
     -- (2021-07-23) reads the construction: its first spell from exile each
     -- turn has cascade "even if it's not the first spell you've cast that
     -- turn". data/scenarios/planechase/tardis-bay-* prove it, the heir
-    -- planar controller's case the scope check.
+    -- planar controller's one the turn scope.
     nthCastFor f (TurnOrdinal.MkTurnOrdinal scope n) = case Game.castsBefore oid gs of
       Nothing -> False
       Just earlier ->
