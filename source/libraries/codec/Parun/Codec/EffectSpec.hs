@@ -1611,8 +1611,8 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.RemoveCounters (RemoveCounters.MkRemoveCounters CounterKind.MinusOneMinusOne (Quantity.Literal 1) (SlotName.MkSlotName (Text.pack "target")) Nothing))
-      " {\"type\":\"RemoveCounters\",\"value\":{\"kind\":{\"type\":\"MinusOneMinusOne\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"slot\":\"target\"}} "
+      (Effect.RemoveCounters (RemoveCounters.MkRemoveCounters CounterKind.MinusOneMinusOne (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing))
+      " {\"type\":\"RemoveCounters\",\"value\":{\"kind\":{\"type\":\"MinusOneMinusOne\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}}} "
   -- Each RemovalCount arm, and the tally written only where it is bound.
   Spec.it s "RemoveCountersAmong" $ do
     let among count tally = Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong count (ObjectRef.EachMatching Filter.IsSource) (WhichCounters.OfKind CounterKind.Stun) tally)

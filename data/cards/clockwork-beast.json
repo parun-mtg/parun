@@ -212,7 +212,10 @@
                             "type": "Literal",
                             "value": 1
                           },
-                          "slot": "self"
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
                         }
                       }
                     ]

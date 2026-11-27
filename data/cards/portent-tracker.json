@@ -96,7 +96,10 @@
                             "type": "Literal",
                             "value": 1
                           },
-                          "slot": "target"
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
                         }
                       }
                     ]

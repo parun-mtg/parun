@@ -170,20 +170,6 @@
       "turn": 1
     },
     {
-      "do": {
-        "Answer": {
-          "prompt": "OrderForEach",
-          "with": [
-            0,
-            1
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
       "check": {
         "Counters": {
           "count": 3,

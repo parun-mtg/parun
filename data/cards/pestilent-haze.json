@@ -66,31 +66,22 @@
               {
                 "effects": [
                   {
-                    "type": "ForEach",
+                    "type": "RemoveCounters",
                     "value": {
-                      "body": [
-                        {
-                          "type": "RemoveCounters",
-                          "value": {
-                            "kind": {
-                              "type": "Loyalty"
-                            },
-                            "quantity": {
-                              "type": "Literal",
-                              "value": 2
-                            },
-                            "slot": "walker"
-                          }
-                        }
-                      ],
+                      "kind": {
+                        "type": "Loyalty"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 2
+                      },
                       "ref": {
                         "type": "EachMatching",
                         "value": {
                           "type": "HasCardType",
                           "value": "Planeswalker"
                         }
-                      },
-                      "slot": "walker"
+                      }
                     }
                   }
                 ]

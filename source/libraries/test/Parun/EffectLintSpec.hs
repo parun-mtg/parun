@@ -1844,7 +1844,7 @@ effectObjectRefs effect =
         -- counters go to which recipient IS a choice, and it is asked of the answer
         -- rather than of the ref (Prompt.ChooseDistributedMovedCounters).
         Effect.MoveCounters (MoveCounters.MkMoveCounters from _ _ to) -> read_ [from, to]
-        Effect.RemoveCounters {} -> []
+        Effect.RemoveCounters x -> read_ [RemoveCounters.ref x]
         Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong _ from _ _) -> read_ [from]
         Effect.GainPlayerCounters {} -> []
         Effect.RemovePlayerCounters {} -> []
@@ -2426,7 +2426,6 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Effect.ExileHaunting (ExileHaunting.MkExileHaunting _ host) -> [host]
           -- CR 122.8's read.
           Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom from _ _) -> [from]
-          Effect.RemoveCounters (RemoveCounters.MkRemoveCounters _ _ slot _) -> [slot]
           -- CR 701.12b's WithSource and BetweenSlots: WithinSlot takes both
           -- permanents out of the one slot and reads it whole.
           Effect.ExchangeControl (ControlSides.WithSource slot) -> [slot]
@@ -2547,7 +2546,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         exiledSlot = SlotName.MkSlotName (Text.pack "exiled")
         destroyedSlot = SlotName.MkSlotName (Text.pack "destroyed")
         elsewhereSlot = SlotName.MkSlotName (Text.pack "elsewhere")
-        removal slot = Effect.RemoveCounters (RemoveCounters.MkRemoveCounters CounterKind.PlusOnePlusOne (Quantity.Type.Literal 1) slot Nothing)
+        giving slot = Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom slot Nothing (ObjectRef.EachMatching (Filter.Type.HasCardType CardType.Creature)))
         destruction = Effect.Destroy (Destroy.MkDestroy (ObjectRef.EachMatching (Filter.Type.HasCardType CardType.Creature)) Regenerability.Regenerable Nothing Nothing (Just destroyedSlot))
         -- An opcode whose ObjectRef carries a Filter, so effectFilters reports it
         -- (its Tap arm is `frame SourceHostFramed (objectRefFilters ref)`).
@@ -2635,8 +2634,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- other one-object instruction open. Paired with the board below, which
     -- differs in the slot name alone, so what catches is the intersection rather
     -- than `clashes` answering True for any two effects.
-    Spec.assertBool s (clashes [destruction, removal destroyedSlot]) "a singular read outside TurnFaceUp is caught"
-    Spec.assertBool s (not (clashes [destruction, removal elsewhereSlot])) "a singular read of another slot is left alone"
+    Spec.assertBool s (clashes [destruction, giving destroyedSlot]) "a singular read outside TurnFaceUp is caught"
+    Spec.assertBool s (not (clashes [destruction, giving elsewhereSlot])) "a singular read of another slot is left alone"
     -- One effect, both postures: ExileHaunting's host is a legalOne read and
     -- its haunting card a group-tolerant one (slotGroup first, CR 731.3c), so
     -- the same two slot names swapped are the pair. AttachBound is the second
@@ -2650,10 +2649,10 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- unconditionally: a create's printed count says nothing about how many
     -- tokens it mints, CR 614.16 being free to multiply a literal one, so the
     -- COUNT is not a pair this lint can be built on.
-    Spec.assertBool s (clashes [discarding, removal destroyedSlot]) "a singular read of a counted discard's slot is caught"
-    Spec.assertBool s (not (clashes [discarding, removal elsewhereSlot])) "a singular read of another slot is left alone beside a discard"
-    Spec.assertBool s (clashes [minting 1, removal destroyedSlot]) "a singular read of a minted token is caught even at a printed count of one"
-    Spec.assertBool s (not (clashes [minting 1, removal elsewhereSlot])) "a singular read of another slot is left alone beside a create"
+    Spec.assertBool s (clashes [discarding, giving destroyedSlot]) "a singular read of a counted discard's slot is caught"
+    Spec.assertBool s (not (clashes [discarding, giving elsewhereSlot])) "a singular read of another slot is left alone beside a discard"
+    Spec.assertBool s (clashes [minting 1, giving destroyedSlot]) "a singular read of a minted token is caught even at a printed count of one"
+    Spec.assertBool s (not (clashes [minting 1, giving elsewhereSlot])) "a singular read of another slot is left alone beside a create"
     -- The reading side's other carrier: CR 603.7c hands the arming resolution's
     -- environment to a delayed ability, whose condition names a slot and reads
     -- it through Binding.objectSlots. Paired with the same condition over a slot

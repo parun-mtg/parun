@@ -115,7 +115,10 @@
                       "type": "InSlot",
                       "value": "thatMuch"
                     },
-                    "slot": "self"
+                    "ref": {
+                      "type": "InSlot",
+                      "value": "self"
+                    }
                   }
                 }
               ]

@@ -38,7 +38,10 @@
                         "type": "Literal",
                         "value": 1
                       },
-                      "slot": "victim"
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "victim"
+                      }
                     }
                   }
                 ]

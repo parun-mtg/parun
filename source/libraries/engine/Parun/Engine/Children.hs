@@ -1278,8 +1278,8 @@ effectChildren c effect = case effect of
   Effect.PutCounters (PutCounters.MkPutCounters kind alternatives quantity ref totalAtMost placed putter) ->
     fmap Effect.PutCounters (PutCounters.MkPutCounters <$> onCounterKind c kind <*> traverse (onCounterKind c) alternatives <*> onQuantity c quantity <*> onObjectRef c ref <*> pure totalAtMost <*> traverse (onSlot c) placed <*> traverse (onPlayer c) putter)
   Effect.Divide (Divide.MkDivide quantity among chooser named) -> fmap Effect.Divide (Divide.MkDivide <$> onQuantity c quantity <*> onObjectRef c among <*> onPlayer c chooser <*> onSlot c named)
-  Effect.RemoveCounters (RemoveCounters.MkRemoveCounters kind quantity named tally) ->
-    fmap Effect.RemoveCounters (RemoveCounters.MkRemoveCounters <$> onCounterKind c kind <*> onQuantity c quantity <*> onSlot c named <*> traverse (onSlot c) tally)
+  Effect.RemoveCounters (RemoveCounters.MkRemoveCounters kind quantity ref tally) ->
+    fmap Effect.RemoveCounters (RemoveCounters.MkRemoveCounters <$> onCounterKind c kind <*> onQuantity c quantity <*> onObjectRef c ref <*> traverse (onSlot c) tally)
   Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong count from kind tally) ->
     fmap Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong <$> onRemovalCount c count <*> onObjectRef c from <*> onWhichCounters c kind <*> traverse (onSlot c) tally)
   Effect.MoveCounters (MoveCounters.MkMoveCounters from kinds named to) ->

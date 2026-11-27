@@ -253,7 +253,10 @@
                                     "slot": "land"
                                   }
                                 },
-                                "slot": "land"
+                                "ref": {
+                                  "type": "InSlot",
+                                  "value": "land"
+                                }
                               }
                             }
                           ],

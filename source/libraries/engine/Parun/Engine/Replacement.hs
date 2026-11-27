@@ -539,9 +539,9 @@ collect sources floating =
 -- a target and so does not contradict the paragraph above -- Parun.Engine.Resolve
 -- .performHandAction binds the same slot the same way for the same reason. It is
 -- what lets a rider naming its own permanent by slot say "it": Protean Hydra's
--- "prevent that damage and remove that many +1/+1 counters from it", where
--- Parun.Types.RemoveCounters names a slot and Parun.Types.PutCounters (Stormwild
--- Capridor) names an ObjectRef and needs no binding.
+-- "prevent that damage and remove that many +1/+1 counters from it", whose
+-- ObjectRef names that slot where Stormwild Capridor's names its source by
+-- Filter and needs no binding.
 printedRider :: ObjectId -> Maybe PlayerId -> ReplacementEffect Card (GrantedAbility.GrantedAbility Card) (Effect.Effect Card (GrantedAbility.GrantedAbility Card)) -> Maybe PreventionRider.PreventionRider
 printedRider src you re = case re of
   ReplacementEffect.DamageR damageR
