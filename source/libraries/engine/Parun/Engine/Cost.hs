@@ -334,8 +334,8 @@ faceDownCost =
 
 -- CR 702.143d's "that effect may give the card a foretell cost", as every
 -- printing states it: the mana cost of the face being cast, reduced by the amount
--- the effect stated (Ethereal Valkyrie's {2}). Nothing when no effect gave this
--- foretold card a cost.
+-- the effect stated (Ethereal Valkyrie's {2}), beside that payload. Nothing when
+-- no effect gave this foretold card a cost.
 --
 -- Settled HERE, at CR 601.2b where the candidate costs are named, rather than
 -- when the effect resolved. Two rules push it here and neither is about
@@ -358,10 +358,11 @@ faceDownCost =
 --
 -- No additional costs ride along: the caller wraps this in `withAdditional`, CR
 -- 118.9d, exactly as it wraps a printed foretell cost.
-grantedForetellCost :: Face.Face card -> Object.Object -> Maybe (Cost Keyword.Type.Keyword)
+grantedForetellCost :: Face.Face card -> Object.Object -> Maybe (ForetellCost.ForetellCost Keyword.Type.Keyword, Cost Keyword.Type.Keyword)
 grantedForetellCost face obj = do
-  amount <- Object.foretellCostReduction obj
-  foretellCostFor face (ForetellCost.ManaCostReducedBy amount)
+  payload <- ForetellCost.ManaCostReducedBy <$> Object.foretellCostReduction obj
+  cost <- foretellCostFor face payload
+  pure (payload, cost)
 
 -- CR 702.143a: a foretell keyword's payload settled against the face being cast
 -- -- the stated cost as printed, or that face's mana cost reduced (CR 118.7),
@@ -1331,11 +1332,17 @@ candidateCostsGiven permitted pid name oid gs =
                 -- card foretold with NEITHER is offered nothing and is not
                 -- castable, which is that clause read at zero.
                 --
-                -- CR 601.3: where a player's grant opens it too, its owner casts
-                -- under either, the plotted arm's reading; the card's own
-                -- permission is closed face down, as above. The scenario
+                -- Each is tagged with its foretell keyword, so Cast.castWays opens
+                -- CR 702.143a's own permission to a foretell cost alone (CR
+                -- 118.9a; Singing Towers of Darillium's ruling of 2023-10-13).
+                --
+                -- CR 601.3: where a player's grant opens it too, the printed cost
+                -- and its alternatives are cast under that grant alone. The
+                -- scenarios
                 -- singing-towers-of-darillium-grants-foretell-and-its-chaos-casts-one-foretold-card-free
-                -- proves it.
+                -- and
+                -- singing-towers-of-darillium-chaos-leaves-a-foretold-card-no-evoke-cost-from-exile
+                -- prove it.
                 --
                 -- The granted cost is settled against THIS face, which is the whole
                 -- reason the object carries the reduction rather than a cost: CR
@@ -1345,9 +1352,9 @@ candidateCostsGiven permitted pid name oid gs =
                 -- call was asked about.
                 Just Zone.Exile
                   | permitsCastForetold pid oid gs ->
-                      fmap
-                        (untagged . withAdditional)
-                        (Maybe.maybeToList (grantedForetellCost face obj) <> Maybe.mapMaybe (foretellCostFor face) (Keyword.foretellCosts (Face.keywordSet face)))
+                      [ CandidateCost.plain (Just (Keyword.Type.Foretell payload)) (withAdditional cost)
+                      | (payload, cost) <- Maybe.maybeToList (grantedForetellCost face obj) <> [(stated, settled) | stated <- Keyword.foretellCosts (Face.keywordSet face), Just settled <- [foretellCostFor face stated]]
+                      ]
                         <> (if PlayerEffect.mayCastFrom pid Zone.Exile oid gs then ordinary else [])
                 -- CR 118.9b: a CR 601.3 permission that states an alternative
                 -- cost -- "without paying its mana cost" (Extract Power), rule

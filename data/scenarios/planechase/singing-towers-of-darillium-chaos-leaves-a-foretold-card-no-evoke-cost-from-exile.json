@@ -1,0 +1,248 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i3",
+            "ready": true
+          }
+        ],
+        "command": [
+          {
+            "card": "Singing Towers of Darillium",
+            "label": "towers"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Mulldrifter",
+            "label": "drifter"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice",
+        "sideDecks": [
+          {
+            "key": "Planar",
+            "value": [
+              {
+                "card": "Academy at Tolaria West"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Singing Towers of Darillium chaos leaves a foretold card no evoke cost from exile",
+  "note": "Alice foretells Mulldrifter through the plane's grant. On turn 3 chaos opens the free cast, and the card is offered its foretell cost, under foretell's own permission, and its mana cost, which only the free cast can take; evoke is no cost either permission admits (CR 702.143a, 118.9a). She pays the foretell cost with all three Islands.",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "Foretell $drifter",
+          "mana": [
+            "$i1",
+            "$i2",
+            null
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "RollPlanarDie"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "Mulldrifter",
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseCost",
+            "offer": {
+              "source": "Mulldrifter",
+              "costs": [
+                {
+                  "mana": [
+                    {
+                      "type": "Generic",
+                      "value": 2
+                    },
+                    {
+                      "type": "OfType",
+                      "value": {
+                        "type": "Colored",
+                        "value": "Blue"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "mana": [
+                    {
+                      "type": "Generic",
+                      "value": 4
+                    },
+                    {
+                      "type": "OfType",
+                      "value": {
+                        "type": "Colored",
+                        "value": "Blue"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "keywords": [
+                {
+                  "type": "Foretell",
+                  "value": {
+                    "type": "ManaCostReducedBy",
+                    "value": [
+                      {
+                        "type": "Generic",
+                        "value": 2
+                      }
+                    ]
+                  }
+                },
+                null
+              ],
+              "earlier": []
+            }
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCost",
+          "with": 0
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mulldrifter",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}

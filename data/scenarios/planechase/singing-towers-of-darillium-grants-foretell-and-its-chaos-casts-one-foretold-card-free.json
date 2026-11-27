@@ -250,49 +250,6 @@
       "turn": 3
     },
     {
-      "do": {
-        "Answer": {
-          "prompt": "ChoosePlayPermission",
-          "with": [
-            "$towers",
-            {
-              "alternativeCost": {
-                "type": "InsteadOfManaCost",
-                "value": []
-              },
-              "from": {
-                "player": {
-                  "type": "Relative",
-                  "value": "AnyPlayer"
-                },
-                "zone": "Exile"
-              },
-              "limit": "OncePerEffect",
-              "matching": {
-                "type": "And",
-                "value": [
-                  {
-                    "type": "HasExileMark",
-                    "value": "Foretold"
-                  },
-                  {
-                    "type": "HeldBy",
-                    "value": {
-                      "holder": "Owner",
-                      "relation": "You"
-                    }
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 3
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
