@@ -13,7 +13,7 @@ data Icon
     MkBeginning
   | -- | A main phase: a card.
     MkMain
-  | -- | The combat phase: crossed swords.
+  | -- | The combat phase, and commander damage (CR 903.10a): crossed swords.
     MkCombat
   | -- | The ending phase: a sunset.
     MkEnding
