@@ -495,15 +495,18 @@ events :: Maybe PlayerId.PlayerId -> PlayerView.PlayerView -> [LoggedEvent.Logge
 events reader view = concatMap (sentences reader view) . runs reader view
 
 -- | Witnessed entries as `kept` keeps them, a run of one player's draws,
--- looks or mana abilities (those paying for a spell, CR 601.2g) together.
+-- looks or mana abilities (those paying for a spell, CR 601.2g) together, and
+-- a run of objects leaving the game from one zone (CR 800.4a).
 runs :: Maybe PlayerId.PlayerId -> PlayerView.PlayerView -> [LoggedEvent.LoggedEvent] -> [[LoggedEvent.LoggedEvent]]
 runs reader view = List.groupBy (\a b -> Maybe.isJust (runner a) && runner a == runner b) . kept . filter (Maybe.isJust . event reader view)
   where
-    -- The player and the predicate a run of their entries shares.
+    -- The player and the predicate a run of their entries shares, or the zone
+    -- a run of departures shares.
     runner logged = case LoggedEvent.event logged of
-      GameEvent.Drew d -> Just (Drew.player d, "draws")
-      GameEvent.Looked l -> Just (Looked.player l, "looks at")
-      GameEvent.AbilityActivated a | isManaAbility a -> Just (AbilityWasActivated.player a, "gets mana from")
+      GameEvent.Drew d -> Just (Right (Drew.player d, "draws"))
+      GameEvent.Looked l -> Just (Right (Looked.player l, "looks at"))
+      GameEvent.AbilityActivated a | isManaAbility a -> Just (Right (AbilityWasActivated.player a, "gets mana from"))
+      GameEvent.LeftTheGame l -> Just (Left (LeftTheGame.from l))
       _ -> Nothing
 
 -- | One of `runs` as sentences to a reader: a run of draws, looks or mana
@@ -514,6 +517,11 @@ sentences reader view run = case run of
   first : _ : _
     | Just (pid, predicate, what) <- together first ->
         [acts reader pid predicate <> Text.pack " " <> what <> Text.pack "."]
+    -- CR 800.4a: what left with a departed player, gone from the view, by the
+    -- names the seat saw them by, else counted.
+    | GameEvent.LeftTheGame l <- LoggedEvent.event first ->
+        let departed = maybe (count (List.genericLength run) (departedNoun (LeftTheGame.from l))) listing (traverse leftName run)
+         in [departed <> Text.pack " leave the game."]
   _ -> concatMap (\logged -> foldMap (: announced reader view logged) (event reader view logged)) run
   where
     together logged = case LoggedEvent.event logged of
@@ -523,6 +531,14 @@ sentences reader view run = case run of
     looked logged = case LoggedEvent.event logged of
       GameEvent.Looked l -> Just (PromptOffer.snapshotName (Looked.characteristics l))
       _ -> Nothing
+    leftName logged = case LoggedEvent.event logged of
+      GameEvent.LeftTheGame l -> knownName view (LeftTheGame.object l)
+      _ -> Nothing
+
+-- | What left the game from a zone is called, unnamed: a permanent from the
+-- battlefield (CR 110.1), else a card (CR 730.4a).
+departedNoun :: Zone.Zone -> String
+departedNoun zone = if zone == Zone.Battlefield then "permanent" else "card"
 
 -- | A cast spell's (CR 601.2c) or activated ability's (CR 602.2b) targets, to
 -- a reader, a sentence each in the order announced: told after its cast or
@@ -710,7 +726,7 @@ event reader view logged = case LoggedEvent.event logged of
   GameEvent.VentureMarkerEntered v -> said [acts reader (VentureMarkerEntered.player v) "moves", their reader (VentureMarkerEntered.player v), Text.pack "venture marker in", name (VentureMarkerEntered.dungeon v)]
   GameEvent.BecameAttached a -> said [name (BecameAttached.attachment a), Text.pack "becomes attached to", recipient (BecameAttached.host a)]
   GameEvent.BecameUnattached a -> said [name (BecameUnattached.attachment a), Text.pack "becomes unattached from", recipient (BecameUnattached.host a)]
-  GameEvent.LeftTheGame l -> said [name (LeftTheGame.object l), Text.pack "leaves the game"]
+  GameEvent.LeftTheGame l -> said [Maybe.fromMaybe (Text.pack ("A " <> departedNoun (LeftTheGame.from l))) (knownName view (LeftTheGame.object l)), Text.pack "leaves the game"]
   GameEvent.LostTheGame pid -> said [acts reader pid "loses the game"]
   GameEvent.ManifestedDread d -> said [acts reader (ManifestedDread.player d) "manifests dread"]
   GameEvent.FacedDilemma d -> said [acts reader (FacedDilemma.player d) "faces a dilemma over", name (FacedDilemma.object d)]
