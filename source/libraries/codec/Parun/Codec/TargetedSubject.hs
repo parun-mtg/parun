@@ -17,7 +17,8 @@ codec =
     tagOf
     [ Arm.payload "Permanent" ActingPermanent.codec TargetedSubject.Permanent (\x -> case x of TargetedSubject.Permanent y -> Just y; _ -> Nothing),
       Arm.payload "Player" PlayerRelation.codec TargetedSubject.Player (\x -> case x of TargetedSubject.Player y -> Just y; _ -> Nothing),
-      Arm.payload "PlayerOrPermanent" playerOrPermanent (uncurry TargetedSubject.PlayerOrPermanent) (\x -> case x of TargetedSubject.PlayerOrPermanent r p -> Just (r, p); _ -> Nothing)
+      Arm.payload "PlayerOrPermanent" playerOrPermanent (uncurry TargetedSubject.PlayerOrPermanent) (\x -> case x of TargetedSubject.PlayerOrPermanent r p -> Just (r, p); _ -> Nothing),
+      Arm.nullary "ChosenPlayer" TargetedSubject.ChosenPlayer
     ]
 
 -- | PlayerOrPermanent's two fields, keyed.
@@ -32,3 +33,4 @@ tagOf x = case x of
   TargetedSubject.Permanent {} -> "Permanent"
   TargetedSubject.Player {} -> "Player"
   TargetedSubject.PlayerOrPermanent {} -> "PlayerOrPermanent"
+  TargetedSubject.ChosenPlayer -> "ChosenPlayer"

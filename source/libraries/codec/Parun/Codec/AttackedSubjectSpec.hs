@@ -21,6 +21,8 @@ spec s = Spec.describe s "Parun.Codec.AttackedSubject" $ do
   Spec.it s "rejects no kind" $ rejects "{\"type\":\"Related\",\"value\":{\"kinds\":[],\"relation\":\"AnyPlayer\"}}"
   Spec.it s "Enchanted" $
     Common.assertCodec s AttackedSubject.codec AttackedSubject.Enchanted " {\"type\":\"Enchanted\"} "
+  Spec.it s "Chosen" $
+    Common.assertCodec s AttackedSubject.codec AttackedSubject.Chosen " {\"type\":\"Chosen\"} "
   Spec.it s "Source" $
     Common.assertCodec s AttackedSubject.codec AttackedSubject.Source " {\"type\":\"Source\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s AttackedSubject.codec

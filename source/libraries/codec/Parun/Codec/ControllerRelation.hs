@@ -18,6 +18,7 @@ codec =
     tagOf
     ( PlayerRelation.arms ControllerRelation.Related
         <> [ Arm.nullary "EnchantedPlayers" ControllerRelation.EnchantedPlayers,
+             Arm.nullary "ChosenPlayers" ControllerRelation.ChosenPlayers,
              Arm.payload "InSlot" SlotName.codec ControllerRelation.InSlot (\x -> case x of ControllerRelation.InSlot y -> Just y; _ -> Nothing),
              Arm.payload "Among" (Common.set PlayerId.codec) ControllerRelation.Among (\x -> case x of ControllerRelation.Among y -> Just y; _ -> Nothing)
            ]
@@ -27,6 +28,7 @@ tagOf :: ControllerRelation.ControllerRelation -> String
 tagOf x = case x of
   ControllerRelation.Related relation -> PlayerRelation.tag relation
   ControllerRelation.EnchantedPlayers {} -> "EnchantedPlayers"
+  ControllerRelation.ChosenPlayers {} -> "ChosenPlayers"
   ControllerRelation.InSlot {} -> "InSlot"
   ControllerRelation.Among {} -> "Among"
 
@@ -35,11 +37,12 @@ tagOf x = case x of
 -- Reads the tagged object too.
 bare :: Codec.Codec ControllerRelation.ControllerRelation
 bare =
-  let nullaryTags = fmap PlayerRelation.tag [minBound .. maxBound :: PlayerRelation.Type.PlayerRelation] <> ["EnchantedPlayers"]
+  let nullaryTags = fmap PlayerRelation.tag [minBound .. maxBound :: PlayerRelation.Type.PlayerRelation] <> ["EnchantedPlayers", "ChosenPlayers"]
    in codec
         { Codec.encode = \x -> case x of
             ControllerRelation.Related relation -> Codec.encode PlayerRelation.codec relation
             ControllerRelation.EnchantedPlayers -> Value.string "EnchantedPlayers"
+            ControllerRelation.ChosenPlayers -> Value.string "ChosenPlayers"
             ControllerRelation.InSlot {} -> Codec.encode codec x
             ControllerRelation.Among {} -> Codec.encode codec x,
           Codec.decode = \value -> case value of

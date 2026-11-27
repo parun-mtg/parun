@@ -521,6 +521,7 @@ controllerRelationNames :: (Monoid r) => Asking r -> ControllerRelation.Controll
 controllerRelationNames asking x = case x of
   ControllerRelation.Related _ -> mempty
   ControllerRelation.EnchantedPlayers -> mempty
+  ControllerRelation.ChosenPlayers -> mempty
   ControllerRelation.InSlot slotName -> slotNames asking slotName
   ControllerRelation.Among _playerId -> mempty
 
@@ -1024,7 +1025,7 @@ playerEffectNames asking =
 
 playerChoiceNames :: (Monoid r) => Asking r -> PlayerChoice.PlayerChoice -> r
 playerChoiceNames asking x = case x of
-  PlayerChoice.AsEntersOrTransforms -> mempty
+  PlayerChoice.ChosenPlayer -> mempty
   PlayerChoice.Promised _gift instance_ -> keywordInstanceNames asking instance_
   PlayerChoice.SecretChooser -> mempty
 

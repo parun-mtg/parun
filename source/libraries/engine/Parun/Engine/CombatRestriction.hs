@@ -1212,7 +1212,7 @@ cantBeBlockedBy defending blockers attackers gs =
               context attacker = case frame of
                 PairwiseFrame.Attacker ->
                   (Projection.pairwiseContext gs attacker)
-                    { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players attacker gs >>= Map.lookup PlayerChoice.AsEntersOrTransforms,
+                    { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players attacker gs >>= Map.lookup PlayerChoice.ChosenPlayer,
                       Filter.carrierStickers = Game.stickersOn attacker gs
                     }
                 PairwiseFrame.Source -> stating

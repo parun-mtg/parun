@@ -121,6 +121,7 @@ import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
+import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerControl as PlayerControl
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -1421,6 +1422,11 @@ playSubgame runSubgame resolving slot = do
 -- to (CR 701.3a, 608.2d), so Curse of Leeches is never put onto a player it
 -- cannot enchant. Proved by the scenario
 -- curse-of-leeches-is-not-offered-a-player-with-protection-from-its-controller.
+--
+-- A `linked` choice is also written to the source as "the chosen player"
+-- (CR 607.2d), under the acquisition its abilities read, replacing an earlier
+-- one; choosing nobody leaves it as it was. Proved by the scenario
+-- imprison-this-insolent-wretch-keeps-the-chosen-opponent-s-permanents-tapped.
 choosePlayer :: ObjectId -> ObjectId -> PlayerId -> ChoosePlayer.ChoosePlayer -> Game ()
 choosePlayer resolving source controller choice = do
   gs <- State.get
@@ -1429,7 +1435,10 @@ choosePlayer resolving source controller choice = do
       hosts pid = not (ChoosePlayer.attaching choice) || Attach.canHostPlayer source pid gs
       offered = filter (\pid -> Set.notMember pid excluded && hosts pid) (Maybe.fromMaybe [] (PlayerEffect.playersInScope (Plane.rangePerspective source controller gs) (Just controller) gs (ChoosePlayer.scope choice)))
   chosenPlayer <- Players.chooseOne controller source Nothing offered
-  Monad.forM_ chosenPlayer $ \pid -> State.modify' (Common.bindPlayerSlot resolving slot (Set.singleton pid))
+  Monad.forM_ chosenPlayer $ \pid -> do
+    State.modify' (Common.bindPlayerSlot resolving slot (Set.singleton pid))
+    Monad.when (ChoosePlayer.linked choice) $
+      State.modify' (\g -> Game.recordChoice Chosen.Players (Game.readingAcquisition resolving source g source) (Just . Map.insert PlayerChoice.ChosenPlayer pid . Maybe.fromMaybe Map.empty) source g)
 
 -- ChoosePlayer's twin with the decision replaced by randomness (Ruhan of the
 -- Fomori's "choose an opponent at random", Strax, Sontaran Nurse's "choose a

@@ -37,6 +37,12 @@ spec s = Spec.describe s "Parun.Codec.ControllerRelation" $ do
       ControllerRelation.codec
       ControllerRelation.EnchantedPlayers
       " {\"type\":\"EnchantedPlayers\"} "
+  Spec.it s "ChosenPlayers" $
+    Common.assertCodec
+      s
+      ControllerRelation.codec
+      ControllerRelation.ChosenPlayers
+      " {\"type\":\"ChosenPlayers\"} "
   -- CR 601.2c: Plagiarize's "target player".
   Spec.it s "InSlot" $
     Common.assertCodec
@@ -63,6 +69,8 @@ spec s = Spec.describe s "Parun.Codec.ControllerRelation" $ do
     Common.assertCodec s ControllerRelation.bare (ControllerRelation.Related PlayerRelation.Opponent) " \"Opponent\" "
   Spec.it s "bare EnchantedPlayers" $
     Common.assertCodec s ControllerRelation.bare ControllerRelation.EnchantedPlayers " \"EnchantedPlayers\" "
+  Spec.it s "bare ChosenPlayers" $
+    Common.assertCodec s ControllerRelation.bare ControllerRelation.ChosenPlayers " \"ChosenPlayers\" "
   Spec.it s "bare InSlot" $
     Common.assertCodec s ControllerRelation.bare (ControllerRelation.InSlot (SlotName.MkSlotName (Text.pack "target"))) " {\"type\":\"InSlot\",\"value\":\"target\"} "
   Spec.it s "bare reads a tagged nullary arm" $

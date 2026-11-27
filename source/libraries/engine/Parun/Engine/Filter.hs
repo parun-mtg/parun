@@ -1789,6 +1789,11 @@ data Context = MkContext
     -- "CR 303.4b no card asks IsAttackingPlayer or HeldBy of a player the
     -- filter cannot read" keeps a card out of those positions.
     sourceEnchantedPlayer :: Maybe PlayerId.PlayerId,
+    -- CR 607.2d: the source's chosen player (Game.chosenPlayerOf), for
+    -- IsAttackingPlayer's and HeldBy's ChosenPlayers. Filled beside
+    -- sourceEnchantedPlayer, live off the board, and Nothing in contextFor,
+    -- the same lint keeping a card out of the positions that leave it so.
+    sourceChosenPlayer :: Maybe PlayerId.PlayerId,
     -- The object the surrounding Quantity is evaluated against, which
     -- IsAttachedTo Evaluated compares a candidate's host with and IsEvaluated the
     -- candidate itself. Filled by Parun.Engine.Quantity's Count and
@@ -2121,7 +2126,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, sourceEnchantedPlayer = Nothing, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, carrierStickers = Seq.empty, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceChosenObjects = Set.empty, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, graveyardViews = Seq.empty, exiledViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, sourceEnchantedPlayer = Nothing, sourceChosenPlayer = Nothing, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, carrierStickers = Seq.empty, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceChosenObjects = Set.empty, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, graveyardViews = Seq.empty, exiledViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
 
 -- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
 -- 805.4a), its draft notes (CR 905.2b), what was exiled before it (CR
@@ -2656,6 +2661,7 @@ matches context view predicate = case predicate of
     (Nothing, _) -> False
     (Just h, ControllerRelation.Related relation) -> maybe False (\p -> PlayerRelation.holds (teams context) relation p h) (perspective context)
     (Just h, ControllerRelation.EnchantedPlayers) -> sourceEnchantedPlayer context == Just h
+    (Just h, ControllerRelation.ChosenPlayers) -> sourceChosenPlayer context == Just h
     (Just _, ControllerRelation.InSlot _) -> False
     (Just _, ControllerRelation.Among _) -> False
   -- CR 508.5 / 702.39a: the candidate's controller IS the defending player, which
@@ -2946,6 +2952,7 @@ matches context view predicate = case predicate of
     (Nothing, _) -> False
     (Just a, ControllerRelation.Related relation) -> maybe False (\p -> PlayerRelation.holds (teams context) relation p a) (perspective context)
     (Just a, ControllerRelation.EnchantedPlayers) -> sourceEnchantedPlayer context == Just a
+    (Just a, ControllerRelation.ChosenPlayers) -> sourceChosenPlayer context == Just a
     (Just _, ControllerRelation.InSlot _) -> False
     (Just _, ControllerRelation.Among _) -> False
   -- CR 508.1b: the atom above one arm of AttackTarget over, and the same posture

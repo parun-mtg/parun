@@ -41,7 +41,7 @@
                   "value": [
                     "self",
                     {
-                      "type": "AsEntersOrTransforms"
+                      "type": "ChosenPlayer"
                     }
                   ]
                 }
@@ -86,7 +86,7 @@
                                               "value": [
                                                 "self",
                                                 {
-                                                  "type": "AsEntersOrTransforms"
+                                                  "type": "ChosenPlayer"
                                                 }
                                               ]
                                             },
@@ -106,7 +106,7 @@
                                     "value": [
                                       "self",
                                       {
-                                        "type": "AsEntersOrTransforms"
+                                        "type": "ChosenPlayer"
                                       }
                                     ]
                                   }

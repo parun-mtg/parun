@@ -267,6 +267,7 @@ attacks context board atEvent gs bearer you trigger event = case (trigger, event
             Set.member (Game.attackTargetKind attacked) kinds
               && maybe False (PlayerRelation.holds (Game.teams gs) relation you) (Defender.playerOf Projection.viewWithLastKnownAnywhere attacked gs)
           (AttackedSubject.Enchanted, AttackTarget.OfPlayer attacked) -> enchanted == Just attacked
+          (AttackedSubject.Chosen, AttackTarget.OfPlayer attacked) -> Game.chosenPlayerOf bearer gs == Just attacked
           (AttackedSubject.Source, AttackTarget.OfPlaneswalker attacked) -> attacked == bearer
           (AttackedSubject.Source, AttackTarget.OfBattle attacked) -> attacked == bearer
           _ -> False
@@ -1972,7 +1973,9 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
           TriggerFrequency.EveryTime -> True
           TriggerFrequency.FirstTimeEachTurn -> maybe True (== t) (firstTargetingOf bearerContext atEvent gs you c (BecameTarget.targeted t))
         && case (Recipient.playerOf (BecameTarget.targeted t), Recipient.objectOf (BecameTarget.targeted t)) of
-          (Just player, _) -> maybe False (\relation -> PlayerRelation.holds (Game.teams gs) relation you player) (TargetedSubject.playerOf (BecomesTargetedTrigger.subject c))
+          (Just player, _) -> case BecomesTargetedTrigger.subject c of
+            TargetedSubject.ChosenPlayer -> Game.chosenPlayerOf bearer gs == Just player
+            subject -> maybe False (\relation -> PlayerRelation.holds (Game.teams gs) relation you player) (TargetedSubject.playerOf subject)
           (Nothing, Nothing) -> False
           (Nothing, Just oid) -> case TargetedSubject.permanentOf (BecomesTargetedTrigger.subject c) of
             Nothing -> False

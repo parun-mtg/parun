@@ -21,7 +21,8 @@ spec s = Spec.describe s "Parun.Codec.ChoosePlayer" $ do
           { ChoosePlayer.scope = PlayerScope.Related PlayerRelation.Opponent,
             ChoosePlayer.slot = SlotName.MkSlotName (Text.pack "opponent"),
             ChoosePlayer.excluding = Nothing,
-            ChoosePlayer.attaching = False
+            ChoosePlayer.attaching = False,
+            ChoosePlayer.linked = False
           }
       )
       " {\"scope\":{\"type\":\"Opponent\"},\"slot\":\"opponent\"} "
@@ -33,7 +34,8 @@ spec s = Spec.describe s "Parun.Codec.ChoosePlayer" $ do
           { ChoosePlayer.scope = PlayerScope.Related PlayerRelation.AnyPlayer,
             ChoosePlayer.slot = SlotName.MkSlotName (Text.pack "chosen"),
             ChoosePlayer.excluding = Nothing,
-            ChoosePlayer.attaching = False
+            ChoosePlayer.attaching = False,
+            ChoosePlayer.linked = False
           }
       )
       " {\"scope\":{\"type\":\"AnyPlayer\"},\"slot\":\"chosen\"} "
@@ -45,7 +47,8 @@ spec s = Spec.describe s "Parun.Codec.ChoosePlayer" $ do
           { ChoosePlayer.scope = PlayerScope.Related PlayerRelation.Opponent,
             ChoosePlayer.slot = SlotName.MkSlotName (Text.pack "opponent"),
             ChoosePlayer.excluding = Just (SlotName.MkSlotName (Text.pack "thoseChosenForOthers")),
-            ChoosePlayer.attaching = False
+            ChoosePlayer.attaching = False,
+            ChoosePlayer.linked = False
           }
       )
       " {\"excluding\":\"thoseChosenForOthers\",\"scope\":{\"type\":\"Opponent\"},\"slot\":\"opponent\"} "
@@ -57,8 +60,22 @@ spec s = Spec.describe s "Parun.Codec.ChoosePlayer" $ do
           { ChoosePlayer.scope = PlayerScope.Related PlayerRelation.AnyPlayer,
             ChoosePlayer.slot = SlotName.MkSlotName (Text.pack "player"),
             ChoosePlayer.excluding = Nothing,
-            ChoosePlayer.attaching = True
+            ChoosePlayer.attaching = True,
+            ChoosePlayer.linked = False
           }
       )
       " {\"attaching\":true,\"scope\":{\"type\":\"AnyPlayer\"},\"slot\":\"player\"} "
+  Spec.it s "MkChoosePlayer, the source's chosen player (Imprison This Insolent Wretch)" $
+    Common.assertCodec
+      s
+      ChoosePlayer.codec
+      ( ChoosePlayer.MkChoosePlayer
+          { ChoosePlayer.scope = PlayerScope.Related PlayerRelation.Opponent,
+            ChoosePlayer.slot = SlotName.MkSlotName (Text.pack "opponent"),
+            ChoosePlayer.excluding = Nothing,
+            ChoosePlayer.attaching = False,
+            ChoosePlayer.linked = True
+          }
+      )
+      " {\"linked\":true,\"scope\":{\"type\":\"Opponent\"},\"slot\":\"opponent\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ChoosePlayer.codec

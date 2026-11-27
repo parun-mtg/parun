@@ -17,6 +17,8 @@ data TargetedSubject
     -- one permanent you control", Loki, God of Mischief's "a player or
     -- permanent" (CR 115.1).
     PlayerOrPermanent PlayerRelation.PlayerRelation ActingPermanent.ActingPermanent
+  | -- | CR 607.2d: the source's chosen player (Imprison This Insolent Wretch).
+    ChosenPlayer
   deriving (Eq, Ord, Show)
 
 -- | The permanent the subject admits, if any.
@@ -25,11 +27,14 @@ permanentOf x = case x of
   Permanent p -> Just p
   Player _ -> Nothing
   PlayerOrPermanent _ p -> Just p
+  ChosenPlayer -> Nothing
 
 -- | How a targeted player must stand to CR 109.5's "you" for the subject to
--- admit them, if a player can be admitted at all.
+-- admit them, if a relation admits them at all: Nothing for ChosenPlayer too,
+-- which admits one player rather than a relation.
 playerOf :: TargetedSubject -> Maybe PlayerRelation.PlayerRelation
 playerOf x = case x of
   Permanent _ -> Nothing
   Player r -> Just r
   PlayerOrPermanent r _ -> Just r
+  ChosenPlayer -> Nothing

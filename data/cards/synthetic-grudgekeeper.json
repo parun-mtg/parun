@@ -28,7 +28,7 @@
                                 "value": [
                                   "self",
                                   {
-                                    "type": "AsEntersOrTransforms"
+                                    "type": "ChosenPlayer"
                                   }
                                 ]
                               },

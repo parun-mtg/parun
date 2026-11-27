@@ -106,6 +106,7 @@ import qualified Parun.Types.PastTurn as PastTurn
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
+import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Printing as Printing
@@ -1102,6 +1103,11 @@ choiceWithLastKnown field acquisition oid gs = Map.lookup acquisition =<< liveOr
 -- never made (CR 607.5a).
 currentChoice :: Chosen.Chosen a -> ObjectId -> GameState -> Maybe a
 currentChoice field oid gs = Map.lookup (acquisitionOf oid gs) . objectChoices field =<< lookupObject oid gs
+
+-- | CR 607.2d: "the chosen player" of this object's current abilities
+-- (PlayerChoice.ChosenPlayer), Nothing where it chose nobody.
+chosenPlayerOf :: ObjectId -> GameState -> Maybe PlayerId
+chosenPlayerOf oid gs = Map.lookup PlayerChoice.ChosenPlayer =<< currentChoice Chosen.Players oid gs
 
 -- | CR 607.5: `change` the choice `field` holds for the abilities acquired as
 -- `acquisition`, on the live object, else on its last known information (CR

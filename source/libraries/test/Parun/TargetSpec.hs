@@ -1242,7 +1242,7 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
       Just slot -> do
         let (nemesisId, board0) = S.addPermanent nemesis S.bob S.threePlayerGame
             (giantId, board) = S.addPermanent giant S.bob board0
-            chose who = board {GameState.objects = Map.adjust (\o -> o {Object.chosenPlayers = Map.singleton Acquisition.Own (Map.singleton PlayerChoice.AsEntersOrTransforms who)}) nemesisId (GameState.objects board)}
+            chose who = board {GameState.objects = Map.adjust (\o -> o {Object.chosenPlayers = Map.singleton Acquisition.Own (Map.singleton PlayerChoice.ChosenPlayer who)}) nemesisId (GameState.objects board)}
             reaches gs victim =
               let (spellId, onStack) = S.spellOnStack murder S.alice gs
                in Set.member (Recipient.ToCreature victim) (Target.legalRecipients StackObjectKind.Spell (Just S.alice) spellId slot onStack)

@@ -21,6 +21,7 @@ codec =
     tagOf
     [ Arm.payload "Related" related (uncurry AttackedSubject.Related) (\x -> case x of AttackedSubject.Related relation kinds -> Just (relation, kinds); _ -> Nothing),
       Arm.nullary "Enchanted" AttackedSubject.Enchanted,
+      Arm.nullary "Chosen" AttackedSubject.Chosen,
       Arm.nullary "Source" AttackedSubject.Source
     ]
 
@@ -28,6 +29,7 @@ tagOf :: AttackedSubject.AttackedSubject -> String
 tagOf x = case x of
   AttackedSubject.Related {} -> "Related"
   AttackedSubject.Enchanted -> "Enchanted"
+  AttackedSubject.Chosen -> "Chosen"
   AttackedSubject.Source -> "Source"
 
 -- | Related's two keys, "kinds" defaulting to the player alone, as "attacks

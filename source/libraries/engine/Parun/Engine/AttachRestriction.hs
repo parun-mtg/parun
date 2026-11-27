@@ -167,7 +167,7 @@ barredBy mint pcs subject host gs =
                 -- rule 702.16 minted is the protected host itself -- the same
                 -- frame this function's haddock states for the minted case.
                 (Projection.sourceContext gs (Projection.controllerOf source gs) source)
-                  { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players source gs >>= Map.lookup PlayerChoice.AsEntersOrTransforms,
+                  { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players source gs >>= Map.lookup PlayerChoice.ChosenPlayer,
                     Filter.carrierStickers = Game.stickersOn source gs
                   }
                 subjectView

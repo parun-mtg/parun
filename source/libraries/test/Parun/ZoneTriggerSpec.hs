@@ -1948,6 +1948,7 @@ representativeEvents cond =
         TriggerCondition.BecomesTargeted c -> case BecomesTargetedTrigger.subject c of
           TargetedSubject.Permanent ActingPermanent.Self -> one (GameEvent.BecameTarget (BecameTarget.MkBecameTarget (Recipient.ToObject departed) arrived StackObjectKind.ActivatedAbility S.alice (BecomesTargetedTrigger.sourceKeyword c)))
           TargetedSubject.PlayerOrPermanent _ ActingPermanent.Self -> one (GameEvent.BecameTarget (BecameTarget.MkBecameTarget (Recipient.ToObject departed) arrived StackObjectKind.ActivatedAbility S.alice (BecomesTargetedTrigger.sourceKeyword c)))
+          TargetedSubject.ChosenPlayer -> one (GameEvent.BecameTarget (BecameTarget.MkBecameTarget (Recipient.ToPlayer S.alice) arrived (Maybe.fromMaybe StackObjectKind.Spell (Set.lookupMin (BecomesTargetedTrigger.kinds c))) S.bob (BecomesTargetedTrigger.sourceKeyword c)))
           TargetedSubject.Player _ -> one (GameEvent.BecameTarget (BecameTarget.MkBecameTarget (Recipient.ToPlayer S.alice) arrived (Maybe.fromMaybe StackObjectKind.Spell (Set.lookupMin (BecomesTargetedTrigger.kinds c))) S.bob (BecomesTargetedTrigger.sourceKeyword c)))
           TargetedSubject.Permanent (ActingPermanent.Matching _) -> becameTargetEvents c
           TargetedSubject.PlayerOrPermanent _ (ActingPermanent.Matching _) -> becameTargetEvents c
