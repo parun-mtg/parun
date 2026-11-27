@@ -72,6 +72,7 @@ import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManaUnit as ManaUnit
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
@@ -154,6 +155,35 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
     Spec.assertBool s (not (Set.member carolsToo (CombatRestriction.cantBlock (Just S.carol) [carolsToo] (S.withRange 1 withBedlam)))) "CR 801.10 at range 1 alice's Bedlam does not reach it"
     Spec.assertBool s (Set.member carolsToo (CombatRestriction.cantBlock (Just S.carol) [carolsToo] withBedlam)) "at an unlimited range Bedlam does"
     Spec.assertBool s (not (Game.inRangeOf S.alice S.carol (S.withRange 1 withTazeem))) "carol is outside alice's range"
+
+  -- CR 805.10b / 901.12c: alice and dave, the planar team of a Two-Headed
+  -- Giant game, attack together under City of the Daleks ("Whenever you
+  -- attack, target opponent loses X life, where X is the number of artifacts
+  -- you control."). The team's one combined attack triggers it once, X the
+  -- team's two Ornithopters, so the opponents lose 2 in all; a trigger per
+  -- attacking member would cost them 4. Every prompt answered, which a
+  -- scenario's unscheduled second trigger cannot be.
+  Spec.it s "CR 805.10b City of the Daleks triggers once for the planar team's combined attack" $ do
+    thopter <- S.printingOf s registry "Ornithopter"
+    planar <- seatedPlanarBoard s registry S.alice [(S.alice, ["City of the Daleks"]), (S.bob, []), (S.carol, []), (S.dave, [])]
+    let giant gs = gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.sharedTeamTurns = True, GameSettings.twoHeadedGiant = True}}}
+        teamed = giant (S.inTeams [[S.alice, S.dave], [S.bob, S.carol]] planar)
+        (_, withAlice) = S.addPermanent thopter S.alice teamed
+        (_, staged) = S.addPermanent thopter S.dave withAlice
+        board =
+          staged
+            { GameState.turn =
+                (GameState.turn staged)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat,
+                    TurnRegisters.priority = Just S.alice,
+                    TurnRegisters.remaining = S.phasesAfter (Phase.Combat CombatStep.BeginningOfCombat)
+                  }
+            }
+        after = S.runCombat (S.attackTo S.bob) board
+        lost = sum (Maybe.mapMaybe (\pid -> fmap (20 -) (S.lifeOf pid after)) [S.bob, S.carol])
+    Spec.assertEqWith s "alice and dave each attacked" (fmap (Game.attackersDeclaredThisTurn after) [S.alice, S.dave]) [1, 1]
+    Spec.assertEqWith s "the opponents lost 2, once" lost 2
 
   -- CR 801.18 / 901.13 for a plane's triggered ability. Four seats at range 1,
   -- alice the planar controller with Fields of Summer ("Whenever a player casts

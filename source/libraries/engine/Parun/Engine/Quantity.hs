@@ -216,6 +216,16 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
       historyPlayersOf ref = case ref of
         PlayerRef.Candidate -> playersOf ref
         _ -> Count.historyPlayersFor viewOf context gs ref
+      -- CR 901.12c: the one player a "your" quantity reads, or under
+      -- Count.zoneHolder the planar team, each member's share summed
+      -- (docs/decisions.md, "A plane's you is the planar team"). Nothing for
+      -- a reference naming several players otherwise.
+      yoursOf readPlayers ref =
+        let held = Count.zoneHolder context ref
+         in case readPlayers held of
+              Just [pid] -> Just [pid]
+              Just pids | held /= ref, not (null pids) -> Just pids
+              _ -> Nothing
 
       -- Every entry onto the battlefield this log records for one id. A list and not
       -- a Maybe: CR 400.7 makes each arrival a new object, so at most one entry can
@@ -651,7 +661,9 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- CR 700.5: that player's devotion. Nothing for a reference naming anything
         -- but exactly one player, LifeTotal's arity and for its reason -- "your
         -- devotion" is what every printing asks, and a table's worth of devotions
-        -- is an aggregation choice rather than a sum.
+        -- is an aggregation choice rather than a sum -- save a planar "your", the
+        -- planar team's (yoursOf): Nyx's chaos counts the permanents the team
+        -- controls.
         --
         -- CONTROL off the injected view rather than off Game.zoneMembers, which
         -- slices the shared battlefield by OWNER: rule 110.2 is what the rule asks
@@ -672,8 +684,8 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- Projection.conditionHolds hands a static ability's gate a view bounded
         -- at that ability's own layer, which keeps a devotion-gated continuous
         -- effect from reading its own output.
-        Quantity.Devotion (Devotion.MkDevotion ref counted) -> case playersOf ref of
-          Just [pid] -> Just (devotionOf viewOf colors pid gs)
+        Quantity.Devotion (Devotion.MkDevotion ref counted) -> case yoursOf playersOf ref of
+          Just pids -> Just (sum (fmap (\pid -> devotionOf viewOf colors pid gs) pids))
             where
               colors = case counted of
                 DevotionColors.Listed listed -> listed
@@ -948,8 +960,8 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         --
         -- An EMPTY log answers 0 rather than Nothing, as Tallied's does.
         -- What is unanswered is only the reference.
-        Quantity.AttackersDeclaredThisTurn ref -> case playersOf ref of
-          Just [pid] -> Just (toInteger (Game.attackersDeclaredThisTurn gs pid))
+        Quantity.AttackersDeclaredThisTurn ref -> case yoursOf playersOf ref of
+          Just pids -> Just (toInteger (sum (fmap (Game.attackersDeclaredThisTurn gs) pids)))
           _ -> Nothing
         -- CR 508.1a / 506.4: Combat.declaredAttackers, which keeps an attacker
         -- that has since left the battlefield and never holds one CR 508.4 put
@@ -1063,8 +1075,8 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         --
         -- The history roster, LifeChanged's: a spell cast by a player who has since
         -- left the game was still cast (CR 800.4i).
-        Quantity.SpellsCast tally -> case historyPlayersOf (SpellTally.player tally) of
-          Just [pid] -> Just (toInteger (Map.findWithDefault 0 pid (Game.castsPerPlayer (Game.turnLog (SpellTally.turn tally) (Filter.perspective context) gs))))
+        Quantity.SpellsCast tally -> case yoursOf historyPlayersOf (SpellTally.player tally) of
+          Just pids -> Just (toInteger (sum (fmap (\pid -> Map.findWithDefault 0 pid (Game.castsPerPlayer (Game.turnLog (SpellTally.turn tally) (Filter.perspective context) gs))) pids)))
           _ -> Nothing
         -- CR 608.2n / 608.2i: how many times the ability this evaluation is aimed at
         -- has resolved this turn, activated or triggered, folded off the turn-scoped

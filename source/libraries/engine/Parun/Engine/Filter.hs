@@ -2153,10 +2153,15 @@ contextFor t p s = MkContext {teams = t, perspective = p, youIsTeam = False, sou
 contextIn :: GameState -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
 contextIn gs p s = (contextFor (GameSettings.teams (MatchScope.settings (GameState.match gs))) p s) {activePlayers = Turn.activePlayers gs, seated = filter (\pid -> maybe False ((== Status.Playing) . Player.status) (Map.lookup pid (GameState.players gs))) (GameState.seating gs), draftNotes = fmap Player.draftNotes (GameState.players gs), exiledBeforeGame = GameState.exiledBeforeGame gs, playerCounters = fmap Player.counters (GameState.players gs)}
 
--- | PlayerRelation.holds against the context's perspective, its "you" read as
--- the team where CR 901.12c says so (youIsTeam).
+-- | PlayerRelation.holds against the context's perspective, the relation as
+-- 'readRelation' reads it.
 relationHolds :: Context -> PlayerRelation.PlayerRelation -> PlayerId.PlayerId -> PlayerId.PlayerId -> Bool
-relationHolds context relation = PlayerRelation.holds (teams context) (if youIsTeam context then PlayerRelation.asPlanarTeam relation else relation)
+relationHolds context relation = PlayerRelation.holds (teams context) (readRelation context relation)
+
+-- | A relation as this context reads it: its "you" the team where CR 901.12c
+-- says so (youIsTeam).
+readRelation :: Context -> PlayerRelation.PlayerRelation -> PlayerRelation.PlayerRelation
+readRelation context relation = if youIsTeam context then PlayerRelation.asPlanarTeam relation else relation
 
 -- | CR 800.5 / 103.1: the player ControllerRelation.LeftOf names -- the nearest
 -- seated player still in the game to the left of the perspective, or of the one

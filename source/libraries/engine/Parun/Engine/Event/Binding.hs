@@ -1155,14 +1155,35 @@ admittedPreventedSources context gs f = Map.filterWithKey admits . DamagePrevent
     admits damager share =
       sum share > 0 && maybe False (\view -> Filter.matches context (Count.lastZoned gs damager view) f) (Projection.viewWithLastKnown damager gs damager)
 
--- The attackers `attacker` declared that the Filter admits, CR 508.3c's "a
--- creature that player controls" read off the declaration's attacking player
--- and each viewed as admitsAttacker views it, framed by the bearer: each of
--- Count.declaredThisCombat, so one that left after the attack is counted.
-admittedAttackers :: Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> Filter.Type.Filter Keyword.Type.Keyword -> PlayerId -> Seq.Seq ObjectId
-admittedAttackers board gs bearer you f attacker = Seq.fromList (Map.keys (Map.filterWithKey admits (declarations gs)))
+-- The attackers the declaring players declared that the Filter admits, CR
+-- 508.3c's "a creature that player controls" read off the declaration's
+-- attacking players (`declaringPlayers`) and each viewed as admitsAttacker
+-- views it, framed by the bearer: each of Count.declaredThisCombat, so one that
+-- left after the attack is counted.
+admittedAttackers :: Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> Filter.Type.Filter Keyword.Type.Keyword -> (PlayerId -> Bool) -> Seq.Seq ObjectId
+admittedAttackers board gs bearer you f declaring = Seq.fromList (Map.keys (Map.filterWithKey admits (declarations gs)))
   where
-    admits oid d = AttackerDeclared.attackingPlayer d == attacker && admitsAttacker board gs bearer you f oid
+    admits oid d = declaring (AttackerDeclared.attackingPlayer d) && admitsAttacker board gs bearer you f oid
+
+-- CR 508.3d / 805.10b: whose declared attackers a Declaration trigger reads off
+-- `attacker`'s GameEvent.AttackersDeclared: that player's, or, where the
+-- trigger's player reads as a team ('teamDeclaration'), every member's, the
+-- team's one combined attack.
+declaringPlayers :: Filter.Context -> PlayerRelation.PlayerRelation -> PlayerId -> PlayerId -> PlayerId -> Bool
+declaringPlayers context relation you attacker
+  | teamDeclaration context relation = Filter.relationHolds context relation you
+  | otherwise = (== attacker)
+
+-- CR 102.4 / 805.10b: does a Declaration trigger's player read as the team,
+-- "your team attacks" (Valor's Reach) or a planar "you" under CR 901.12c (City
+-- of the Daleks)? The team's combined attack is then one occurrence, however
+-- many of its members declared.
+teamDeclaration :: Filter.Context -> PlayerRelation.PlayerRelation -> Bool
+teamDeclaration context relation = Filter.readRelation context relation == PlayerRelation.YourTeam
+
+-- declaringPlayers framed by the bearer, admitsAttacker's context.
+declaringFor :: GameState -> ObjectId -> PlayerId -> PlayerRelation.PlayerRelation -> PlayerId -> PlayerId -> Bool
+declaringFor gs bearer you relation = declaringPlayers (Projection.sourceContext gs (Just you) bearer) relation you
 
 -- Whether the Filter admits this declared attacker, viewed off `board`, the
 -- event's CR 603.10 sample (`postEventView`), and framed by the bearer:
@@ -1525,7 +1546,7 @@ attackBindings board gs bearer you trigger event = case (trigger, event) of
      in attacking (attacked (Binding.setAttackingCreatures (attackedBy board gs bearer you t payload) Map.empty))
   (AttackTrigger.Declaration t, GameEvent.AttackersDeclared attacker) -> case DeclarationTrigger.attackers t of
     Nothing -> Binding.setAttackingPlayer attacker Map.empty
-    Just count -> Binding.setAttackingPlayer attacker (Binding.setAttackingCreatures (admittedAttackers board gs bearer you (AttackCount.filter count) attacker) Map.empty)
+    Just count -> Binding.setAttackingPlayer attacker (Binding.setAttackingCreatures (admittedAttackers board gs bearer you (AttackCount.filter count) (declaringFor gs bearer you (DeclarationTrigger.player t) attacker)) Map.empty)
   (AttackTrigger.Unblocked _, GameEvent.AttackerUnblocked u) ->
     Binding.setTriggerPlayer (AttackerUnblocked.defender u) (Binding.setAttackingCreature (AttackerUnblocked.attacker u) Map.empty)
   _ -> Map.empty
@@ -1544,7 +1565,7 @@ attackCausers board gs bearer you condition event = case condition of
     (AttackTrigger.Attacker _, GameEvent.AttackerDeclared d) -> Set.singleton (AttackerDeclared.attacker d)
     (AttackTrigger.Attacked t, GameEvent.BecameAttacked payload) -> Set.fromList (Foldable.toList (attackedBy board gs bearer you t payload))
     (AttackTrigger.Declaration t, GameEvent.AttackersDeclared attacker) ->
-      Set.fromList (Foldable.toList (admittedAttackers board gs bearer you (maybe (Filter.Type.And []) AttackCount.filter (DeclarationTrigger.attackers t)) attacker))
+      Set.fromList (Foldable.toList (admittedAttackers board gs bearer you (maybe (Filter.Type.And []) AttackCount.filter (DeclarationTrigger.attackers t)) (declaringFor gs bearer you (DeclarationTrigger.player t) attacker)))
     _ -> Set.empty
   _ -> Set.empty
 

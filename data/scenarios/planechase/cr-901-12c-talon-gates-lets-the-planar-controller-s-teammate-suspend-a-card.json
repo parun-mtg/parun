@@ -95,16 +95,53 @@
     "step": "PrecombatMain",
     "twoHeadedGiant": true
   },
-  "description": "CR 901.12b only the planar controller may take Talon Gates' special action",
-  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, seated so that dave, not the active alice, is the planar controller (CR 901.12b). Talon Gates' \"you\" is its controller (CR 901.6), so alice, whose plane it is, is never offered its special action; dave takes it and exiles his Hill Giant with four time counters.",
+  "description": "CR 901.12c Talon Gates lets the planar controller's teammate suspend a card",
+  "final": [
+    {
+      "Count": {
+        "card": "Grizzly Bears",
+        "count": 0,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, seated so that dave, not the active alice, is the planar controller (CR 901.12b). Talon Gates' \"you\" is the planar team (CR 901.12c; docs/decisions.md, \"A plane's you is the planar team\"), and its special action is a \"you\" acting, so either member may take it: alice exiles her Grizzly Bears with two time counters, then dave his Hill Giant with four, each from their own hand (CR 810.5). Read with dave alone as its \"you\", alice is never offered it.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
+      "do": {
         "Take": {
           "action": "PerformAsASorcery $gates"
         }
       },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "Time"
+          },
+          "object": "Grizzly Bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "dave",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
       "step": "PrecombatMain",
       "turn": 1
     },
@@ -132,19 +169,6 @@
             "type": "Time"
           },
           "object": "Hill Giant"
-        }
-      },
-      "player": "dave",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "check": {
-        "Count": {
-          "card": "Grizzly Bears",
-          "count": 1,
-          "player": "alice",
-          "zone": "Hand"
         }
       },
       "player": "dave",

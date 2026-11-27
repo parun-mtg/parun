@@ -13,7 +13,8 @@
                 "type": "SpellsCast",
                 "value": {
                   "player": {
-                    "type": "Candidate"
+                    "type": "Relative",
+                    "value": "You"
                   }
                 }
               },
@@ -38,7 +39,8 @@
               "measured": {
                 "type": "AttackersDeclaredThisTurn",
                 "value": {
-                  "type": "Candidate"
+                  "type": "Relative",
+                  "value": "You"
                 }
               },
               "threshold": {

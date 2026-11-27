@@ -3290,14 +3290,18 @@ Entries are ordered by the first rule each cites.
   player's. Not forced: a player reference the ability writes as "you"
   names the planar team. As an object or quantity, the team's: "discard
   your hand" makes each member discard their own, "target creature you
-  control" (Naya) admits either member's creature, and "each land you
-  control" counts the team's lands. As a condition, the team's: Academy's
+  control" (Naya) admits either member's creature, "each land you
+  control" counts the team's lands, and "your devotion" (Nyx, Hotel of
+  Fears) the team's permanents. As a condition, the team's: Academy's
   "if you have no cards in hand" holds only when neither member holds a
-  card, and The Golden City of Orazca's ascend counts the team's
+  card, Prahv's "if you cast a spell this turn" holds for both once either
+  casts one, and The Golden City of Orazca's ascend counts the team's
   permanents and blesses each member. As an actor, either member, once:
   "whenever you roll the planar die" and Selesnya Loft Gardens' "whenever
-  you tap a land for mana" match either member's roll or tap, and "you may
-  play any number of lands" and Izzet Steam Maze's chaos ("spells you cast
+  you tap a land for mana" match either member's roll or tap, City of the
+  Daleks' "whenever you attack" triggers once for the team's combined
+  attack (CR 805.10b), and "you may play any number of lands", Talon
+  Gates' special action and Izzet Steam Maze's chaos ("spells you cast
   this turn cost {3} less") reach each member. An
   instruction's unstated subject (CR 608.2c) is the planar controller
   alone: Tazeem has the planar controller draw a card for each land the
@@ -3320,10 +3324,13 @@ Entries are ordered by the first rule each cites.
   `Parun.Engine.Plane.teamScope` (the scope a stored effect bakes); and through
   `Parun.Engine.Plane.planarYous` by `Parun.Engine.Event.Trigger`'s
   `eventTriggers` and delayed matching,
-  `Parun.Engine.Resolve.Slots.objectRefObjects`' `EachCardInYourHand` and
-  `Parun.Engine.PlayerDesignation.gaining`. Proved by the
-  `data/scenarios/planechase/cr-901-12c-*` scenarios.
-- **Issue**: #9165, #9178, #10054, #10085, #10093.
+  `Parun.Engine.Resolve.Slots.objectRefObjects`' `EachCardInYourHand`,
+  `Parun.Engine.Action.sorcerySpeedGrants` and
+  `Parun.Engine.PlayerDesignation.gaining`; through `Count.zoneHolder` by
+  `Parun.Engine.Quantity`'s `yoursOf`; and through `Filter.readRelation` by
+  `Parun.Engine.Event.Binding.teamDeclaration`. Proved by the
+  `data/scenarios/planechase/cr-901-12c-*` and `cr-805-10b-*` scenarios.
+- **Issue**: #9165, #9178, #10054, #10085, #10093, #10108.
 
 ## Which planar controller controls a Grand Melee plane
 
