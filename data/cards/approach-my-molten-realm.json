@@ -1,0 +1,62 @@
+{
+  "faces": [
+    {
+      "name": "Approach My Molten Realm",
+      "oracleText": "When you set this scheme in motion, until your next turn, if a source would deal damage, it deals double that damage instead.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Replace",
+                        "value": {
+                          "duration": {
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
+                          },
+                          "effect": {
+                            "type": "DamageR",
+                            "value": {
+                              "matching": {},
+                              "rewrite": {
+                                "type": "Scale",
+                                "value": {
+                                  "type": "Multiply",
+                                  "value": 2
+                                }
+                              }
+                            }
+                          },
+                          "origin": "Other",
+                          "uses": "Unlimited"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Scheme"
+        ]
+      }
+    }
+  ]
+}
