@@ -80,7 +80,7 @@
                 "effects": [
                   {
                     "type": "Planeswalk",
-                    "value": null
+                    "value": {}
                   }
                 ]
               },

@@ -104,6 +104,7 @@ import qualified Parun.Codec.PayAny as PayAny
 import qualified Parun.Codec.PermanentActed as PermanentActed
 import qualified Parun.Codec.Phase as Phase
 import qualified Parun.Codec.PhaseOut as PhaseOut
+import qualified Parun.Codec.Planeswalk as Planeswalk
 import qualified Parun.Codec.PlayerCounters as PlayerCounters
 import qualified Parun.Codec.PlayerQuantity as PlayerQuantity
 import qualified Parun.Codec.PlayerRef as PlayerRef
@@ -192,7 +193,7 @@ codec cardCodec abilityCodec =
           Arm.payload "Assemble" (Common.maybe ObjectRef.codec) Effect.Assemble (\x -> case x of Effect.Assemble y -> Just y; _ -> Nothing),
           Arm.payload "Reassemble" ObjectRef.codec Effect.Reassemble (\x -> case x of Effect.Reassemble y -> Just y; _ -> Nothing),
           Arm.nullary "Crank" Effect.Crank,
-          Arm.payload "Planeswalk" (Common.maybe ObjectRef.codec) Effect.Planeswalk (\x -> case x of Effect.Planeswalk y -> Just y; _ -> Nothing),
+          Arm.payload "Planeswalk" Planeswalk.codec Effect.Planeswalk (\x -> case x of Effect.Planeswalk y -> Just y; _ -> Nothing),
           Arm.optionalPayload "ChaosEnsues" ObjectRef.codec Effect.ChaosEnsues (\x -> case x of Effect.ChaosEnsues y -> Just y; _ -> Nothing),
           Arm.nullary "Abandon" Effect.Abandon,
           Arm.payload "SetInMotion" ObjectRef.codec Effect.SetInMotion (\x -> case x of Effect.SetInMotion y -> Just y; _ -> Nothing),

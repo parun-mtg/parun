@@ -389,6 +389,7 @@ import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
 import qualified Parun.Types.PlacesSticker as PlacesSticker
+import qualified Parun.Types.Planeswalk as Planeswalk
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
 import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
 import qualified Parun.Types.PlayAsCopy as PlayAsCopy
@@ -1377,7 +1378,7 @@ effectChildren c effect = case effect of
   Effect.Assemble ref -> fmap Effect.Assemble (traverse (onObjectRef c) ref)
   Effect.Reassemble ref -> fmap Effect.Reassemble (onObjectRef c ref)
   Effect.Crank -> pure effect
-  Effect.Planeswalk ref -> fmap Effect.Planeswalk (traverse (onObjectRef c) ref)
+  Effect.Planeswalk p -> fmap (\to -> Effect.Planeswalk p {Planeswalk.to = to}) (traverse (onObjectRef c) (Planeswalk.to p))
   Effect.ChaosEnsues ref -> fmap Effect.ChaosEnsues (traverse (onObjectRef c) ref)
   Effect.Abandon -> pure effect
   Effect.SetInMotion ref -> fmap Effect.SetInMotion (onObjectRef c ref)
