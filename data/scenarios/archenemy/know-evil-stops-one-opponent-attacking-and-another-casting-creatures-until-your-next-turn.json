@@ -1,0 +1,245 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice",
+        "sideDecks": [
+          {
+            "key": "Scheme",
+            "value": [
+              {
+                "card": "Know Evil"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bb",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "cf1"
+          },
+          {
+            "card": "Forest",
+            "label": "cf2"
+          },
+          {
+            "card": "Island",
+            "label": "ci"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grizzly Bears",
+            "label": "cbears"
+          },
+          {
+            "card": "Divination",
+            "label": "div"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "carol"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "df1"
+          },
+          {
+            "card": "Forest",
+            "label": "df2"
+          },
+          {
+            "card": "Island",
+            "label": "di"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grizzly Bears",
+            "label": "dbears"
+          },
+          {
+            "card": "Divination",
+            "label": "ddiv"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "dave"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "Know Evil, targeting each opponent at most once, stops bob attacking, carol casting creature spells and dave casting noncreature spells until the archenemy's next turn",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "noAttack": [
+            "$bob"
+          ],
+          "noCreature": [
+            "$bob"
+          ],
+          "noNoncreature": [
+            "$dave"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "noAttack": [
+            "$bob"
+          ],
+          "noCreature": [
+            "$carol"
+          ],
+          "noNoncreature": [
+            "$dave"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "carol",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$cf1",
+            "$cf2"
+          ],
+          "object": "$cbears"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$ci",
+            "$cf1",
+            "$cf2"
+          ],
+          "object": "$div"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "player": "dave",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$di",
+            "$df1",
+            "$df2"
+          ],
+          "object": "$ddiv"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$df1",
+            "$df2",
+            null
+          ],
+          "object": "$dbears"
+        }
+      },
+      "player": "dave",
+      "step": "PrecombatMain",
+      "turn": 4
+    }
+  ]
+}
