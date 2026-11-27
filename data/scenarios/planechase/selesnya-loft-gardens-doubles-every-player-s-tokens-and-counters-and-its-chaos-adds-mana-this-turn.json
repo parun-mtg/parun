@@ -1,0 +1,353 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "af1"
+          },
+          {
+            "card": "Forest",
+            "label": "af2"
+          },
+          {
+            "card": "Forest",
+            "label": "af3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grizzly Bears",
+            "label": "abears"
+          }
+        ],
+        "command": [
+          {
+            "card": "Selesnya Loft Gardens",
+            "label": "loft"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "sideDecks": [
+          {
+            "key": "Planar",
+            "value": [
+              {
+                "card": "Academy at Tolaria West"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "bf"
+          },
+          {
+            "card": "Plains",
+            "label": "bp1"
+          },
+          {
+            "card": "Plains",
+            "label": "bp2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Battlegrowth",
+            "label": "growth"
+          },
+          {
+            "card": "Raise the Alarm",
+            "label": "alarm"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "cbears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Selesnya Loft Gardens doubles any player's tokens and counters, and its chaos makes the planar controller's lands add an extra mana this turn",
+  "note": "Bob, not the planar controller, creates the tokens (four Soldiers) and puts the counter on carol's Bears (two counters): neither clause is Doubling Season's \"you\". Alice's Forest adds one G before chaos and two after it; bob's Forest tapped after chaos adds none extra, so the delayed trigger's \"you\" is alice. On bob's turn alice's Forest adds one G again: the trigger lasted until end of turn, not until her next turn.",
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $af1"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Take": {
+          "action": "RollPlanarDie"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 5
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Cast": {
+          "object": "$abears",
+          "mana": [
+            "$af2",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "do": {
+        "Cast": {
+          "object": "$growth",
+          "mana": [
+            "$bf",
+            null
+          ],
+          "targets": [
+            "$cbears"
+          ]
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "bob",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "do": {
+        "Cast": {
+          "object": "$alarm",
+          "mana": [
+            "$bp1",
+            "$bp2"
+          ]
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Soldier Token",
+          "count": 4,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1,
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$cbears"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $af3"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
