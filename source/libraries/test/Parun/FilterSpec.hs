@@ -1739,7 +1739,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- CR 303.4b: NamedBySource Enchanted reads the player the context's source
     -- enchants, not the perspective; unfilled, it names nobody.
     Spec.it s "NamedBySource Enchanted reads the source's enchanted player" $ do
-      let enchanting n = self {Filter.sourcePlayers = Map.singleton SourcePlayer.Enchanted (PlayerId.MkPlayerId n)}
+      let enchanting n = self {Filter.sourcePlayers = Map.singleton SourcePlayer.Enchanted (Set.singleton (PlayerId.MkPlayerId n))}
           atom = Filter.Type.IsAttackingPlayer (ControllerRelation.NamedBySource SourcePlayer.Enchanted)
       Spec.assertBool s (Filter.matches (enchanting 1) (attackingPlayer 1) atom) "attacking the enchanted player"
       Spec.assertBool s (not (Filter.matches (enchanting 2) (attackingPlayer 1) atom)) "attacking another player"

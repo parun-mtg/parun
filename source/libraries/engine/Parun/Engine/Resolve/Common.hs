@@ -988,7 +988,7 @@ askingObjects offered forKind resolving source controller legal chosen ref = cas
   ObjectRef.EachCardInYourHand -> swept
   ObjectRef.EachCardInHand _ -> swept
   ObjectRef.EachCardInYourLibrary _ -> swept
-  ObjectRef.EachCardYouOwn _ -> swept
+  ObjectRef.EachCard _ -> swept
   ObjectRef.EachCardInExiledPile _ -> swept
   ObjectRef.EachCardEncodedOnSource _ -> swept
   ObjectRef.EachSpell _ -> swept
@@ -1367,7 +1367,7 @@ objectRefRecipients legal resolving controller source gs ref = case ref of
   ObjectRef.EachCardInYourHand -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
   ObjectRef.EachCardInHand {} -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
   ObjectRef.EachCardInYourLibrary _ -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
-  ObjectRef.EachCardYouOwn _ -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
+  ObjectRef.EachCard _ -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
   ObjectRef.EachCardInExiledPile _ -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
   ObjectRef.EachCardEncodedOnSource {} -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
   ObjectRef.TopOfLibrary {} -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
@@ -2232,7 +2232,7 @@ bakeAtGrant seat modification = case modification of
     player ref = case ref of
       PlayerRef.AtGrant inner -> maybe ref PlayerRef.Specific (seat inner)
       _ -> ref
-    trigger = Identity.runIdentity . Children.triggerConditionChildren Children.triggerLeaves {Children.triggerTurn = \(TurnScope.PlayersTurn whose) -> Identity.Identity (TurnScope.PlayersTurn (player whose)), Children.triggerPlayer = Identity.Identity . player, Children.triggerNested = Identity.Identity . trigger}
+    trigger = Identity.runIdentity . Children.triggerConditionChildren Children.triggerLeaves {Children.triggerTurn = \scope -> Identity.Identity (case scope of TurnScope.PlayersTurn whose -> TurnScope.PlayersTurn (player whose); TurnScope.FirstTurnOfGame -> scope), Children.triggerPlayer = Identity.Identity . player, Children.triggerNested = Identity.Identity . trigger}
     modal = Identity.runIdentity . Children.modalChildren Children.modalLeaves {Children.modalPlayer = Identity.Identity . player, Children.modalEffect = Identity.Identity . effect}
     effect = Identity.runIdentity . Children.effectChildren Children.effectLeaves {Children.onPlayer = Identity.Identity . player, Children.onObjectRef = Identity.Identity . objectRef, Children.onEffect = Identity.Identity . effect}
     objectRef = Identity.runIdentity . Children.objectRefChildren Children.objectRefLeaves {Children.refPlayer = Identity.Identity . player, Children.refNested = Identity.Identity . objectRef}

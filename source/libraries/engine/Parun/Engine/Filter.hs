@@ -1782,14 +1782,15 @@ data Context = MkContext
     -- the positions read through a bare contextFor is Parun.FilterPositionLintSpec's
     -- "CR 303.4b no card asks IsHostOfSource where the source's host is unknown".
     sourceAttachedTo :: Maybe ObjectId.ObjectId,
-    -- CR 303.4b / 607.2d: the players the SOURCE names (its enchanted player,
-    -- sourceAttachedTo's other destination, and its chosen player), for
+    -- CR 303.4b / 607.2d / 607.2f: the players the SOURCE names (its enchanted
+    -- player, sourceAttachedTo's other destination, its chosen player, and the
+    -- players who last chose each of its words), for
     -- IsAttackingPlayer's and HeldBy's NamedBySource. Filled beside sourceAttachedTo
-    -- by Parun.Engine.SourceContext through Game.sourcePlayerWithLastKnown.
+    -- by Parun.Engine.SourceContext through Game.sourcePlayersWithLastKnown.
     -- Empty in contextFor, where the atom answers False; Parun.FilterPositionLintSpec's
     -- "CR 303.4b no card asks IsAttackingPlayer or HeldBy of a player the
     -- filter cannot read" keeps a card out of those positions.
-    sourcePlayers :: Map.Map SourcePlayer.SourcePlayer PlayerId.PlayerId,
+    sourcePlayers :: Map.Map SourcePlayer.SourcePlayer (Set.Set PlayerId.PlayerId),
     -- The object the surrounding Quantity is evaluated against, which
     -- IsAttachedTo Evaluated compares a candidate's host with and IsEvaluated the
     -- candidate itself. Filled by Parun.Engine.Quantity's Count and
@@ -2661,7 +2662,7 @@ matches context view predicate = case predicate of
   Filter.HeldBy holder rel -> case (heldBy holder view, rel) of
     (Nothing, _) -> False
     (Just h, ControllerRelation.Related relation) -> maybe False (\p -> PlayerRelation.holds (teams context) relation p h) (perspective context)
-    (Just h, ControllerRelation.NamedBySource which) -> Map.lookup which (sourcePlayers context) == Just h
+    (Just h, ControllerRelation.NamedBySource which) -> any (Set.member h) (Map.lookup which (sourcePlayers context))
     (Just _, ControllerRelation.InSlot _) -> False
     (Just _, ControllerRelation.Among _) -> False
   -- CR 508.5 / 702.39a: the candidate's controller IS the defending player, which
@@ -2951,7 +2952,7 @@ matches context view predicate = case predicate of
   Filter.IsAttackingPlayer rel -> case (attackingPlayer view, rel) of
     (Nothing, _) -> False
     (Just a, ControllerRelation.Related relation) -> maybe False (\p -> PlayerRelation.holds (teams context) relation p a) (perspective context)
-    (Just a, ControllerRelation.NamedBySource which) -> Map.lookup which (sourcePlayers context) == Just a
+    (Just a, ControllerRelation.NamedBySource which) -> any (Set.member a) (Map.lookup which (sourcePlayers context))
     (Just _, ControllerRelation.InSlot _) -> False
     (Just _, ControllerRelation.Among _) -> False
   -- CR 508.1b: the atom above one arm of AttackTarget over, and the same posture

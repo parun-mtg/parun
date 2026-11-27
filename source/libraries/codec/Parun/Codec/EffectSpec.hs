@@ -47,6 +47,7 @@ import qualified Parun.Types.CastRepetition as CastRepetition
 import qualified Parun.Types.ChangeCount as ChangeCount
 import qualified Parun.Types.ChangeTargets as ChangeTargets
 import qualified Parun.Types.ChangeText as ChangeText
+import qualified Parun.Types.ChoiceDistinct as ChoiceDistinct
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChooseCardName as ChooseCardName
 import qualified Parun.Types.ChooseGroup as ChooseGroup
@@ -217,6 +218,7 @@ import qualified Parun.Types.PutCounterOfEachKind as PutCounterOfEachKind
 import qualified Parun.Types.PutCounters as PutCounters
 import qualified Parun.Types.PutCountersFrom as PutCountersFrom
 import qualified Parun.Types.PutSticker as PutSticker
+import qualified Parun.Types.QualityChooser as QualityChooser
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Reach as Reach
 import qualified Parun.Types.RecipientRef as RecipientRef
@@ -2678,7 +2680,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1) ColorlessOption.ColorsOnly) False False))
+      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1) ColorlessOption.ColorsOnly) False False QualityChooser.Controller))
       " {\"type\":\"ChooseQuality\",\"value\":{\"quality\":{\"type\":\"Colors\",\"value\":{\"least\":1,\"most\":1}}}} "
   -- Shapeshifter: a choice its static ability reads.
   Spec.it s "ChooseQuality linked" $
@@ -2686,7 +2688,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Number 0 (Just 7)) True False))
+      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Number 0 (Just 7)) True False QualityChooser.Controller))
       " {\"type\":\"ChooseQuality\",\"value\":{\"linked\":true,\"quality\":{\"type\":\"Number\",\"value\":{\"least\":0,\"most\":7}}}} "
   -- A Killer Among Us: a secret choice.
   Spec.it s "ChooseQuality secret" $
@@ -2694,8 +2696,26 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Number 0 (Just 7)) True True))
+      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Number 0 (Just 7)) True True QualityChooser.Controller))
       " {\"type\":\"ChooseQuality\",\"value\":{\"linked\":true,\"quality\":{\"type\":\"Number\",\"value\":{\"least\":0,\"most\":7}},\"secret\":true}} "
+  -- Two Streams Facility: each player chooses a word.
+  Spec.it s "ChooseQuality by each player" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Word (Text.pack "a" NonEmpty.:| [Text.pack "b"])) True False (QualityChooser.EachPlayer ChoiceDistinct.MayRepeat)))
+      " {\"type\":\"ChooseQuality\",\"value\":{\"chooser\":{\"type\":\"EachPlayer\",\"value\":\"MayRepeat\"},\"linked\":true,\"quality\":{\"type\":\"Word\",\"value\":[\"a\",\"b\"]}}} "
+  Spec.it s "ChooseQuality refuses each player choosing a number" $
+    Spec.assertBool
+      s
+      (Either.isLeft (fromJson =<< Common.parse (Text.pack " {\"type\":\"ChooseQuality\",\"value\":{\"chooser\":{\"type\":\"EachPlayer\",\"value\":\"MayRepeat\"},\"quality\":{\"type\":\"Number\",\"value\":{\"least\":0}}}} ")))
+      "expected a decode failure"
+  Spec.it s "ChooseQuality refuses each player choosing a word in secret" $
+    Spec.assertBool
+      s
+      (Either.isLeft (fromJson =<< Common.parse (Text.pack " {\"type\":\"ChooseQuality\",\"value\":{\"chooser\":{\"type\":\"EachPlayer\",\"value\":\"MayRepeat\"},\"quality\":{\"type\":\"Word\",\"value\":[\"a\"]},\"secret\":true}} ")))
+      "expected a decode failure"
   -- CR 400.11c: the filter and CR 701.20a's reveal, Burning Wish's "reveal a
   -- sorcery card". Everything else about the sentence is the rule's -- the pool is
   -- the resolving controller's own (CR 108.3b) and the destination their hand.

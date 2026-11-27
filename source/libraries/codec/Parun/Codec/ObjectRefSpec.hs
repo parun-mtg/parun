@@ -177,12 +177,12 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
       " {\"type\":\"EachCardInYourLibrary\",\"value\":{\"type\":\"HasSubtype\",\"value\":\"Mountain\"}} "
   -- Static Discharge's "cards you own named Static Discharge": the owner is CR
   -- 109.5's "you", so the Filter is the whole payload.
-  Spec.it s "EachCardYouOwn" $
+  Spec.it s "EachCard" $
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.EachCardYouOwn (Filter.HasSubtype Subtype.Mountain))
-      " {\"type\":\"EachCardYouOwn\",\"value\":{\"type\":\"HasSubtype\",\"value\":\"Mountain\"}} "
+      (ObjectRef.EachCard (Filter.HasSubtype Subtype.Mountain))
+      " {\"type\":\"EachCard\",\"value\":{\"type\":\"HasSubtype\",\"value\":\"Mountain\"}} "
   -- No player, for a rule: CR 607.2a's set is defined by which object exiled the
   -- card. The record carries the pile and the filter (Parun.Codec.EachCardInExiledPileSpec).
   Spec.it s "EachCardInExiledPile" $
@@ -517,7 +517,7 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
                 Codec.encode ObjectRef.codec ObjectRef.EachCardInYourHand,
                 Codec.encode ObjectRef.codec (ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)) Nothing)),
                 Codec.encode ObjectRef.codec (ObjectRef.EachCardInYourLibrary Nothing),
-                Codec.encode ObjectRef.codec (ObjectRef.EachCardYouOwn (Filter.HasCardType CardType.Creature)),
+                Codec.encode ObjectRef.codec (ObjectRef.EachCard (Filter.HasCardType CardType.Creature)),
                 Codec.encode ObjectRef.codec (ObjectRef.EachCardInExiledPile (EachCardInExiledPile.MkEachCardInExiledPile ExiledPile.OwnAbilities Nothing)),
                 Codec.encode ObjectRef.codec (ObjectRef.EachSpell (Filter.Not Filter.IsSource)),
                 Codec.encode ObjectRef.codec (ObjectRef.EachAbility (Filter.Not Filter.IsSource)),

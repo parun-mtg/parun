@@ -18,5 +18,5 @@ spec s = Spec.describe s "Parun.Codec.TargetedSubject" $ do
   Spec.it s "PlayerOrPermanent" $
     Common.assertCodec s TargetedSubject.codec (TargetedSubject.PlayerOrPermanent PlayerRelation.AnyPlayer (ActingPermanent.Matching Filter.IsToken)) " {\"type\":\"PlayerOrPermanent\",\"value\":{\"player\":\"AnyPlayer\",\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"IsToken\"}}}} "
   Spec.it s "NamedBySource Chosen" $
-    Common.assertCodec s TargetedSubject.codec (TargetedSubject.NamedBySource SourcePlayer.Chosen) " {\"type\":\"NamedBySource\",\"value\":\"Chosen\"} "
+    Common.assertCodec s TargetedSubject.codec (TargetedSubject.NamedBySource SourcePlayer.Chosen) " {\"type\":\"NamedBySource\",\"value\":{\"type\":\"Chosen\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s TargetedSubject.codec

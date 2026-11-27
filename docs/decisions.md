@@ -3523,3 +3523,22 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Resolve.Arms.Zones.offerNamedCopy`'s
   `NamedCopySource.SameManaCostAs`.
 - **Issue**: none.
+
+## Which spell TARDIS Bay's "first spell ... with mana value 2 or greater" is
+
+- **Question**: TARDIS Bay gives cascade to "the first spell you cast during
+  each of your turns with mana value 2 or greater". Is that the first spell
+  with mana value 2 or greater, or the turn's first spell, provided its mana
+  value is 2 or greater?
+- **Rules**: CR 202.3, 601.2i, 702.85a; the card has no ruling on it; CR of
+  2026-11-06.
+- **Decision**: The first spell with mana value 2 or greater: the quality
+  qualifies "spell", so a cheaper spell cast earlier is not counted, as
+  `CostModifier.onlyNth` counts only the casts its `matching` admits.
+- **Rejected**: The turn's first spell only, which a one-drop cast first would
+  switch off for the turn; the sentence puts the quality inside the noun
+  phrase the ordinal numbers.
+- **Site**: `Parun.Engine.Projection.affectsFramed`'s
+  `Affected.MatchingOffBattlefield` ordinal;
+  data/scenarios/planechase/tardis-bay-cascades-only-the-first-spell-of-mana-value-two-or-more-each-turn.json.
+- **Issue**: none.

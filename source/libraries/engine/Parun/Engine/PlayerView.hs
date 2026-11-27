@@ -246,6 +246,7 @@ objectView pid gs oid = do
         ObjectView.chosenNames = chosen Chosen.Names,
         ObjectView.chosenPlayers = if public || seen then Object.chosenPlayers object else Map.empty,
         ObjectView.chosenNumber = chosen Chosen.Number,
+        ObjectView.chosenNumberBy = Object.chosenNumberBy object,
         ObjectView.chosenObjects = chosen Chosen.Objects,
         ObjectView.commanderTax = Commander.tax (Object.owner object) oid gs
       }

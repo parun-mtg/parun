@@ -68,44 +68,46 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "IsInZone",
-                  "value": "Graveyard"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Owner",
-                    "relation": "You"
-                  }
-                },
-                {
-                  "type": "Or",
-                  "value": [
-                    {
-                      "type": "HasCardType",
-                      "value": "Instant"
-                    },
-                    {
-                      "type": "HasCardType",
-                      "value": "Sorcery"
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "IsInZone",
+                    "value": "Graveyard"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Owner",
+                      "relation": "You"
                     }
-                  ]
-                },
-                {
-                  "type": "Measures",
-                  "value": {
-                    "comparison": "Exactly",
-                    "measure": "ColorCount",
-                    "operand": {
-                      "type": "Literal",
-                      "value": 2
+                  },
+                  {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Instant"
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Sorcery"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Measures",
+                    "value": {
+                      "comparison": "Exactly",
+                      "measure": "ColorCount",
+                      "operand": {
+                        "type": "Literal",
+                        "value": 2
+                      }
                     }
                   }
-                }
-              ]
+                ]
+              }
             }
           },
           "modifications": [

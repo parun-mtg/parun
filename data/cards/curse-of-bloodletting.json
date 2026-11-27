@@ -38,7 +38,9 @@
               "matching": {
                 "whoRecipient": {
                   "type": "NamedBySource",
-                  "value": "Enchanted"
+                  "value": {
+                    "type": "Enchanted"
+                  }
                 }
               },
               "rewrite": {

@@ -84,6 +84,8 @@ data ObjectView = MkObjectView
     chosenPlayers :: Map.Map Acquisition.Acquisition (Map.Map PlayerChoice.PlayerChoice PlayerId.PlayerId),
     -- | CR 607.2d: Object.chosenNumber, less a secret choice the seat is not privy to.
     chosenNumber :: Map.Map Acquisition.Acquisition Natural.Natural,
+    -- | CR 101.4: Object.chosenNumberBy, every player's choice being public.
+    chosenNumberBy :: Map.Map Acquisition.Acquisition (Map.Map PlayerId.PlayerId Natural.Natural),
     -- | CR 607.2d: Object.chosenObjects, less a secret choice the seat is not privy to.
     chosenObjects :: Map.Map Acquisition.Acquisition (Set.Set ObjectId.ObjectId),
     -- | CR 903.8: the generic mana a commander in the command zone costs its owner beyond its mana cost, and 0 for anything else.

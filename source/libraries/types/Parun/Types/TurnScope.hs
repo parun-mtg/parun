@@ -18,7 +18,9 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 -- A CR 603.7 delayed ability keyed to "the NEXT end step" is @Relative
 -- AnyPlayer@: any player's end step qualifies, and its once-ness comes from the
 -- delayed store (CR 603.7b), never from the scope.
-newtype TurnScope
+data TurnScope
   = -- | CR 102.1: the turn of a player the reference names.
     PlayersTurn PlayerRef.PlayerRef
+  | -- | CR 103.8: the game's first turn, whoever takes it ("the first upkeep of the game", Two Streams Facility).
+    FirstTurnOfGame
   deriving (Eq, Ord, Show)

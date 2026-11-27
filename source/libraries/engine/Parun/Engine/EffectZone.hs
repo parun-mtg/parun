@@ -122,7 +122,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
     ObjectRef.EachCardInYourHand -> Set.empty
     ObjectRef.EachCardInHand {} -> Set.empty
     ObjectRef.EachCardInYourLibrary _ -> Set.empty
-    ObjectRef.EachCardYouOwn _ -> Set.empty
+    ObjectRef.EachCard _ -> Set.empty
     ObjectRef.EachCardInExiledPile _ -> Set.empty
     ObjectRef.EachCardEncodedOnSource {} -> Set.empty
     ObjectRef.EachSpell _ -> Set.empty

@@ -180,6 +180,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnOrdinal as TurnOrdinal
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnTally as TurnTally
 import qualified Parun.Types.UntapRestriction as UntapRestriction
@@ -368,7 +369,8 @@ affectedNames asking =
       Children.MkAffectedChildren
         { Children.affectedObjects = \objects -> Const.Const (names asking (`elem` objects)),
           Children.affectedFilter = Const.Const . filterNames asking,
-          Children.affectedDuration = Const.Const . durationNames asking
+          Children.affectedDuration = Const.Const . durationNames asking,
+          Children.affectedOrdinal = \(TurnOrdinal.MkTurnOrdinal scope _) -> Const.Const (turnScopeNames asking scope <> history asking HistoryRead.Casts)
         }
 
 affectedPlayersNames :: (Monoid r) => Asking r -> (player -> r) -> AffectedPlayers.AffectedPlayers player -> r
@@ -1199,6 +1201,7 @@ specialActionNames asking x = case x of
 turnScopeNames :: (Monoid r) => Asking r -> TurnScope.TurnScope -> r
 turnScopeNames asking x = case x of
   TurnScope.PlayersTurn playerRef -> playerRefNames asking playerRef
+  TurnScope.FirstTurnOfGame -> mempty
 
 duringPhaseNames :: (Monoid r) => Asking r -> DuringPhase.DuringPhase -> r
 duringPhaseNames asking x = case x of

@@ -598,6 +598,7 @@ phasePatternOffends replacement = case replacement of
     ControllerRelation.Related _ -> False
     (ControllerRelation.NamedBySource SourcePlayer.Enchanted) -> False
     (ControllerRelation.NamedBySource SourcePlayer.Chosen) -> False
+    (ControllerRelation.NamedBySource (SourcePlayer.LastChoseWord _)) -> False
   ReplacementEffect.CounterR {} -> False
   ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.ZoneChangeR {} -> False
@@ -1557,7 +1558,7 @@ questionOf ref = case ref of
   ObjectRef.EachCardInYourHand -> Nothing
   ObjectRef.EachCardInHand {} -> Nothing
   ObjectRef.EachCardInYourLibrary {} -> Nothing
-  ObjectRef.EachCardYouOwn _ -> Nothing
+  ObjectRef.EachCard _ -> Nothing
   ObjectRef.EachCardInExiledPile _ -> Nothing
   ObjectRef.EachCardEncodedOnSource {} -> Nothing
   ObjectRef.EachSpell {} -> Nothing
@@ -2960,7 +2961,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Twilight Diviner's "a copy of one of them" and I Am Never Alone's one of
     -- two commanders are the questions a copy asks.
     let tokenCopies ref = Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) (CopyOriginal.OfObject ref) EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False Nothing)
-        oneOfYours = ObjectRef.OneAmong CardSelection.ByChoice (ObjectRef.EachCardYouOwn anyCard)
+        oneOfYours = ObjectRef.OneAmong CardSelection.ByChoice (ObjectRef.EachCard anyCard)
     Spec.assertEqWith s "a copy allows one card from among them, one chosen among, and no other chosen arm" (inert (fmap tokenCopies [inGraveyard, inHand, fromAmong, atRandom, anyFromAmong, oneOfYours])) [True, True, False, True, True, False]
     -- An exact count other than one: only a move's test (Split the Party) reaches it.
     let exactlyTwo = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.Exactly (Quantity.Type.Literal 2)) Nothing Zone.Battlefield Set.empty CardSelection.ByChoice Set.empty)
@@ -4786,7 +4787,7 @@ movesAtMostOne ref = case ref of
   ObjectRef.EachCardInYourHand -> False
   ObjectRef.EachCardInHand {} -> False
   ObjectRef.EachCardInYourLibrary {} -> False
-  ObjectRef.EachCardYouOwn _ -> False
+  ObjectRef.EachCard _ -> False
   -- CR 607.3 is what makes this one plural even where the card's own
   -- words are singular: an ability referring to "the exiled card" whose
   -- linked ability exiled several performs its action on each of them.
@@ -4909,6 +4910,8 @@ namesOneGraveyard scope = case scope of
   ZoneScope.Scoped (PlayerScope.NamedBySource SourcePlayer.Chosen) -> True
   ZoneScope.Scoped PlayerScope.SourceOwner -> True
   ZoneScope.Scoped (PlayerScope.NamedBySource SourcePlayer.Enchanted) -> True
+  -- Several players may have chosen one word.
+  ZoneScope.Scoped (PlayerScope.NamedBySource (SourcePlayer.LastChoseWord _)) -> False
   -- Several opponents may each have attacked you.
   ZoneScope.Scoped PlayerScope.AttackedYou {} -> False
   ZoneScope.InSlot _ -> True

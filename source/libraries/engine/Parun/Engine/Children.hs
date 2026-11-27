@@ -1356,7 +1356,7 @@ effectChildren c effect = case effect of
         AnotherCounter.ChosenKind named -> AnotherCounter.ChosenKind <$> onSlot c named
   Effect.ChooseCardName (ChooseCardName.MkChooseCardName who restriction among selection) ->
     fmap Effect.ChooseCardName (ChooseCardName.MkChooseCardName <$> onPlayer c who <*> onFilter c restriction <*> traverse (onSlot c) among <*> pure selection)
-  Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality linked secret) -> fmap Effect.ChooseQuality (ChooseQuality.MkChooseQuality <$> chosenQualityChildren (onSubtype c) (onFilter c) quality <*> pure linked <*> pure secret)
+  Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality linked secret chooser) -> fmap Effect.ChooseQuality (ChooseQuality.MkChooseQuality <$> chosenQualityChildren (onSubtype c) (onFilter c) quality <*> pure linked <*> pure secret <*> pure chooser)
   Effect.Bolster quantity -> fmap Effect.Bolster (onQuantity c quantity)
   Effect.Amass (Amass.MkAmass who quantity kind named) -> fmap Effect.Amass (Amass.MkAmass <$> onPlayer c who <*> onQuantity c quantity <*> pure kind <*> traverse (onSlot c) named)
   Effect.Blight (Blight.MkBlight who quantity named) -> fmap Effect.Blight (Blight.MkBlight <$> onPlayer c who <*> onQuantity c quantity <*> traverse (onSlot c) named)
@@ -3519,7 +3519,7 @@ objectRefChildren c ref = case ref of
   ObjectRef.EachCardInYourHand -> pure ref
   ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand hands filter_) -> fmap ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand <$> refZones c hands <*> traverse (refFilter c) filter_)
   ObjectRef.EachCardInYourLibrary filter_ -> ObjectRef.EachCardInYourLibrary <$> traverse (refFilter c) filter_
-  ObjectRef.EachCardYouOwn filter_ -> ObjectRef.EachCardYouOwn <$> refFilter c filter_
+  ObjectRef.EachCard filter_ -> ObjectRef.EachCard <$> refFilter c filter_
   ObjectRef.EachCardInExiledPile (EachCardInExiledPile.MkEachCardInExiledPile pile filter_) -> fmap ObjectRef.EachCardInExiledPile (EachCardInExiledPile.MkEachCardInExiledPile pile <$> traverse (refFilter c) filter_)
   ObjectRef.EachCardEncodedOnSource filter_ -> ObjectRef.EachCardEncodedOnSource <$> traverse (refFilter c) filter_
   ObjectRef.EachSpell filter_ -> ObjectRef.EachSpell <$> refFilter c filter_
@@ -3721,7 +3721,9 @@ data AffectedChildren f = MkAffectedChildren
     -- | The Filter a matching arm holds.
     affectedFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
     -- | How long a permission's card stays covered (CR 611.3d), whole.
-    affectedDuration :: Duration.Duration -> f Duration.Duration
+    affectedDuration :: Duration.Duration -> f Duration.Duration,
+    -- | A matching arm's cast ordinal, whole; it reads the turn's casts.
+    affectedOrdinal :: TurnOrdinal.TurnOrdinal -> f TurnOrdinal.TurnOrdinal
   }
 
 -- | An Affected's children.
@@ -3730,7 +3732,7 @@ affectedChildren c affected = case affected of
   Affected.TheseObjects objects -> Affected.TheseObjects <$> affectedObjects c objects
   Affected.Matching filter_ -> Affected.Matching <$> affectedFilter c filter_
   Affected.MatchingAnywhere filter_ -> Affected.MatchingAnywhere <$> affectedFilter c filter_
-  Affected.MatchingOffBattlefield filter_ -> Affected.MatchingOffBattlefield <$> affectedFilter c filter_
+  Affected.MatchingOffBattlefield filter_ onlyNth -> Affected.MatchingOffBattlefield <$> affectedFilter c filter_ <*> traverse (affectedOrdinal c) onlyNth
   Affected.Attached -> pure affected
   Affected.AttachedPlayerControls filter_ -> Affected.AttachedPlayerControls <$> affectedFilter c filter_
   Affected.PlayedThisWay duration -> Affected.PlayedThisWay <$> affectedDuration c duration

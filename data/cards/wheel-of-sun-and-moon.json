@@ -54,7 +54,9 @@
                 "whenDestination": "Graveyard",
                 "whoseObject": {
                   "type": "NamedBySource",
-                  "value": "Enchanted"
+                  "value": {
+                    "type": "Enchanted"
+                  }
                 }
               },
               "revealing": true
