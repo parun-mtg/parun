@@ -425,7 +425,7 @@ pre {
 .ms .fg-generic { color: var(--ms-generic-text); }
 
 /* A loyalty cost: up for a gain, down for a loss, level for zero. */
-.loyalty {
+.loyalty-cost {
   display: inline-block;
   min-width: 2em;
   padding: 0.1em 0.35em;
@@ -439,11 +439,11 @@ pre {
   font-feature-settings: "tnum";
   clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
 }
-.loyalty.up {
+.loyalty-cost.up {
   padding-top: 0.3em;
   clip-path: polygon(50% 0, 100% 0.3em, 100% 100%, 0 100%, 0 0.3em);
 }
-.loyalty.down {
+.loyalty-cost.down {
   padding-bottom: 0.3em;
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 0.3em), 50% 100%, 0 calc(100% - 0.3em));
 }

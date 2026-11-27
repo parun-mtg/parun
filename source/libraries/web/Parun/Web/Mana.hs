@@ -201,7 +201,7 @@ loyalty inside = do
     _ -> Just ("level", "", "", inside)
   let number' = not (Text.null amount) && (Text.all Char.isDigit amount || amount == Text.pack "X")
   if number' && (direction /= "level" || amount == Text.pack "0")
-    then Just $ Element.el "span" ["loyalty", direction] [Element.attr "title" (Text.pack "[" <> inside <> Text.pack "]"), Element.attr "role" (Text.pack "img"), Element.attr "aria-label" (Text.pack ("loyalty " <> said) <> amount)] [Element.text (Text.pack sign <> amount)]
+    then Just $ Element.el "span" ["loyalty-cost", direction] [Element.attr "title" (Text.pack "[" <> inside <> Text.pack "]"), Element.attr "role" (Text.pack "img"), Element.attr "aria-label" (Text.pack ("loyalty " <> said) <> amount)] [Element.text (Text.pack sign <> amount)]
     else Nothing
 
 -- | A symbol read aloud: "green", "2 generic", "white or blue",
