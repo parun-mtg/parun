@@ -3547,3 +3547,25 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Resolve.Arms.Zones.offerNamedCopy`'s
   `NamedCopySource.SameManaCostAs`.
 - **Issue**: none.
+
+## Whether a permanent that can't become tapped phases in tapped from Oubliette
+
+- **Question**: Ood Sphere's Red-Eye says the goaded creatures "can't become
+  tapped unless they're being declared as attackers" until its controller's
+  next turn. Phasing keeps the object (CR 702.26d), so the prohibition still
+  applies to one Oubliette phased out. When Oubliette leaves, does "tap that
+  creature as it phases in this way" tap it?
+- **Rules**: CR 101.2, 603.2e, 702.26c, 702.26d; Oubliette's rulings of
+  2020-08-07 (no becomes-tapped trigger) and Ood Sphere's of 2023-10-13 ("can't
+  be tapped by effects"); CR of 2026-11-06.
+- **Decision**: Yes, it phases in tapped. Oubliette's ruling treats it as
+  phasing in in that status rather than becoming tapped, as a permanent
+  entering tapped does (CR 603.2e), and the prohibition forbids only becoming
+  tapped.
+- **Rejected**: The tap is an instruction the "can't" beats (CR 101.2), so it
+  phases in untapped. Not chosen because no rule or ruling makes phasing in
+  tapped a becoming-tapped, and the one ruling on the point says it is not one
+  for triggers.
+- **Site**: `Parun.Engine.Phasing.phasesInAs`; the scenario
+  `ood-sphere-s-goaded-creature-phases-in-tapped-from-oubliette`.
+- **Issue**: none.
