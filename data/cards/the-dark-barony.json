@@ -1,0 +1,106 @@
+{
+  "faces": [
+    {
+      "name": "The Dark Barony",
+      "oracleText": "Whenever a nonblack card is put into a player's graveyard from anywhere, that player loses 1 life.\nWhenever chaos ensues, each opponent discards a card.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "PutIntoZone",
+            "value": {
+              "card": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "IsCard"
+                    },
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "HasColor",
+                        "value": "Black"
+                      }
+                    }
+                  ]
+                }
+              },
+              "to": "Graveyard"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "HolderOfBound",
+                            "value": {
+                              "holder": "Owner",
+                              "hop": "Itself",
+                              "slot": "became"
+                            }
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "Counted",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "Opponent"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Ulgrotha"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}
