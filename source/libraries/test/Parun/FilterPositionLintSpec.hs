@@ -1669,8 +1669,8 @@ enchantedAttackedCounts card =
    in (atoms sourceFramed, atoms (not . sourceFramed))
 
 -- The atom asked outside `sourceFramed`, the traversal and the codec disagreeing
--- about how many the card holds (hostOfSourceOffends' fence), or a relation
--- naming a resolution's players.
+-- about how many the card holds (hostOfSourceOffends' fence), a relation
+-- naming a resolution's players, or an attacked player to someone's left.
 attackedPlayerOffends :: Surveyed -> Bool
 attackedPlayerOffends card =
   let (framed, elsewhere) = enchantedAttackedCounts card
@@ -1682,6 +1682,7 @@ attackedPlayerOffends card =
    in elsewhere /= 0
         || framed + elsewhere /= relationAtomsIn sourceRelation encoded
         || relationAtomsIn baked encoded /= 0
+        || decodedAtoms "IsAttackingPlayer" (\atom -> case atom of Filter.Type.IsAttackingPlayer (ControllerRelation.LeftOf _) -> True; _ -> False) encoded /= 0
 
 -- The pools Parun.Engine.SourceContext.framedWith fills as Filter.Shares
 -- anchors them, in an encoding: Anchor.AnyObject's ExiledCards (CR 406.1,
@@ -2880,6 +2881,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (attackedPlayerOffends (survey (counting (Filter.Type.HeldBy Holder.Controller (ControllerRelation.NamedBySource SourcePlayer.Chosen))))) "and so is the chosen player's"
     Spec.assertBool s (attackedPlayerOffends (survey (slotted (Filter.Type.HeldBy Holder.Controller (ControllerRelation.InSlot (SlotName.MkSlotName (Text.pack "target"))))))) "as is HeldBy's InSlot relation"
     Spec.assertBool s (not (attackedPlayerOffends (survey (S.combinedFace curse)))) "and the Curse itself is not"
+    Spec.assertBool s (attackedPlayerOffends (survey (slotted (Filter.Type.IsAttackingPlayer (ControllerRelation.LeftOf Nothing))))) "an attacked player to your left is an offence"
+    Spec.assertBool s (not (attackedPlayerOffends (survey (slotted (Filter.Type.HeldBy Holder.Controller (ControllerRelation.LeftOf Nothing)))))) "and HeldBy's is not"
   -- CR 406.1's exiled pool and CR 401.2's library tops are answerable only
   -- where Filter.Context.exiledViews and libraryTopViews are filled, which
   -- Parun.Engine.SourceContext.framedWith fills: the positions `sourceFramed`

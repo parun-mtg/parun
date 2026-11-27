@@ -546,6 +546,7 @@ controllerRelationNames asking x = case x of
   ControllerRelation.NamedBySource _ -> mempty
   ControllerRelation.InSlot slotName -> slotNames asking slotName
   ControllerRelation.Among _playerId -> mempty
+  ControllerRelation.LeftOf anchor -> foldMap (slotNames asking) anchor
 
 copyExceptionNames :: (Monoid r) => Asking r -> (ability -> r) -> CopyException.CopyException ability -> r
 copyExceptionNames asking onAbility = Const.getConst . Children.copyExceptionChildren (copyVisitors asking onAbility (const mempty))

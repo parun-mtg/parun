@@ -616,6 +616,8 @@ filterChildren children predicate = case predicate of
   Filter.ManaCostRepeatsSymbol -> pure predicate
   Filter.ManaCostHasSymbol _ -> pure predicate
   Filter.HasManaCost _ -> pure predicate
+  -- ONE: the player to the left of the one player the slot binds.
+  Filter.HeldBy holder (ControllerRelation.LeftOf (Just name)) -> fmap (Filter.HeldBy holder . ControllerRelation.LeftOf . Just) (slot children SlotArity.One name)
   Filter.HeldBy _ _ -> pure predicate
   Filter.ControllerIsOwner -> pure predicate
   Filter.ControlledByRole _ -> pure predicate

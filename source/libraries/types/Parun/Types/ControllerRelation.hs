@@ -29,4 +29,9 @@ data ControllerRelation
     -- card cannot name a PlayerId, and Parun.EffectLintSpec keeps the pool from
     -- authoring one.
     Among (Set.Set PlayerId.PlayerId)
+  | -- | CR 800.5 / 103.1: the nearest player still in the game seated to the
+    -- left of the candidate's "you", or of the one player a slot names --
+    -- Bowie Base One's "the player to your left", Caught in a Parallel
+    -- Universe's "the player to their left".
+    LeftOf (Maybe SlotName.SlotName)
   deriving (Eq, Ord, Show)

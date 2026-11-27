@@ -1916,6 +1916,21 @@ Entries are ordered by the first rule each cites.
   a later one.
 - **Issue**: none.
 
+## Whether the player to your left closes up over a seat that emptied
+
+- **Question**: Bowie Base One names "the player to your left". After that
+  player leaves the game, is it the next player still in the game, or nobody?
+- **Rules**: CR 101.4, 102.1, 103.1, 800.4a, 800.5, 801.2c; CR of 2026-11-06.
+- **Decision**: The nearest player still in the game seated to the left.
+- **Rejected**: Nobody, until the game ends. Turn order (CR 101.4, 103.1)
+  passes over the departed seat, as range of influence (CR 801.2c) and Grand
+  Melee's markers ("Which seats Grand Melee's three-seat window counts") do;
+  attack left's reading ("Whether attack left closes up over a seat that
+  emptied") reads a variant's seat rule, which a card's player reference is not.
+- **Site**: `Parun.Engine.Filter.leftOfAnchor`, filled by `contextIn`'s
+  `seated`. The scenario `bowie-base-one-goads-a-creature-of-the-player-to-your-left`.
+- **Issue**: none.
+
 ## Whether a Grand Melee game keeps a turn marker
 
 - **Question**: CR 807.4a gives one turn marker for each full four players, so
