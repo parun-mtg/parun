@@ -38,7 +38,13 @@ spec s = Spec.describe s "Parun.Codec.DealtDamageTo" $ do
       s
       DealtDamageTo.codec
       DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.HolderOfCandidate Holder.Controller, DealtDamageTo.kind = Just DamageKind.Combat, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = Actor.Source}
-      " {\"party\":{\"type\":\"HolderOfCandidate\",\"value\":\"Controller\"},\"kind\":\"Combat\",\"dealer\":\"Source\"} "
+      " {\"party\":{\"type\":\"HolderOfCandidate\",\"value\":\"Controller\"},\"kind\":\"Combat\",\"dealer\":{\"type\":\"Source\"}} "
+  Spec.it s "a slot's combat damage this combat to the candidate's controller" $
+    Common.assertCodec
+      s
+      DealtDamageTo.codec
+      DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.HolderOfCandidate Holder.Controller, DealtDamageTo.kind = Just DamageKind.Combat, DealtDamageTo.window = Lookback.ThisCombat, DealtDamageTo.dealer = Actor.InSlot (SlotName.MkSlotName (Text.pack "yours"))}
+      " {\"party\":{\"type\":\"HolderOfCandidate\",\"value\":\"Controller\"},\"kind\":\"Combat\",\"window\":\"ThisCombat\",\"dealer\":{\"type\":\"InSlot\",\"value\":\"yours\"}} "
   Spec.it s "another creature" $
     Common.assertCodec
       s

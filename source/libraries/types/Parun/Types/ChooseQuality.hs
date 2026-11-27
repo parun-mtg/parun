@@ -1,6 +1,7 @@
 module Parun.Types.ChooseQuality where
 
 import qualified Parun.Types.ChosenQuality as ChosenQuality
+import qualified Parun.Types.QualityChooser as QualityChooser
 
 -- | The payload of Parun.Types.Effect's ChooseQuality arm: CR 608.2d's choice
 -- of a quality as a spell or ability resolves, and whose choice it is.
@@ -14,6 +15,11 @@ data ChooseQuality = MkChooseQuality
     -- | A secret choice (A Killer Among Us's ruling): the chooser is
     -- recorded on the source (PlayerChoice.SecretChooser), so that only they
     -- can reveal it (CostComponent.RevealSecretChoice).
-    secret :: Bool
+    secret :: Bool,
+    -- | Whose choice it is.
+    --
+    -- Unprinted: each player choosing anything but a word, or in secret.
+    -- Parun.Codec.ChooseQuality refuses either.
+    chooser :: QualityChooser.QualityChooser
   }
   deriving (Eq, Ord, Show)

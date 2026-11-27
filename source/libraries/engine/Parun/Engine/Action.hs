@@ -182,6 +182,25 @@ discardableCards pid gs =
   let grantsIt oid = Maybe.isJust (Game.cardOfHandMember oid gs) && List.elem SpecialAction.DiscardThisAnyTime (Projection.specialActionsOf oid gs)
    in filter grantsIt (Game.zoneMembers Zone.Hand pid gs)
 
+-- CR 307.5: the objects granting this player a sorcery-timed special action
+-- (SpecialAction.PerformAsASorcery) they may take now: a face-up plane they
+-- control (CR 311.4, 901.6), in their main phase with the stack empty. Read
+-- through Projection.specialActionsOf, discardableCards' reason.
+--
+-- Unprinted: such an action on anything but a plane, which this does not read;
+-- Parun.EffectLintSpec's "only a plane grants a sorcery-timed special action"
+-- keeps it out of card data.
+--
+-- Implementation-defined: offered whether or not its effects would change
+-- anything (Talon Gates with no nonland card in hand); the CR is silent.
+sorcerySpeedGrants :: PlayerId -> GameState -> [ObjectId]
+sorcerySpeedGrants pid gs =
+  let grantsIt oid = Planechase.controllerOfFaceUp oid gs == Just pid && any isSorcerySpeed (Projection.specialActionsOf oid gs)
+      isSorcerySpeed action = case action of
+        SpecialAction.PerformAsASorcery _ -> True
+        _ -> False
+   in if Turn.sorcerySpeedWindow pid gs then filter grantsIt (Planechase.faceUp gs) else []
+
 -- The card a play or a cast takes, the only actions a stand-in for a card
 -- outside the game (Event.offerOutside) is offered for.
 playedObject :: Action -> Maybe ObjectId
@@ -267,6 +286,8 @@ legalActions pid gs =
       -- is one action over its four stored effects, and each of Nafs Asp's hits on
       -- one player is an action of its own.
       endings = fmap (uncurry Action.EndEffect) (EndEffect.endable pid gs)
+      -- CR 307.5: Talon Gates' special action, on sorcery timing, repeatable.
+      sorcerySpeedActions = fmap Action.PerformAsASorcery (sorcerySpeedGrants pid gs)
       -- CR 116.2c again: one action per stored offer, repeatable.
       laterPayments = fmap (uncurry Action.MakeLaterPayment) (LaterPayment.payable pid gs)
       -- CR 116.2c again, with the timing restriction that rule leaves room for:
@@ -426,7 +447,7 @@ legalActions pid gs =
       -- Parun.ManaSpec's "the menu carries one activation per untapped source" is
       -- the proof.
       manaAbilityActivations = fmap Action.ActivateManaAbility manaSources
-   in Action.Pass : lands <> spells <> turnUps <> unlocks <> discards <> ignores <> endings <> laterPayments <> lifeForMana <> plots <> foretells <> suspends <> companions <> planarRolls <> conspiracies <> shownDieRerolls <> activations <> manaAbilityActivations
+   in Action.Pass : lands <> spells <> turnUps <> unlocks <> discards <> ignores <> endings <> laterPayments <> sorcerySpeedActions <> lifeForMana <> plots <> foretells <> suspends <> companions <> planarRolls <> conspiracies <> shownDieRerolls <> activations <> manaAbilityActivations
 
 -- | The actions of `offered` passing priority may give up: legal now, with
 -- the stack empty, and not in the next step of this turn that grants

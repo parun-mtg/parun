@@ -68,6 +68,7 @@ import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.ActiveLaterPayment as ActiveLaterPayment
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
+import qualified Parun.Types.Actor as Actor
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AimedPlayers as AimedPlayers
@@ -105,6 +106,8 @@ import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageTally as DamageTally
+import qualified Parun.Types.DamagedParty as DamagedParty
+import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.DeclaredRole as DeclaredRole
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DungeonRoom as DungeonRoom
@@ -268,6 +271,23 @@ readsSourceLinks =
 slotNames :: Asking r -> SlotName.SlotName -> r
 slotNames asking _slot = contextNames asking
 
+-- The slot a relation atom's actor reads.
+actorNames :: (Monoid r) => Asking r -> Actor.Actor -> r
+actorNames asking actor = case actor of
+  Actor.Candidate -> mempty
+  Actor.Source -> mempty
+  Actor.InSlot slot -> slotNames asking slot
+
+-- The slot a damage look-back's party reads.
+damagedPartyNames :: (Monoid r) => Asking r -> DamagedParty.DamagedParty -> r
+damagedPartyNames asking party = case party of
+  DamagedParty.Related _ -> mempty
+  DamagedParty.Source -> mempty
+  DamagedParty.InSlot slot -> slotNames asking slot
+  DamagedParty.Anyone -> mempty
+  DamagedParty.HolderOfCandidate _ -> mempty
+  DamagedParty.Another _ -> mempty
+
 -- A history read of the turn a tally names: the turn in progress is read
 -- (CR 733.3), as is a window reaching it, and last turn's log, which no loop of
 -- this turn can grow, is not.
@@ -323,13 +343,13 @@ filterNames asking criterion = case criterion of
   Filter.CouldAttackThisTurn -> keyed asking
   Filter.LeftLibraryThisTurn how -> keyed asking <> case how of LibraryDeparture.Drawn -> mempty; LibraryDeparture.LastDrawn -> mempty; LibraryDeparture.Milled -> history asking HistoryRead.Mills
   Filter.CantPayKeywordCost _ -> contextNames asking
-  Filter.CrewedThisTurn _ -> keyed asking <> history asking HistoryRead.Crews
+  Filter.CrewedThisTurn crewer -> keyed asking <> history asking HistoryRead.Crews <> actorNames asking crewer
   Filter.ConvokedSourceThisTurn -> keyed asking <> history asking HistoryRead.Convokes <> history asking HistoryRead.Moves
   Filter.SaddledSourceThisTurn -> keyed asking <> history asking HistoryRead.Saddles
   Filter.DealtDamageThisTurn _ nested _ -> keyed asking <> history asking HistoryRead.Damage <> foldMap (filterNames asking) nested
   Filter.ActivatedThisTurn -> keyed asking <> history asking HistoryRead.Activations
   Filter.ActedThisTurn action -> keyed asking <> history asking (HistoryRead.PermanentActs action)
-  Filter.DealtDamageTo _ -> keyed asking <> history asking HistoryRead.Damage
+  Filter.DealtDamageTo (DealtDamageTo.MkDealtDamageTo party _kind _window dealer) -> keyed asking <> history asking HistoryRead.Damage <> damagedPartyNames asking party <> actorNames asking dealer
   Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to _from _window _under) -> keyed asking <> history asking (if to == Zone.Battlefield then HistoryRead.Entries else HistoryRead.Moves)
   Filter.BeforeMove nested -> keyed asking <> history asking HistoryRead.Moves <> filterNames asking nested
   Filter.TappedForManaThisTurn nested -> keyed asking <> history asking HistoryRead.TapsForMana <> filterNames asking nested
@@ -796,7 +816,7 @@ faceNames asking onCard =
           Children.faceBlockCost = Const.Const . blockCostNames asking,
           Children.faceCounterLimit = Const.Const . counterLimitNames asking,
           Children.faceHandAction = Const.Const . handActionNames asking onCard,
-          Children.faceSpecialAction = Const.Const . specialActionNames asking
+          Children.faceSpecialAction = Const.Const . specialActionNames asking onCard
         }
 
 faceDownCharacteristicsNames :: (Monoid r) => Asking r -> (ability -> r) -> FaceDownCharacteristics.FaceDownCharacteristics ability -> r
@@ -1081,7 +1101,7 @@ lentKeywordNames asking x = case x of
 
 projectedCharacteristicsNames :: (Monoid r) => Asking r -> ProjectedCharacteristics.ProjectedCharacteristics -> r
 projectedCharacteristicsNames asking x = case x of
-  ProjectedCharacteristics.MkProjectedCharacteristics _names _supertypes keywords _colors _strippedColors _manaCost _manaValue _power _toughness _basePower _baseToughness _loyalty _defense _intensity characteristicPT _cardTypes _subtypes _printedSubtypes staticAbilities playerAbilities grantedPlayerAbilities grantedStaticAbilities grantedRuleAbilities specialActions activatedAbilities replacementEffects triggeredAbilities delayedAbilities enchant castingPermissions ruleAbilities _lostAllAbilities barredKeywords lentKeywords _hasFullText _wordChanges textChangedKeywords _combatDamageAmount _combatDamageOptions _controllerGrants _goadedBy _tapCounts _loyaltyIsToughness additionalCosts additionalCostChoices alternativeCosts costReductions castingRestrictions grantedCostReductions grantedAlternativeCosts _grantedSpendManaAsThough _halves exceptions mergedDonors prepare alternativeSpell _prototyped spell counterability _copyability _circled _definesChosenColor flipped -> foldMap (keywordNames asking) (Map.keys keywords) <> foldMap (keywordDesignatorNames asking) barredKeywords <> foldMap (lentKeywordNames asking) lentKeywords <> foldMap (characteristicPTNames asking) characteristicPT <> foldMap (staticAbilityNames asking (grantedAbilityNames asking (const mempty))) staticAbilities <> foldMap (playerStaticAbilityNames asking) playerAbilities <> foldMap (playerStaticAbilityNames asking . snd) grantedPlayerAbilities <> foldMap (staticAbilityNames asking (grantedAbilityNames asking (const mempty)) . snd) grantedStaticAbilities <> ruleAbilitiesNames asking grantedRuleAbilities <> foldMap (specialActionNames asking) specialActions <> foldMap (activatedAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty))) activatedAbilities <> foldMap (printedReplacementNames asking (const mempty) (grantedAbilityNames asking (const mempty)) (effectNames asking (const mempty) (grantedAbilityNames asking (const mempty)))) replacementEffects <> foldMap (triggeredAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty))) triggeredAbilities <> foldMap (triggeredAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty))) delayedAbilities <> foldMap (targetSlotNames asking) enchant <> foldMap (castingPermissionNames asking) castingPermissions <> ruleAbilitiesNames asking ruleAbilities <> foldMap (keywordNames asking) (Map.keys textChangedKeywords) <> foldMap (costComponentNames asking (keywordNames asking)) additionalCosts <> foldMap (costChoiceNames asking) additionalCostChoices <> foldMap (alternativeCostNames asking) alternativeCosts <> foldMap (costReductionNames asking) costReductions <> foldMap (castingRestrictionNames asking) castingRestrictions <> foldMap (costReductionNames asking) grantedCostReductions <> foldMap (alternativeCostNames asking) grantedAlternativeCosts <> foldMap (copyExceptionNames asking (grantedAbilityNames asking (const mempty))) exceptions <> foldMap (projectedCharacteristicsNames asking) mergedDonors <> foldMap (faceNames asking (const mempty)) prepare <> foldMap (faceNames asking (const mempty)) alternativeSpell <> modalNames asking (const mempty) (grantedAbilityNames asking (const mempty)) spell <> counterabilityNames asking counterability <> foldMap (projectedCharacteristicsNames asking) flipped
+  ProjectedCharacteristics.MkProjectedCharacteristics _names _supertypes keywords _colors _strippedColors _manaCost _manaValue _power _toughness _basePower _baseToughness _loyalty _defense _intensity characteristicPT _cardTypes _subtypes _printedSubtypes staticAbilities playerAbilities grantedPlayerAbilities grantedStaticAbilities grantedRuleAbilities specialActions activatedAbilities replacementEffects triggeredAbilities delayedAbilities enchant castingPermissions ruleAbilities _lostAllAbilities barredKeywords lentKeywords _hasFullText _wordChanges textChangedKeywords _combatDamageAmount _combatDamageOptions _controllerGrants _goadedBy _tapCounts _loyaltyIsToughness additionalCosts additionalCostChoices alternativeCosts costReductions castingRestrictions grantedCostReductions grantedAlternativeCosts _grantedSpendManaAsThough _halves exceptions mergedDonors prepare alternativeSpell _prototyped spell counterability _copyability _circled _definesChosenColor flipped -> foldMap (keywordNames asking) (Map.keys keywords) <> foldMap (keywordDesignatorNames asking) barredKeywords <> foldMap (lentKeywordNames asking) lentKeywords <> foldMap (characteristicPTNames asking) characteristicPT <> foldMap (staticAbilityNames asking (grantedAbilityNames asking (const mempty))) staticAbilities <> foldMap (playerStaticAbilityNames asking) playerAbilities <> foldMap (playerStaticAbilityNames asking . snd) grantedPlayerAbilities <> foldMap (staticAbilityNames asking (grantedAbilityNames asking (const mempty)) . snd) grantedStaticAbilities <> ruleAbilitiesNames asking grantedRuleAbilities <> foldMap (specialActionNames asking (const mempty)) specialActions <> foldMap (activatedAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty))) activatedAbilities <> foldMap (printedReplacementNames asking (const mempty) (grantedAbilityNames asking (const mempty)) (effectNames asking (const mempty) (grantedAbilityNames asking (const mempty)))) replacementEffects <> foldMap (triggeredAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty))) triggeredAbilities <> foldMap (triggeredAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty))) delayedAbilities <> foldMap (targetSlotNames asking) enchant <> foldMap (castingPermissionNames asking) castingPermissions <> ruleAbilitiesNames asking ruleAbilities <> foldMap (keywordNames asking) (Map.keys textChangedKeywords) <> foldMap (costComponentNames asking (keywordNames asking)) additionalCosts <> foldMap (costChoiceNames asking) additionalCostChoices <> foldMap (alternativeCostNames asking) alternativeCosts <> foldMap (costReductionNames asking) costReductions <> foldMap (castingRestrictionNames asking) castingRestrictions <> foldMap (costReductionNames asking) grantedCostReductions <> foldMap (alternativeCostNames asking) grantedAlternativeCosts <> foldMap (copyExceptionNames asking (grantedAbilityNames asking (const mempty))) exceptions <> foldMap (projectedCharacteristicsNames asking) mergedDonors <> foldMap (faceNames asking (const mempty)) prepare <> foldMap (faceNames asking (const mempty)) alternativeSpell <> modalNames asking (const mempty) (grantedAbilityNames asking (const mempty)) spell <> counterabilityNames asking counterability <> foldMap (projectedCharacteristicsNames asking) flipped
 
 quantityNames :: (Monoid r) => Asking r -> Quantity.Quantity -> r
 quantityNames asking x =
@@ -1192,15 +1212,17 @@ scopeNames asking x = case x of
   Scope.AsTurnBegan -> mempty
   Scope.Anywhere -> mempty
 
-specialActionNames :: (Monoid r) => Asking r -> SpecialAction.SpecialAction -> r
-specialActionNames asking x = case x of
+specialActionNames :: (Monoid r) => Asking r -> (card -> r) -> SpecialAction.SpecialAction (Effect.Effect card (GrantedAbility.GrantedAbility card)) -> r
+specialActionNames asking onCard x = case x of
   SpecialAction.DiscardThisAnyTime -> mempty
   SpecialAction.IgnoreThisUntilEndOfTurn _abilityName cost -> costNames asking (keywordNames asking) cost
+  SpecialAction.PerformAsASorcery effects -> foldMap (effectNames asking onCard (grantedAbilityNames asking onCard)) effects
 
 -- CR 102.1: a named player's turn reads whatever its reference reads.
 turnScopeNames :: (Monoid r) => Asking r -> TurnScope.TurnScope -> r
 turnScopeNames asking x = case x of
   TurnScope.PlayersTurn playerRef -> playerRefNames asking playerRef
+  TurnScope.FirstTurnOfGame -> mempty
 
 duringPhaseNames :: (Monoid r) => Asking r -> DuringPhase.DuringPhase -> r
 duringPhaseNames asking x = case x of

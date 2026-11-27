@@ -59,6 +59,7 @@ codec = Fields.object $ do
   chosenSubtype <- Fields.defaulted "chosenSubtype" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.nonEmpty Subtype.codec))) LastKnown.chosenSubtype
   chosenCardType <- Fields.defaulted "chosenCardType" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec CardType.codec)) LastKnown.chosenCardType
   chosenNumber <- Fields.defaulted "chosenNumber" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec Common.natural)) LastKnown.chosenNumber
+  chosenNumberBy <- Fields.defaulted "chosenNumberBy" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.naturalMap PlayerId.codec Common.natural))) LastKnown.chosenNumberBy
   chosenObjects <- Fields.defaulted "chosenObjects" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set ObjectId.codec))) LastKnown.chosenObjects
   acquisition <- Fields.defaulted "acquisition" Acquisition.Own Acquisition.codec LastKnown.acquisition
   attacking <- Fields.required "attacking" Common.boolean LastKnown.attacking
@@ -104,6 +105,7 @@ codec = Fields.object $ do
         LastKnown.chosenSubtype = chosenSubtype,
         LastKnown.chosenCardType = chosenCardType,
         LastKnown.chosenNumber = chosenNumber,
+        LastKnown.chosenNumberBy = chosenNumberBy,
         LastKnown.chosenObjects = chosenObjects,
         LastKnown.acquisition = acquisition,
         LastKnown.attacking = attacking,

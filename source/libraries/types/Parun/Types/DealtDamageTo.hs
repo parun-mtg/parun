@@ -12,9 +12,11 @@ data DealtDamageTo = MkDealtDamageTo
     -- | Nothing for any damage; Just Combat for CR 510.2's combat damage
     -- alone -- Witch-king of Angmar's "dealt combat damage to you".
     kind :: Maybe DamageKind.DamageKind,
-    -- | The turn in progress, or every turn the candidate has been this object.
+    -- | The turn in progress, the combat phase in progress, or every turn the
+    -- candidate has been this object.
     window :: Lookback.Lookback,
-    -- | Whose damage is asked about: the candidate's, or the source's.
+    -- | Whose damage is asked about: the candidate's, the source's, or a
+    -- slot's object's.
     dealer :: Actor.Actor
   }
   deriving (Eq, Ord, Show)

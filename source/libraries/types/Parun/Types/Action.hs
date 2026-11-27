@@ -230,6 +230,10 @@ data Action
     -- without the stack. Carries the row's source and the row's identity. Not
     -- EndEffect: nothing ends, so the offer stays for another payment.
     MakeLaterPayment ObjectId.ObjectId Timestamp.Timestamp
+  | -- | CR 307.5: take the sorcery-timed special action this object grants
+    -- (SpecialAction.PerformAsASorcery, Talon Gates), running its effects without
+    -- the stack. Carries only the source: no printing grants two.
+    PerformAsASorcery ObjectId.ObjectId
   | -- | CR 116.2c / 605.3a / Channel: pay this much life to add one mana of this
     -- type, at priority; Prompt.PayLifeForMana is the same action inside a payment.
     PayLifeForMana Natural.Natural ManaType.ManaType

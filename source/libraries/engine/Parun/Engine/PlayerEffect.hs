@@ -202,7 +202,7 @@ inScopeWithin source reach pid controller gs scope = case scope of
   PlayerScope.Related relation -> PlayerRelation.holds (Game.teams gs) relation controller pid
   PlayerScope.Superlative leading -> maybe False (List.elem pid) (leaders reach (Just controller) gs leading)
   PlayerScope.InRole role -> List.elem pid (Turn.roleHolders role gs)
-  PlayerScope.NamedBySource which -> (source >>= \oid -> Game.sourcePlayerOf which oid gs) == Just pid
+  PlayerScope.NamedBySource which -> any (\oid -> Set.member pid (Game.sourcePlayersOf which oid gs)) source
   PlayerScope.SourceOwner -> (source >>= \oid -> fmap Object.owner (Game.lookupObject oid gs)) == Just pid
   PlayerScope.AttackedYou during kinds -> Game.attacked gs during kinds pid controller
 

@@ -2027,6 +2027,12 @@ priorityDecision trail = do
                             Foldable.for_ paid (Resolve.runLaterPayment playSubgame)
                           grantAfterAction gs p
                           pure (PriorityWindow.Open trail')
+                        -- CR 307.5: Talon Gates' special action, its
+                        -- effects run without the stack.
+                        Action.Type.PerformAsASorcery oid -> do
+                          Event.takingSpecialAction $ Resolve.runSorcerySpeedAction playSubgame p oid
+                          grantAfterAction gs p
+                          pure (PriorityWindow.Open trail')
                         -- CR 116.2c / 116.3: Channel's life for mana.
                         Action.Type.PayLifeForMana life mana -> do
                           _ <- Event.takingSpecialAction (Cost.payLifeForMana performManaAbility p life mana)

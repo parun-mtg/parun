@@ -1,5 +1,5 @@
 -- CR 611.2c: reading a stored, resolution-generated row's subject -- a
--- Parun.Types.RestrictedCreatures -- against the permanents a rule is asking
+-- Parun.Types.RestrictedCreatures -- against the objects a rule is asking
 -- about. The one reader of that type's two arms, so every stored carrier that
 -- holds one (attack and block requirements, attack restrictions, object
 -- prohibitions) answers CR 611.2c the same way.

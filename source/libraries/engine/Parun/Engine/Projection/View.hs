@@ -62,6 +62,7 @@ import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Counterability as Counterability
+import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.ExileMark as ExileMark
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
@@ -2005,7 +2006,7 @@ grantedStaticAbilitiesOf oid gs =
 -- CR 116.2e's discard is asked of this too, of a card in HAND
 -- (Parun.Engine.Action.discardableCards), where the printed face is the answer
 -- unless something made the object a copy.
-copiableSpecialActionsOf :: ObjectId -> GameState -> [SpecialAction.SpecialAction]
+copiableSpecialActionsOf :: ObjectId -> GameState -> [SpecialAction.SpecialAction (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))]
 copiableSpecialActionsOf carrier gs =
   let oid = textBoxHolderOf carrier gs
    in case carriedSnapshotOf carrier oid gs of

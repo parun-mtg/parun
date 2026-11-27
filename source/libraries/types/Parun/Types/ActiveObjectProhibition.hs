@@ -8,7 +8,7 @@ import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Timestamp as Timestamp
 
 -- | CR 611.2a / 613.11: a stored, resolution-generated prohibition over the
--- permanents it names or a class of them, held in StoredEffects.objectProhibitions and left by
+-- objects it names or a class of them, held in StoredEffects.objectProhibitions and left by
 -- Parun.Types.Effect's Prohibit.
 --
 -- Read through Parun.Engine.RestrictedCreatures.prohibited, one
@@ -17,7 +17,8 @@ import qualified Parun.Types.Timestamp as Timestamp
 -- 701.26b at Parun.Engine.UntapRestriction.gathered, CR 122.6 at
 -- Parun.Engine.CounterRestriction.prohibited -- each unioned beside its printed
 -- carrier's rows, so no gate learns which road a prohibition took -- CR 702.26a
--- at Parun.Engine.Phasing.phasingIn, and CR 701.19c at
+-- at Parun.Engine.Phasing.phasingIn, CR 101.2 and 400.4a at
+-- Parun.Engine.EntryRestriction.prohibited, and CR 701.19c at
 -- Parun.Engine.Event.resolveDestruction, which turns the destruction it proposes
 -- into one that can't be regenerated.
 --
@@ -52,7 +53,7 @@ data ActiveObjectProhibition = MkActiveObjectProhibition
     timestamp :: Timestamp.Timestamp,
     expiry :: Expiry.Expiry,
     what :: Prohibition.Prohibition,
-    -- | The permanents the prohibition covers.
+    -- | The objects the prohibition covers.
     affected :: RestrictedCreatures.RestrictedCreatures ObjectId.ObjectId
   }
   deriving (Eq, Ord, Show)

@@ -20,7 +20,9 @@
                       "holder": "Controller",
                       "relation": {
                         "type": "NamedBySource",
-                        "value": "Chosen"
+                        "value": {
+                          "type": "Chosen"
+                        }
                       }
                     }
                   }

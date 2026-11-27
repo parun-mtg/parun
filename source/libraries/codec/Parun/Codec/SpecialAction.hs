@@ -2,23 +2,26 @@
 
 module Parun.Codec.SpecialAction where
 
+import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.AbilityName as AbilityName
 import qualified Parun.Codec.Cost as Cost
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.AbilityName as AbilityName.Type
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.SpecialAction as SpecialAction
 
-codec :: Codec.Codec SpecialAction.SpecialAction
-codec =
+codec :: (Eq effect, Typeable.Typeable effect) => Codec.Codec effect -> Codec.Codec (SpecialAction.SpecialAction effect)
+codec effect =
   Arm.tagged
     tagOf
     [ Arm.nullary "DiscardThisAnyTime" SpecialAction.DiscardThisAnyTime,
-      Arm.payload "IgnoreThisUntilEndOfTurn" ignoreCodec (uncurry SpecialAction.IgnoreThisUntilEndOfTurn) (\x -> case x of SpecialAction.IgnoreThisUntilEndOfTurn n y -> Just (n, y); _ -> Nothing)
+      Arm.payload "IgnoreThisUntilEndOfTurn" ignoreCodec (uncurry SpecialAction.IgnoreThisUntilEndOfTurn) (\x -> case x of SpecialAction.IgnoreThisUntilEndOfTurn n y -> Just (n, y); _ -> Nothing),
+      Arm.payload "PerformAsASorcery" (Common.seq effect) SpecialAction.PerformAsASorcery (\x -> case x of SpecialAction.PerformAsASorcery y -> Just y; _ -> Nothing)
     ]
 
 -- CR 116.2d's two payloads, keyed rather than positional: which ability the
@@ -29,7 +32,8 @@ ignoreCodec = Fields.object $ do
   cost <- Fields.required "cost" (Cost.codec Keyword.codec) snd
   pure (ability, cost)
 
-tagOf :: SpecialAction.SpecialAction -> String
+tagOf :: SpecialAction.SpecialAction effect -> String
 tagOf x = case x of
   SpecialAction.DiscardThisAnyTime {} -> "DiscardThisAnyTime"
   SpecialAction.IgnoreThisUntilEndOfTurn {} -> "IgnoreThisUntilEndOfTurn"
+  SpecialAction.PerformAsASorcery {} -> "PerformAsASorcery"

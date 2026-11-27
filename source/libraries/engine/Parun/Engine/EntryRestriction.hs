@@ -6,8 +6,9 @@
 -- Parun.Engine.ObjectRestriction and Parun.Engine.UntapRestriction). None is a
 -- layer, and no layer of Parun.Engine.Projection rewrites them.
 --
--- The only reader of Parun.Types.EntryRestriction. Each caller asks a Bool about
--- one entry and never learns which card produced it.
+-- The only reader of Parun.Types.EntryRestriction, and of a stored
+-- Prohibition.EnterFrom row. Each caller asks a Bool about one entry and never
+-- learns which card produced it.
 --
 -- THREE places ask. Parun.Engine.Event.runEntry asks of the permanent as it
 -- would exist on the battlefield (CR 614.17d), before and after CR 616.1's entry
@@ -25,10 +26,12 @@ import qualified Data.Set as Set
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.Rewrite as Projection
 import qualified Parun.Engine.Projection.View as Projection
+import qualified Parun.Engine.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.EntryRestriction as EntryRestriction
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import Parun.Types.Zone (Zone)
 
@@ -98,4 +101,8 @@ prohibited oid origin gs =
         let affected = EntryRestriction.affected restriction
          in Set.member origin (EntryRestriction.origins restriction)
               && named source (if null changes then affected else Projection.rewriteAffected changes affected)
-   in any (\source -> fromPermanent source || fromGrant source) (Set.toList (GameState.battlefield gs))
+      -- CR 611.2a: a resolution's stored row, which outlives its source (Bad
+      -- Wolf Bay planeswalks away in the same resolution). Proved by
+      -- data/scenarios/planechase's Bad Wolf Bay scenario.
+      stored = Set.member oid (RestrictedCreatures.prohibited (Prohibition.EnterFrom origin) [oid] gs)
+   in stored || any (\source -> fromPermanent source || fromGrant source) (Set.toList (GameState.battlefield gs))

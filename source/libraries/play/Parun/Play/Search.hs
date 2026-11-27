@@ -723,6 +723,7 @@ objectsIn f action = case action of
   Action.PutCompanionIntoHand -> pure action
   Action.EndEffect paid ended -> Action.EndEffect <$> f paid <*> f ended
   Action.MakeLaterPayment oid stamp -> (`Action.MakeLaterPayment` stamp) <$> f oid
+  Action.PerformAsASorcery oid -> Action.PerformAsASorcery <$> f oid
   Action.PayLifeForMana {} -> pure action
   Action.RollPlanarDie -> pure action
   Action.RerollShownDie die modifier -> Action.RerollShownDie <$> f die <*> f modifier

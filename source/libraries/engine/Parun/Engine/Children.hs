@@ -18,6 +18,7 @@ import qualified Parun.Types.ActivationsThisTurn as ActivationsThisTurn
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.ActiveLaterPayment as ActiveLaterPayment
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
+import qualified Parun.Types.Actor as Actor
 import qualified Parun.Types.AffectPlayers as AffectPlayers
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
@@ -677,7 +678,7 @@ filterChildren children predicate = case predicate of
   Filter.CouldAttackThisTurn -> pure predicate
   Filter.LeftLibraryThisTurn _ -> pure predicate
   Filter.CantPayKeywordCost _ -> pure predicate
-  Filter.CrewedThisTurn _ -> pure predicate
+  Filter.CrewedThisTurn crewer -> fmap Filter.CrewedThisTurn (actorChildren children crewer)
   Filter.ConvokedSourceThisTurn -> pure predicate
   Filter.SaddledSourceThisTurn -> pure predicate
   Filter.DealtDamageThisTurn kind by excess -> fmap (\by' -> Filter.DealtDamageThisTurn kind by' excess) (traverse (nest children) by)
@@ -773,19 +774,27 @@ operandChildren children operand = case operand of
   Operand.YourCounters _ -> pure operand
   Operand.ChosenNumber -> pure operand
 
--- | A damage look-back's children: the slot its party reads, at MANY
--- (membership, IsBound's reading).
+-- | A damage look-back's children: the slots its party and its dealer read,
+-- at MANY (membership, IsBound's reading).
 dealtDamageToChildren :: (Applicative f) => Children keyword f -> DealtDamageTo.DealtDamageTo -> f DealtDamageTo.DealtDamageTo
 dealtDamageToChildren children asked = case asked of
   DealtDamageTo.MkDealtDamageTo party kind window dealer ->
-    let rebuild renamed = DealtDamageTo.MkDealtDamageTo renamed kind window dealer
-     in case party of
-          DamagedParty.InSlot name -> fmap (rebuild . DamagedParty.InSlot) (slot children SlotArity.Many name)
-          DamagedParty.Related _ -> pure asked
-          DamagedParty.Source -> pure asked
-          DamagedParty.Anyone -> pure asked
-          DamagedParty.HolderOfCandidate _ -> pure asked
-          DamagedParty.Another _ -> pure asked
+    let partyChildren = case party of
+          DamagedParty.InSlot name -> fmap DamagedParty.InSlot (slot children SlotArity.Many name)
+          DamagedParty.Related _ -> pure party
+          DamagedParty.Source -> pure party
+          DamagedParty.Anyone -> pure party
+          DamagedParty.HolderOfCandidate _ -> pure party
+          DamagedParty.Another _ -> pure party
+     in (\party' dealer' -> DealtDamageTo.MkDealtDamageTo party' kind window dealer') <$> partyChildren <*> actorChildren children dealer
+
+-- | A relation atom's actor's children: the slot an InSlot actor reads, at MANY
+-- (any object the slot binds).
+actorChildren :: (Applicative f) => Children keyword f -> Actor.Actor -> f Actor.Actor
+actorChildren children actor = case actor of
+  Actor.InSlot name -> fmap Actor.InSlot (slot children SlotArity.Many name)
+  Actor.Candidate -> pure actor
+  Actor.Source -> pure actor
 
 -- | A counter link's children: the keyword its kind may hold.
 counterLinkedChildren :: (Applicative f) => Children keyword f -> CounterLinked.CounterLinked keyword -> f (CounterLinked.CounterLinked keyword)
@@ -1355,7 +1364,7 @@ effectChildren c effect = case effect of
         AnotherCounter.ChosenKind named -> AnotherCounter.ChosenKind <$> onSlot c named
   Effect.ChooseCardName (ChooseCardName.MkChooseCardName who restriction among selection) ->
     fmap Effect.ChooseCardName (ChooseCardName.MkChooseCardName <$> onPlayer c who <*> onFilter c restriction <*> traverse (onSlot c) among <*> pure selection)
-  Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality linked secret) -> fmap Effect.ChooseQuality (ChooseQuality.MkChooseQuality <$> chosenQualityChildren (onSubtype c) (onFilter c) quality <*> pure linked <*> pure secret)
+  Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality linked secret chooser) -> fmap Effect.ChooseQuality (ChooseQuality.MkChooseQuality <$> chosenQualityChildren (onSubtype c) (onFilter c) quality <*> pure linked <*> pure secret <*> pure chooser)
   Effect.Bolster quantity -> fmap Effect.Bolster (onQuantity c quantity)
   Effect.Amass (Amass.MkAmass who quantity kind named) -> fmap Effect.Amass (Amass.MkAmass <$> onPlayer c who <*> onQuantity c quantity <*> pure kind <*> traverse (onSlot c) named)
   Effect.Blight (Blight.MkBlight who quantity named) -> fmap Effect.Blight (Blight.MkBlight <$> onPlayer c who <*> onQuantity c quantity <*> traverse (onSlot c) named)
@@ -3191,7 +3200,7 @@ data FaceChildren card f = MkFaceChildren
     -- | An action taken from a hand at the mulligan or the game's start (CR 103.6), whole.
     faceHandAction :: HandAction.HandAction card -> f (HandAction.HandAction card),
     -- | A special action (CR 116.2), whole.
-    faceSpecialAction :: SpecialAction.SpecialAction -> f SpecialAction.SpecialAction
+    faceSpecialAction :: SpecialAction.SpecialAction (Effect.Effect card (GrantedAbility.GrantedAbility card)) -> f (SpecialAction.SpecialAction (Effect.Effect card (GrantedAbility.GrantedAbility card)))
   }
 
 -- | Every child of a face left as it is: the base a walk overrides.
@@ -3686,6 +3695,14 @@ counterRestrictionChildren c (CounterRestriction.MkCounterRestriction affected k
 counterLimitChildren :: (Applicative f) => RuleChildren f -> CounterLimit.CounterLimit -> f CounterLimit.CounterLimit
 counterLimitChildren c (CounterLimit.MkCounterLimit kind atMost) =
   CounterLimit.MkCounterLimit <$> ruleCounterKind c kind <*> pure atMost
+
+-- | A special action's effects (CR 116.2, 307.5), each through `visit`; a
+-- CR 116.2d ignore is left whole.
+specialActionChildren :: (Applicative f) => (effect -> f effect) -> SpecialAction.SpecialAction effect -> f (SpecialAction.SpecialAction effect)
+specialActionChildren visit x = case x of
+  SpecialAction.DiscardThisAnyTime -> pure x
+  SpecialAction.IgnoreThisUntilEndOfTurn {} -> pure x
+  SpecialAction.PerformAsASorcery effects -> SpecialAction.PerformAsASorcery <$> traverse visit effects
 
 -- | A keyword cost restriction's children (CR 702.122d, 702.196b).
 keywordCostRestrictionChildren :: (Applicative f) => RuleChildren f -> KeywordCostRestriction.KeywordCostRestriction -> f KeywordCostRestriction.KeywordCostRestriction

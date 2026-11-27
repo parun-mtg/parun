@@ -722,17 +722,18 @@ data Face card = MkFace
     -- | CR 116.2: the special actions this face's printed text grants -- CR
     -- 116.2e's "you may discard this card any time you could cast an instant"
     -- (Circling Vultures). WHERE it is read from is the reader's question and
-    -- differs per row. Both rows are read through
+    -- differs per row. Every row is read through
     -- Parun.Engine.Projection.specialActionsOf: the copiable snapshot, since a
     -- permanent that is a copy grants what it copied (CR 707.2a), and nothing
     -- once a layer-6 wipe has removed the object's abilities (CR 613.1f). CR
     -- 116.2e's functions in the HAND (CR 113.6), where
-    -- Parun.Engine.Action.discardableCards asks it.
+    -- Parun.Engine.Action.discardableCards asks it; CR 307.5's on a face-up
+    -- plane (CR 311.4), where Parun.Engine.Action.sorcerySpeedGrants does.
     --
     -- A LIST rather than a flag, matching every neighbouring permission field:
     -- nothing in CR 116.2 caps how many such lines a face may print, and
     -- Parun.Types.SpecialAction says which rows will land here.
-    specialActions :: [SpecialAction.SpecialAction]
+    specialActions :: [SpecialAction.SpecialAction (Effect.Effect card (GrantedAbility.GrantedAbility card))]
   }
   deriving (Eq, Ord, Show)
 

@@ -700,7 +700,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       s
       TriggerCondition.codec
       (TriggerCondition.PlayerLosesGame (PlayerScope.NamedBySource SourcePlayer.Chosen))
-      " {\"type\":\"PlayerLosesGame\",\"value\":{\"type\":\"NamedBySource\",\"value\":\"Chosen\"}} "
+      " {\"type\":\"PlayerLosesGame\",\"value\":{\"type\":\"NamedBySource\",\"value\":{\"type\":\"Chosen\"}}} "
   Spec.it s "PlayerManifestsDread" $
     Common.assertCodec
       s
