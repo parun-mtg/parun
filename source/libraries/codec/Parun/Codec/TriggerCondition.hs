@@ -31,6 +31,7 @@ import qualified Parun.Codec.PermanentBecomesDesignated as PermanentBecomesDesig
 import qualified Parun.Codec.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Codec.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Codec.PlacesSticker as PlacesSticker
+import qualified Parun.Codec.PlanarDieTrigger as PlanarDieTrigger
 import qualified Parun.Codec.PlayerActed as PlayerActed
 import qualified Parun.Codec.PlayerDrawsNthCard as PlayerDrawsNthCard
 import qualified Parun.Codec.PlayerExpends as PlayerExpends
@@ -127,7 +128,7 @@ codec =
           Arm.nullary "ChaosEnsues" TriggerCondition.ChaosEnsues,
           Arm.nullary "DaytimeChanges" TriggerCondition.DaytimeChanges,
           Arm.nullary "GameBegins" TriggerCondition.GameBegins,
-          Arm.payload "PlayerRollsPlaneswalker" PlayerRelation.codec TriggerCondition.PlayerRollsPlaneswalker (\x -> case x of TriggerCondition.PlayerRollsPlaneswalker y -> Just y; _ -> Nothing),
+          Arm.payload "PlayerRollsPlanarDie" PlanarDieTrigger.codec TriggerCondition.PlayerRollsPlanarDie (\x -> case x of TriggerCondition.PlayerRollsPlanarDie y -> Just y; _ -> Nothing),
           Arm.payload "TurnedUpOffDeck" ActingPermanent.codec TriggerCondition.TurnedUpOffDeck (\x -> case x of TriggerCondition.TurnedUpOffDeck y -> Just y; _ -> Nothing),
           Arm.nullary "SelfPlaneswalkedAwayFrom" TriggerCondition.SelfPlaneswalkedAwayFrom,
           Arm.payload "FlipsCoin" CoinFlipTrigger.codec TriggerCondition.FlipsCoin (\x -> case x of TriggerCondition.FlipsCoin y -> Just y; _ -> Nothing),
@@ -202,7 +203,7 @@ tagOf x = case x of
   TriggerCondition.ChaosEnsues {} -> "ChaosEnsues"
   TriggerCondition.DaytimeChanges {} -> "DaytimeChanges"
   TriggerCondition.GameBegins {} -> "GameBegins"
-  TriggerCondition.PlayerRollsPlaneswalker {} -> "PlayerRollsPlaneswalker"
+  TriggerCondition.PlayerRollsPlanarDie {} -> "PlayerRollsPlanarDie"
   TriggerCondition.TurnedUpOffDeck {} -> "TurnedUpOffDeck"
   TriggerCondition.SelfPlaneswalkedAwayFrom {} -> "SelfPlaneswalkedAwayFrom"
   TriggerCondition.FlipsCoin {} -> "FlipsCoin"

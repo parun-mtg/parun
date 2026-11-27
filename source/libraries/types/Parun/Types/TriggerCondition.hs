@@ -31,6 +31,7 @@ import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesig
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.PlacesSticker as PlacesSticker
+import qualified Parun.Types.PlanarDieTrigger as PlanarDieTrigger
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerDrawsNthCard as PlayerDrawsNthCard
 import qualified Parun.Types.PlayerExpends as PlayerExpends
@@ -279,8 +280,9 @@ data TriggerCondition
   | -- | "At the beginning of the game" (Seshiro the Anointed Avatar), against a
     -- GameEvent.GameBegan.
     GameBegins
-  | -- | CR 901.8: "whenever you roll the Planeswalker symbol on the planar die".
-    PlayerRollsPlaneswalker PlayerRelation.PlayerRelation
+  | -- | CR 901.8 / 901.9: "whenever you roll the planar die", or a stated face
+    -- on it, against a GameEvent.PlanarDieRolled.
+    PlayerRollsPlanarDie PlanarDieTrigger.PlanarDieTrigger
   | -- | CR 904.9 / 312.5 / 701.31d: "When you set this scheme in motion", "When
     -- you encounter [this phenomenon]" and "When you planeswalk to [this
     -- plane]" (Self), and CR 701.32b's "whenever you set a non-ongoing scheme

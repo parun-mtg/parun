@@ -13690,7 +13690,7 @@ controllerTurnScoped cond = case cond of
   TriggerCondition.ChaosEnsues -> False
   TriggerCondition.DaytimeChanges -> False
   TriggerCondition.GameBegins -> False
-  TriggerCondition.PlayerRollsPlaneswalker _ -> False
+  TriggerCondition.PlayerRollsPlanarDie _ -> False
   TriggerCondition.TurnedUpOffDeck _ -> False
   TriggerCondition.SelfPlaneswalkedAwayFrom -> False
   TriggerCondition.FlipsCoin _ -> False

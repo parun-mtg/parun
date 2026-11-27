@@ -59,6 +59,7 @@ import qualified Parun.Types.PaymentSubject as PaymentSubject
 import qualified Parun.Types.PendingTrigger as PendingTrigger
 import qualified Parun.Types.PlanarDieFace as PlanarDieFace
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
+import qualified Parun.Types.PlanarDieTrigger as PlanarDieTrigger
 import qualified Parun.Types.Planeswalk as Planeswalk
 import qualified Parun.Types.PlaneswalkAway as PlaneswalkAway
 import qualified Parun.Types.PlaneswalkCause as PlaneswalkCause
@@ -457,4 +458,4 @@ abilities gs = if isPlanechase gs then fmap (\pid -> (pid, planeswalkingAbility)
 -- die, planeswalk."
 planeswalkingAbility :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 planeswalkingAbility =
-  Mint.trigger (TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.You) (Seq.singleton (Effect.Planeswalk (Planeswalk.MkPlaneswalk Nothing PlaneswalkAway.FromEveryCard)))
+  Mint.trigger (TriggerCondition.PlayerRollsPlanarDie (PlanarDieTrigger.MkPlanarDieTrigger PlayerRelation.You (Just PlanarDieFace.Planeswalker))) (Seq.singleton (Effect.Planeswalk (Planeswalk.MkPlaneswalk Nothing PlaneswalkAway.FromEveryCard)))

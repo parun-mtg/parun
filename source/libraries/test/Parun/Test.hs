@@ -695,6 +695,7 @@ import qualified Parun.Codec.PileSpec
 import qualified Parun.Codec.PlacementSpec
 import qualified Parun.Codec.PlanarDieFaceSpec
 import qualified Parun.Codec.PlanarDieRolledSpec
+import qualified Parun.Codec.PlanarDieTriggerSpec
 import qualified Parun.Codec.PlaneswalkAwaySpec
 import qualified Parun.Codec.PlaneswalkCauseSpec
 import qualified Parun.Codec.PlaneswalkRSpec
@@ -1914,6 +1915,7 @@ spec s reference corpus = do
   Parun.Codec.PileSpec.spec s
   Parun.Codec.PlacementSpec.spec s
   Parun.Codec.PlanarDieFaceSpec.spec s
+  Parun.Codec.PlanarDieTriggerSpec.spec s
   Parun.Codec.PlanarDieRolledSpec.spec s
   Parun.Codec.PlayAsCopySpec.spec s
   Parun.Codec.PlayerActionSpec.spec s
