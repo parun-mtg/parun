@@ -211,7 +211,8 @@ inScopeWithin source reach pid controller gs scope = case scope of
 
 -- The same question over a CARRIER's affected set rather than over a bare scope:
 -- is `pid` one of the players this row applies to? inScope for the Scoped arm,
--- and an equality for the seat CR 601.2c chose and Parun.Engine.Resolve baked.
+-- and an equality for the seat CR 601.2c chose and Parun.Engine.Resolve baked
+-- (an inequality, beside the controller's, for AllBut).
 --
 -- The stored carrier is asked through this. The printed one, which only ever
 -- holds a Scoped (a static ability has no target slot to have named a seat),
@@ -226,6 +227,7 @@ applies pid controller gs affected =
   Game.inRangeOf controller pid gs && case affected of
     AffectedPlayers.Scoped scope -> inScope pid controller gs scope
     AffectedPlayers.Named seat -> pid == seat
+    AffectedPlayers.AllBut seat -> pid /= seat && pid /= controller
 
 -- PlayerScope.Superlative's players: Players.superlative over the players
 -- @reach@'s range holds (CR 801.11: an ability gets no information from outside

@@ -26,6 +26,18 @@ spec s = Spec.describe s "Parun.Codec.AffectedPlayers" $ do
       (AffectedPlayers.codec SlotName.codec)
       (AffectedPlayers.Named (SlotName.MkSlotName (Text.pack "target")))
       " {\"type\":\"Named\",\"value\":\"target\"} "
+  Spec.it s "AllBut" $
+    Common.assertCodec
+      s
+      (AffectedPlayers.codec SlotName.codec)
+      (AffectedPlayers.AllBut (SlotName.MkSlotName (Text.pack "champion")))
+      " {\"type\":\"AllBut\",\"value\":\"champion\"} "
+  Spec.it s "AllBut at a seat rather than a slot" $
+    Common.assertCodec
+      s
+      (AffectedPlayers.codec PlayerId.codec)
+      (AffectedPlayers.AllBut (PlayerId.MkPlayerId 2))
+      " {\"type\":\"AllBut\",\"value\":2} "
   -- The other instantiation, which Parun.Types.ActivePlayerEffect holds: the same
   -- two tags, with the seat CR 601.2c's slot was answered with in place of the
   -- slot name.

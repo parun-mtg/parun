@@ -849,6 +849,8 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
           [ (ChoosePlayer.slot choice, Set.singleton pid)
           | (clause, _) <- ManaOption.steps option,
             choice <- Maybe.mapMaybe ManaAbility.playerChoice (Foldable.toList (Clause.effects clause)),
+            -- The payer is the chooser only where "you" chooses.
+            ChoosePlayer.chooser choice == PlayerRef.Relative PlayerRelation.You,
             List.elem pid (Maybe.fromMaybe [] (PlayerEffect.playersInScope (Just pid) (Just pid) gs (ChoosePlayer.scope choice)))
               -- The resolving arm's CR 608.2d cut (Resolve.Arms.Damage.choosePlayer).
               && (not (ChoosePlayer.attaching choice) || Attach.canHostPlayer oid pid gs)

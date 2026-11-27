@@ -6,9 +6,10 @@ import qualified Parun.Types.PlayerScope as PlayerScope
 -- (CR 611.1 / 613.11) -- the payload of Effect.AffectPlayers and of the
 -- Parun.Types.ActivePlayerEffect it stores.
 --
--- Two readings, which is exactly Parun.Types.ZoneScope's split one axis over:
+-- Two kinds of reading, which is exactly Parun.Types.ZoneScope's split one axis over:
 -- a card either names a CLASS of players relative to the effect's controller
--- ("your opponents"), or names the seat it TARGETED ("target player"). The
+-- ("your opponents"), or names a seat a slot holds ("target player"), or
+-- every seat but that one and the controller's (AllBut). The
 -- printed carrier (Parun.Types.PlayerStaticAbility) keeps the bare PlayerScope,
 -- because a static ability has no slots for the second reading to be resolved
 -- against; the stored carrier has them, since a resolution binds slots.
@@ -39,4 +40,7 @@ data AffectedPlayers player
     -- (Cease-Fire's "target player"), and the seat that slot was answered with
     -- once Resolve has baked it.
     Named player
+  | -- | CR 101.2: every player but the effect's controller and the one named, as
+    -- Named names it -- Choose Your Champion's "only you and the chosen player".
+    AllBut player
   deriving (Eq, Ord, Show)

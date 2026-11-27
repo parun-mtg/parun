@@ -375,6 +375,7 @@ affectedPlayersNames :: (Monoid r) => Asking r -> (player -> r) -> AffectedPlaye
 affectedPlayersNames _asking onPlayer x = case x of
   AffectedPlayers.Scoped _playerScope -> mempty
   AffectedPlayers.Named player -> onPlayer player
+  AffectedPlayers.AllBut player -> onPlayer player
 
 aimedPlayersNames :: (Monoid r) => Asking r -> AimedPlayers.AimedPlayers -> r
 aimedPlayersNames asking x = case x of

@@ -547,11 +547,12 @@ playerRefSlots ref = case ref of
   PlayerRef.Superlative _ -> Map.empty
   PlayerRef.InRole _ -> Map.empty
 
--- The slots an AffectedPlayers reads. Only Named does, and only ever one player.
+-- The slots an AffectedPlayers reads. Only Named and AllBut do, and only ever one player.
 affectedPlayersSlots :: AffectedPlayers.AffectedPlayers SlotName -> Map.Map SlotName SlotArity
 affectedPlayersSlots affected = case affected of
   AffectedPlayers.Scoped _ -> Map.empty
   AffectedPlayers.Named slot -> Map.singleton slot SlotArity.One
+  AffectedPlayers.AllBut slot -> Map.singleton slot SlotArity.One
 
 -- The slots a Chooser reads: only BoundInSlot, and only ever one player.
 chooserSlots :: Chooser.Chooser -> Map.Map SlotName SlotArity
@@ -1031,7 +1032,8 @@ effectPlayerRefs effect = case effect of
   Effect.ItBecomes {} -> []
   Effect.ExileHaunting {} -> []
   Effect.PlaySubgame {} -> []
-  Effect.ChoosePlayer {} -> []
+  -- The seat that picks -- Choose Your Champion's target opponent.
+  Effect.ChoosePlayer choice -> [ChoosePlayer.chooser choice]
   Effect.ChoosePlayerAtRandom {} -> []
   -- The seat that picks -- Archfiend of Depravity's "that player" -- and the
   -- one that picks a pile (CR 700.3).

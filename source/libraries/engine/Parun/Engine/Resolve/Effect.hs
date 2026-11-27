@@ -631,7 +631,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.Note kind -> Damage.noteFor resolving source controller kind
   Effect.RestartGame payload -> Damage.restartGame performHandAction runSubgame resolving source controller legal payload
   Effect.PlaySubgame payload -> Damage.playSubgame runSubgame resolving payload
-  Effect.ChoosePlayer payload -> Damage.choosePlayer resolving source controller payload
+  Effect.ChoosePlayer payload -> Damage.choosePlayer resolving source controller legal payload
   Effect.ChoosePlayerAtRandom payload -> Damage.choosePlayerAtRandom resolving source controller payload
   Effect.ChoosePermanents payload -> Damage.choosePermanents resolving source controller legal payload
   Effect.ChooseGroup payload -> Damage.chooseGroup resolving source controller legal payload
