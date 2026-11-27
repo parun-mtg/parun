@@ -2247,8 +2247,11 @@ payOffers runSubgame resolving source controller offer legal gate offers = do
 -- permanents they control, exactly that many, which Cost.pay takes without
 -- asking again, and payOffers makes the shares one event. CR 118.3 first: a
 -- team controlling too few, or too little power, between them is not asked.
--- Reject-not-repair, Cost.pay's posture: an answer outside the offer, or one
--- short of the count or the total, pays nothing.
+-- CR 734.1, payGatePaidBy's posture: an answer outside the offer, or one short
+-- of the count or the total, is reversed and the team asked again
+-- (Common.payAgain); the same answer twice stands as declined. The scenario
+-- bow-to-my-command-a-total-power-of-7-is-reversed-and-the-team-asked-again
+-- proves it.
 --
 -- A cost Common.jointComponent refuses, or a choice of costs, is offered to
 -- nobody; Parun.CardSpec's "no card writes a joint offer the team cannot
@@ -2268,9 +2271,15 @@ jointOffer resolving source controller offer legal committed gate team = do
               split pools part chosen = [(payer, shareOf (part picked)) | (payer, mine) <- pools, let picked = Set.intersection chosen (Set.fromList mine), not (Set.null picked)]
               offered payable pick
                 | not payable = pure Nothing
-                | otherwise = do
+                | otherwise = attempt Set.empty
+                where
+                  attempt failed = do
                     decision <- if forced then pure PaymentDecision.Pays else Game.choose (Prompt.ChooseToPay decider asker resolving offer option Seq.empty)
-                    if decision /= PaymentDecision.Pays then pure Nothing else pick
+                    if decision /= PaymentDecision.Pays
+                      then pure Nothing
+                      else do
+                        (chosen, shares) <- pick
+                        Common.payAgain failed chosen shares id attempt
           case component of
             CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed n)) criterion _) -> do
               let pools = [(payer, Replacement.sacrificeCandidates (Just payer) slots payer (Just source) criterion gs) | payer <- team]
@@ -2281,10 +2290,12 @@ jointOffer resolving source controller offer legal committed gate team = do
                   if n == 0 || Natural.length pool <= n
                     then pure (Set.fromList (List.genericTake n pool))
                     else Game.choose (Prompt.ChooseSacrifices decider asker source pool n Seq.empty)
-                pure $
-                  if Set.isSubsetOf chosen (Set.fromList pool) && Natural.length chosen == n
-                    then Just (split pools part chosen)
-                    else Nothing
+                pure
+                  ( chosen,
+                    if Set.isSubsetOf chosen (Set.fromList pool) && Natural.length chosen == n
+                      then Just (split pools part chosen)
+                      else Nothing
+                  )
             CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n criterion keyword) -> do
               let pools = [(payer, filter (\c -> Projection.controllerOf c gs == Just payer) (Cost.tapCandidates slots payer source criterion gs)) | payer <- team]
                   powers = [(c, Cost.tapPower keyword payer source c gs) | (payer, mine) <- pools, c <- mine]
@@ -2292,10 +2303,12 @@ jointOffer resolving source controller offer legal committed gate team = do
                   part picked = CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed (Natural.length picked)) (Filter.Type.And [criterion, among picked]) False TapState.Tapped)
               offered (sum (fmap (max 0 . snd) powers) >= toInteger n) $ do
                 chosen <- Game.choose (Prompt.ChooseTapsForTotalPower decider asker source powers n)
-                pure $
-                  if Set.isSubsetOf chosen (Set.fromList (fmap fst powers)) && total chosen >= toInteger n
-                    then Just (split pools part chosen)
-                    else Nothing
+                pure
+                  ( chosen,
+                    if Set.isSubsetOf chosen (Set.fromList (fmap fst powers)) && total chosen >= toInteger n
+                      then Just (split pools part chosen)
+                      else Nothing
+                  )
             _ -> pure Nothing
     _ -> pure Nothing
 
