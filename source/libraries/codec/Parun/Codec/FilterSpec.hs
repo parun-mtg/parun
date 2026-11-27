@@ -498,7 +498,7 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       s
       codec
       (Filter.CrewedThisTurn Actor.Source)
-      " {\"type\":\"CrewedThisTurn\",\"value\":\"Source\"} "
+      " {\"type\":\"CrewedThisTurn\",\"value\":{\"type\":\"Source\"}} "
   Spec.it s "ConvokedSourceThisTurn" $
     Common.assertCodec
       s

@@ -487,10 +487,11 @@ data View = MkView
     -- CR 120.1 / 608.2i: whom did this candidate deal damage to earlier this
     -- turn? Every recipient of a GameEvent.DamageDealt it was the source of,
     -- each beside that event's CR 510 / 608 kind and the recipient's card types
-    -- as it was dealt the damage (CR 120.3), LAZY for `crewedThisTurn`'s
-    -- reason; DealtDamageTo compares them against the party and the
-    -- kind the card names.
-    dealtDamageTo :: Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType),
+    -- as it was dealt the damage (CR 120.3) and whether it was dealt during the
+    -- combat phase in progress (CR 506.1), LAZY for `crewedThisTurn`'s
+    -- reason; DealtDamageTo compares them against the party, the
+    -- kind and the window the card names.
+    dealtDamageTo :: Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType, Bool),
     -- CR 120.1 / 400.7: the same answer for every EARLIER turn this candidate
     -- has been this object, off Game.damageBeforeThisTurn, which
     -- Lookback.AsThisObject joins to `dealtDamageTo`. Lazy for its reason.
@@ -1396,7 +1397,7 @@ data Context = MkContext
     -- and the recipient's card types,
     -- for DealtDamageTo's Source dealer. View.dealtDamageTo's answer for the
     -- source. Filled with sourceMeasures, and lazy for its reason.
-    sourceDealtDamage :: Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType),
+    sourceDealtDamage :: Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType, Bool),
     -- CR 120.1 / 400.7: the same for every earlier turn, View.dealtDamageEarlier's
     -- answer for the source. Filled with sourceMeasures.
     sourceDealtDamageEarlier :: Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType),
@@ -1725,6 +1726,12 @@ data Context = MkContext
     -- still gets -- and an empty set is a slot bound to no player at all, which
     -- that function declines rather than widening.
     slotPlayers :: Map.Map SlotName.SlotName (Set.Set PlayerId.PlayerId),
+    -- CR 120.1: each object a slot binds, beside View.dealtDamageTo's and
+    -- View.dealtDamageEarlier's answers for it, for DealtDamageTo's InSlot
+    -- dealer. Filled by Parun.Engine.Projection.framedBySlots by id, so a
+    -- departed target still answers (CR 400.7); lazy for sourceDealtDamage's
+    -- reason.
+    slotDealtDamage :: Map.Map SlotName.SlotName [(ObjectId.ObjectId, Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType, Bool), Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType))],
     -- CR 601.2b / 603.2: the NUMBERS the surrounding announcement's bindings hold,
     -- keyed by slot -- "that much" as the trigger's own event stamped it
     -- (Parun.Engine.Binding.eventAmount), the X a caster just named
@@ -2127,7 +2134,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, sourcePlayers = Map.empty, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, carrierStickers = Seq.empty, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceChosenObjects = Set.empty, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, graveyardViews = Seq.empty, exiledViews = Seq.empty, libraryTopViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, slotDealtDamage = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, sourcePlayers = Map.empty, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, carrierStickers = Seq.empty, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceChosenObjects = Set.empty, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, graveyardViews = Seq.empty, exiledViews = Seq.empty, libraryTopViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
 
 -- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
 -- 805.4a), its draft notes (CR 905.2b), what was exiled before it (CR
@@ -3063,7 +3070,9 @@ matches context view predicate = case predicate of
   -- context with no source, no perspective or nothing in the slot, where the
   -- party names nothing. The Anyone party names every recipient, and
   -- Lookback.AsThisObject adds the earlier turns' damage, the Palladia-Mors
-  -- scenarios' subject.
+  -- scenarios' subject; Lookback.ThisCombat keeps the combat phase's alone.
+  -- An InSlot dealer is any object the slot binds, read by id: the Glen
+  -- Elendra scenarios under data/scenarios/planechase prove it and the window.
   --
   -- The Source dealer reads the same pair off the context, and a holder party
   -- is the candidate's holder as it is now: Steel Hellkite's ruling, proved by
@@ -3073,7 +3082,7 @@ matches context view predicate = case predicate of
   -- it was dealt the damage, whatever it is now (CR 608.2i). The Wolverine,
   -- Best There Is scenarios under data/scenarios/damage prove it.
   Filter.DealtDamageTo (DealtDamageTo.MkDealtDamageTo party wanted window dealer) ->
-    let toParty damaged damagedTypes = case party of
+    let toParty dealerId damaged damagedTypes = case party of
           DamagedParty.Anyone -> True
           DamagedParty.Source -> Maybe.isJust (source context) && Recipient.objectOf damaged == source context
           DamagedParty.Related relation -> case (Recipient.playerOf damaged, perspective context) of
@@ -3084,14 +3093,19 @@ matches context view predicate = case predicate of
             Nothing -> False
           DamagedParty.HolderOfCandidate holder -> Maybe.isJust (Recipient.playerOf damaged) && Recipient.playerOf damaged == heldBy holder view
           DamagedParty.Another cardType -> Set.member cardType damagedTypes && Recipient.objectOf damaged /= dealerId
-        hit (damaged, dealtKind, damagedTypes) = toParty damaged damagedTypes && all (== dealtKind) wanted
-        (thisTurn, allEarlier, dealerId) = case dealer of
-          Actor.Candidate -> (dealtDamageTo view, dealtDamageEarlier view, identity view)
-          Actor.Source -> (sourceDealtDamage context, sourceDealtDamageEarlier context, source context)
-        earlier = case window of
-          Lookback.ThisTurn -> Set.empty
-          Lookback.AsThisObject -> allEarlier
-     in any hit thisTurn || any hit earlier
+        hit dealerId (damaged, dealtKind, damagedTypes) = toParty dealerId damaged damagedTypes && all (== dealtKind) wanted
+        dealtBy (dealerId, thisTurn, allEarlier) = case window of
+          Lookback.ThisTurn -> any (\(damaged, dealtKind, damagedTypes, _) -> hit dealerId (damaged, dealtKind, damagedTypes)) thisTurn
+          Lookback.ThisCombat -> any (\(damaged, dealtKind, damagedTypes, thisCombat) -> thisCombat && hit dealerId (damaged, dealtKind, damagedTypes)) thisTurn
+          Lookback.AsThisObject -> any (\(damaged, dealtKind, damagedTypes, _) -> hit dealerId (damaged, dealtKind, damagedTypes)) thisTurn || any (hit dealerId) allEarlier
+     in case dealer of
+          Actor.Candidate -> dealtBy (identity view, dealtDamageTo view, dealtDamageEarlier view)
+          Actor.Source -> dealtBy (source context, sourceDealtDamage context, sourceDealtDamageEarlier context)
+          -- Vacuously TRUE for a slot the context has no key for,
+          -- ControllerRelatesToBound's reason: CR 601.2c's offer before the
+          -- sibling is chosen, which Parun.Engine.Target.selectionLegal's joint
+          -- check narrows.
+          Actor.InSlot slot -> maybe True (any (\(oid, thisTurn, allEarlier) -> dealtBy (Just oid, thisTurn, allEarlier))) (Map.lookup slot (slotDealtDamage context))
   -- CR 400.7 / 608.2i: the same look-back over the zone changes. A permanent
   -- that left and came back is a new object whose entry this is; one that phased
   -- in or turned face up made no entry at all (CR 702.26d, CR 708.8). A card that
@@ -3134,6 +3148,9 @@ matches context view predicate = case predicate of
       Just src -> Set.member src (crewedThisTurn view)
       Nothing -> False
     Actor.Source -> Maybe.isJust (source context) && maybe False (`Set.member` sourceCrewed context) (identity view)
+    -- Unprinted: a crewer naming a slot. Parun.FilterPositionLintSpec's "CR
+    -- 702.122c no card names a slot as a crewer" keeps it out of card data.
+    Actor.InSlot _ -> False
   -- CR 702.51c: the sibling above's relation one keyword over -- the candidate's
   -- own field says which spells it convoked and which permanents those became,
   -- and the SOURCE on the context says which one the card's "it" names.

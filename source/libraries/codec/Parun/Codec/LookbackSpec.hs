@@ -13,6 +13,12 @@ spec s = Spec.describe s "Parun.Codec.Lookback" $ do
       Lookback.codec
       Lookback.ThisTurn
       " \"ThisTurn\" "
+  Spec.it s "ThisCombat" $
+    Common.assertCodec
+      s
+      Lookback.codec
+      Lookback.ThisCombat
+      " \"ThisCombat\" "
   Spec.it s "AsThisObject" $
     Common.assertCodec
       s

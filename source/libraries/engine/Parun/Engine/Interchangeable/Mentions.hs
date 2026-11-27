@@ -68,6 +68,7 @@ import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.ActiveLaterPayment as ActiveLaterPayment
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
+import qualified Parun.Types.Actor as Actor
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AimedPlayers as AimedPlayers
@@ -105,6 +106,8 @@ import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageTally as DamageTally
+import qualified Parun.Types.DamagedParty as DamagedParty
+import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.DeclaredRole as DeclaredRole
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DungeonRoom as DungeonRoom
@@ -268,6 +271,23 @@ readsSourceLinks =
 slotNames :: Asking r -> SlotName.SlotName -> r
 slotNames asking _slot = contextNames asking
 
+-- The slot a relation atom's actor reads.
+actorNames :: (Monoid r) => Asking r -> Actor.Actor -> r
+actorNames asking actor = case actor of
+  Actor.Candidate -> mempty
+  Actor.Source -> mempty
+  Actor.InSlot slot -> slotNames asking slot
+
+-- The slot a damage look-back's party reads.
+damagedPartyNames :: (Monoid r) => Asking r -> DamagedParty.DamagedParty -> r
+damagedPartyNames asking party = case party of
+  DamagedParty.Related _ -> mempty
+  DamagedParty.Source -> mempty
+  DamagedParty.InSlot slot -> slotNames asking slot
+  DamagedParty.Anyone -> mempty
+  DamagedParty.HolderOfCandidate _ -> mempty
+  DamagedParty.Another _ -> mempty
+
 -- A history read of the turn a tally names: the turn in progress is read
 -- (CR 733.3), as is a window reaching it, and last turn's log, which no loop of
 -- this turn can grow, is not.
@@ -323,13 +343,13 @@ filterNames asking criterion = case criterion of
   Filter.CouldAttackThisTurn -> keyed asking
   Filter.LeftLibraryThisTurn how -> keyed asking <> case how of LibraryDeparture.Drawn -> mempty; LibraryDeparture.LastDrawn -> mempty; LibraryDeparture.Milled -> history asking HistoryRead.Mills
   Filter.CantPayKeywordCost _ -> contextNames asking
-  Filter.CrewedThisTurn _ -> keyed asking <> history asking HistoryRead.Crews
+  Filter.CrewedThisTurn crewer -> keyed asking <> history asking HistoryRead.Crews <> actorNames asking crewer
   Filter.ConvokedSourceThisTurn -> keyed asking <> history asking HistoryRead.Convokes <> history asking HistoryRead.Moves
   Filter.SaddledSourceThisTurn -> keyed asking <> history asking HistoryRead.Saddles
   Filter.DealtDamageThisTurn _ nested _ -> keyed asking <> history asking HistoryRead.Damage <> foldMap (filterNames asking) nested
   Filter.ActivatedThisTurn -> keyed asking <> history asking HistoryRead.Activations
   Filter.ActedThisTurn action -> keyed asking <> history asking (HistoryRead.PermanentActs action)
-  Filter.DealtDamageTo _ -> keyed asking <> history asking HistoryRead.Damage
+  Filter.DealtDamageTo (DealtDamageTo.MkDealtDamageTo party _kind _window dealer) -> keyed asking <> history asking HistoryRead.Damage <> damagedPartyNames asking party <> actorNames asking dealer
   Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to _from _window _under) -> keyed asking <> history asking (if to == Zone.Battlefield then HistoryRead.Entries else HistoryRead.Moves)
   Filter.BeforeMove nested -> keyed asking <> history asking HistoryRead.Moves <> filterNames asking nested
   Filter.TappedForManaThisTurn nested -> keyed asking <> history asking HistoryRead.TapsForMana <> filterNames asking nested

@@ -48,6 +48,7 @@ import qualified Parun.Types.CardArrivedIn as CardArrivedIn
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.Combat as Combat
+import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.Convoking as Convoking
@@ -94,6 +95,7 @@ import qualified Parun.Types.PastActivation as PastActivation
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
+import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -107,6 +109,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.SourceDealtDamage as SourceDealtDamage
 import qualified Parun.Types.SpellWasCast as SpellWasCast
+import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.TappedForMana as TappedForMana
 import qualified Parun.Types.Trait as Trait
@@ -1617,13 +1620,24 @@ countersMovedThisTurn oid gs =
 -- Game.damageRecipient so CR 120.8's zero is no damage here either. The
 -- recipient is the one the damage was finally dealt to, so CR 614.9's
 -- redirection counts against where it landed. Each recipient rides beside the
--- event's kind (CR 510 / 608), for a card that asks about combat damage alone.
-dealtDamageTo :: ObjectId -> GameState -> Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType)
+-- event's kind (CR 510 / 608), for a card that asks about combat damage alone,
+-- and whether the event came during the combat phase in progress: after the
+-- latest beginning of combat step began (CR 506.1), and never outside a combat
+-- phase, whose end CR 511.3 marks.
+dealtDamageTo :: ObjectId -> GameState -> Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType, Bool)
 dealtDamageTo oid gs =
-  let byIt event = case event of
-        GameEvent.DamageDealt ev | DamageEvent.source ev == oid -> fmap (\recipient -> (recipient, DamageEvent.kind ev, DamageEvent.recipientCardTypes ev)) (Game.damageRecipient event)
+  let events = fmap LoggedEvent.event (Foldable.toList (Turn.eventsThisTurn gs))
+      combatBegan event = case event of
+        GameEvent.StepBegan began -> StepBegan.phase began == Phase.Combat CombatStep.BeginningOfCombat
+        _ -> False
+      sinceCombatBegan = case TurnRegisters.phase (GameState.turn gs) of
+        Phase.Combat _ -> length (takeWhile (not . combatBegan) (List.reverse events))
+        _ -> 0
+      (beforeCombat, thisCombat) = List.splitAt (length events - sinceCombatBegan) events
+      byIt during event = case event of
+        GameEvent.DamageDealt ev | DamageEvent.source ev == oid -> fmap (\recipient -> (recipient, DamageEvent.kind ev, DamageEvent.recipientCardTypes ev, during)) (Game.damageRecipient event)
         _ -> Nothing
-   in Set.fromList (Maybe.mapMaybe (byIt . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs)))
+   in Set.fromList (Maybe.mapMaybe (byIt False) beforeCombat <> Maybe.mapMaybe (byIt True) thisCombat)
 
 -- CR 120.1 / 400.7: the same answer for every earlier turn of the game. An id
 -- names one object for its whole life, so the earlier turns' damage by this id
