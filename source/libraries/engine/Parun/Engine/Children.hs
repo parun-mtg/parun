@@ -3518,7 +3518,7 @@ objectRefChildren c ref = case ref of
   ObjectRef.EachCardInYourHand -> pure ref
   ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand hands filter_) -> fmap ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand <$> refZones c hands <*> traverse (refFilter c) filter_)
   ObjectRef.EachCardInYourLibrary filter_ -> ObjectRef.EachCardInYourLibrary <$> traverse (refFilter c) filter_
-  ObjectRef.EachCardYouOwn filter_ -> ObjectRef.EachCardYouOwn <$> refFilter c filter_
+  ObjectRef.EachCard filter_ -> ObjectRef.EachCard <$> refFilter c filter_
   ObjectRef.EachCardInExiledPile (EachCardInExiledPile.MkEachCardInExiledPile pile filter_) -> fmap ObjectRef.EachCardInExiledPile (EachCardInExiledPile.MkEachCardInExiledPile pile <$> traverse (refFilter c) filter_)
   ObjectRef.EachCardEncodedOnSource filter_ -> ObjectRef.EachCardEncodedOnSource <$> traverse (refFilter c) filter_
   ObjectRef.EachSpell filter_ -> ObjectRef.EachSpell <$> refFilter c filter_

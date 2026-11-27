@@ -92,13 +92,25 @@
                         }
                       },
                       "subject": {
-                        "type": "EachCardYouOwn",
+                        "type": "EachCard",
                         "value": {
-                          "type": "Not",
-                          "value": {
-                            "type": "IsInZone",
-                            "value": "Battlefield"
-                          }
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Owner",
+                                "relation": "You"
+                              }
+                            },
+                            {
+                              "type": "Not",
+                              "value": {
+                                "type": "IsInZone",
+                                "value": "Battlefield"
+                              }
+                            }
+                          ]
                         }
                       }
                     }

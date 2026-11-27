@@ -68,9 +68,21 @@
                           ],
                           "members": "One",
                           "ref": {
-                            "type": "EachCardYouOwn",
+                            "type": "EachCard",
                             "value": {
-                              "type": "IsCommander"
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Owner",
+                                    "relation": "You"
+                                  }
+                                },
+                                {
+                                  "type": "IsCommander"
+                                }
+                              ]
                             }
                           },
                           "slot": "commander"

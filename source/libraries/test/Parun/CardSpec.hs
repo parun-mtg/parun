@@ -3689,7 +3689,7 @@ objectRefFilters ref = case ref of
   -- states it here -- optional, exactly as the hand and linked exile arms are.
   ObjectRef.EachCardInYourLibrary f -> unframed (Foldable.toList f)
   -- Static Discharge's "cards you own named Static Discharge".
-  ObjectRef.EachCardYouOwn f -> unframed [f]
+  ObjectRef.EachCard f -> unframed [f]
   -- Hoarding Dragon's "the exiled card" usually holds none: CR 607.2a's set is
   -- named by which object exiled the cards rather than by their characteristics.
   -- Karn Liberated's "all non-Aura permanent cards exiled with Karn" is the one
