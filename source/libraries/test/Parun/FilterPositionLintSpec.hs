@@ -1330,6 +1330,7 @@ pooledAtom atom = case atom of
           AnchorPool.Permanents -> True
           AnchorPool.GraveyardCards -> True
           AnchorPool.ExiledCards -> False
+          AnchorPool.LibraryTops -> False
         pooledTrait = case trait of
           Trait.Name -> True
           Trait.Controller -> True
@@ -1681,25 +1682,33 @@ attackedPlayerOffends card =
         || framed + elsewhere /= relationAtomsIn sourceRelation encoded
         || relationAtomsIn baked encoded /= 0
 
--- CR 406.1's exiled pool as Filter.Shares anchors it, in an encoding:
--- Anchor.AnyObject's ExiledCards (Cemetery Illuminator's "a card exiled with
--- this creature"). IsAttachedTo at that anchor reads no pool.
-exiledAnchorAtoms :: Value.Value -> Int
-exiledAnchorAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares _ (Anchor.AnyObject AnchorPool.ExiledCards _ _) -> True; _ -> False)
+-- The pools Parun.Engine.SourceContext.framedWith fills as Filter.Shares
+-- anchors them, in an encoding: Anchor.AnyObject's ExiledCards (CR 406.1,
+-- Cemetery Illuminator's "a card exiled with this creature") and LibraryTops
+-- (CR 401.2, Skybreen). IsAttachedTo at that anchor reads no pool.
+sourcePoolAnchorAtoms :: Value.Value -> Int
+sourcePoolAnchorAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares _ (Anchor.AnyObject pool _ _) -> sourceFramedPool pool; _ -> False)
 
--- How many exiled-pool atoms this card asks where `sourceFramed` admits them,
--- and how many elsewhere.
-exiledAnchorCounts :: Surveyed -> (Int, Int)
-exiledAnchorCounts card =
-  let atoms framing = sum [exiledAnchorAtoms (atomJson f) | (position, f) <- surveyedFilters card, framing position]
+sourceFramedPool :: AnchorPool.AnchorPool -> Bool
+sourceFramedPool pool = case pool of
+  AnchorPool.ExiledCards -> True
+  AnchorPool.LibraryTops -> True
+  AnchorPool.Permanents -> False
+  AnchorPool.GraveyardCards -> False
+
+-- How many source-framed-pool atoms this card asks where `sourceFramed` admits
+-- them, and how many elsewhere.
+sourcePoolAnchorCounts :: Surveyed -> (Int, Int)
+sourcePoolAnchorCounts card =
+  let atoms framing = sum [sourcePoolAnchorAtoms (atomJson f) | (position, f) <- surveyedFilters card, framing position]
    in (atoms sourceFramed, atoms (not . sourceFramed))
 
 -- The atom asked outside `sourceFramed`, or the traversal and the codec
 -- disagreeing about how many the card holds (hostOfSourceOffends' fence).
-exiledAnchorOffends :: Surveyed -> Bool
-exiledAnchorOffends card =
-  let (framed, elsewhere) = exiledAnchorCounts card
-   in elsewhere /= 0 || framed + elsewhere /= exiledAnchorAtoms (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
+sourcePoolAnchorOffends :: Surveyed -> Bool
+sourcePoolAnchorOffends card =
+  let (framed, elsewhere) = sourcePoolAnchorCounts card
+   in elsewhere /= 0 || framed + elsewhere /= sourcePoolAnchorAtoms (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- How many atoms aimed at a quantity's object an encoding carries:
 -- Filter.IsEvaluated by tag, and Filter.Shares and Filter.IsAttachedTo at the
@@ -2870,14 +2879,15 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (attackedPlayerOffends (survey (counting (Filter.Type.HeldBy Holder.Controller (ControllerRelation.NamedBySource SourcePlayer.Chosen))))) "and so is the chosen player's"
     Spec.assertBool s (attackedPlayerOffends (survey (slotted (Filter.Type.HeldBy Holder.Controller (ControllerRelation.InSlot (SlotName.MkSlotName (Text.pack "target"))))))) "as is HeldBy's InSlot relation"
     Spec.assertBool s (not (attackedPlayerOffends (survey (S.combinedFace curse)))) "and the Curse itself is not"
-  -- CR 406.1's exiled pool is answerable only where Filter.Context.exiledViews
-  -- is filled, which Parun.Engine.SourceContext.framedWith fills: the positions
-  -- `sourceFramed` admits. Filter.contextFor leaves it empty, so the anchor
-  -- elsewhere is a silent False. See exiledAnchorOffends.
-  Spec.it s "CR 406.1 no card anchors Shares at the exiled pool outside a source-framed position" $ do
-    let offenders = fmap fst (filter (any exiledAnchorOffends . snd) pool)
-    Spec.assertEqWith s "the anchor sits only where the exiled pool is supplied" (fmap (S.nameOf . Printing.card) offenders) []
-    assertAuthors s registry pool "each author's anchors are framed" exiledAnchorCounts [("Cemetery Gatekeeper", 1), ("Cemetery Illuminator", 1), ("Cemetery Protector", 1), ("Circle of Confinement", 1)]
+  -- CR 406.1's exiled pool and CR 401.2's library tops are answerable only
+  -- where Filter.Context.exiledViews and libraryTopViews are filled, which
+  -- Parun.Engine.SourceContext.framedWith fills: the positions `sourceFramed`
+  -- admits. Filter.contextFor leaves them empty, so the anchor elsewhere is a
+  -- silent False. See sourcePoolAnchorOffends.
+  Spec.it s "CR 406.1 / 401.2 no card anchors Shares at the exiled pool or the library tops outside a source-framed position" $ do
+    let offenders = fmap fst (filter (any sourcePoolAnchorOffends . snd) pool)
+    Spec.assertEqWith s "the anchor sits only where its pool is supplied" (fmap (S.nameOf . Printing.card) offenders) []
+    assertAuthors s registry pool "each author's anchors are framed" sourcePoolAnchorCounts [("Cemetery Gatekeeper", 1), ("Cemetery Illuminator", 1), ("Cemetery Protector", 1), ("Circle of Confinement", 1), ("Skybreen", 1)]
     -- The rejected side: the anchor in a spell's life-gain amount, which no source
     -- frames, beside the same anchor in a target slot, which one does.
     piker <- S.printingOf s registry "Goblin Piker"
@@ -2892,10 +2902,17 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             { Face.spell =
                 Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures (Just exiled))) Seq.empty
             }
-    Spec.assertEqWith s "a planted anchor in a life-gain amount is an offence" (exiledAnchorCounts (survey counting)) (0, 1)
-    Spec.assertBool s (exiledAnchorOffends (survey counting)) "and the lint says so"
-    Spec.assertEqWith s "the same anchor in a target slot is not" (exiledAnchorCounts (survey slotted)) (1, 0)
-    Spec.assertBool s (not (exiledAnchorOffends (survey slotted))) "and the lint accepts it"
+    Spec.assertEqWith s "a planted anchor in a life-gain amount is an offence" (sourcePoolAnchorCounts (survey counting)) (0, 1)
+    Spec.assertBool s (sourcePoolAnchorOffends (survey counting)) "and the lint says so"
+    Spec.assertEqWith s "the same anchor in a target slot is not" (sourcePoolAnchorCounts (survey slotted)) (1, 0)
+    Spec.assertBool s (not (sourcePoolAnchorOffends (survey slotted))) "and the lint accepts it"
+    let tops = Filter.Type.Shares Trait.Color (Anchor.AnyObject AnchorPool.LibraryTops SelfInclusion.IncludesCandidate (Filter.Type.And []))
+        countingTops =
+          (S.combinedFace piker)
+            { Face.spell =
+                Mint.oneMode (Seq.singleton (Effect.GainLife (PlayerQuantity.MkPlayerQuantity (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) (Filter.Type.And [Filter.Type.Not tops]) Aggregation.Members)))))
+            }
+    Spec.assertBool s (sourcePoolAnchorOffends (survey countingTops)) "a planted library-top anchor in a life-gain amount is an offence too"
   -- CR 303.4b's Filter.IsHostOfSource is CR 709.4a's atom one axis over again:
   -- answerable only in the positions `hostFramed` admits. See hostOfSourceOffends for the two offences.
   Spec.it s "CR 303.4b no card asks IsHostOfSource where the source's host is unknown" $ do

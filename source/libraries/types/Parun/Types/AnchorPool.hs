@@ -8,4 +8,6 @@ data AnchorPool
     ExiledCards
   | -- | CR 404.1: the cards in every graveyard (Volo, Guide to Monsters).
     GraveyardCards
+  | -- | CR 401.2: the top card of every library (Skybreen).
+    LibraryTops
   deriving (Bounded, Enum, Eq, Ord, Show)
