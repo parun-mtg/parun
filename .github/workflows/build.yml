@@ -135,7 +135,7 @@ jobs:
           restore-keys: wasm-optimized-${{ hashFiles('flake.lock') }}-
       - run: nix develop .#wasm --command script/build-web.sh artifact/web
       - run: |
-          nix develop .#wasm --command wasm32-wasi-cabal build exe:parun \
+          nix develop .#wasm --command script/retry-package-db-race.sh wasm32-wasi-cabal build exe:parun \
             --builddir=dist-wasm \
             --enable-optimization \
             --flags=pedantic \
