@@ -215,6 +215,7 @@ import qualified Parun.Types.PairwiseFrame as PairwiseFrame
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
+import qualified Parun.Types.PayerGrouping as PayerGrouping
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PermissionVerb as PermissionVerb
@@ -6158,6 +6159,7 @@ extort =
       gate =
         PayGate.MkPayGate
           { PayGate.payer = PlayerRef.Relative PlayerRelation.You,
+            PayGate.grouping = PayerGrouping.Severally,
             PayGate.cost = CostChoice.MkCostChoice (extortCost NonEmpty.:| []),
             PayGate.basis = Nothing,
             PayGate.branch = PayBranch.IfPaid,
@@ -6520,6 +6522,7 @@ ward w =
       gate =
         PayGate.MkPayGate
           { PayGate.payer = PlayerRef.HolderOfBound Holder.Controller Hop.Itself Binding.targetingObject,
+            PayGate.grouping = PayerGrouping.Severally,
             PayGate.cost = CostChoice.MkCostChoice (Ward.cost w),
             PayGate.basis = Nothing,
             PayGate.branch = PayBranch.IfNotPaid,
@@ -7139,6 +7142,7 @@ fabricate n =
       gate =
         PayGate.MkPayGate
           { PayGate.payer = PlayerRef.InSlot Binding.you,
+            PayGate.grouping = PayerGrouping.Severally,
             PayGate.cost =
               CostChoice.MkCostChoice
                 ( Cost.MkCost
@@ -7937,6 +7941,7 @@ recover cost =
   let gate branch offeredAt =
         PayGate.MkPayGate
           { PayGate.payer = PlayerRef.Relative PlayerRelation.You,
+            PayGate.grouping = PayerGrouping.Severally,
             PayGate.cost = CostChoice.MkCostChoice (cost NonEmpty.:| []),
             PayGate.basis = Nothing,
             PayGate.branch = branch,
@@ -8955,6 +8960,7 @@ cumulativeUpkeep cost =
       gate =
         PayGate.MkPayGate
           { PayGate.payer = PlayerRef.Relative PlayerRelation.You,
+            PayGate.grouping = PayerGrouping.Severally,
             PayGate.cost = CostChoice.MkCostChoice (cost NonEmpty.:| []),
             PayGate.basis = Nothing,
             PayGate.branch = PayBranch.IfNotPaid,
@@ -9009,6 +9015,7 @@ echo cost =
       gate =
         PayGate.MkPayGate
           { PayGate.payer = PlayerRef.Relative PlayerRelation.You,
+            PayGate.grouping = PayerGrouping.Severally,
             PayGate.cost = CostChoice.MkCostChoice (cost NonEmpty.:| []),
             PayGate.basis = Nothing,
             PayGate.branch = PayBranch.IfNotPaid,

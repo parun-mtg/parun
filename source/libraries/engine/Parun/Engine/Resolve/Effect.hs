@@ -75,6 +75,9 @@ import qualified Parun.Types.CopyChoice as CopyChoice
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Cost as Cost.Type
+import qualified Parun.Types.CostAmount as CostAmount
+import qualified Parun.Types.CostChoice as CostChoice
+import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CountedAct as CountedAct
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.DieResult as DieResult
@@ -87,6 +90,7 @@ import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Facing as Facing
+import qualified Parun.Types.Filter as Filter.Type
 import Parun.Types.Game (Game)
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
@@ -101,6 +105,7 @@ import qualified Parun.Types.Modal as Modal.Type
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.Object as Object
+import qualified Parun.Types.ObjectCount as ObjectCount
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OptionalDecision as OptionalDecision
@@ -108,7 +113,9 @@ import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PayerAnswer as PayerAnswer
+import qualified Parun.Types.PayerGrouping as PayerGrouping
 import qualified Parun.Types.Payment as Payment
+import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.PaymentMoment as PaymentMoment
 import qualified Parun.Types.PaymentSubject as PaymentSubject
 import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
@@ -135,6 +142,7 @@ import qualified Parun.Types.Response as Response
 import Parun.Types.Result (Result)
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.RollReading as RollReading
+import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Settle as Settle
 import Parun.Types.SlotName (SlotName)
@@ -2153,13 +2161,37 @@ applyLoopBody runSubgame resolving source controller legal chosen bodyDefined bo
 -- (Event.causedBy; Tamiyo, Collector of Tales' ruling of 2019-05-03). The
 -- scenario ajanis-last-stand-makes-an-avatar-discarded-to-an-opponents-painful-quandary
 -- proves it.
+--
+-- A Jointly gate (Parun.Types.PayerGrouping) is one offer to the players named
+-- as a team: jointOffer settles it into each sharer's own mandatory share, and
+-- those shares are paid as above. Every player named still playing answers
+-- the team's answer.
 payGatePaid :: Game Result -> ObjectId -> ObjectId -> PlayerId -> PayOffer.PayOffer -> Map.Map SlotName (Set Recipient) -> Maybe (Set PlayerId) -> Set PlayerId -> PayGate.PayGate -> Game (Map.Map PlayerId Bool)
 payGatePaid runSubgame resolving source controller offer legal announced committed gate = caused resolving source controller $ do
   gs <- State.get
-  -- A COMMITTED payer (Parun.Engine.Resolve.chosenBranch) already chose to pay
-  -- when they announced the branch, so their offer is CR 118.12's mandatory
-  -- limb: paid when CR 118.3 allows, and not asked.
-  let offerTo payer = if Set.member payer committed then gate {PayGate.obligation = PayObligation.Mandatory} else gate
+  let named = Common.announcedOnly announced (Common.apnapDecidersOf (PayGate.payer gate) legal resolving source controller gs)
+  case PayGate.grouping gate of
+    -- A COMMITTED payer (Parun.Engine.Resolve.chosenBranch) already chose to
+    -- pay when they announced the branch, so their offer is CR 118.12's
+    -- mandatory limb: paid when CR 118.3 allows, and not asked.
+    PayerGrouping.Severally ->
+      payOffers runSubgame resolving source controller offer legal gate [(payer, if Set.member payer committed then mandatory gate else gate) | payer <- named]
+    PayerGrouping.Jointly -> do
+      let team = filter (`elem` Game.stillPlaying gs) named
+      shares <- jointOffer resolving source controller offer legal committed gate team
+      paid <- maybe (pure Map.empty) (payOffers runSubgame resolving source controller offer legal gate) shares
+      let together = Maybe.isJust shares && and paid
+      pure (Map.fromList ([(payer, False) | payer <- named] <> [(payer, together) | payer <- team]))
+  where
+    mandatory g = g {PayGate.obligation = PayObligation.Mandatory}
+
+-- payGatePaid's offers made, each payer with the gate offered to them, in the
+-- order given (CR 101.4's APNAP order); `gate` is the offer as printed, whose
+-- PayGate.marks the source performs once anybody pays.
+payOffers :: Game Result -> ObjectId -> ObjectId -> PlayerId -> PayOffer.PayOffer -> Map.Map SlotName (Set Recipient) -> PayGate.PayGate -> [(PlayerId, PayGate.PayGate)] -> Game (Map.Map PlayerId Bool)
+payOffers runSubgame resolving source controller offer legal gate offers = do
+  gs <- State.get
+  let offerTo payer = Maybe.fromMaybe gate (List.lookup payer offers)
       rehearse earlier payer = payGatePaidBy runSubgame resolving source controller offer (fmap (fmap (Common.payerAnswerOf gs)) earlier) legal payer (offerTo payer)
   rehearsed <-
     Monad.foldM
@@ -2169,7 +2201,7 @@ payGatePaid runSubgame resolving source controller offer legal announced committ
           pure (earlier Seq.|> (payer, plan))
       )
       Seq.empty
-      (Common.announcedOnly announced (Common.apnapDecidersOf (PayGate.payer gate) legal resolving source controller gs))
+      (fmap fst offers)
   -- CR 605.3a's activations ahead of the one event (CR 601.2g): each payer's
   -- last attempt is replayed up to its mana window's close, and its earlier,
   -- failed ones whole, in APNAP order, before any payment is made.
@@ -2195,6 +2227,57 @@ payGatePaid runSubgame resolving source controller offer legal announced committ
   Foldable.for_ (PayGate.marks gate) $ \action ->
     Monad.when (any (Maybe.isJust . snd) answered) (State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed action source Nothing))))
   pure (Map.fromList [(payer, Maybe.isJust paid) | (payer, paid) <- Foldable.toList answered])
+
+-- CR 805.2 / 118.12: a Jointly gate's one offer to `team`, the players it
+-- names still playing, in APNAP order, as each sharer's mandatory share of the
+-- cost; Nothing when the team does not pay. The team answers through its
+-- primary player, to whom CR 805.2 gives a team's unsettled choice: whether to
+-- pay (Prompt.ChooseToPay, unless the cost is mandatory or every player
+-- committed to it) and which permanents (Prompt.ChooseSacrifices, elided where
+-- the count leaves no choice), from everything any of the team controls
+-- matching the cost -- My Forces Are Innumerable's ruling, "Those creatures may
+-- be controlled by different teammates".
+--
+-- Each controller sacrifices their own (CR 701.21a): a share is the gate's
+-- sacrifice narrowed to the permanents picked that they control, which
+-- Cost.pay takes without asking again, and payOffers makes the shares one
+-- event. CR 118.3 first: a team controlling too few between them is not asked.
+-- Reject-not-repair, Cost.pay's Sacrifice posture: an answer that is not a
+-- size-n subset of the offer pays nothing.
+--
+-- A cost jointSacrifice cannot split, or a choice of costs, is offered to
+-- nobody; Parun.CardSpec's "no card writes a joint offer the team cannot
+-- split" keeps both out of card data.
+jointOffer :: ObjectId -> ObjectId -> PlayerId -> PayOffer.PayOffer -> Map.Map SlotName (Set Recipient) -> Set PlayerId -> PayGate.PayGate -> [PlayerId] -> Game (Maybe [(PlayerId, PayGate.PayGate)])
+jointOffer resolving source controller offer legal committed gate team = do
+  gs <- State.get
+  let (slots, options) = Common.gateCostOf resolving source controller legal gate gs
+  case (team, options) of
+    (first : _, option NonEmpty.:| [])
+      | Just (n, criterion) <- Common.jointSacrifice option -> do
+          let asker = Maybe.fromMaybe first (List.find (== Game.primaryOf gs first) team)
+              decider = Decide.deciderFor asker gs
+              pools = [(payer, Replacement.sacrificeCandidates (Just payer) slots payer (Just source) criterion gs) | payer <- team]
+              pool = concatMap snd pools
+              share picked = option {Cost.Type.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed (Natural.length picked))) (Filter.Type.And [criterion, Filter.Type.Or (fmap Filter.Type.IsObject (Set.toAscList picked))]) Set.empty)]}
+              shareOf picked = gate {PayGate.grouping = PayerGrouping.Severally, PayGate.cost = CostChoice.MkCostChoice (NonEmpty.singleton (share picked)), PayGate.obligation = PayObligation.Mandatory}
+              forced = PayGate.obligation gate == PayObligation.Mandatory || all (`Set.member` committed) team
+          if Natural.length pool < n
+            then pure Nothing
+            else do
+              decision <- if forced then pure PaymentDecision.Pays else Game.choose (Prompt.ChooseToPay decider asker resolving offer option Seq.empty)
+              if decision /= PaymentDecision.Pays
+                then pure Nothing
+                else do
+                  chosen <-
+                    if n == 0 || Natural.length pool <= n
+                      then pure (Set.fromList (List.genericTake n pool))
+                      else Game.choose (Prompt.ChooseSacrifices decider asker source pool n Seq.empty)
+                  pure $
+                    if Set.isSubsetOf chosen (Set.fromList pool) && Natural.length chosen == n
+                      then Just [(payer, shareOf picked) | (payer, mine) <- pools, let picked = Set.intersection chosen (Set.fromList mine), not (Set.null picked)]
+                      else Nothing
+    _ -> pure Nothing
 
 -- CR 118.12a over CR 608.2f's loop: the members whose ForEach.payGate branch
 -- selects anybody, in the loop's own order. Each member is its own offer, read

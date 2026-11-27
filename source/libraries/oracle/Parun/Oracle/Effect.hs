@@ -64,6 +64,7 @@ import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
+import qualified Parun.Types.PayerGrouping as PayerGrouping
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Pool as Pool
@@ -441,11 +442,11 @@ condition context c = case c of
 -- {1}{U}. If you do, draw a card." (Merfolk Seer), "Counter target spell
 -- unless its controller pays {3}." (Mana Leak, CR 118.12a), "unless any
 -- player pays {2}" (Nakaya Shade). A choice of more than two costs, one offered
--- by an earlier clause or reckoned from an object's mana cost, or one the
--- payer is not asked about, is not spelled out here.
+-- by an earlier clause or reckoned from an object's mana cost, one the payer
+-- is not asked about, or one a team pays together, is not spelled out here.
 paid :: Target.Context -> Bool -> PayGate.PayGate -> [Predicate.Predicate] -> [(Text.Text, [SlotName.SlotName])]
 paid context mayYou g predicates
-  | Maybe.isJust (PayGate.basis g) || Maybe.isJust (PayGate.offeredAt g) || PayGate.obligation g /= PayObligation.Optional = []
+  | Maybe.isJust (PayGate.basis g) || Maybe.isJust (PayGate.offeredAt g) || PayGate.obligation g /= PayObligation.Optional || PayGate.grouping g /= PayerGrouping.Severally = []
   | otherwise = do
       (second, third) <- Cost.paymentChoice (Target.self context) (Target.keyword context) (CostChoice.unwrap (PayGate.cost g))
       (each', counted) <- case PayGate.perEach g of

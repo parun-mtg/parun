@@ -1434,6 +1434,8 @@ library codec
     Parun.Codec.PayAny
     Parun.Codec.PayBranch
     Parun.Codec.PayBranchSpec
+    Parun.Codec.PayerGrouping
+    Parun.Codec.PayerGroupingSpec
     Parun.Codec.PayGate
     Parun.Codec.PayGateSpec
     Parun.Codec.Paying
@@ -3767,6 +3769,7 @@ library types
     Parun.Types.PayAny
     Parun.Types.PayBranch
     Parun.Types.PayerAnswer
+    Parun.Types.PayerGrouping
     Parun.Types.PayGate
     Parun.Types.Paying
     Parun.Types.Payment

@@ -145,6 +145,7 @@ import qualified Parun.Types.PairwiseFrame as PairwiseFrame
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
+import qualified Parun.Types.PayerGrouping as PayerGrouping
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseSelector as PhaseSelector
@@ -1219,7 +1220,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
 -- A cost paid on resolution, offered to the payer, of which the instructions
 -- are this branch.
 gate :: PayBranch.PayBranch -> PlayerRef.PlayerRef -> Cost.Cost Keyword.Keyword -> PayGate.PayGate
-gate branch payer cost = PayGate.MkPayGate payer (CostChoice.MkCostChoice (NonEmpty.singleton cost)) Nothing branch PayObligation.Optional Nothing Nothing Nothing Nothing
+gate branch payer cost = PayGate.MkPayGate payer PayerGrouping.Severally (CostChoice.MkCostChoice (NonEmpty.singleton cost)) Nothing branch PayObligation.Optional Nothing Nothing Nothing Nothing
 
 -- A cost of these mana symbols alone.
 mana :: [ManaSymbol.ManaSymbol] -> Cost.Cost Keyword.Keyword

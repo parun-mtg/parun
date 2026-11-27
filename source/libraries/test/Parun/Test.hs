@@ -665,6 +665,7 @@ import qualified Parun.Codec.PastTurnSpec
 import qualified Parun.Codec.PayBranchSpec
 import qualified Parun.Codec.PayGateSpec
 import qualified Parun.Codec.PayObligationSpec
+import qualified Parun.Codec.PayerGroupingSpec
 import qualified Parun.Codec.PayingSpec
 import qualified Parun.Codec.PaymentDecisionSpec
 import qualified Parun.Codec.PendingEntryEffectSpec
@@ -1875,6 +1876,7 @@ spec s reference corpus = do
   Parun.Codec.PayingSpec.spec s
   Parun.Codec.PaymentDecisionSpec.spec s
   Parun.Codec.PayObligationSpec.spec s
+  Parun.Codec.PayerGroupingSpec.spec s
   Parun.Codec.PendingEntryEffectSpec.spec s
   Parun.Codec.PendingOriginSpec.spec s
   Parun.Codec.PendingReplacementEffectSpec.spec s

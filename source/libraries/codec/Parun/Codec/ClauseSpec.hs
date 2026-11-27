@@ -32,6 +32,7 @@ import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
+import qualified Parun.Types.PayerGrouping as PayerGrouping
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
@@ -126,6 +127,7 @@ spec s = Spec.describe s "Parun.Codec.Clause" $ do
           ( Just
               PayGate.MkPayGate
                 { PayGate.payer = PlayerRef.HolderOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "spell")),
+                  PayGate.grouping = PayerGrouping.Severally,
                   PayGate.cost = CostChoice.MkCostChoice (Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 3]), Cost.components = []} NonEmpty.:| []),
                   PayGate.basis = Nothing,
                   PayGate.branch = PayBranch.IfNotPaid,

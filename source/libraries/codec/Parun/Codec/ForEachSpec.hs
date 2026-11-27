@@ -20,6 +20,7 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
+import qualified Parun.Types.PayerGrouping as PayerGrouping
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayersWho as PlayersWho
@@ -105,6 +106,7 @@ spec s = Spec.describe s "Parun.Codec.ForEach" $ do
               Just
                 PayGate.MkPayGate
                   { PayGate.payer = PlayerRef.Relative PlayerRelation.AnyPlayer,
+                    PayGate.grouping = PayerGrouping.Severally,
                     PayGate.cost = CostChoice.MkCostChoice (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.PayLife (CostAmount.Fixed 1)] NonEmpty.:| []),
                     PayGate.basis = Nothing,
                     PayGate.branch = PayBranch.IfNonePaid,

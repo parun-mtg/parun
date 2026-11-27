@@ -51,6 +51,7 @@ import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Engine.Resolve as Resolve
+import qualified Parun.Engine.Resolve.Common as Resolve.Common
 import qualified Parun.Engine.Resolve.Slots as Resolve
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
@@ -397,6 +398,7 @@ import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.OrTapped as OrTapped
 import qualified Parun.Types.PayGate as PayGate
+import qualified Parun.Types.PayerGrouping as PayerGrouping
 import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PerformerR as PerformerR
@@ -2194,6 +2196,28 @@ tapForManaRestrictionsDiffer faces = Set.size (Set.fromList (concatMap (Maybe.ca
 -- derivation and untouched by this lint.
 cardCostBasisStatesMana :: Face.Face Card.Type.Card -> Bool
 cardCostBasisStatesMana = any (any modeGateStatesMana . Modal.modes) . faceModals
+
+-- Unprinted: a joint offer (PayerGrouping.Jointly) the team cannot split --
+-- a cost Parun.Engine.Resolve.Common.jointSacrifice refuses, a choice of
+-- costs, a cost rewritten per payer (a basis, a "for each" or a chosen X), a
+-- CR 608.2f loop's per-member offer, which Resolve.Effect.loopOffers makes
+-- severally, or one in a mode with a CR 608.2d choice, whose
+-- Resolve.chosenBranch asks each seat's affordability alone.
+-- Parun.Engine.Resolve.Effect.jointOffer offers the first three to nobody.
+cardJointUnsplittable :: Face.Face Card.Type.Card -> Bool
+cardJointUnsplittable = any (\modal -> any unsplittable (clauseGates modal) || any joint (loopGates modal) || any chosen (Modal.modes modal)) . faceModals
+  where
+    gatesIn = Maybe.mapMaybe Clause.payGate . Foldable.toList . Mode.clauses
+    clauseGates = concatMap gatesIn . Modal.modes
+    chosen mode = any (Maybe.isJust . Clause.orElse) (Mode.clauses mode) && any joint (gatesIn mode)
+    loopGates modal = filter (`notElem` clauseGates modal) (payGatesOf modal)
+    joint gate = PayGate.grouping gate == PayerGrouping.Jointly
+    refused gate = case CostChoice.unwrap (PayGate.cost gate) of
+      option NonEmpty.:| [] -> Maybe.isNothing (Resolve.Common.jointSacrifice option)
+      _ -> True
+    unsplittable gate =
+      joint gate
+        && (refused gate || Maybe.isJust (PayGate.basis gate) || Maybe.isJust (PayGate.perEach gate) || Maybe.isJust (PayGate.x gate))
 
 -- A land face whose mana cost is {0}, by Filter.manaCostKey.
 landCostsZero :: Face.Face Card.Type.Card -> Bool
@@ -7042,6 +7066,29 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cardCostBasisStatesMana face)) "Flash, whose gate states no mana of its own, is accepted"
     Spec.assertBool s (cardCostBasisStatesMana (overGate stated)) "a described cost stating a mana part of its own is rejected"
     Spec.assertBool s (not (cardCostBasisStatesMana (overGate (stated . undescribed)))) "and a gate stating mana and describing nothing is what every other card writes"
+  -- The joint offer's lint: the corpus half, guarded against passing
+  -- vacuously by My Forces Are Innumerable, the one joint offer in the pool.
+  Spec.it s "no card writes a joint offer the team cannot split" $ do
+    ps <- S.allPrintings s corpus
+    let joint = any (any ((== PayerGrouping.Jointly) . PayGate.grouping) . payGatesOf) . faceModals
+    Spec.assertBool s (any (anyFace joint . Printing.card) ps) "the pool has a joint offer"
+    Spec.assertEqWith s "no unsplittable joint offer" (fmap (S.nameOf . Printing.card) (filter (anyFace cardJointUnsplittable . Printing.card) ps)) []
+  -- And the rejecting direction, against My Forces Are Innumerable misauthored
+  -- on purpose.
+  Spec.it s "the lint itself catches a joint offer the team cannot split" $ do
+    forces <- S.printingOf s registry "My Forces Are Innumerable"
+    let face = S.combinedFace forces
+        overGate f = face {Face.triggeredAbilities = fmap (\ability -> ability {TriggeredAbility.modal = (TriggeredAbility.modal ability) {Modal.modes = fmap (\mode -> mode {Mode.clauses = fmap (\clause -> clause {Clause.payGate = fmap f (Clause.payGate clause)}) (Mode.clauses mode)}) (Modal.modes (TriggeredAbility.modal ability))}}) (Face.triggeredAbilities face)}
+        options f gate = gate {PayGate.cost = CostChoice.MkCostChoice (f (CostChoice.unwrap (PayGate.cost gate)))}
+        withMana :: NonEmpty.NonEmpty (Cost.Type.Cost Keyword.Keyword) -> NonEmpty.NonEmpty (Cost.Type.Cost Keyword.Keyword)
+        withMana = fmap (\option -> option {Cost.Type.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])})
+    Spec.assertBool s (not (cardJointUnsplittable face)) "My Forces Are Innumerable's sacrifice is accepted"
+    Spec.assertBool s (cardJointUnsplittable (overGate (options withMana))) "a joint cost with mana is rejected"
+    Spec.assertBool s (cardJointUnsplittable (overGate (options (\costs -> costs <> costs)))) "a choice of joint costs is rejected"
+    Spec.assertBool s (cardJointUnsplittable (overGate (\gate -> gate {PayGate.perEach = Just (Quantity.Type.Literal 2)}))) "a joint cost for each of something is rejected"
+    let chosen = face {Face.triggeredAbilities = fmap (\ability -> ability {TriggeredAbility.modal = (TriggeredAbility.modal ability) {Modal.modes = fmap (\mode -> mode {Mode.clauses = fmap (\clause -> clause {Clause.orElse = Just (OrElse.MkOrElse Set.empty (PlayerRef.Relative PlayerRelation.You) False CardSelection.ByChoice 1)}) (Mode.clauses mode)}) (Modal.modes (TriggeredAbility.modal ability))}}) (Face.triggeredAbilities face)}
+    Spec.assertBool s (cardJointUnsplittable chosen) "a joint cost beside a CR 608.2d choice is rejected"
+    Spec.assertBool s (not (cardJointUnsplittable (overGate (\gate -> (options withMana gate) {PayGate.grouping = PayerGrouping.Severally})))) "and a cost with mana offered severally is what every other card writes"
   -- A land face writing {0} for CR 202.1b's absent mana cost: no printed land
   -- costs {0} (MTGJSON, 2026-11-26), and Filter.HasManaCost would match it.
   Spec.it s "CR 202.1b no land face writes the mana cost {0}" $ do

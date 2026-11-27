@@ -197,6 +197,7 @@ import qualified Parun.Types.OutsideDestination as OutsideDestination
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
+import qualified Parun.Types.PayerGrouping as PayerGrouping
 import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
@@ -3202,6 +3203,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                           ( Just
                               PayGate.MkPayGate
                                 { PayGate.payer = PlayerRef.Relative PlayerRelation.You,
+                                  PayGate.grouping = PayerGrouping.Severally,
                                   PayGate.cost = CostChoice.MkCostChoice (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) buried Set.empty)] NonEmpty.:| []),
                                   PayGate.basis = Nothing,
                                   PayGate.branch = PayBranch.IfNotPaid,
@@ -3408,6 +3410,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         gate =
           PayGate.MkPayGate
             { PayGate.payer = PlayerRef.Relative PlayerRelation.You,
+              PayGate.grouping = PayerGrouping.Severally,
               PayGate.cost = CostChoice.MkCostChoice (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) [] NonEmpty.:| []),
               PayGate.basis = Nothing,
               PayGate.branch = PayBranch.IfNotPaid,

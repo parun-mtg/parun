@@ -142,6 +142,7 @@ import qualified Parun.Types.PairwiseFrame as PairwiseFrame
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
+import qualified Parun.Types.PayerGrouping as PayerGrouping
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerEffect as PlayerEffect
@@ -1162,6 +1163,7 @@ payGate :: PlayerRef.PlayerRef -> PayBranch.PayBranch -> NonEmpty.NonEmpty (Cost
 payGate payer branch options =
   PayGate.MkPayGate
     { PayGate.payer = payer,
+      PayGate.grouping = PayerGrouping.Severally,
       PayGate.cost = CostChoice.MkCostChoice options,
       PayGate.basis = Nothing,
       PayGate.branch = branch,
