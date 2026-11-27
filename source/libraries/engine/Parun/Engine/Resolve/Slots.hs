@@ -505,8 +505,9 @@ riderSlots riders =
    in joinSlots [attacked, blocked, hosted]
 
 -- The slots a PlayerRef reads. InSlot, HolderOfBound, OwnersOfExiledBy,
--- ChosenPlayerOfBound and Attacking name one at arity One, and EachInSlot, HoldersOfBound,
--- EachPlayerExcept and EachOpponentExcept one at arity Many; the rest name
+-- ChosenPlayerOfBound and Attacking name one at arity One, EachInSlot,
+-- EachPlayerExcept and EachOpponentExcept one at arity Many, and HoldersOfBound
+-- each of its slots at arity Many; the rest name
 -- none, and the arms below carry the reason for each arity that is not
 -- self-evident.
 playerRefSlots :: PlayerRef -> Map.Map SlotName SlotArity
@@ -530,7 +531,7 @@ playerRefSlots ref = case ref of
   -- owner or host.
   PlayerRef.HolderOfBound _ _ slot -> Map.singleton slot SlotArity.One
   -- Read at arity MANY: the plural of the arm above.
-  PlayerRef.HoldersOfBound _ _ slot -> Map.singleton slot SlotArity.Many
+  PlayerRef.HoldersOfBound _ _ slots -> Map.fromList [(slot, SlotArity.Many) | slot <- NonEmpty.toList slots]
   -- Read at arity one for that arm's reason: a slot naming several objects
   -- names no one source a pile is linked to.
   PlayerRef.OwnersOfExiledBy _ slot -> Map.singleton slot SlotArity.One

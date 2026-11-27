@@ -1044,7 +1044,7 @@ playerRefNames asking x = case x of
   PlayerRef.Specific _playerId -> mempty
   PlayerRef.Candidate -> mempty
   PlayerRef.HolderOfBound _holder _hop slotName -> slotNames asking slotName
-  PlayerRef.HoldersOfBound _holder _hop slotName -> slotNames asking slotName
+  PlayerRef.HoldersOfBound _holder _hop slotNames' -> foldMap (slotNames asking) slotNames'
   PlayerRef.OwnersOfExiledBy _exiledPile slotName -> slotNames asking slotName
   PlayerRef.PlayerHostOfBound slotName -> slotNames asking slotName
   PlayerRef.AttackedByBound slotName -> slotNames asking slotName
