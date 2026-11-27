@@ -212,6 +212,7 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
 import qualified Parun.Types.UntapR as UntapR
+import qualified Parun.Types.UntapRewrite as UntapRewrite
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.WhichTurn as WhichTurn
 import qualified Parun.Types.WithCounters as WithCounters
@@ -1136,7 +1137,8 @@ matchesPrinted viewOf gs event candidate =
         -- DestructionR's arm reads one event class over: the row is minted onto
         -- the permanent holding the counters, so `src` IS the rule's subject and
         -- UntapR needs no subject. Bewitching Leechcraft's granted "this
-        -- creature" is the same self-scope.
+        -- creature" is the same self-scope. A printed subject (Edge of
+        -- Malacol's "a creature you control") is matched as a Filter instead.
         --
         -- `during` is the one restriction on WHICH untaps a row reaches, read
         -- off the board as the step the game is in, and that step must be the
@@ -1144,7 +1146,7 @@ matchesPrinted viewOf gs event candidate =
         -- untap step (Parun.Engine.Engine.untapAll). Nothing is rule 122.1d's
         -- every untap.
         (ReplacementEffect.UntapR untapR, ProposedEvent.WouldUntap oid) ->
-          src == oid
+          maybe (src == oid) (\f -> matchesFiltered viewOf gs candidate f oid) (UntapR.matching untapR)
             && maybe True (\phase -> phase == TurnRegisters.phase (GameState.turn gs) && maybe False (Turn.isActive gs) (Projection.controllerOf oid gs)) (UntapR.during untapR)
         -- CR 614.1a / 120.4c: whose life total the row watches (CR 109.5's
         -- "your") and what caused the loss. Whether the loss would actually
@@ -2639,8 +2641,13 @@ readsApplier re = case re of
   ReplacementEffect.TransformR (TransformR.MkTransformR _ _) -> False
   ReplacementEffect.SetInMotionR _ -> False
   -- CR 122.1d acts on the permanent becoming untapped and names no player -- CR
-  -- 701.19a's answer one event class over, and for its reason.
-  ReplacementEffect.UntapR _ -> False
+  -- 701.19a's answer one event class over, and for its reason. An
+  -- instead-effect runs as the row's controller, DestructionRewrite.RunEffects'
+  -- answer.
+  ReplacementEffect.UntapR (UntapR.MkUntapR _ _ rewrite) -> case rewrite of
+    UntapRewrite.RunEffects _ -> True
+    UntapRewrite.RemoveStunCounter -> False
+    UntapRewrite.RemoveCounterToUntap _ -> False
   -- The rewrite is the effect's own field and the player is the one the event
   -- already named, so two rows alike in `effect` resize the same loss the same way
   -- whoever holds them. CR 109.5's "your" is read in `applies` rather than in
@@ -2962,7 +2969,12 @@ readsSource effect = case effect of
   ReplacementEffect.AttachR {} -> False
   ReplacementEffect.TransformR {} -> False
   ReplacementEffect.SetInMotionR {} -> False
-  ReplacementEffect.UntapR _ -> False
+  -- Instead-effects may name the row's own source, DestructionRewrite.RunEffects'
+  -- answer.
+  ReplacementEffect.UntapR (UntapR.MkUntapR _ _ rewrite) -> case rewrite of
+    UntapRewrite.RunEffects _ -> True
+    UntapRewrite.RemoveStunCounter -> False
+    UntapRewrite.RemoveCounterToUntap _ -> False
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.Scaled scaling)) -> computedScaling scaling
   -- Enduring Angel transforms the row's own source, so two such rows leave
   -- different boards: DestructionRewrite.UmbraArmor's answer.

@@ -5290,7 +5290,7 @@ apply settle batch applied batchPrevented candidate event =
     -- this candidate's own source. `consume` is skipped for the shield arm's
     -- reason: the counter IS the resource, so spending the row twice off one
     -- counter is what removing the counter already prevents.
-    (ReplacementEffect.UntapR (UntapR.MkUntapR _ rewrite), ProposedEvent.WouldUntap oid) -> case rewrite of
+    (ReplacementEffect.UntapR (UntapR.MkUntapR _ _ rewrite), ProposedEvent.WouldUntap oid) -> case rewrite of
       UntapRewrite.RemoveStunCounter -> do
         removeCounters oid CounterKind.Stun 1
         pure Nothing
@@ -5305,6 +5305,14 @@ apply settle batch applied batchPrevented candidate event =
             removeCounters oid kind 1
             pure (Just event)
           _ -> pure Nothing
+      -- CR 614.1a / 614.6: Edge of Malacol's "put two +1/+1 counters on it
+      -- instead": the untap does not happen, and the effects are queued with
+      -- `oid` under Binding.sparedPermanent ("it"), DestructionRewrite.RunEffects'
+      -- reason. `consume` spends only a resolution's row; a static one is kept.
+      UntapRewrite.RunEffects effects -> do
+        Replacement.consume (ReplacementCandidate.identity candidate)
+        queueInstead candidate oid effects
+        pure Nothing
     -- Unreachable: `applies` admits UntapR only against WouldUntap.
     (ReplacementEffect.UntapR _, _) -> pure (Just event)
     -- CR 614.1a: the RESIZING arms leave the event standing at a rewritten loss,
