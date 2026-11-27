@@ -610,6 +610,10 @@ runTurnBasedActions phase = do
       -- upkeep's triggers and CR 704.5m look.
       Resolve.runReplacementEffects playSubgame
       untapAll live
+      -- CR 614.6: what a run-effects untap rewrite queued is the modified event,
+      -- so it happens in this step, before the upkeep's first CR 704.3 check
+      -- (Edge of Malacol's counters on a phased-in 0/0).
+      Resolve.runReplacementEffects playSubgame
     -- CR 805.4b: each player on the active team draws.
     -- CR 503.1 gives the upkeep no turn-based action; the Unstable FAQ adds the
     -- crank (CR 701.45a leaving it out of the rules), the active player's, so

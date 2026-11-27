@@ -89,7 +89,8 @@ data StoredEffects = MkStoredEffects
     -- or a replacement's (Event.drawSeries); for a transformation, the CR
     -- 702.145 sweep that turned it, in the untap step
     -- (Engine.runTurnBasedActions) or before the state-based action pass
-    -- (Engine.settlePasses), and each resolved instruction.
+    -- (Engine.settlePasses), and each resolved instruction; for the untap
+    -- step's untap, that step's turn-based action (Engine.runTurnBasedActions).
     pendingReplacementEffects :: Seq.Seq PendingReplacementEffect.PendingReplacementEffect,
     -- | CR 614.10b: the actions a skip put first in the next step, phase or turn
     -- to actually occur (PhaseRewrite.MaySkipFor), drained by
