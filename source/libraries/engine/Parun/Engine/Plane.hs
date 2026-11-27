@@ -192,7 +192,7 @@ rangePerspective source controller gs = if exemptFromRange source gs then Nothin
 -- the planar team"). A triggered ability triggers once for each, each its
 -- instance's controller (Event.Trigger's eventTriggers); a static ability
 -- applies as though each controlled it (PlayerEffect's printedRows,
--- Projection's affectsFramed).
+-- Projection's affectsFramed, Replacement's applicable).
 -- data/scenarios/planechase/cr-901-12c-tazeem-s-chaos-draws-for-each-member-of-the-planar-team.json
 -- and its Academy at Tolaria West, Naya, Grixis and The Caldaia siblings
 -- prove it.

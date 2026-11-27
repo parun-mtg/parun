@@ -600,7 +600,20 @@ applicable asOf gs event =
       -- One gather and one grant walk, shared by every candidate asked.
       viewOf = Projection.viewsOf sources
       grants = Projection.controlGrants sources
-   in filter (\candidate -> applies viewOf grants sources event candidate && changesLoss gs event candidate) (collect sources (StoredEffects.replacements (GameState.stored gs)))
+      -- CR 901.12c: a static row of a planar source reads each member of the
+      -- planar team as its "you" (Plane.planarYous; docs/decisions.md, "A
+      -- plane's you is each member of the planar team"), so it applies as the
+      -- first member it matches for, and once: the identity is unchanged.
+      -- data/scenarios/planechase/cr-901-12c-edge-of-malacol-spares-a-tapped-creature-of-each-member-of-the-planar-team.json
+      -- proves it.
+      asMatching candidate = List.find (\c -> applies viewOf grants sources event c && changesLoss gs event c) (perspectives candidate)
+      perspectives candidate = case (ReplacementCandidate.lifetime candidate, ReplacementCandidate.controller candidate) of
+        (Nothing, Just controller) ->
+          let source = ReplacementCandidate.source candidate
+              as you = candidate {ReplacementCandidate.controller = Just you, ReplacementCandidate.rider = printedRider source (Just you) (ReplacementCandidate.effect candidate)}
+           in candidate : fmap as (filter (/= controller) (Plane.planarYous source controller sources))
+        _ -> [candidate]
+   in Maybe.mapMaybe asMatching (collect sources (StoredEffects.replacements (GameState.stored gs)))
 
 -- CR 120.4c / 120.4d: would a LifeLossR row change this loss, judged on the
 -- live board even where `asOf` freezes the candidates. A damage batch's
