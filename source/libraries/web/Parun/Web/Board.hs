@@ -276,13 +276,36 @@ seatHead marks board own s =
         Nothing -> Element.el "div" ["who"] [] [Element.el "span" ["seat-name"] [] [Element.text label], lifeBox]
       chip cls k v tip = Element.el "span" ["count", cls] [Element.attr "title" (Text.pack tip)] ([Element.el "span" ["k"] [] [Element.string k]] <> [Element.string v | not (null v)])
       counterWord kind = Text.unpack (Wording.spaced (Text.pack (show kind)))
-      -- CR 903.10a: the combat damage each commander has dealt the seat, by
-      -- the commander's name up to its comma, beside its life.
+      -- CR 903.10a: the combat damage each commander has dealt the seat, in
+      -- one quiet chip by the most any one has dealt, opening to each by its
+      -- name up to its comma; nothing until one has.
       whose owner = if owner == PlayerView.viewer board then "your" else Text.unpack (name owner) <> "'s"
-      commanderDamage =
-        [ chip "commander-damage" (takeWhile (/= ',') (Text.unpack (CardName.unwrap commander)) <> ":") (show n <> " commander damage") ("Combat damage dealt by " <> Text.unpack (CardName.unwrap commander) <> ", " <> whose owner <> " commander (CR 903.10a)")
+      dealtBy =
+        [ (owner, commander, n)
         | (owner, dealt) <- Map.toList (SeatView.commanderDamage s),
-          (commander, n) <- Map.toList dealt
+          (commander, n) <- Map.toList dealt,
+          n > 0
+        ]
+      dealtLine (owner, commander, n) =
+        Element.el
+          "span"
+          ["dealt"]
+          [Element.attr "title" (Text.pack ("Combat damage dealt by " <> Text.unpack (CardName.unwrap commander) <> ", " <> whose owner <> " commander (CR 903.10a)"))]
+          [Element.el "span" ["k"] [] [Element.string (takeWhile (/= ',') (Text.unpack (CardName.unwrap commander)))], Element.string (show n)]
+      commanderDamage =
+        [ Element.el
+            "details"
+            ["count", "commander-damage"]
+            []
+            [ Element.el
+                "summary"
+                []
+                [Element.attr "title" (Text.pack "Commander damage: the most one commander has dealt (CR 903.10a)"), Element.attr "aria-label" (Text.pack (show most <> " commander damage"))]
+                [Icon.icon [] Icon.MkCombat, Element.string (show most)],
+              Element.el "span" ["dealt-by"] [] (fmap dealtLine dealtBy)
+            ]
+        | let most = maximum (0 : [n | (_, _, n) <- dealtBy]),
+          not (null dealtBy)
         ]
       -- The seat's team (CR 808.1), designations (CR 726.1, 727.1,
       -- 701.54c, 702.179b, 702.131c, 702.195b, 309.7) and player counters
