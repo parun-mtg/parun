@@ -127,14 +127,16 @@ data Picker = MkPicker
     send :: Text.Text
   }
 
--- | Options to pick from, how many at least, how many at most, and whether
--- a pick replaces the group's last.
+-- | Options to pick from, how many at least, how many at most, whether a
+-- pick replaces the group's last, and what the list says of its options'
+-- order (arranged).
 data Group = MkGroup
   { title :: Text.Text,
     options :: [(R.Reply, Text.Text)],
     least :: Natural,
     most :: Natural,
-    exclusive :: Bool
+    exclusive :: Bool,
+    sorting :: Maybe Text.Text
   }
 
 -- | How much the seat lets the page answer for it, its own setting: full
@@ -804,21 +806,23 @@ picker request = do
   let named :: [R.Reply] -> [(R.Reply, Text.Text)]
       named = fmap (\option -> (option, Offer.listedName shown option))
       every items = (0, Natural.length items)
+      -- Cards to pick from, in a stated order (arranged).
+      cards heading' labelled least' most' = let (sorted, note) = arranged shown labelled in MkGroup heading' sorted least' most' False note
   case Text.unpack (Question.kind question) of
     kind | kind `elem` ["Bottom", "ChooseDiscard"] -> do
       from <- Protocol.field "from" offer >>= Protocol.arrayOf
       wanted <- min (Natural.length from) <$> (Protocol.field "count" offer >>= Protocol.naturalOf)
       let purpose = if kind == "Bottom" then " to put on the bottom of your library" else " to discard"
-      pure $ MkPicker [MkGroup (Text.pack "Choose " <> Wording.count wanted "card" <> Text.pack purpose) (named from) wanted wanted False] (Right . R.Array . concat) (Text.pack "Done")
+      pure $ MkPicker [cards (Text.pack "Choose " <> Wording.count wanted "card" <> Text.pack purpose) (named from) wanted wanted] (Right . R.Array . concat) (Text.pack "Done")
     "DeclareAttackers" -> do
       attackers <- Protocol.arrayOf offer
-      pure $ MkPicker [uncurry (MkGroup (Text.pack "Choose attackers") (named attackers)) (every attackers) False] (Right . R.Array . concat) (Text.pack "Attack")
+      pure $ MkPicker [uncurry (MkGroup (Text.pack "Choose attackers") (named attackers)) (every attackers) False Nothing] (Right . R.Array . concat) (Text.pack "Attack")
     "DeclareBlockers" -> do
       blockers <- Protocol.field "blockers" offer >>= Protocol.arrayOf
       attackers <- Protocol.field "attackers" offer >>= Protocol.arrayOf
       pure $
         MkPicker
-          [uncurry (MkGroup (Offer.listedName shown blocker <> Text.pack " blocks") (named attackers)) (every attackers) False | blocker <- blockers]
+          [uncurry (MkGroup (Offer.listedName shown blocker <> Text.pack " blocks") (named attackers)) (every attackers) False Nothing | blocker <- blockers]
           (\chosen -> Right $ R.Array [R.Array [blocker, R.Array blocked] | (blocker, blocked) <- zip blockers chosen, not (null blocked)])
           (Text.pack "Block")
     "ChooseTargets" -> do
@@ -827,7 +831,7 @@ picker request = do
         MkPicker
           [ let legal = Offer.bySeat shown offered
                 n = min wanted (Natural.length legal)
-             in MkGroup (Text.pack "Choose " <> Wording.count n "target" <> Text.pack " for " <> Offer.objectName shown source <> foldMap (\t -> Text.pack " (" <> Wording.spaced t <> Text.pack ")") (Monad.mfilter (/= Text.pack "target") (Offer.textOf slot))) [(option, asSeat shown (Offer.recipientPlayer option) (Offer.targetName shown legal option)) | option <- legal] n n False
+             in MkGroup (Text.pack "Choose " <> Wording.count n "target" <> Text.pack " for " <> Offer.objectName shown source <> foldMap (\t -> Text.pack " (" <> Wording.spaced t <> Text.pack ")") (Monad.mfilter (/= Text.pack "target") (Offer.textOf slot))) [(option, asSeat shown (Offer.recipientPlayer option) (Offer.targetName shown legal option)) | option <- legal] n n False Nothing
           | (slot, wanted, offered) <- slots
           ]
           (\chosen -> Right $ R.Array [R.Array [slot, R.Array picks] | ((slot, _, _), picks) <- zip slots chosen])
@@ -836,7 +840,7 @@ picker request = do
       from <- Protocol.field "from" offer >>= Protocol.arrayOf
       names <- Protocol.field "names" offer >>= Protocol.arrayOf >>= traverse Offer.textOf
       wanted <- min (Natural.length from) <$> (Protocol.field "count" offer >>= Protocol.naturalOf)
-      pure $ MkPicker [MkGroup (Text.pack "Choose up to " <> Wording.count wanted "card" <> Text.pack " to find") (zip from names) 0 wanted False] (Right . R.Array . concat) (Text.pack "Find")
+      pure $ MkPicker [cards (Text.pack "Choose up to " <> Wording.count wanted "card" <> Text.pack " to find") (zip from names) 0 wanted] (Right . R.Array . concat) (Text.pack "Find")
     -- CR 601.2d: an amount of at least one per target, adding up to the
     -- total, or using exactly the parts given.
     "ChooseDivision" -> do
@@ -846,7 +850,7 @@ picker request = do
       let self = foldMap (Offer.objectName shown) (Protocol.field "source" offer)
       pure $
         MkPicker
-          [MkGroup (asSeat shown (Offer.recipientPlayer target) (Offer.recipientName shown target)) [(R.Number (toInteger n), Text.pack (show n)) | n <- [1 .. total]] 1 1 True | target <- targets]
+          [MkGroup (asSeat shown (Offer.recipientPlayer target) (Offer.recipientName shown target)) [(R.Number (toInteger n), Text.pack (show n)) | n <- [1 .. total]] 1 1 True Nothing | target <- targets]
           ( \chosen ->
               let given = [n | [R.Number n] <- chosen]
                in if sum given == toInteger total && all (\ps -> List.sort given == List.sort (fmap toInteger ps)) parts
@@ -860,7 +864,7 @@ picker request = do
       let players = fmap fst totals
       pure $
         MkPicker
-          [MkGroup (if Offer.playerOf p == Just (PlayerView.viewer shown) then Text.pack "You take the life total of" else Offer.playerName p <> Text.pack " takes the life total of") [(giver, asSeat shown (Offer.playerOf giver) (Offer.playerName giver) <> Text.pack (" (" <> show life <> ")")) | (giver, life) <- totals] 1 1 True | p <- players]
+          [MkGroup (if Offer.playerOf p == Just (PlayerView.viewer shown) then Text.pack "You take the life total of" else Offer.playerName p <> Text.pack " takes the life total of") [(giver, asSeat shown (Offer.playerOf giver) (Offer.playerName giver) <> Text.pack (" (" <> show life <> ")")) | (giver, life) <- totals] 1 1 True Nothing | p <- players]
           ( \chosen ->
               let givers = concat chosen
                in if length givers == length players && all (`elem` givers) players
@@ -873,7 +877,7 @@ picker request = do
       (from, to) <- Offer.wordSwap offer
       pure $
         MkPicker
-          [MkGroup (Text.pack "Change the word") from 1 1 True, MkGroup (Text.pack "to") to 1 1 True]
+          [MkGroup (Text.pack "Change the word") from 1 1 True Nothing, MkGroup (Text.pack "to") to 1 1 True Nothing]
           ( \chosen -> case chosen of
               [[a], [b]]
                 | a == b -> Left (Text.pack "Choose two different words.")
@@ -887,7 +891,7 @@ picker request = do
       count <- Protocol.field "count" offer >>= Protocol.naturalOf
       pure $
         MkPicker
-          [MkGroup (Offer.listedName shown creature) [(R.Number (toInteger k), Text.pack ("Pile " <> show k)) | k <- [1 .. count]] 1 1 True | creature <- from]
+          [MkGroup (Offer.listedName shown creature) [(R.Number (toInteger k), Text.pack ("Pile " <> show k)) | k <- [1 .. count]] 1 1 True Nothing | creature <- from]
           (\chosen -> Right (R.Array [R.Array [creature | (creature, [R.Number k']) <- zip from chosen, k' == toInteger k] | k <- [1 .. count]]))
           (Text.pack "Done")
     _
@@ -898,7 +902,7 @@ picker request = do
               -- An option the offer names under "names" (a mode's text, a card
               -- outside the game) by that name.
               names = foldMap (fmap Offer.textOf) (Protocol.field "names" offer >>= Protocol.arrayOf) <> repeat Nothing
-          pure $ MkPicker [MkGroup (Maybe.fromMaybe (capitalized (Question.kind question)) (headingOf shown request)) [(option, Maybe.fromMaybe (Offer.optionName shown option) name) | (option, name) <- zip among names] least' most' False] (Right . R.Array . concat) (Text.pack "Done")
+          pure $ MkPicker [cards (Maybe.fromMaybe (capitalized (Question.kind question)) (headingOf shown request)) [(option, Maybe.fromMaybe (Offer.optionName shown option) name) | (option, name) <- zip among names] least' most'] (Right . R.Array . concat) (Text.pack "Done")
     -- An amount per item the offer lists, each within its range and in all
     -- within the offer's bounds (Protocol.amountsFit).
     _
@@ -910,7 +914,7 @@ picker request = do
                 Right k -> Offer.amountKeyName shown k
           pure $
             MkPicker
-              [MkGroup (maybe Text.empty stepName (Maybe.listToMaybe (reverse path))) [(R.Number (toInteger n), Text.pack (show n)) | n <- [0 .. cap]] 0 1 True | (path, cap) <- leaves]
+              [MkGroup (maybe Text.empty stepName (Maybe.listToMaybe (reverse path))) [(R.Number (toInteger n), Text.pack (show n)) | n <- [0 .. cap]] 0 1 True Nothing | (path, cap) <- leaves]
               ( \chosen ->
                   let typed :: [Natural]
                       typed = [maybe 0 Integer.toNaturalSaturating (Maybe.listToMaybe [n | R.Number n <- picks]) | picks <- chosen]
@@ -920,13 +924,13 @@ picker request = do
     "ChooseManaToSpend" -> do
       units <- Protocol.arrayOf offer
       shownUnits <- traverse (Offer.decoded Codec.ManaUnit.codec) units
-      pure $ MkPicker [MkGroup (Text.pack "Choose the mana to spend") (zip units $ fmap Offer.unitName shownUnits) 1 1 True] (Right . Maybe.fromMaybe R.Null . Maybe.listToMaybe . concat) (Text.pack "Spend")
+      pure $ MkPicker [MkGroup (Text.pack "Choose the mana to spend") (zip units $ fmap Offer.unitName shownUnits) 1 1 True Nothing] (Right . Maybe.fromMaybe R.Null . Maybe.listToMaybe . concat) (Text.pack "Spend")
     "AssignCombatDamage" -> do
       (source, lethal, total) <- damage
       let amounts = [(R.Number $ toInteger n, Text.pack $ show n) | n <- [0 .. total]]
       pure $
         MkPicker
-          [MkGroup (asSeat shown (Offer.recipientPlayer recipient) (Offer.recipientName shown recipient) <> (if threshold > 0 then Text.pack (" (lethal " <> show threshold <> ")") else Text.empty)) amounts 1 1 True | (recipient, threshold) <- lethal]
+          [MkGroup (asSeat shown (Offer.recipientPlayer recipient) (Offer.recipientName shown recipient) <> (if threshold > 0 then Text.pack (" (lethal " <> show threshold <> ")") else Text.empty)) amounts 1 1 True Nothing | (recipient, threshold) <- lethal]
           ( \chosen ->
               let given = [n | [R.Number n] <- chosen]
                in if sum given == toInteger total
@@ -1194,9 +1198,10 @@ form request texts picked focused typed = case Text.unpack (Question.kind questi
               | kind == "ChooseRoom", Just n <- Protocol.naturalOf option = Text.pack ("Room " <> show (n + 1))
               | Just carried <- carry = Offer.resultName shown (Maybe.fromMaybe option entry) carried
               | otherwise = maybe (name option) (Offer.entryName shown) entry
-            labelled = [(option, label option entry) | (option, entry) <- zip options' (zip entries carries)]
+            (labelled, sorting') = arranged shown [(option, label option entry) | (option, entry) <- zip options' (zip entries carries)]
          in Html.element (Text.pack "h2") [] (Mana.rich $ Maybe.fromMaybe (capitalized (Question.kind question) <> foldMap (\source -> Text.pack " for " <> Offer.objectName shown source) (Protocol.field "source" offer) <> Text.pack ".") (headingOf shown request))
-              : foldMap (\among -> [looking shown among (`lookup` [(oid, option) | option <- options', Just oid <- [Offer.objectOf option]])]) (amongCards shown options')
+              : foldMap (\among -> [looking shown among (`lookup` [(oid, option) | option <- options', Just oid <- [Offer.objectOf option]])]) (amongCards shown (fmap fst labelled))
+                <> fmap nudge (Maybe.maybeToList sorting')
                 -- Cards the seat can't tell apart share a button, for the first.
                 <> let choices = [(MkAnswer option, named' <> many count) | (option : _, named', count) <- collapsed (Maybe.isJust . Offer.objectOf) labelled]
                     in if length choices > comboPast then combo typed choices else fmap (uncurry button) choices
@@ -1283,7 +1288,8 @@ form request texts picked focused typed = case Text.unpack (Question.kind questi
         let boxed = Maybe.listToMaybe [g | (g, group) <- zip [0 :: Natural ..] (groups chooser), length (collapsed (const True) (options group)) > comboPast]
          in concat
               [ Html.element (Text.pack "h2") [] (Mana.rich $ title group <> (if Text.any Char.isDigit (title group) then Text.empty else Text.pack (" (choose " <> bounds group <> ")")))
-                  : (if boxed == Just g then comboToggles else toggles Nothing) g (most group) [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
+                  : fmap nudge (Maybe.maybeToList (sorting group))
+                    <> (if boxed == Just g then comboToggles else toggles Nothing) g (most group) [(i, label) | (i, (_, label)) <- zip [0 ..] (options group)]
               | (g, group) <- zip [0 ..] (groups chooser)
               ]
               -- Answering waits on picks within every group's bounds, the refusal
@@ -1483,6 +1489,19 @@ indexed shown request = case Text.unpack (Question.kind (Request.question reques
     self = foldMap (Offer.objectName shown) (Protocol.field "source" offer)
     symbols :: [ManaType.ManaType] -> Text.Text
     symbols = foldMap (\t -> Text.pack "{" <> Wording.manaType t <> Text.pack "}")
+
+-- | Card options in a stated order and the line saying it: as the seat's
+-- latest look showed them where they are all among it, since there the order
+-- is what was seen (CR 701.20e), else by name; options not all cards, or
+-- fewer than two, as offered, saying nothing.
+arranged :: PlayerView.PlayerView -> [(R.Reply, Text.Text)] -> ([(R.Reply, Text.Text)], Maybe Text.Text)
+arranged shown labelled = case traverse (Offer.objectOf . fst) labelled of
+  Just oids@(_ : _ : _) -> case latestLook shown of
+    Just (looked, _)
+      | all (`elem` looked) oids ->
+          (List.sortOn (\(option, _) -> Offer.objectOf option >>= (`List.elemIndex` looked)) labelled, Just (Text.pack "In the order you looked at them."))
+    _ -> (List.sortOn (Text.toCaseFold . snd) labelled, Just (Text.pack "Sorted by name."))
+  _ -> (labelled, Nothing)
 
 -- | Options by label, each shareable label once with every shareable option
 -- bearing it, in the order labels first appear, and every other option

@@ -775,15 +775,40 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         request = requestFor gs (Prompt.Search (Decider.MkDecider S.alice) S.alice library 2)
         page picked typed = Question.Web.view request Question.Web.blank {Question.Web.selected = picked, Question.Web.query = Text.pack typed}
         tap picked typed label = Html.labelled (Text.pack "button") (Text.pack label) (page picked typed) >>= \path -> Html.handler (Text.pack "click") path (page picked typed)
-        shock = Maybe.fromMaybe 0 (List.elemIndex "Shock" names)
-        tutor = Maybe.fromMaybe 0 (List.elemIndex "Demonic Tutor" names)
+        -- The options sorted by name (Question.Web.arranged).
+        sorted = List.sortOn (Text.toCaseFold . Text.pack) names
+        shock = Maybe.fromMaybe 0 (List.elemIndex "Shock" sorted)
+        tutor = Maybe.fromMaybe 0 (List.elemIndex "Demonic Tutor" sorted)
     Spec.assertBool s (Text.isInfixOf (Text.pack "id=\"combo-filter\"") (Html.toText (page Set.empty ""))) "a box"
     Spec.assertBool s (Text.isInfixOf (Text.pack "4 more match.") (Html.content (page Set.empty ""))) "a button for at most comboPast"
     Spec.assertEqWith s "typed, then tapped" (tap Set.empty "tutor" "Demonic Tutor") (Just (Question.Web.MkToggle 0 (Int.toNaturalSaturating tutor)))
     Spec.assertBool s (Text.isInfixOf (Text.pack "data-enter=\"combo-first\"") (Html.toText (page Set.empty "tutor")) && Text.isInfixOf (Text.pack "id=\"combo-first\"") (Html.toText (page Set.empty "tutor"))) "Enter takes the match"
     Spec.assertEqWith s "filtered out" (tap Set.empty "tutor" "Shock") Nothing
     Spec.assertEqWith s "picked, kept in view" (tap (Set.singleton (0, Int.toNaturalSaturating shock)) "tutor" "\x2713 Shock") (Just (Question.Web.MkToggle 0 (Int.toNaturalSaturating shock)))
-    Spec.assertEqWith s "alike cards share a button" (tap Set.empty "swa" "Swamp \x00d7\&4") (Just (Question.Web.MkToggle 0 (Int.toNaturalSaturating (length names - 4))))
+    Spec.assertEqWith s "alike cards share a button" (tap Set.empty "swa" "Swamp \x00d7\&4") (Just (Question.Web.MkToggle 0 (Int.toNaturalSaturating (Maybe.fromMaybe 0 (List.elemIndex "Swamp" sorted)))))
+
+  Spec.it s "CR 701.20e cards to choose from are listed by name, or as looked at where they were, and the list says which" $ do
+    printings <- traverse (S.printingOf s registry) ["Shock", "Air Elemental", "Mountain"]
+    bridge <- S.printingOf s registry "Mosswort Bridge"
+    let into zone g0 = Foldable.foldl' (\(ids, g) printing -> let (oid, g') = S.addObjectIn zone printing S.alice g in (ids <> [oid], g')) ([], g0) printings
+        (library, g1) = into Zone.Library (Setup.emptyGame S.bothPlayers)
+        (hand, g2) = into Zone.Hand g1
+        (source, gs) = S.addPermanent bridge S.alice g2
+        card n = List.genericIndex library (n :: Natural)
+        labels request = [Html.content b | b <- Html.elements (Text.pack "button") (Question.Web.view request Question.Web.blank), Html.content b `elem` fmap Text.pack ["Shock", "Air Elemental", "Mountain"]]
+        says request note = Text.isInfixOf (Text.pack note) (Html.content (Question.Web.view request Question.Web.blank))
+        search = requestFor gs (Prompt.Search (Decider.MkDecider S.alice) S.alice library 1)
+        discard = requestFor gs (Prompt.ChooseDiscard (Decider.MkDecider S.alice) S.alice hand 1 Seq.empty)
+        -- Looked at Shock, then Mountain, the choice offered by name.
+        look oid = Event.recordEvent (GameEvent.Looked (Looked.MkLooked S.alice oid (Projection.project oid gs) (Set.singleton S.alice)))
+        among = requestFor (look (card 2) (look (card 0) gs)) (Prompt.ChooseCardFromAmong (Decider.MkDecider S.alice) S.alice source (NonEmpty.fromList [card 2, card 0]))
+    Spec.assertEqWith s "a search by name" (labels search) (fmap Text.pack ["Air Elemental", "Mountain", "Shock"])
+    Spec.assertBool s (says search "Sorted by name.") "a search says so"
+    Spec.assertEqWith s "the first by name finds its card" (Question.Web.step search (picking search [Question.Web.MkToggle 0 0]) Question.Web.MkSubmit Text.empty) (Question.Web.MkReplied (R.Array [R.Text (Text.pack ("$" <> show (ObjectId.unwrap (card 1))))]))
+    Spec.assertEqWith s "a hand by name" (labels discard) (fmap Text.pack ["Air Elemental", "Mountain", "Shock"])
+    Spec.assertBool s (says discard "Sorted by name.") "a hand says so"
+    Spec.assertEqWith s "cards looked at as looked at" (labels among) (fmap Text.pack ["Shock", "Mountain"])
+    Spec.assertBool s (says among "In the order you looked at them." && not (says among "Sorted by name.")) "a look says so"
 
   Spec.it s "the log heads each turn the seat reads into, once" $ do
     let view = PlayerView.viewFor S.alice (Setup.emptyGame S.bothPlayers)
