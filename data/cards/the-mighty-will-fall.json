@@ -1,0 +1,64 @@
+{
+  "faces": [
+    {
+      "name": "The Mighty Will Fall",
+      "oracleText": "When you set this scheme in motion, choose an opponent with the highest life total among your opponents. That player loses 7 life.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ChoosePlayer",
+                        "value": {
+                          "scope": {
+                            "type": "Superlative",
+                            "value": {
+                              "among": "Opponent",
+                              "comparison": "AtLeast",
+                              "measure": {
+                                "type": "LifeTotal"
+                              }
+                            }
+                          },
+                          "slot": "chosen"
+                        }
+                      },
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "InSlot",
+                            "value": "chosen"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 7
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Scheme"
+        ]
+      }
+    }
+  ]
+}

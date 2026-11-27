@@ -311,15 +311,16 @@ namedUncut given gs ref =
           let sentAt = Map.keys (Map.filter (== AttackTarget.OfPlayer attacked) (Combat.attackers (TurnRegisters.combat (GameState.turn gs))))
               attackers = Maybe.mapMaybe (controllerOf given) sentAt
           fmap (filter (`elem` attackers)) (related' relation)
-        -- The table's leaders on a measure, compared among the 'roster' alone:
-        -- CR 801.11 gives a spell or ability no information from outside its
-        -- controller's range.
-        PlayerRef.Superlative leading -> Just (superlative (controllerOf given) (roster given) gs leading)
+        -- The leaders on a measure, compared among the 'roster' players in the
+        -- superlative's relation alone: CR 801.11 gives a spell or ability no
+        -- information from outside its controller's range.
+        PlayerRef.Superlative leading -> fmap (\compared -> superlative (controllerOf given) compared gs leading) (related' (Superlative.among leading))
         -- CR 102.1 / 802.2: read off the turn, PlayerScope.InRole's answer.
         PlayerRef.InRole role -> Just (filter (`elem` Turn.roleHolders role gs) (roster given))
 
 -- | The players among @roster@ whose measure stands in the superlative's
--- comparison to every OTHER roster player's (Parun.Types.Superlative): with
+-- comparison to every OTHER roster player's, the caller having cut @roster@ to
+-- the superlative's @among@ (Parun.Types.Superlative): with
 -- GreaterThan a tie names nobody, with AtLeast it names every tied player. A
 -- lone player is vacuously the leader; CR 104.2a has ended such a game.
 --
