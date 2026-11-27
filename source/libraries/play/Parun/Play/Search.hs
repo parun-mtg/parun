@@ -1062,13 +1062,13 @@ attacks offered
 -- the attackers they may block (CR 509.1a): every one blocking at most one
 -- attacker each, where there are up to 'widest', else none, each blocker
 -- alone on each attacker, every blocker on each attacker, and each rotation
--- of the blockers over the attackers, by every blocker and by one an attacker.
+-- of the blockers over the attackers, every blocker blocking or one an attacker.
 -- The engine judges each (CR 509.1b, 509.1c).
 blocks :: [ObjectId.ObjectId] -> [ObjectId.ObjectId] -> [Map.Map ObjectId.ObjectId (Set.Set ObjectId.ObjectId)]
 blocks candidates attacked
   | (length attacked + 1) ^ length candidates <= widest = fmap (Map.fromList . Maybe.catMaybes) (traverse (\blocker -> Nothing : [Just (blocker, Set.singleton attacker) | attacker <- attacked]) candidates)
   | otherwise =
-      let declared = Map.fromList . fmap (fmap Set.singleton)
+      let declared pairs = Map.fromList (fmap (fmap Set.singleton) pairs)
           rotated k = drop k (cycle attacked)
        in ListUtils.nubOrd
             ( Map.empty
