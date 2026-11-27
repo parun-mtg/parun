@@ -86,6 +86,29 @@
             "card": "Prodigal Sorcerer",
             "label": "control",
             "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "bf1"
+          },
+          {
+            "card": "Forest",
+            "label": "bf2"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Ambush Viper",
+            "label": "viper"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
           }
         ],
         "library": [
@@ -126,8 +149,22 @@
     "step": "PrecombatMain"
   },
   "description": "Stormcage gives graveyard creatures escape and its chaos detains",
-  "note": "alice rolls chaos and detains one of bob's two Prodigal Sorcerers, chosen over carol's Hill Giant; her own Hill Giant is refused as a target; on bob's turn the declaration naming both is refused. Her graveyard's Grizzly Bears escapes for {1}{G} plus three of the four other cards, while the Lightning Bolt there, not a creature card, is not offered a cast.",
+  "note": "alice rolls chaos and detains one of bob's two Prodigal Sorcerers, chosen over carol's Hill Giant; her own Hill Giant is refused as a target; on bob's turn the declaration naming both is refused. Her graveyard's Grizzly Bears escapes for {1}{G} plus three of the four other cards, while the Lightning Bolt there, not a creature card, is not offered a cast. bob's Ambush Viper has no escape on alice's turn: the grant reads the planar controller's graveyard (CR 901.6).",
   "timeline": [
+    {
+      "player": "bob",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$bf1",
+            "$bf2"
+          ],
+          "object": "$viper"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
     {
       "do": {
         "Take": {
