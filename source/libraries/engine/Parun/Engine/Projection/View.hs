@@ -62,6 +62,7 @@ import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Counterability as Counterability
+import qualified Parun.Types.ExileMark as ExileMark
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter.Type
@@ -307,7 +308,7 @@ viewOfCardLapsed lapsed face =
           -- printed FACE with no object behind it -- the line above's reason,
           -- one rule over.
           Filter.exiledFaceDown = False,
-          Filter.warped = False,
+          Filter.exileMarks = Set.empty,
           -- CR 701.27h asks about a permanent on the battlefield; this is a
           -- printed FACE with no object behind it, so the rule's own answer is
           -- False rather than an unknown.
@@ -350,9 +351,6 @@ viewOfCardLapsed lapsed face =
           Filter.tributePaid = False,
           Filter.castUsing = Nothing,
           Filter.enteredUsing = Nothing,
-          -- CR 702.143c asks about a card in exile or a spell, and this builder
-          -- describes a printed face.
-          Filter.foretold = False,
           -- CR 719.3: a prototyped SPELL is cast, and this builder describes a
           -- printed face.
           Filter.prototyped = False,
@@ -494,6 +492,11 @@ settledUnder :: ObjectId -> Maybe PlayerId.PlayerId -> GameState -> Bool
 settledUnder oid controller gs = case (Game.lookupObject oid gs, controller) of
   (Just object, Just pid) -> Object.sickness object == Sickness.Settled pid
   _ -> False
+
+-- CR 702.185b / 702.143c: the exile marks an object carries, one per stamp.
+exileMarksOf :: Object.Object -> Set.Set ExileMark.ExileMark
+exileMarksOf obj =
+  Set.fromList ([ExileMark.Warped | Maybe.isJust (Object.warped obj)] <> [ExileMark.Foretold | Maybe.isJust (Object.foretold obj)])
 
 -- Shared assembly: fill a View from a projection's characteristics, a supplied
 -- controller and supplied counters.
@@ -896,7 +899,9 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- mints a fresh incarnation on the way out, so the object it is True of is
       -- in exile by construction.
       Filter.exiledFaceDown = maybe False Object.exiledFaceDown (Game.lookupObject oid gs),
-      Filter.warped = maybe False (Maybe.isJust . Object.warped) (Game.lookupObject oid gs),
+      -- CR 702.185b / 702.143c: read live off the object, `tributePaid`'s
+      -- posture.
+      Filter.exileMarks = foldMap exileMarksOf (Game.lookupObject oid gs),
       -- CR 701.27h's three conjuncts, and the only site that fills the field. The
       -- face is read CURRENT -- Game.isFrontFaceUp reads Object.face, never the
       -- Object.turnedOverAt beside it -- which is the rule's first exclusion, a
@@ -974,8 +979,6 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- CR 400.7: read live off the object. For one that has left its zone,
       -- Count.lastKnownView overrides this with LastKnown.enteredUsing.
       Filter.enteredUsing = Object.enteredUsing =<< Game.lookupObject oid gs,
-      -- CR 702.143c: read live off the object, `tributePaid`'s posture.
-      Filter.foretold = any (Maybe.isJust . Object.foretold) (Game.lookupObject oid gs),
       -- CR 719.3c / 719.3d: a copy's answer rides its copiable values (CR
       -- 719.2a); the object's own flag answers for an original whose copiable
       -- values are something else's, face down (CR 708.2) or a copy (CR 707.2).

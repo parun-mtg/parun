@@ -2074,7 +2074,7 @@ stubView table oid =
                 Filter.faceDown = False,
                 Filter.representedCard = Nothing,
                 Filter.exiledFaceDown = False,
-                Filter.warped = False,
+                Filter.exileMarks = Set.empty,
                 -- CR 701.27h: the table registers no face, and this stub stands
                 -- for a card outside the game rather than a permanent.
                 Filter.transformed = False,
@@ -2094,7 +2094,6 @@ stubView table oid =
                 Filter.tributePaid = False,
                 Filter.castUsing = Nothing,
                 Filter.enteredUsing = Nothing,
-                Filter.foretold = False,
                 Filter.prototyped = False,
                 Filter.preparedSpell = False,
                 Filter.modesChosen = Nothing,

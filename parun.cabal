@@ -965,6 +965,8 @@ library codec
     Parun.Codec.ExileLinkSpec
     Parun.Codec.ExileLooker
     Parun.Codec.ExileLookerSpec
+    Parun.Codec.ExileMark
+    Parun.Codec.ExileMarkSpec
     Parun.Codec.ExileMaterials
     Parun.Codec.ExileMaterialsSpec
     Parun.Codec.ExilePermanents
@@ -3488,6 +3490,7 @@ library types
     Parun.Types.ExileHaunting
     Parun.Types.ExileLink
     Parun.Types.ExileLooker
+    Parun.Types.ExileMark
     Parun.Types.ExileMaterials
     Parun.Types.ExilePermanents
     Parun.Types.ExilePlayPermission

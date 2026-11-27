@@ -33,6 +33,7 @@ import qualified Parun.Types.DeclaredRole as DeclaredRole
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.EnteredZone as EnteredZone
 import qualified Parun.Types.EntryWindow as EntryWindow
+import qualified Parun.Types.ExileMark as ExileMark
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Expansion as Expansion
 import qualified Parun.Types.Filter as Filter
@@ -832,12 +833,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.IsExiledFaceDown
       " {\"type\":\"IsExiledFaceDown\"} "
-  Spec.it s "IsWarped" $
+  Spec.it s "HasExileMark" $
     Common.assertCodec
       s
       codec
-      Filter.IsWarped
-      " {\"type\":\"IsWarped\"} "
+      (Filter.HasExileMark ExileMark.Foretold)
+      " {\"type\":\"HasExileMark\",\"value\":\"Foretold\"} "
   Spec.it s "Transformed" $
     Common.assertCodec
       s
