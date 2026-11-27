@@ -95,8 +95,11 @@
     {
       "do": {
         "Answer": {
-          "prompt": "RandomPlayer",
-          "with": "bob"
+          "prompt": "RandomTarget",
+          "with": [
+            "Player",
+            "bob"
+          ]
         }
       },
       "player": "alice",

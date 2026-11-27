@@ -1824,6 +1824,9 @@ target context n = case Node.tag n of
   "TargetGraveyardCard" -> do
     (scope, f) <- Node.argument n >>= graveyardCards
     Right (slot (Pool.CardsInGraveyard scope) f)
+  "AnyTargetChosenAtRandom" -> atRandom "AnyTarget"
+  "TargetPermanentAtRandom" -> atRandom "TargetPermanent"
+  "TargetGraveyardCardAtRandom" -> atRandom "TargetGraveyardCard"
   "TargetPlayerOrPermanent" -> do
     (who, what) <- pair n
     relation <- players who
@@ -1834,6 +1837,8 @@ target context n = case Node.tag n of
       _ -> Node.untranslated n
   _ -> Node.untranslated n
   where
+    -- The same slot filled by randomness (TargetSlot's selection).
+    atRandom tag = fmap (\s -> s {TargetSlot.selection = CardSelection.AtRandom}) (target context n {Node.tag = tag})
     counted exactly = do
       (amount, what) <- pair n
       k <- Node.node amount >>= integer
@@ -1854,6 +1859,9 @@ reference n = case Node.tag n of
   "TargetPlayer" -> Right "Ref_TargetPlayer"
   "TargetSpell" -> Right "Ref_TargetSpell"
   "TargetGraveyardCard" -> Right "Ref_TargetGraveyardCard"
+  "AnyTargetChosenAtRandom" -> Right "Ref_AnyTarget"
+  "TargetPermanentAtRandom" -> Right "Ref_TargetPermanent"
+  "TargetGraveyardCardAtRandom" -> Right "Ref_TargetGraveyardCard"
   "TargetPlayerOrPermanent" -> Right "Ref_TargetPlayerOrPermanent"
   _ -> Node.untranslated n
 

@@ -2233,16 +2233,14 @@ askChooser reader controller chooser oid source seed x slots sets mine = do
             (\slot (lo, hi) -> max lo (min hi (Map.findWithDefault lo slot announced)))
             ranges
       asked = Map.intersectionWith (,) counts offered
-      -- TargetSlot's `selection`: a slot randomness fills is drawn among the
-      -- players it is offered, one Prompt.RandomPlayer per target, and kept out
-      -- of the chooser's prompt.
-      --
-      -- Not implemented: a random slot offering objects, which falls to the
-      -- chooser's prompt (#10076).
-      drawsPlayer name = case Map.lookup name slots of
-        Just slot -> TargetSlot.selection slot == CardSelection.AtRandom && all (Maybe.isJust . Recipient.playerOf) (Map.findWithDefault Set.empty name offered)
-        Nothing -> False
-      (random, decided) = Map.partitionWithKey (\name _ -> drawsPlayer name) asked
+      -- TargetSlot's `selection`: a slot randomness fills is drawn among every
+      -- recipient it is offered, players and objects in one draw (Goblin Test
+      -- Pilot's ruling: every legal target equally likely), one
+      -- Prompt.RandomTarget per target, and kept out of the chooser's prompt.
+      -- Proved by
+      -- data/scenarios/goblin-test-pilot-deals-2-damage-to-a-target-drawn-at-random-among-players-and-objects.json.
+      atRandom name = maybe False ((== CardSelection.AtRandom) . TargetSlot.selection) (Map.lookup name slots)
+      (random, decided) = Map.partitionWithKey (\name _ -> atRandom name) asked
       -- Every slot taking all it is offered admits one answer, so it is bound
       -- unasked. Should that answer fail the joint check, no other passes either.
       forced = all (\(n, legal) -> Natural.length legal == n) decided
@@ -2251,7 +2249,7 @@ askChooser reader controller chooser oid source seed x slots sets mine = do
     []
       | Map.null asked -> pure (Map.empty, Set.empty)
       | otherwise -> do
-          picked <- traverse (\(n, legal) -> fmap (Set.fromList . fmap Recipient.ToPlayer) (Game.drawDistinct Prompt.RandomPlayer n (Maybe.mapMaybe Recipient.playerOf (Set.toAscList legal)))) random
+          picked <- traverse (\(n, legal) -> fmap Set.fromList (Game.drawDistinct Prompt.RandomTarget n (Set.toAscList legal))) random
           answer <-
             if forced
               then pure (fmap snd decided)
@@ -2259,8 +2257,8 @@ askChooser reader controller chooser oid source seed x slots sets mine = do
           -- CR 406.4's draw, taken before selectionLegal judges the announcement:
           -- the drawn card can be one the slot's Filter refuses, and CR 601.2e is
           -- what then reverses the casting.
-          drawn <- traverse (drawFromPiles (Just chooser)) answer
-          pure (Map.union picked (fmap fst drawn), foldMap snd drawn)
+          drawn <- traverse (drawFromPiles (Just chooser)) (Map.union picked answer)
+          pure (fmap fst drawn, foldMap snd drawn)
 
 -- CR 601.2d: each divided slot's announced division, asked once CR 601.2c's
 -- targets are fixed, every target getting at least one. Asked of the seat that

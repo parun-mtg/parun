@@ -504,8 +504,9 @@ player context ref = case ref of
   _ -> []
 
 -- | A target slot as its announcement reads: "target creature", "any
--- target", "two target lands", "up to three target creatures". A slot whose
--- damage is divided reads through 'among' instead.
+-- target", "two target lands", "up to three target creatures", and one
+-- randomness fills, "any target chosen at random" (Goblin Test Pilot). A slot
+-- whose damage is divided reads through 'among' instead.
 target :: Context -> SlotName.SlotName -> [Reference]
 target context s = case Map.lookup s (slots context) of
   Just slot
@@ -513,11 +514,14 @@ target context s = case Map.lookup s (slots context) of
       Maybe.isNothing (TargetSlot.perPlayer slot),
       Maybe.isNothing (TargetSlot.amount slot),
       Maybe.isNothing (TargetSlot.total slot),
-      Maybe.isNothing (TargetSlot.divided slot),
-      TargetSlot.selection slot == CardSelection.ByChoice -> do
+      Maybe.isNothing (TargetSlot.divided slot) -> do
         (one, many) <- heads context slot
         (text, n) <- counted (TargetSlot.count slot) one many
-        [MkReference text [s] n []]
+        case TargetSlot.selection slot of
+          CardSelection.ByChoice -> [MkReference text [s] n []]
+          CardSelection.AtRandom
+            | n == Filter.Singular -> [MkReference (text <> Text.pack " chosen at random") [s] n []]
+            | otherwise -> []
   _ -> []
 
 -- | A slot whose damage is divided (CR 601.2d), as "among" reads it: "one or
