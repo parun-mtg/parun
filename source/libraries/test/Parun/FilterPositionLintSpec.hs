@@ -2287,6 +2287,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Kotose, the Silent Spider", 1), -- its search's filter, against its exiled target
         ("Legion's End", 3), -- its battlefield and graveyard exiles' objects and its hand sweep's filter
         ("Maelstrom Pulse", 1), -- its destroy's object
+        ("Isle of Vesuva", 1), -- its chaos destroy's object
         ("Legions to Ashes", 1), -- its exile's object
         ("Rat King, Verminister", 1), -- its return's object
         ("Pattern Matcher", 1), -- its search's filter, at AnyPermanent

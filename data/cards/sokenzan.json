@@ -1,0 +1,133 @@
+{
+  "faces": [
+    {
+      "name": "Sokenzan",
+      "oracleText": "All creatures get +1/+1 and have haste.\nWhenever chaos ensues, untap all creatures that attacked this turn. If it's a main phase, there is an additional combat phase after this phase, followed by an additional main phase.",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "HasCardType",
+              "value": "Creature"
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 1
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            },
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Haste"
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Untap",
+                        "value": {
+                          "type": "EachMatching",
+                          "value": {
+                            "type": "DeclaredThisTurn",
+                            "value": {
+                              "type": "Attacked"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": {
+                      "type": "Any",
+                      "value": [
+                        {
+                          "type": "During",
+                          "value": {
+                            "scope": {
+                              "type": "PlayersTurn",
+                              "value": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              }
+                            },
+                            "window": {
+                              "type": "Step",
+                              "value": {
+                                "type": "PrecombatMain"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "During",
+                          "value": {
+                            "scope": {
+                              "type": "PlayersTurn",
+                              "value": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              }
+                            },
+                            "window": {
+                              "type": "Step",
+                              "value": {
+                                "type": "PostcombatMain"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "effects": [
+                      {
+                        "type": "AddPhases",
+                        "value": {
+                          "phases": [
+                            "ExtraCombat",
+                            "ExtraMain"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Kamigawa"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}

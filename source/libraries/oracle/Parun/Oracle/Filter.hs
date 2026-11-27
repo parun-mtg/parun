@@ -59,6 +59,12 @@ data Number
 phrase :: Filter.Filter k -> (k -> [Text.Text]) -> [Phrase]
 phrase = phraseJoining Plain
 
+-- | Whether a filter excludes the object a slot names.
+unbound :: Filter.Filter k -> Bool
+unbound f = case f of
+  Filter.Not (Filter.IsBound _) -> True
+  _ -> False
+
 -- | How a disjunction of whole phrases joins its nouns, in the singular and
 -- the plural.
 data Joining
@@ -76,6 +82,12 @@ data Joining
 -- | 'phrase', joining a disjunction's nouns as given.
 phraseJoining :: Joining -> Filter.Filter k -> (k -> [Text.Text]) -> [Phrase]
 phraseJoining joining f named = case f of
+  -- Another of the mode's objects than two slots name: "a third
+  -- target creature" (Raven's Run).
+  Filter.And fs
+    | [_, _] <- filter unbound fs -> do
+        parts <- traverse (\g -> phraseJoining joining g named) (filter (not . unbound) fs)
+        pure (List.foldl' merge (adjective (Text.pack "third")) parts)
   Filter.And fs -> do
     parts <- traverse (\g -> phraseJoining joining g named) fs
     pure (List.foldl' merge empty parts)
