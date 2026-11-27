@@ -1,0 +1,94 @@
+{
+  "faces": [
+    {
+      "name": "You Will Know True Suffering",
+      "oracleText": "When you set this scheme in motion, it deals damage equal to your commander's mana value to each noncommander creature your opponents control.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "DealDamage",
+                              "value": {
+                                "parts": [
+                                  {
+                                    "quantity": {
+                                      "type": "AgainstSlot",
+                                      "value": {
+                                        "quantity": {
+                                          "type": "Measure",
+                                          "value": "ManaValue"
+                                        },
+                                        "slot": "commander"
+                                      }
+                                    },
+                                    "ref": {
+                                      "type": "EachMatching",
+                                      "value": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Creature"
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "Opponent"
+                                            }
+                                          },
+                                          {
+                                            "type": "Not",
+                                            "value": {
+                                              "type": "IsCommander"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          ],
+                          "members": "One",
+                          "ref": {
+                            "type": "EachCardYouOwn",
+                            "value": {
+                              "type": "IsCommander"
+                            }
+                          },
+                          "slot": "commander"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Scheme"
+        ]
+      }
+    }
+  ]
+}
