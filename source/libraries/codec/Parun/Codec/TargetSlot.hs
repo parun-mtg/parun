@@ -3,6 +3,7 @@
 module Parun.Codec.TargetSlot where
 
 import qualified Data.Map.Strict as Map
+import qualified Parun.Codec.CardSelection as CardSelection
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.PlayerRef as PlayerRef
@@ -15,6 +16,7 @@ import qualified Parun.Codec.TotalCap as TotalCap
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.CardSelection as CardSelection.Type
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.TargetCount as TargetCount
@@ -37,7 +39,7 @@ import qualified Parun.Types.TargetSlot as TargetSlot
 -- player" slots name one, the divided key: only CR 601.2d's divided slots, and
 -- the together key: only a slot whose targets must share a zone, the total key:
 -- only a slot capping its targets' sum, and the asCast key: only a slot narrowed
--- as the spell is cast.
+-- as the spell is cast, the selection key: only a slot randomness fills.
 codec :: Codec.Codec TargetSlot.TargetSlot
 codec = Fields.object $ do
   pool <- Fields.required "pool" Pool.codec TargetSlot.pool
@@ -50,6 +52,7 @@ codec = Fields.object $ do
   together <- Fields.defaulted "together" Nothing (Common.maybe Together.codec) TargetSlot.together
   total <- Fields.defaulted "total" Nothing (Common.maybe TotalCap.codec) TargetSlot.total
   asCast <- Fields.defaulted "asCast" Nothing (Common.maybe (Filter.codec Keyword.codec)) TargetSlot.asCast
+  selection <- Fields.defaulted "selection" CardSelection.Type.ByChoice CardSelection.codec TargetSlot.selection
   pure
     TargetSlot.MkTargetSlot
       { TargetSlot.pool = pool,
@@ -61,7 +64,8 @@ codec = Fields.object $ do
         TargetSlot.divided = divided,
         TargetSlot.together = together,
         TargetSlot.total = total,
-        TargetSlot.asCast = asCast
+        TargetSlot.asCast = asCast,
+        TargetSlot.selection = selection
       }
 
 -- | A slot-keyed map as a JSON object keyed by the slot name (#1303).

@@ -4302,10 +4302,10 @@ permissionLeaves =
     }
 
 -- | A target slot's children (CR 115.1, 601.2c). A printed count, the players
--- a per-player slot is announced for and its "together" rider are left as
--- they are; its total's weight and ceiling are quantities.
+-- a per-player slot is announced for, its "together" rider and its selection
+-- are left as they are; its total's weight and ceiling are quantities.
 targetSlotChildren :: (Applicative f) => PermissionChildren f -> TargetSlot.TargetSlot -> f TargetSlot.TargetSlot
-targetSlotChildren c (TargetSlot.MkTargetSlot pool filter_ count amount chooser perPlayer divided together total asCast) =
+targetSlotChildren c (TargetSlot.MkTargetSlot pool filter_ count amount chooser perPlayer divided together total asCast selection) =
   TargetSlot.MkTargetSlot
     <$> poolChildren pool
     <*> traverse (permissionFilter c) filter_
@@ -4317,6 +4317,7 @@ targetSlotChildren c (TargetSlot.MkTargetSlot pool filter_ count amount chooser 
     <*> pure together
     <*> traverse (\(TotalCap.MkTotalCap weight most) -> TotalCap.MkTotalCap <$> permissionQuantity c weight <*> permissionQuantity c most) total
     <*> traverse (permissionFilter c) asCast
+    <*> pure selection
   where
     poolChildren p = case p of
       Pool.Creatures -> pure p

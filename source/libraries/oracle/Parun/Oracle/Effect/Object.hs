@@ -411,7 +411,8 @@ supported context p = case PutCounters.ref p of
       Maybe.isNothing (TargetSlot.together slot),
       Maybe.isNothing (TargetSlot.amount slot),
       Maybe.isNothing (TargetSlot.total slot),
-      Maybe.isNothing (TargetSlot.divided slot) ->
+      Maybe.isNothing (TargetSlot.divided slot),
+      TargetSlot.selection slot == CardSelection.ByChoice ->
         [Predicate.MkPredicate Nothing (Text.pack ("support " <> show n)) [] [s] Nothing False]
   _ -> []
 

@@ -5,6 +5,7 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.TargetSlot as TargetSlot
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Measure as Measure
@@ -51,6 +52,13 @@ spec s = Spec.describe s "Parun.Codec.TargetSlot" $ do
       TargetSlot.codec
       (TargetSlot.required Pool.Permanents (Just (Filter.And [Filter.Not (Filter.HasCardType CardType.Land), Filter.Not Filter.IsSource])))
       " {\"pool\":{\"type\":\"Permanents\"},\"filter\":{\"type\":\"And\",\"value\":[{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}},{\"type\":\"Not\",\"value\":{\"type\":\"IsSource\"}}]}} "
+  -- CR 601.2c: a slot randomness fills (Furnace Layer).
+  Spec.it s "a required spec: selected at random" $
+    Common.assertCodec
+      s
+      TargetSlot.codec
+      ((TargetSlot.required Pool.Players Nothing) {TargetSlot.selection = CardSelection.AtRandom})
+      " {\"pool\":{\"type\":\"Players\"},\"selection\":\"AtRandom\"} "
   -- CR 115.1: a slot another player announces, its chooser a PlayerRef.
   Spec.it s "a required spec: chosen by an opponent" $
     Common.assertCodec

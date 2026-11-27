@@ -513,7 +513,8 @@ target context s = case Map.lookup s (slots context) of
       Maybe.isNothing (TargetSlot.perPlayer slot),
       Maybe.isNothing (TargetSlot.amount slot),
       Maybe.isNothing (TargetSlot.total slot),
-      Maybe.isNothing (TargetSlot.divided slot) -> do
+      Maybe.isNothing (TargetSlot.divided slot),
+      TargetSlot.selection slot == CardSelection.ByChoice -> do
         (one, many) <- heads context slot
         (text, n) <- counted (TargetSlot.count slot) one many
         [MkReference text [s] n []]
@@ -529,6 +530,7 @@ among context s = case Map.lookup s (slots context) of
       Maybe.isNothing (TargetSlot.together slot),
       Maybe.isNothing (TargetSlot.amount slot),
       Maybe.isNothing (TargetSlot.total slot),
+      TargetSlot.selection slot == CardSelection.ByChoice,
       Just total <- TargetSlot.divided slot -> do
         (_, many) <- heads context slot
         text <- case TargetSlot.count slot of
