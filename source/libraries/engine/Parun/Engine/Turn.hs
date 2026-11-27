@@ -88,7 +88,8 @@ sharesTurnUnder settings one other =
 -- CR 102.3's relation, which in a two-player game (CR 102.2) and a Free-for-All
 -- (CR 806.1) is any other seat, and in a game between teams is a seat on another
 -- team. A reference no reader can answer admits no turn. The game's first
--- turn is turn number 1 (Parun.Engine.Setup), whoever is active.
+-- turn is turn number 1 (Parun.Engine.Setup), whoever is active, and in Grand
+-- Melee every opening marker's turn too ('isFirstTurn').
 turnScopeAdmits :: (PlayerRef.PlayerRef -> Maybe [PlayerId]) -> GameState -> TurnScope.TurnScope -> PlayerId -> PlayerId -> Bool
 turnScopeAdmits named gs scope active own = case scope of
   TurnScope.FirstTurnOfGame -> isFirstTurn gs
@@ -96,9 +97,15 @@ turnScopeAdmits named gs scope active own = case scope of
     PlayerRef.Relative _ -> any (\player -> sharesTurn gs active player && scopeNames named gs scope own player) (GameState.seating gs)
     _ -> maybe False (any (sharesTurn gs active)) (named ref)
 
--- CR 103.8: is this the game's first turn?
+-- CR 103.8 / 807.4b: is this a turn the game began with -- its first turn, or
+-- in Grand Melee any opening marker's, those turns starting together and
+-- numbered 1 up to the marker count (Parun.Engine.Engine.newTurn), which
+-- CR 807.4 never raises. docs/decisions.md, "Which upkeep is the first of a
+-- Grand Melee game".
 isFirstTurn :: GameState -> Bool
-isFirstTurn gs = TurnRegisters.turnNumber (GameState.turn gs) == 1
+isFirstTurn gs =
+  let n = TurnRegisters.turnNumber (GameState.turn gs)
+   in n >= 1 && n <= max 1 (Natural.length (GameState.turnMarkers gs))
 
 -- CR 102.1: does the scope name this seat, read against `own`? A relation (CR
 -- 102.2 / 102.3) is judged between the two seats directly, over no roster:
@@ -246,7 +253,8 @@ duringRunningTurn named gs window scope own =
 
 -- | CR 103.1 / glossary "Starting Player": is the turn being worked the game's
 -- first, the starting player's, numbered 1 at setup? In Grand Melee the other
--- opening markers' turns are not (CR 807.4b, 901.14a). An anchor read
+-- opening markers' turns are not (CR 807.4b), though 'isFirstTurn' admits
+-- them for "the first upkeep of the game". An anchor read
 -- (docs/decisions.md, "Which turn a Grand Melee read of the active player
 -- means"): "it" is the turn the question arises in, as a step paired with its
 -- player is, not any running turn; an end step's trigger is checked and

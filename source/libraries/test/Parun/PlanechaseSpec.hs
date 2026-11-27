@@ -846,6 +846,18 @@ grandMeleeSpec s registry = Spec.describe s "CR 901.14" $ do
     Spec.assertEqWith s "the premise: Tazeem is face up, seat 0's marker designated" (faceUpNames conceded, fmap TurnMarker.removals (GameState.turnMarkers conceded)) ([cardName "Tazeem"], [1, 0])
     Spec.assertEqWith s "seat 5's turn begins next" (fmap (TurnRegisters.activePlayer . GameState.turn) next) [seat 5]
     Spec.assertEqWith s "CR 807.4g Tazeem is on the bottom" (fmap (\gs -> (faceUpNames gs, deckNames (seat 0) gs)) next) [([], fmap cardName ["Naya", "Tazeem"])]
+
+  -- CR 807.4b / 901.14a: seat 4's starting Two Streams Facility triggers at
+  -- the first upkeep of marker 2's opening turn (docs/decisions.md, "Which
+  -- upkeep is the first of a Grand Melee game"), and only seats 3 to 5, in
+  -- seat 4's range, choose (CR 801.10, 901.13).
+  Spec.it s "CR 807.4b a later Grand Melee starting plane has the first upkeep of the game" $ do
+    board <- meleePlanarBoard s registry 8 [(seat 0, ["Tazeem"]), (seat 4, ["Two Streams Facility"])]
+    let zeros = Melee.untilPhase Phase.PrecombatMain board
+        fours = Melee.untilPhase Phase.PrecombatMain (Engine.workOn 2 zeros)
+        choosers gs = [Map.keys (Map.unions (Map.elems (Object.chosenNumberBy obj))) | oid <- Planechase.faceUp gs, fmap Face.name (Game.faceOf oid gs) == cardName "Two Streams Facility", obj <- Maybe.maybeToList (Game.lookupObject oid gs)]
+    Spec.assertEqWith s "seat 4's turn is worked" (TurnRegisters.activePlayer (GameState.turn fours)) (seat 4)
+    Spec.assertEqWith s "CR 807.4b / 801.10 seats 3 to 5 chose" (choosers fours) [[seat 3, seat 4, seat 5]]
   where
     seat = PlayerId.MkPlayerId
     passed gs = maybe gs (`GrandMelee.passLeft` gs) (GrandMelee.markerNumbered 2 gs)

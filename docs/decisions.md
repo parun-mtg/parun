@@ -3323,6 +3323,27 @@ Entries are ordered by the first rule each cites.
   the bottom".
 - **Issue**: #9166.
 
+## Which upkeep is the first of a Grand Melee game
+
+- **Question**: Two Streams Facility triggers "at the beginning of the first
+  upkeep of the game". In Grand Melee every opening turn marker's holder sets
+  a starting plane (CR 901.14a) and those turns start at the same time (CR
+  807.4b). Is the first upkeep only the starting player's, or each opening
+  turn's?
+- **Rules**: CR 103.8, 801.7, 807.4b, 901.13, 901.14a; glossary "Starting
+  Player"; the card has no ruling; CR of 2026-11-06.
+- **Decision**: Each opening turn's first upkeep. The glossary fixes the first
+  turn of a game as the starting player's, so Necropotence Avatar's "the first
+  turn of the game" keeps that one; "the first upkeep of the game" is not
+  defined, and no opening turn's upkeep comes after another's.
+- **Rejected**: The starting player's alone. CR 801.7 then keeps every later
+  starting plane's trigger from seeing it, so its statics do nothing until
+  chaos or a planeswalk.
+- **Site**: `Parun.Engine.Turn.isFirstTurn`, proved by `Parun.PlanechaseSpec`'s
+  "CR 807.4b a later Grand Melee starting plane has the first upkeep of the
+  game".
+- **Issue**: #10040.
+
 ## Which result a reroll's trigger reads
 
 - **Question**: A reroll is a roll of its own (Pippa, Duchess of Dice's ruling),

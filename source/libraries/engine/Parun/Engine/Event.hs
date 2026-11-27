@@ -6568,22 +6568,26 @@ chooseQuality quality chooser reader acquisition oid = case quality of
     picked <- Game.chooseAmong (\decider who -> Prompt.ChooseCardFromAmong decider who oid) chooser candidates
     Foldable.for_ picked $ \card -> State.modify' (Game.markChosenExile (Set.fromList whole) (Just card))
 
--- CR 101.4 / 607.2f: each player in APNAP order chooses one of `offered` for
--- `oid`, its position written under its chooser and `acquisition` to
--- Object.chosenNumberBy, replacing that player's last. Distinct asks only the
+-- CR 101.4 / 607.2f: each player on `table` in APNAP order chooses one of
+-- `offered` for `oid`, its position written under its chooser and
+-- `acquisition` to Object.chosenNumberBy, replacing that player's last.
+-- `table` is the caller's Players.table, so a departed seat (CR 102.1) and
+-- one outside a Grand Melee plane's range (CR 801.10, 901.13) neither choose
+-- nor get a choice recorded. Distinct asks only the
 -- players who chose before, each offered every word but their last: Two Streams
 -- Facility's "each player who last chose green anchor chooses red waterfall,
 -- and vice versa", where the one word left is forced and so not asked
 -- (Game.chooseAmong). Each player's exclusion is read before anyone answers,
 -- the choices happening simultaneously (CR 101.4).
-chooseWordEach :: ChoiceDistinct.ChoiceDistinct -> NonEmpty.NonEmpty Text.Text -> Acquisition.Acquisition -> ObjectId -> Game ()
-chooseWordEach distinct offered acquisition oid = do
+chooseWordEach :: [PlayerId] -> ChoiceDistinct.ChoiceDistinct -> NonEmpty.NonEmpty Text.Text -> Acquisition.Acquisition -> ObjectId -> Game ()
+chooseWordEach table distinct offered acquisition oid = do
   gs <- State.get
   let earlier = Maybe.fromMaybe Map.empty (Game.choiceWithLastKnown Chosen.NumberBy acquisition oid gs)
       numbered = zip [1 :: Natural ..] (NonEmpty.toList offered)
+      seated = filter (`elem` table) (Game.apnapOrder gs)
       choosers = case distinct of
-        ChoiceDistinct.MayRepeat -> Game.apnapOrder gs
-        ChoiceDistinct.Distinct -> filter (`Map.member` earlier) (Game.apnapOrder gs)
+        ChoiceDistinct.MayRepeat -> seated
+        ChoiceDistinct.Distinct -> filter (`Map.member` earlier) seated
       open chooser = case distinct of
         ChoiceDistinct.MayRepeat -> numbered
         ChoiceDistinct.Distinct -> filter (\(n, _) -> Just n /= Map.lookup chooser earlier) numbered
