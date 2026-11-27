@@ -158,33 +158,35 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "Not",
-                  "value": {
-                    "type": "HasCardType",
-                    "value": "Land"
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "Not",
+                    "value": {
+                      "type": "HasCardType",
+                      "value": "Land"
+                    }
+                  },
+                  {
+                    "type": "IsInZone",
+                    "value": "Stack"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  },
+                  {
+                    "type": "Not",
+                    "value": {
+                      "type": "IsAbility"
+                    }
                   }
-                },
-                {
-                  "type": "IsInZone",
-                  "value": "Stack"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Controller",
-                    "relation": "You"
-                  }
-                },
-                {
-                  "type": "Not",
-                  "value": {
-                    "type": "IsAbility"
-                  }
-                }
-              ]
+                ]
+              }
             }
           },
           "modifications": [
@@ -203,37 +205,39 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "Not",
-                  "value": {
-                    "type": "HasCardType",
-                    "value": "Land"
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "Not",
+                    "value": {
+                      "type": "HasCardType",
+                      "value": "Land"
+                    }
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Owner",
+                      "relation": "You"
+                    }
+                  },
+                  {
+                    "type": "Not",
+                    "value": {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "IsAbility"
+                        },
+                        {
+                          "type": "IsEmblem"
+                        }
+                      ]
+                    }
                   }
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Owner",
-                    "relation": "You"
-                  }
-                },
-                {
-                  "type": "Not",
-                  "value": {
-                    "type": "Or",
-                    "value": [
-                      {
-                        "type": "IsAbility"
-                      },
-                      {
-                        "type": "IsEmblem"
-                      }
-                    ]
-                  }
-                }
-              ]
+                ]
+              }
             }
           },
           "modifications": [

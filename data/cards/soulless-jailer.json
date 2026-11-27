@@ -6,33 +6,35 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "Or",
-              "value": [
-                {
-                  "type": "HasCardType",
-                  "value": "Artifact"
-                },
-                {
-                  "type": "HasCardType",
-                  "value": "Battle"
-                },
-                {
-                  "type": "HasCardType",
-                  "value": "Creature"
-                },
-                {
-                  "type": "HasCardType",
-                  "value": "Enchantment"
-                },
-                {
-                  "type": "HasCardType",
-                  "value": "Land"
-                },
-                {
-                  "type": "HasCardType",
-                  "value": "Planeswalker"
-                }
-              ]
+              "matching": {
+                "type": "Or",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Artifact"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Battle"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Enchantment"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Land"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Planeswalker"
+                  }
+                ]
+              }
             }
           },
           "origins": [

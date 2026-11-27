@@ -37,28 +37,30 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "IsInZone",
-                  "value": "Graveyard"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Owner",
-                    "relation": "You"
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "IsInZone",
+                    "value": "Graveyard"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Owner",
+                      "relation": "You"
+                    }
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Artifact"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
                   }
-                },
-                {
-                  "type": "HasCardType",
-                  "value": "Artifact"
-                },
-                {
-                  "type": "HasCardType",
-                  "value": "Creature"
-                }
-              ]
+                ]
+              }
             }
           },
           "modifications": [

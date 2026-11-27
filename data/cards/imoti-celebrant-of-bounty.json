@@ -37,40 +37,42 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "IsInZone",
-                  "value": "Stack"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Controller",
-                    "relation": "You"
-                  }
-                },
-                {
-                  "type": "Not",
-                  "value": {
-                    "type": "IsAbility"
-                  }
-                },
-                {
-                  "type": "Not",
-                  "value": {
-                    "type": "Measures",
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "IsInZone",
+                    "value": "Stack"
+                  },
+                  {
+                    "type": "HeldBy",
                     "value": {
-                      "comparison": "AtMost",
-                      "measure": "ManaValue",
-                      "operand": {
-                        "type": "Literal",
-                        "value": 5
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  },
+                  {
+                    "type": "Not",
+                    "value": {
+                      "type": "IsAbility"
+                    }
+                  },
+                  {
+                    "type": "Not",
+                    "value": {
+                      "type": "Measures",
+                      "value": {
+                        "comparison": "AtMost",
+                        "measure": "ManaValue",
+                        "operand": {
+                          "type": "Literal",
+                          "value": 5
+                        }
                       }
                     }
                   }
-                }
-              ]
+                ]
+              }
             }
           },
           "modifications": [

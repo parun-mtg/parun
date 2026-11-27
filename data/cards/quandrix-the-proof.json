@@ -43,43 +43,45 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "IsInZone",
-                  "value": "Stack"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Controller",
-                    "relation": "You"
-                  }
-                },
-                {
-                  "type": "Not",
-                  "value": {
-                    "type": "IsAbility"
-                  }
-                },
-                {
-                  "type": "Or",
-                  "value": [
-                    {
-                      "type": "HasCardType",
-                      "value": "Instant"
-                    },
-                    {
-                      "type": "HasCardType",
-                      "value": "Sorcery"
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "IsInZone",
+                    "value": "Stack"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
                     }
-                  ]
-                },
-                {
-                  "type": "WasCastFrom",
-                  "value": "Hand"
-                }
-              ]
+                  },
+                  {
+                    "type": "Not",
+                    "value": {
+                      "type": "IsAbility"
+                    }
+                  },
+                  {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Instant"
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Sorcery"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "WasCastFrom",
+                    "value": "Hand"
+                  }
+                ]
+              }
             }
           },
           "modifications": [

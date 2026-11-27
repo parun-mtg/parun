@@ -6,8 +6,10 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "HasCardType",
-              "value": "Creature"
+              "matching": {
+                "type": "HasCardType",
+                "value": "Creature"
+              }
             }
           },
           "origins": [

@@ -40,19 +40,21 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "WasCastFrom"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Controller",
-                    "relation": "You"
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "WasCastFrom"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
                   }
-                }
-              ]
+                ]
+              }
             }
           },
           "modifications": [

@@ -3720,7 +3720,9 @@ data AffectedChildren f = MkAffectedChildren
     -- | The Filter a matching arm holds.
     affectedFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
     -- | How long a permission's card stays covered (CR 611.3d), whole.
-    affectedDuration :: Duration.Duration -> f Duration.Duration
+    affectedDuration :: Duration.Duration -> f Duration.Duration,
+    -- | A matching arm's cast ordinal, whole; it reads the turn's casts.
+    affectedOrdinal :: TurnOrdinal.TurnOrdinal -> f TurnOrdinal.TurnOrdinal
   }
 
 -- | An Affected's children.
@@ -3729,7 +3731,7 @@ affectedChildren c affected = case affected of
   Affected.TheseObjects objects -> Affected.TheseObjects <$> affectedObjects c objects
   Affected.Matching filter_ -> Affected.Matching <$> affectedFilter c filter_
   Affected.MatchingAnywhere filter_ -> Affected.MatchingAnywhere <$> affectedFilter c filter_
-  Affected.MatchingOffBattlefield filter_ -> Affected.MatchingOffBattlefield <$> affectedFilter c filter_
+  Affected.MatchingOffBattlefield filter_ onlyNth -> Affected.MatchingOffBattlefield <$> affectedFilter c filter_ <*> traverse (affectedOrdinal c) onlyNth
   Affected.Attached -> pure affected
   Affected.AttachedPlayerControls filter_ -> Affected.AttachedPlayerControls <$> affectedFilter c filter_
   Affected.PlayedThisWay duration -> Affected.PlayedThisWay <$> affectedDuration c duration

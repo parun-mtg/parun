@@ -58,8 +58,10 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "IsInZone",
-              "value": "Graveyard"
+              "matching": {
+                "type": "IsInZone",
+                "value": "Graveyard"
+              }
             }
           },
           "kind": "Spell"
@@ -68,8 +70,10 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "IsInZone",
-              "value": "Graveyard"
+              "matching": {
+                "type": "IsInZone",
+                "value": "Graveyard"
+              }
             }
           },
           "kind": "ActivatedAbility"
@@ -78,8 +82,10 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "IsInZone",
-              "value": "Graveyard"
+              "matching": {
+                "type": "IsInZone",
+                "value": "Graveyard"
+              }
             }
           },
           "kind": "TriggeredAbility"
