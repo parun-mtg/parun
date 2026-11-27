@@ -45,6 +45,12 @@ spec s = Spec.describe s "Parun.Codec.Prohibition" $ do
       Prohibition.codec
       Prohibition.Regenerate
       " {\"type\":\"Regenerate\"} "
+  Spec.it s "TapExceptAttacking" $
+    Common.assertCodec
+      s
+      Prohibition.codec
+      Prohibition.TapExceptAttacking
+      " {\"type\":\"TapExceptAttacking\"} "
   Spec.it s "Untap" $
     Common.assertCodec
       s

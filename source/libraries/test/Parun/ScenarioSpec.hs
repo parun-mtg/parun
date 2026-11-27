@@ -80,6 +80,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StackPlacement as StackPlacement
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.Stop as Stop
+import qualified Parun.Types.TapCause as TapCause
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TappedIs as TappedIs
 import qualified Parun.Types.TeamId as TeamId
@@ -685,7 +686,7 @@ spec s registry = Spec.describe s "Scenario" $ do
             Spec.assertEqWith s "the unlogged tap" (NonEmpty.toList found) [Discrepancy.MkTapState land TapState.Untapped TapState.Tapped]
           Left failure -> Spec.assertFailure s (S.renderFailure failure)
           Right _ -> Spec.assertFailure s "a tap with no event passed"
-        case Scenario.rehearse Seq.empty built (between (Event.tap S.alice land)) of
+        case Scenario.rehearse Seq.empty built (between (Event.tap TapCause.OtherTap S.alice land)) of
           Left failure -> Spec.assertFailure s (S.renderFailure failure)
           Right _ -> pure ()
 

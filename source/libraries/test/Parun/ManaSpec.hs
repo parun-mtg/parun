@@ -124,6 +124,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Status as Status
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.TapCause as TapCause
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -3879,7 +3880,7 @@ wildGrowthSpec s registry = Spec.describe s "Wild Growth" $ do
     Spec.assertEqWith s "and bob, whose land was not the one tapped, gets nothing there" (poolTypes S.bob unenchanted) []
   Spec.it s "CR 106.12 a tap that is not for mana leaves the Aura silent" $ do
     (_, bobForest, _, board) <- wildGrowthBoard s registry
-    let after = S.runPure S.identityAnswer board (Event.tap S.bob bobForest >> Engine.settleForPriority)
+    let after = S.runPure S.identityAnswer board (Event.tap TapCause.OtherTap S.bob bobForest >> Engine.settleForPriority)
     Spec.assertEqWith s "CR 106.12 nothing was tapped FOR MANA, so no mana was added" (poolTypes S.bob after) []
     Spec.assertEqWith s "nor did an ordinary triggered ability go on the stack" (length (TurnRegisters.stack (GameState.turn after))) 0
     Spec.assertEqWith s "and the land really is tapped, so the boards differ in nothing else" (fmap Object.tapped (Game.lookupObject bobForest after)) (Just TapState.Tapped)
