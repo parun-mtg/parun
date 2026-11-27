@@ -6,6 +6,7 @@ import qualified Data.List as List
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.CardSelection as CardSelection
+import qualified Parun.Codec.DifferentIn as DifferentIn
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.HowMany as HowMany
 import qualified Parun.Codec.Keyword as Keyword
@@ -25,7 +26,8 @@ import qualified Parun.Types.Zone as Zone
 -- | A bare object keyed by the record's field names, the shape every other
 -- 'Parun.Types.ObjectRef' payload record takes.
 --
--- @chooser@, @count@, @zone@, @ownZones@ and @selection@ are defaulted, so the
+-- @chooser@, @count@, @zone@, @ownZones@, @selection@ and @differentIn@ are
+-- defaulted, so the
 -- printed choice of one permanent addressed to the resolving controller writes
 -- none of those keys.
 --
@@ -43,6 +45,7 @@ codec = Fields.objectWith validZones $ do
   zone <- Fields.defaulted "zone" Zone.Battlefield Zone.codec ChosenPermanents.zone
   ownZones <- Fields.defaulted "ownZones" Set.empty (Common.set Zone.codec) ChosenPermanents.ownZones
   selection <- Fields.defaulted "selection" CardSelection.Type.ByChoice CardSelection.codec ChosenPermanents.selection
+  differentIn <- Fields.defaulted "differentIn" Set.empty (Common.set DifferentIn.codec) ChosenPermanents.differentIn
   pure
     ChosenPermanents.MkChosenPermanents
       { ChosenPermanents.filter = filter_,
@@ -51,7 +54,8 @@ codec = Fields.objectWith validZones $ do
         ChosenPermanents.total = total,
         ChosenPermanents.zone = zone,
         ChosenPermanents.ownZones = ownZones,
-        ChosenPermanents.selection = selection
+        ChosenPermanents.selection = selection,
+        ChosenPermanents.differentIn = differentIn
       }
 
 validZones :: ChosenPermanents.ChosenPermanents -> Either Text.Text ChosenPermanents.ChosenPermanents

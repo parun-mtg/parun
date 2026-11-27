@@ -3578,7 +3578,7 @@ onePerChildren c per = case per of
 -- | A battlefield choice's children (CR 608.2d): what it picks among, who
 -- picks, how many and within what total.
 chosenPermanentsChildren :: (Applicative f) => ObjectRefChildren f -> ChosenPermanents.ChosenPermanents -> f ChosenPermanents.ChosenPermanents
-chosenPermanentsChildren c (ChosenPermanents.MkChosenPermanents filter_ chooser count total zone own selection) =
+chosenPermanentsChildren c (ChosenPermanents.MkChosenPermanents filter_ chooser count total zone own selection apart) =
   ChosenPermanents.MkChosenPermanents
     <$> refFilter c filter_
     <*> refPlayer c chooser
@@ -3587,6 +3587,7 @@ chosenPermanentsChildren c (ChosenPermanents.MkChosenPermanents filter_ chooser 
     <*> pure zone
     <*> pure own
     <*> pure selection
+    <*> pure apart
 
 -- | One visitor per kind of child a rule-affecting row holds (CR 613.11): a
 -- restriction on declaring attackers or blockers (CR 508.1c, 509.1b), a cost to
