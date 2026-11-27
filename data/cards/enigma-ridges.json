@@ -1,0 +1,335 @@
+{
+  "faces": [
+    {
+      "name": "Enigma Ridges",
+      "oracleText": "When you planeswalk to Enigma Ridges, each player who controls fewer lands than the player who controls the most lands searches their library for a number of basic land cards less than or equal to the difference, reveals them, puts them into their hand, then shuffles.\nWhenever chaos ensues, draw a card, then you may put a land card from your hand onto the battlefield.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "Search",
+                              "value": {
+                                "destination": "RevealThenHand",
+                                "filter": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Land"
+                                    },
+                                    {
+                                      "type": "HasSupertype",
+                                      "value": "Basic"
+                                    }
+                                  ]
+                                },
+                                "owner": {
+                                  "type": "InSlot",
+                                  "value": "player"
+                                },
+                                "quantity": {
+                                  "type": "Plus",
+                                  "value": {
+                                    "left": {
+                                      "type": "Count",
+                                      "value": {
+                                        "aggregation": {
+                                          "type": "Greatest",
+                                          "value": {
+                                            "type": "Count",
+                                            "value": {
+                                              "aggregation": {
+                                                "type": "Members"
+                                              },
+                                              "filter": {
+                                                "type": "And",
+                                                "value": [
+                                                  {
+                                                    "type": "HasCardType",
+                                                    "value": "Land"
+                                                  },
+                                                  {
+                                                    "type": "HeldByRecipient",
+                                                    "value": "Controller"
+                                                  }
+                                                ]
+                                              },
+                                              "scope": {
+                                                "type": "InZone",
+                                                "value": {
+                                                  "player": {
+                                                    "type": "Relative",
+                                                    "value": "AnyPlayer"
+                                                  },
+                                                  "zone": "Battlefield"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "filter": {
+                                          "type": "And",
+                                          "value": []
+                                        },
+                                        "scope": {
+                                          "type": "OverPlayers",
+                                          "value": {
+                                            "type": "Relative",
+                                            "value": "AnyPlayer"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "right": {
+                                      "type": "Negate",
+                                      "value": {
+                                        "type": "Count",
+                                        "value": {
+                                          "aggregation": {
+                                            "type": "Members"
+                                          },
+                                          "filter": {
+                                            "type": "And",
+                                            "value": [
+                                              {
+                                                "type": "HasCardType",
+                                                "value": "Land"
+                                              },
+                                              {
+                                                "type": "HeldByBound",
+                                                "value": {
+                                                  "holder": "Controller",
+                                                  "slot": "player"
+                                                }
+                                              }
+                                            ]
+                                          },
+                                          "scope": {
+                                            "type": "InZone",
+                                            "value": {
+                                              "player": {
+                                                "type": "Relative",
+                                                "value": "AnyPlayer"
+                                              },
+                                              "zone": "Battlefield"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "searcher": {
+                                  "type": "InSlot",
+                                  "value": "player"
+                                }
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "Players",
+                            "value": {
+                              "players": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              },
+                              "whose": {
+                                "type": "Compares",
+                                "value": {
+                                  "comparison": "LessThan",
+                                  "measured": {
+                                    "type": "Count",
+                                    "value": {
+                                      "aggregation": {
+                                        "type": "Total",
+                                        "value": {
+                                          "type": "Count",
+                                          "value": {
+                                            "aggregation": {
+                                              "type": "Members"
+                                            },
+                                            "filter": {
+                                              "type": "And",
+                                              "value": [
+                                                {
+                                                  "type": "HasCardType",
+                                                  "value": "Land"
+                                                },
+                                                {
+                                                  "type": "HeldByRecipient",
+                                                  "value": "Controller"
+                                                }
+                                              ]
+                                            },
+                                            "scope": {
+                                              "type": "InZone",
+                                              "value": {
+                                                "player": {
+                                                  "type": "Relative",
+                                                  "value": "AnyPlayer"
+                                                },
+                                                "zone": "Battlefield"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "filter": {
+                                        "type": "And",
+                                        "value": []
+                                      },
+                                      "scope": {
+                                        "type": "OverPlayers",
+                                        "value": {
+                                          "type": "Candidate"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "threshold": {
+                                    "type": "Count",
+                                    "value": {
+                                      "aggregation": {
+                                        "type": "Greatest",
+                                        "value": {
+                                          "type": "Count",
+                                          "value": {
+                                            "aggregation": {
+                                              "type": "Members"
+                                            },
+                                            "filter": {
+                                              "type": "And",
+                                              "value": [
+                                                {
+                                                  "type": "HasCardType",
+                                                  "value": "Land"
+                                                },
+                                                {
+                                                  "type": "HeldByRecipient",
+                                                  "value": "Controller"
+                                                }
+                                              ]
+                                            },
+                                            "scope": {
+                                              "type": "InZone",
+                                              "value": {
+                                                "player": {
+                                                  "type": "Relative",
+                                                  "value": "AnyPlayer"
+                                                },
+                                                "zone": "Battlefield"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "filter": {
+                                        "type": "And",
+                                        "value": []
+                                      },
+                                      "scope": {
+                                        "type": "OverPlayers",
+                                        "value": {
+                                          "type": "Relative",
+                                          "value": "AnyPlayer"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "slot": "player"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "ChosenCardInHand",
+                            "value": {
+                              "filter": {
+                                "type": "HasCardType",
+                                "value": "Land"
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Echoir"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}
