@@ -2889,6 +2889,14 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (Effect.ChaosEnsues (Just (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "revealed")))))
       " {\"type\":\"ChaosEnsues\",\"value\":{\"type\":\"InSlot\",\"value\":\"revealed\"}} "
+  -- CR 901.9: nullary, the roller being the resolving controller.
+  Spec.it s "RollPlanarDie" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      Effect.RollPlanarDie
+      " {\"type\":\"RollPlanarDie\"} "
   -- CR 702.159b: nullary, the prize's actions being the effects after it.
   Spec.it s "ClaimPrize" $
     Common.assertJsonCodec

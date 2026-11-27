@@ -1382,6 +1382,7 @@ effectChildren c effect = case effect of
   Effect.Crank -> pure effect
   Effect.Planeswalk p -> fmap (\to -> Effect.Planeswalk p {Planeswalk.to = to}) (traverse (onObjectRef c) (Planeswalk.to p))
   Effect.ChaosEnsues ref -> fmap Effect.ChaosEnsues (traverse (onObjectRef c) ref)
+  Effect.RollPlanarDie -> pure effect
   Effect.Abandon -> pure effect
   Effect.SetInMotion ref -> fmap Effect.SetInMotion (onObjectRef c ref)
   Effect.ClaimPrize -> pure effect

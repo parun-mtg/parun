@@ -822,6 +822,9 @@ data Effect card ability
     -- on; for each object the ObjectRef names, where it ensues for a
     -- particular object (Pools of Becoming).
     ChaosEnsues (Maybe ObjectRef.ObjectRef)
+  | -- | CR 901.9: the resolving controller rolls the planar die (Fractured
+    -- Powerstone), performed by Parun.Engine.Planechase.rollFor.
+    RollPlanarDie
   | -- | CR 701.33: abandon this scheme -- the effect's source (CR 314.7) --
     -- performed by Parun.Engine.Archenemy.abandon.
     Abandon

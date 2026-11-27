@@ -4001,6 +4001,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   -- CR 701.31a: only the planar controller of a Planechase game planeswalks.
   Effect.Planeswalk _ -> not (Planechase.canPlaneswalk controller gs)
   Effect.ChaosEnsues {} -> False
+  Effect.RollPlanarDie -> False
   -- CR 701.33a: only a face-up ongoing scheme may be abandoned.
   Effect.Abandon -> not (Archenemy.canAbandon source gs)
   -- CR 101.2 / 614.17c: All in Good Time's prohibition is not this question's.

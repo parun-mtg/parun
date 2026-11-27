@@ -1066,6 +1066,7 @@ effectPlayerRefs effect = case effect of
   Effect.RollToVisit -> []
   Effect.Planeswalk {} -> []
   Effect.ChaosEnsues {} -> []
+  Effect.RollPlanarDie -> []
   Effect.Abandon -> []
   Effect.SetInMotion _ -> []
   Effect.ClaimPrize -> []
@@ -1297,6 +1298,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.RollToVisit -> Map.empty
   Effect.Planeswalk {} -> Map.empty
   Effect.ChaosEnsues {} -> Map.empty
+  Effect.RollPlanarDie -> Map.empty
   Effect.Abandon -> Map.empty
   Effect.SetInMotion _ -> Map.empty
   Effect.ClaimPrize -> Map.empty
@@ -2285,6 +2287,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.RollToVisit -> True
   Effect.Planeswalk {} -> True
   Effect.ChaosEnsues {} -> True
+  Effect.RollPlanarDie -> True
   Effect.Abandon -> True
   Effect.SetInMotion _ -> True
   Effect.ClaimPrize -> True
@@ -2607,6 +2610,7 @@ hasRead wanted =
         Effect.RollToVisit -> False
         Effect.Planeswalk {} -> False
         Effect.ChaosEnsues {} -> False
+        Effect.RollPlanarDie -> False
         Effect.Abandon -> False
         Effect.SetInMotion _ -> False
         Effect.ClaimPrize -> False
@@ -2928,6 +2932,7 @@ boundSlots effect = case effect of
   Effect.RollToVisit -> Set.empty
   Effect.Planeswalk {} -> Set.empty
   Effect.ChaosEnsues {} -> Set.empty
+  Effect.RollPlanarDie -> Set.empty
   Effect.Abandon -> Set.empty
   Effect.SetInMotion _ -> Set.empty
   Effect.ClaimPrize -> Set.empty

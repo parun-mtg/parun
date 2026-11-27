@@ -134,6 +134,7 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseGrant as PhaseGrant
 import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhaseSelector as PhaseSelector
+import qualified Parun.Types.PlanarRollCause as PlanarRollCause
 import qualified Parun.Types.Planeswalk as Planeswalk
 import qualified Parun.Types.PlaneswalkCause as PlaneswalkCause
 import qualified Parun.Types.PlayerActed as PlayerActed
@@ -171,6 +172,7 @@ import qualified Parun.Types.TakeExtraTurn as TakeExtraTurn
 import qualified Parun.Types.Tap as Tap
 import qualified Parun.Types.TapCause as TapCause
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.Throw as Throw
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.Zone as Zone
@@ -1606,6 +1608,11 @@ chaosEnsues resolving source controller legal ref = case ref of
   Just r -> do
     gs <- State.get
     Monad.mapM_ (State.modify' . Event.recordEvent . GameEvent.ChaosEnsued . Just) (objectRefObjects legal resolving controller source gs r)
+
+-- CR 901.9: the resolving controller rolls the planar die, which CR 901.9's
+-- cost does not count.
+rollPlanarDie :: (Throw.Throw -> Game [Natural]) -> PlayerId -> Game ()
+rollPlanarDie thrown = Planechase.rollFor thrown PlanarRollCause.Instruction
 
 abandon :: ObjectId -> Game ()
 abandon = Archenemy.abandon

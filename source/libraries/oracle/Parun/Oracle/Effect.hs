@@ -1129,6 +1129,7 @@ effect context e = case e of
   Effect.Crank {} -> []
   Effect.Planeswalk {} -> []
   Effect.ChaosEnsues {} -> []
+  Effect.RollPlanarDie -> Player.rolledPlanarDie context
   Effect.Abandon -> Player.abandoned context
   Effect.SetInMotion {} -> []
   Effect.ClaimPrize {} -> []

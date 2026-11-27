@@ -70,6 +70,10 @@ flipped context f
       Predicate.imperative context (FlipCoin.flipper f) (Text.pack "flip a coin") (Text.pack "flips a coin")
   | otherwise = []
 
+-- | "Roll the planar die" (CR 901.9).
+rolledPlanarDie :: Target.Context -> [Predicate.Predicate]
+rolledPlanarDie context = Predicate.imperative context (PlayerRef.Relative PlayerRelation.You) (Text.pack "roll the planar die") (Text.pack "rolls the planar die")
+
 -- | "Abandon this scheme" (CR 701.33): the scheme's controller, the
 -- archenemy, abandons the source.
 abandoned :: Target.Context -> [Predicate.Predicate]
