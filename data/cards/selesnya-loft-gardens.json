@@ -49,10 +49,7 @@
             "type": "TokenR",
             "value": {
               "matching": {
-                "effectsOnly": true,
-                "whose": {
-                  "type": "AnyPlayer"
-                }
+                "effectsOnly": true
               },
               "scaling": {
                 "type": "Multiply",
@@ -72,9 +69,6 @@
                 },
                 "subject": {
                   "type": "ByEffect"
-                },
-                "whose": {
-                  "type": "AnyPlayer"
                 }
               },
               "scaling": {
