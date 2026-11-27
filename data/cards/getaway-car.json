@@ -78,7 +78,9 @@
                     },
                     "filter": {
                       "type": "CrewedThisTurn",
-                      "value": "Candidate"
+                      "value": {
+                        "type": "Candidate"
+                      }
                     },
                     "pool": {
                       "type": "Creatures"

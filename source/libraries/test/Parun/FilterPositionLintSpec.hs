@@ -3761,6 +3761,65 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 ]
             }
     Spec.assertEqWith s "a planted atom in an affected set is seen" (outside planted) 1
+  -- CR 120.1: what a SLOT's object dealt is filled by
+  -- Parun.Engine.Projection.framedBySlots, and an absent key is vacuously True
+  -- for CR 601.2c's offer, so anywhere but a target slot the atom would admit
+  -- everything. Glen Elendra's "that player" is the one position admitted.
+  Spec.it s "CR 120.1 no card asks what a slot's object dealt outside a target slot" $ do
+    ps <- S.allPrintings s corpus
+    let bySlot atom = case atom of
+          Filter.Type.DealtDamageTo asked -> case DealtDamageTo.dealer asked of
+            Actor.InSlot _ -> True
+            Actor.Candidate -> False
+            Actor.Source -> False
+          _ -> False
+        atoms = decodedAtoms "DealtDamageTo" bySlot
+        admitted c = sum [atoms (atomJson f) | (framing, f) <- cardFilters c, framing == InTargetSlot]
+        outside c = atoms (Codec.encode (Face.Codec.codec Card.codec) c) - admitted c
+        offenders = filter (anyFace (\c -> outside c /= 0) . Printing.card) ps
+    Spec.assertEqWith s "the atom sits only in a target slot" (fmap (S.nameOf . Printing.card) offenders) []
+    glen <- S.printingOf s registry "Glen Elendra"
+    Spec.assertEqWith s "NOT vacuous: Glen Elendra's is accepted" (admitted (S.combinedFace glen), outside (S.combinedFace glen)) (1, 0)
+    let atom = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.Anyone, DealtDamageTo.kind = Nothing, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = Actor.InSlot (SlotName.MkSlotName (Text.pack "yours"))}
+        planted =
+          (S.combinedFace glen)
+            { Face.staticAbilities =
+                [ StaticAbility.MkStaticAbility
+                    (Affected.Matching (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, atom]))
+                    Nothing
+                    Set.empty
+                    Nothing
+                    Nothing
+                    (NonEmpty.singleton Modification.LoseAllAbilities)
+                ]
+            }
+    Spec.assertEqWith s "a planted atom in an affected set is seen" (outside planted) 1
+  -- Unprinted: a crewer naming a slot ("crewed by that creature"), which no
+  -- context fills (Parun.Engine.Filter's CrewedThisTurn arm).
+  Spec.it s "CR 702.122c no card names a slot as a crewer" $ do
+    ps <- S.allPrintings s corpus
+    let bySlot atom = case atom of
+          Filter.Type.CrewedThisTurn (Actor.InSlot _) -> True
+          _ -> False
+        atoms = decodedAtoms "CrewedThisTurn" bySlot
+        offenders = filter (anyFace (\c -> atoms (Codec.encode (Face.Codec.codec Card.codec) c) /= 0) . Printing.card) ps
+    Spec.assertEqWith s "no crewer names a slot" (fmap (S.nameOf . Printing.card) offenders) []
+    balthier <- S.printingOf s registry "Balthier and Fran"
+    let face = S.combinedFace balthier
+        planted =
+          face
+            { Face.staticAbilities =
+                [ StaticAbility.MkStaticAbility
+                    (Affected.Matching (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.CrewedThisTurn (Actor.InSlot (SlotName.MkSlotName (Text.pack "it")))]))
+                    Nothing
+                    Set.empty
+                    Nothing
+                    Nothing
+                    (NonEmpty.singleton Modification.LoseAllAbilities)
+                ]
+            }
+    Spec.assertEqWith s "NOT vacuous: the real Balthier and Fran is accepted" (atoms (Codec.encode (Face.Codec.codec Card.codec) face)) 0
+    Spec.assertEqWith s "a planted slot crewer is seen" (atoms (Codec.encode (Face.Codec.codec Card.codec) planted)) 1
   -- CR 400.7: what the SOURCE was before its move is filled where what it
   -- crewed is (Projection.withCharacteristicsOf), so the same positions admit it.
   Spec.it s "CR 400.7 no card asks what its source was before its move outside the positions that fill it" $ do

@@ -105,7 +105,9 @@
                                   },
                                   "filter": {
                                     "type": "CrewedThisTurn",
-                                    "value": "Candidate"
+                                    "value": {
+                                      "type": "Candidate"
+                                    }
                                   },
                                   "scope": {
                                     "type": "InZone",
@@ -127,7 +129,9 @@
                                   },
                                   "filter": {
                                     "type": "CrewedThisTurn",
-                                    "value": "Candidate"
+                                    "value": {
+                                      "type": "Candidate"
+                                    }
                                   },
                                   "scope": {
                                     "type": "InHistory",

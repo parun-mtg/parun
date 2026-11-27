@@ -123,7 +123,9 @@
                         },
                         {
                           "type": "CrewedThisTurn",
-                          "value": "Candidate"
+                          "value": {
+                            "type": "Candidate"
+                          }
                         }
                       ]
                     },
