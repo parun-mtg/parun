@@ -222,7 +222,8 @@
                           "duration": {
                             "type": "UntilEvent",
                             "value": {
-                              "type": "Planeswalked"
+                              "type": "Planeswalked",
+                              "value": "AnyCard"
                             }
                           }
                         }

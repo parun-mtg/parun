@@ -131,6 +131,7 @@ import qualified Parun.Types.PermissionCost as PermissionCost
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
+import qualified Parun.Types.PlanarDieFace as PlanarDieFace
 import qualified Parun.Types.PlayAsCopy as PlayAsCopy
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import Parun.Types.PlayerEffect (PlayerEffect)
@@ -760,6 +761,7 @@ prohibitsCasting pid oid variable gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.PhasesReversed -> False
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> False
         PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.DrawsDuringDrawSteps _ -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -959,6 +961,7 @@ prohibitsPlayingLand pid oid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.PhasesReversed -> False
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> False
         PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.DrawsDuringDrawSteps _ -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -1033,6 +1036,7 @@ searchPortion pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -1129,6 +1133,7 @@ prohibitsSearching pid owner causeController gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.PhasesReversed -> False
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> False
         PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.DrawsDuringDrawSteps _ -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -1247,6 +1252,7 @@ prohibitsCounters pid kind gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.PhasesReversed -> False
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> False
         PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.DrawsDuringDrawSteps _ -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -1298,6 +1304,7 @@ stateBasedActionDoesntApplyTo action pid oid gs =
         PlayerEffect.StateBasedActionDoesntApply exempted matching -> exempted == action && matchesObjectFrom source matching oid gs
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.PhasesReversed -> False
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> False
         PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.DrawsDuringDrawSteps _ -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -1364,6 +1371,15 @@ stateBasedActionDoesntApplyTo action pid oid gs =
 phasesReversed :: PlayerId -> GameState -> Bool
 phasesReversed pid gs = odd (length (filter ((== PlayerEffect.PhasesReversed) . snd) (applying pid gs)))
 
+-- | CR 901.9b: is `pid`'s planar die roll showing `face` a chaos roll? The
+-- chaos symbol is, and so is a blank while a row makes blank rolls chaos rolls
+-- (Chaotic Aether). Parun.Engine.Planechase.roll is the reader.
+isChaosRoll :: PlayerId -> PlanarDieFace.PlanarDieFace -> GameState -> Bool
+isChaosRoll pid face gs = case face of
+  PlanarDieFace.Chaos -> True
+  PlanarDieFace.Blank -> any ((== PlayerEffect.BlankPlanarDieRollsAreChaos) . snd) (applying pid gs)
+  PlanarDieFace.Planeswalker -> False
+
 -- | CR 504.1 / 613.11: how many cards nonactive `pid` draws during this draw
 -- step beside the active players' turn-based draws, one per row whose relation
 -- to `pid` an active player stands in (Teferi, Who Slows the Sunset's emblem).
@@ -1399,6 +1415,7 @@ schemesCantBeSetInMotion gs =
   let prohibits effect = case effect of
         PlayerEffect.CantSetSchemesInMotion -> True
         PlayerEffect.PhasesReversed -> False
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> False
         PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.DrawsDuringDrawSteps _ -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -1487,6 +1504,7 @@ moveTriggerings move pid subjects (bearer, atBearer) effects board =
         PlayerEffect.BearersTrigger _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -1599,6 +1617,7 @@ bearerTriggerings pid bearer ability gs =
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.ControlledWhileSearching -> Nothing
@@ -1681,6 +1700,7 @@ prohibitsAttackingWithCreatures pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.PhasesReversed -> False
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> False
         PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.DrawsDuringDrawSteps _ -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -2554,6 +2574,7 @@ landPlayFlashGrant effect = case effect of
   PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
   PlayerEffect.CantSetSchemesInMotion -> Nothing
   PlayerEffect.PhasesReversed -> Nothing
+  PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
   PlayerEffect.TurnOrderReversed -> Nothing
   PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
   PlayerEffect.EntriesTrigger _ -> Nothing
@@ -2833,6 +2854,7 @@ castFromGrantOf effect = case effect of
   PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
   PlayerEffect.CantSetSchemesInMotion -> Nothing
   PlayerEffect.PhasesReversed -> Nothing
+  PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
   PlayerEffect.TurnOrderReversed -> Nothing
   PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
   PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3278,6 +3300,7 @@ ratherThanManaCost pid oid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3366,6 +3389,7 @@ playLandPiles pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> []
         PlayerEffect.CantSetSchemesInMotion -> []
         PlayerEffect.PhasesReversed -> []
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> []
         PlayerEffect.TurnOrderReversed -> []
         PlayerEffect.DrawsDuringDrawSteps _ -> []
         PlayerEffect.EntriesTrigger _ -> []
@@ -3493,6 +3517,7 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.PhasesReversed -> False
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> False
         PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.DrawsDuringDrawSteps _ -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -3611,6 +3636,7 @@ protectedFromGiven rows aimer view gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.PhasesReversed -> False
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> False
         PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.DrawsDuringDrawSteps _ -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -3713,6 +3739,7 @@ protectionCarriers gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3808,6 +3835,7 @@ landPlaysAllowed pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3895,6 +3923,7 @@ votesAllowed pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3968,6 +3997,7 @@ offeredExtras pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.PhasesReversed -> False
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> False
         PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.DrawsDuringDrawSteps _ -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -4042,6 +4072,7 @@ cascadeActions pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -4115,6 +4146,7 @@ drawReveals pid nth gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -4188,6 +4220,7 @@ shownGrants pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -4308,6 +4341,7 @@ maximumHandSize pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> current
         PlayerEffect.CantSetSchemesInMotion -> current
         PlayerEffect.PhasesReversed -> current
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> current
         PlayerEffect.TurnOrderReversed -> current
         PlayerEffect.DrawsDuringDrawSteps _ -> current
         PlayerEffect.EntriesTrigger _ -> current
@@ -4423,6 +4457,7 @@ unspentManaRows pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -4506,6 +4541,7 @@ losesLifeForUnspentMana pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.PhasesReversed -> False
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> False
         PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.DrawsDuringDrawSteps _ -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -4600,6 +4636,7 @@ forbids reaches pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.PhasesReversed -> False
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> False
         PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.DrawsDuringDrawSteps _ -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -4748,6 +4785,7 @@ precludes outcome pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.PhasesReversed -> False
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> False
         PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.DrawsDuringDrawSteps _ -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -4830,6 +4868,7 @@ spendManaAsThoughRows pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -5008,6 +5047,7 @@ cantBeCountered pid counterer oid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.PhasesReversed -> False
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> False
         PlayerEffect.TurnOrderReversed -> False
         PlayerEffect.DrawsDuringDrawSteps _ -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -5077,6 +5117,7 @@ targetingRestrictions =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -5165,6 +5206,7 @@ hexproofExemptions =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -5267,6 +5309,7 @@ unpreventable gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -5357,6 +5400,7 @@ unredirectable gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -5431,6 +5475,7 @@ damageAsThough gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -5551,6 +5596,7 @@ statedFlips pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -5637,6 +5683,7 @@ rollModifiers pid gs =
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.PhasesReversed -> Nothing
+        PlayerEffect.BlankPlanarDieRollsAreChaos -> Nothing
         PlayerEffect.TurnOrderReversed -> Nothing
         PlayerEffect.DrawsDuringDrawSteps _ -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -5777,6 +5824,7 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.StateBasedActionDoesntApply _ _ -> pure effect
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.PhasesReversed -> pure effect
+  PlayerEffect.BlankPlanarDieRollsAreChaos -> pure effect
   PlayerEffect.TurnOrderReversed -> pure effect
   PlayerEffect.DrawsDuringDrawSteps _ -> pure effect
   PlayerEffect.EntriesTrigger _ -> pure effect
@@ -5881,6 +5929,7 @@ overDamagePatterns f effect = case effect of
   PlayerEffect.StateBasedActionDoesntApply _ _ -> pure effect
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.PhasesReversed -> pure effect
+  PlayerEffect.BlankPlanarDieRollsAreChaos -> pure effect
   PlayerEffect.TurnOrderReversed -> pure effect
   PlayerEffect.DrawsDuringDrawSteps _ -> pure effect
   PlayerEffect.EntriesTrigger _ -> pure effect

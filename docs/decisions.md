@@ -3604,3 +3604,20 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Event.Match.armMatches`, the DealsDamage arm's
   FirstTimeEachTurn case.
 - **Issue**: none.
+
+## Whether Chaotic Aether's chaos roll is still a blank roll
+
+- **Question**: Chaotic Aether: "each blank roll of the planar die is a
+  {CHAOS} roll". On Pompeii ("Whenever you roll a blank on the planar die"),
+  does such a roll trigger the blank-roll ability as well as the chaos one?
+- **Rules**: CR 901.3a, 901.9a, 901.9b, 311.7 (CR of 2026-11-06); Chaotic
+  Aether's ruling says "rolling any blank face" makes chaos abilities trigger,
+  and nothing of blank-roll triggers.
+- **Decision**: Yes. The die still shows a blank face and the roll is a blank
+  roll; the effect adds that chaos ensues.
+- **Rejected**: The roll is a chaos roll instead of a blank one. The card says
+  "is", not "instead", and the ruling still calls it rolling a blank face.
+- **Site**: `Parun.Engine.Planechase.roll` with
+  `Parun.Engine.PlayerEffect.isChaosRoll`; the scenario
+  `chaotic-aether-makes-blank-rolls-chaos-rolls-until-a-player-planeswalks-away-from-a-plane`.
+- **Issue**: #10005.

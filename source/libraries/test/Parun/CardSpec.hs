@@ -4496,6 +4496,7 @@ playerEffectFilters playerEffect = case playerEffect of
   PlayerEffect.StateBasedActionDoesntApply _ exempted -> [exempted]
   PlayerEffect.CantSetSchemesInMotion -> []
   PlayerEffect.PhasesReversed -> []
+  PlayerEffect.BlankPlanarDieRollsAreChaos -> []
   PlayerEffect.TurnOrderReversed -> []
   PlayerEffect.DrawsDuringDrawSteps _ -> []
   PlayerEffect.EntriesTrigger e -> [EntriesTrigger.entrants e, EntriesTrigger.bearers e]

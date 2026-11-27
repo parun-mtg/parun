@@ -1514,6 +1514,8 @@ library codec
     Parun.Codec.PlaneswalkAwaySpec
     Parun.Codec.PlaneswalkCause
     Parun.Codec.PlaneswalkCauseSpec
+    Parun.Codec.PlaneswalkedFrom
+    Parun.Codec.PlaneswalkedFromSpec
     Parun.Codec.PlaneswalkR
     Parun.Codec.PlaneswalkRewrite
     Parun.Codec.PlaneswalkRewriteSpec
@@ -3835,6 +3837,7 @@ library types
     Parun.Types.Planeswalk
     Parun.Types.PlaneswalkAway
     Parun.Types.PlaneswalkCause
+    Parun.Types.PlaneswalkedFrom
     Parun.Types.PlaneswalkR
     Parun.Types.PlaneswalkRewrite
     Parun.Types.PlayAllowance
