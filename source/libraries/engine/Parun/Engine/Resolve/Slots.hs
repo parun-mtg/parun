@@ -1983,6 +1983,7 @@ relationSlots rel = case rel of
   ControllerRelation.Related _ -> Map.empty
   ControllerRelation.NamedBySource _ -> Map.empty
   ControllerRelation.Among _ -> Map.empty
+  ControllerRelation.LeftOf _ -> Map.empty
 
 -- Every ControllerRelation one row's pattern carries.
 relationsOf :: ReplacementEffect.ReplacementEffect card ability effect -> [ControllerRelation.ControllerRelation]

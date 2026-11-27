@@ -11,8 +11,17 @@
               "actor": {
                 "type": "Matching",
                 "value": {
-                  "type": "HasCardType",
-                  "value": "Creature"
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "IsInZone",
+                      "value": "Battlefield"
+                    }
+                  ]
                 }
               },
               "frequency": "FirstTimeEachTurn",
