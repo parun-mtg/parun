@@ -1,0 +1,110 @@
+{
+  "faces": [
+    {
+      "name": "Caught in a Parallel Universe",
+      "oracleText": "When you encounter Caught in a Parallel Universe, each player chooses a creature controlled by the player to their left. Each player creates a token that's a copy of the creature they chose, except it has menace. (Then planeswalk away from this phenomenon.)",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "ChoosePermanents",
+                              "value": {
+                                "permanents": {
+                                  "chooser": {
+                                    "type": "InSlot",
+                                    "value": "player"
+                                  },
+                                  "filter": {
+                                    "type": "And",
+                                    "value": [
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Creature"
+                                      },
+                                      {
+                                        "type": "HeldBy",
+                                        "value": {
+                                          "holder": "Controller",
+                                          "relation": {
+                                            "type": "LeftOf",
+                                            "value": "player"
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                },
+                                "slot": "chosen"
+                              }
+                            },
+                            {
+                              "type": "CreateCopy",
+                              "value": {
+                                "creator": {
+                                  "type": "InSlot",
+                                  "value": "player"
+                                },
+                                "exceptions": [
+                                  {
+                                    "type": "GainKeywords",
+                                    "value": [
+                                      {
+                                        "type": "Menace"
+                                      }
+                                    ]
+                                  }
+                                ],
+                                "original": {
+                                  "type": "OfObject",
+                                  "value": {
+                                    "type": "InSlot",
+                                    "value": "chosen"
+                                  }
+                                },
+                                "slot": "token"
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "Players",
+                            "value": {
+                              "players": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              }
+                            }
+                          },
+                          "slot": "player"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Phenomenon"
+        ]
+      }
+    }
+  ]
+}

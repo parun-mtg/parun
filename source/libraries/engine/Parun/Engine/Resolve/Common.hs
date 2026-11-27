@@ -1842,6 +1842,7 @@ bakeRelation players rel = case rel of
   ControllerRelation.Related _ -> rel
   ControllerRelation.NamedBySource _ -> rel
   ControllerRelation.Among _ -> rel
+  ControllerRelation.LeftOf _ -> rel
 
 -- CR 608.2h: every Filter.HeldByBound a floating row's filters carry, baked to
 -- the one player its slot named (Filter.bakeBound), since the slot dies with
