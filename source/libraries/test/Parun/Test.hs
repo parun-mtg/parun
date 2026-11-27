@@ -81,6 +81,7 @@ import qualified Parun.Codec.AlternativeActivationCostSpec
 import qualified Parun.Codec.AlternativeCostSpec
 import qualified Parun.Codec.AmassKindSpec
 import qualified Parun.Codec.AnchorSpec
+import qualified Parun.Codec.AnnouncedChoiceSpec
 import qualified Parun.Codec.AnotherCounterSpec
 import qualified Parun.Codec.AnswerSpec
 import qualified Parun.Codec.AnyNumberDiscardSpec
@@ -1841,6 +1842,7 @@ spec s reference corpus = do
   Parun.Codec.NameChooserSpec.spec s
   Parun.Codec.ParityOperandSpec.spec s
   Parun.Codec.ParitySpec.spec s
+  Parun.Codec.AnnouncedChoiceSpec.spec s
   Parun.Codec.NamesAreSpec.spec s
   Parun.Codec.NinjutsuSpec.spec s
   Parun.Codec.NoteFoldSpec.spec s

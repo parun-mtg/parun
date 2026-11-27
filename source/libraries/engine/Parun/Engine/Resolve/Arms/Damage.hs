@@ -52,6 +52,7 @@ import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.Affected as Affected
+import qualified Parun.Types.AnnouncedChoice as AnnouncedChoice
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Card as Card.Type
@@ -1443,6 +1444,8 @@ choosePlayer resolving source controller legal choice = do
   chosenPlayer <- maybe (pure Nothing) (\who -> Players.chooseOne who source Nothing offered) seat
   Monad.forM_ chosenPlayer $ \pid -> do
     State.modify' (Common.bindPlayerSlot resolving slot (Set.singleton pid))
+    -- CR 608.2d: announced.
+    Foldable.for_ seat $ \who -> Event.announce who source [AnnouncedChoice.MkPlayer pid]
     Monad.when (ChoosePlayer.linked choice) $
       State.modify' (\g -> Game.recordChoice Chosen.Players (Game.readingAcquisition resolving source g source) (Just . Map.insert PlayerChoice.ChosenPlayer pid . Maybe.fromMaybe Map.empty) source g)
 

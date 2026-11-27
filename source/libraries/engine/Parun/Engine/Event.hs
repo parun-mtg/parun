@@ -90,6 +90,8 @@ import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
+import qualified Parun.Types.Announced as Announced
+import qualified Parun.Types.AnnouncedChoice as AnnouncedChoice
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.Arrival as Arrival
 import qualified Parun.Types.ArrivalEnd as ArrivalEnd
@@ -1532,6 +1534,7 @@ damageOf event = case event of
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
   GameEvent.ChoseSecretly {} -> Nothing
+  GameEvent.Announced {} -> Nothing
   GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.AttackerDeclared {} -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
@@ -1608,6 +1611,7 @@ revealOf event = case event of
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
   GameEvent.ChoseSecretly {} -> Nothing
+  GameEvent.Announced {} -> Nothing
   GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.Moved {} -> Nothing
   GameEvent.DamageDealt _ -> Nothing
@@ -6479,12 +6483,13 @@ chooseQualityAs candidate quality oid = do
   -- one is materialized before the loop runs), so controllerOf falls back to
   -- its owner. Nothing is chosen rather than the engine choosing for nobody.
   Foldable.for_ (Projection.controllerOf oid gs) $ \controller ->
-    chooseQuality quality controller Nothing (Game.acquisitionOf oid gs) oid
+    announce controller oid =<< chooseQuality quality controller Nothing (Game.acquisitionOf oid gs) oid
   Replacement.consume (ReplacementCandidate.identity candidate)
 
 -- CR 614.1c / 607.2d / 608.2d: `chooser` chooses `quality` for `oid`, written
 -- to it under `acquisition` and NOT to the copiable snapshot, replacing any
--- earlier choice, which is what "the last chosen color" reads.
+-- earlier choice, which is what "the last chosen color" reads. Answers what
+-- was chosen, for the caller to `announce` or keep secret.
 --
 -- Colours go one prompt per colour, each offering the CR 105.1 colours not yet
 -- chosen ("two colors" are two different ones), so only a fifth is forced; a
@@ -6519,7 +6524,7 @@ chooseQualityAs candidate quality oid = do
 -- (CR 607.5, Game.linkedPile) that the Filter matches, and is marked on its
 -- link, the pile's other cards unmarked (Game.markChosenExile). Proved by
 -- data/scenarios/koh-the-face-stealer-has-the-triggered-ability-of-the-last-chosen-card.json.
-chooseQuality :: ChosenQuality.ChosenQuality -> PlayerId -> Maybe AbilityName.AbilityName -> Acquisition.Acquisition -> ObjectId -> Game ()
+chooseQuality :: ChosenQuality.ChosenQuality -> PlayerId -> Maybe AbilityName.AbilityName -> Acquisition.Acquisition -> ObjectId -> Game [AnnouncedChoice.AnnouncedChoice]
 chooseQuality quality chooser reader acquisition oid = case quality of
   ChosenQuality.Colors range offered -> do
     let least = ChooseBetween.least range
@@ -6545,6 +6550,7 @@ chooseQuality quality chooser reader acquisition oid = case quality of
               pure (maybe chosen (`Set.insert` chosen) picked, colorless)
     (picked, colorless) <- Monad.foldM pick (Set.empty, Nothing) [1 .. count]
     State.modify' (Game.recordChoice Chosen.Colors acquisition (const (Just picked)) oid . Game.recordChoice Chosen.Colorless acquisition (const colorless) oid)
+    pure ([AnnouncedChoice.MkColors picked | not (Set.null picked)] <> [AnnouncedChoice.MkColorless | Maybe.isJust colorless])
   ChosenQuality.Subtype ordinal distinct family among -> do
     gs <- State.get
     let earlier = ChoiceOrdinal.before ordinal (Game.choiceWithLastKnown Chosen.Subtype acquisition oid gs)
@@ -6559,14 +6565,18 @@ chooseQuality quality chooser reader acquisition oid = case quality of
       -- CR 612.1: a text change can leave the list naming one type twice, which is one option.
       Just listed -> Game.chooseAmong (\decider who offered -> Prompt.ChooseSubtype decider who oid family (Just offered)) chooser (filter (`notElem` excluded) (ListUtils.nubOrd (NonEmpty.toList listed)))
     Foldable.for_ picked $ \subtype -> State.modify' (Game.recordChoice Chosen.Subtype acquisition (Just . ChoiceOrdinal.chooseAt ordinal subtype) oid)
+    pure (fmap AnnouncedChoice.MkSubtype (Maybe.maybeToList picked))
   ChosenQuality.CardType except among -> do
     let listed = maybe [minBound .. maxBound] NonEmpty.toList among
     picked <- Game.chooseAmong (\decider who offered -> Prompt.ChooseCardType decider who oid offered) chooser (filter (`notElem` except) listed)
     Foldable.for_ picked $ \cardType -> State.modify' (Game.recordChoice Chosen.CardType acquisition (const (Just cardType)) oid)
+    pure (fmap AnnouncedChoice.MkCardType (Maybe.maybeToList picked))
   ChosenQuality.Number least most -> do
     gs <- State.get
     answer <- Game.choose (Prompt.ChooseNumber (Decide.deciderFor chooser gs) chooser oid least NumberFloor.Least most)
-    State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just (max least (maybe id min most answer)))) oid)
+    let written = max least (maybe id min most answer)
+    State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just written)) oid)
+    pure [AnnouncedChoice.MkNumber written]
   ChosenQuality.Parity -> do
     gs <- State.get
     picked <- Game.choose (Prompt.ChooseParity (Decide.deciderFor chooser gs) chooser oid)
@@ -6575,14 +6585,18 @@ chooseQuality quality chooser reader acquisition oid = case quality of
           Parity.Even -> 0
           Parity.Odd -> 1
     State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just written)) oid)
+    pure [AnnouncedChoice.MkParity picked]
   ChosenQuality.Word offered -> do
     let numbered = zip [1 :: Natural ..] (NonEmpty.toList offered)
     picked <- Game.chooseAmong (\decider who anchors -> Prompt.ChooseWord decider who oid anchors) chooser (fmap snd numbered)
     let position = picked >>= \word -> fst <$> List.find ((== word) . snd) numbered
     Foldable.for_ position $ \n -> State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just n)) oid)
+    pure (fmap AnnouncedChoice.MkWord (Maybe.maybeToList (picked <* position)))
   ChosenQuality.Letter -> do
     picked <- Game.chooseAmong (\decider who anchors -> Prompt.ChooseWord decider who oid anchors) chooser (fmap Text.singleton NameWords.alphabet)
-    Foldable.for_ (picked >>= Text.uncons >>= NameWords.letterPosition . fst) $ \n -> State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just n)) oid)
+    let position = picked >>= Text.uncons >>= NameWords.letterPosition . fst
+    Foldable.for_ position $ \n -> State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just n)) oid)
+    pure (fmap AnnouncedChoice.MkWord (Maybe.maybeToList (picked <* position)))
   ChosenQuality.ExiledCard pile cards -> do
     gs <- State.get
     let context = Projection.sourceContext gs (Just chooser) oid
@@ -6590,6 +6604,7 @@ chooseQuality quality chooser reader acquisition oid = case quality of
         candidates = filter (\card -> Filter.matches context (Projection.viewOfObject card gs) cards) whole
     picked <- Game.chooseAmong (\decider who -> Prompt.ChooseCardFromAmong decider who oid) chooser candidates
     Foldable.for_ picked $ \card -> State.modify' (Game.markChosenExile (Set.fromList whole) (Just card))
+    pure (fmap AnnouncedChoice.MkCard (Maybe.maybeToList picked))
 
 -- CR 101.4 / 607.2f: each player on `table` in APNAP order chooses one of
 -- `offered` for `oid`, its position written under its chooser and
@@ -6601,7 +6616,8 @@ chooseQuality quality chooser reader acquisition oid = case quality of
 -- Facility's "each player who last chose green anchor chooses red waterfall,
 -- and vice versa", where the one word left is forced and so not asked
 -- (Game.chooseAmong). Each player's exclusion is read before anyone answers,
--- the choices happening simultaneously (CR 101.4).
+-- the choices happening simultaneously (CR 101.4). Each word is announced
+-- (CR 608.2d).
 chooseWordEach :: [PlayerId] -> ChoiceDistinct.ChoiceDistinct -> NonEmpty.NonEmpty Text.Text -> Acquisition.Acquisition -> ObjectId -> Game ()
 chooseWordEach table distinct offered acquisition oid = do
   gs <- State.get
@@ -6617,8 +6633,16 @@ chooseWordEach table distinct offered acquisition oid = do
   Foldable.for_ choosers $ \chooser -> do
     let offer = open chooser
     picked <- Game.chooseAmong (\decider who anchors -> Prompt.ChooseWord decider who oid anchors) chooser (fmap snd offer)
-    Foldable.for_ (picked >>= \word -> fst <$> List.find ((== word) . snd) offer) $ \n ->
+    let position = picked >>= \word -> fst <$> List.find ((== word) . snd) offer
+    Foldable.for_ position $ \n ->
       State.modify' (Game.recordChoice Chosen.NumberBy acquisition (Just . Map.insert chooser n . Maybe.fromMaybe Map.empty) oid)
+    announce chooser oid (fmap AnnouncedChoice.MkWord (Maybe.maybeToList (picked <* position)))
+
+-- CR 608.2d: `chooser` announces each of `choices`, made for `oid`, to every
+-- player.
+announce :: PlayerId -> ObjectId -> [AnnouncedChoice.AnnouncedChoice] -> Game ()
+announce chooser oid choices = Foldable.for_ choices $ \choice ->
+  State.modify' (recordEvent (GameEvent.Announced (Announced.MkAnnounced chooser oid choice)))
 
 -- CR 607.2d: the field chooseQuality writes `quality` to, put back on `oid` as
 -- `before` held it (Game.restoreChoice).
@@ -14240,6 +14264,7 @@ abilityTriggeredOf event = case event of
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
   GameEvent.ChoseSecretly {} -> Nothing
+  GameEvent.Announced {} -> Nothing
   GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.AttackerDeclared {} -> Nothing
   GameEvent.BecameBlocking {} -> Nothing

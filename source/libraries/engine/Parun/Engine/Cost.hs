@@ -8632,7 +8632,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- nothing that could run out.
   CostComponent.ChooseSubtype family -> do
     gs <- State.get
-    Event.chooseQuality (ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat family Nothing) pid Nothing (Game.acquisitionOf oid gs) oid
+    Event.announce pid oid =<< Event.chooseQuality (ChosenQuality.Subtype ChoiceOrdinal.First ChoiceDistinct.MayRepeat family Nothing) pid Nothing (Game.acquisitionOf oid gs) oid
     pure bindsNothing
   -- NOTHING TO PAY. Rule 701.67a's waterbend cost is the mana this component
   -- scopes, and that mana is in the cost's own mana part, paid by `payMana`

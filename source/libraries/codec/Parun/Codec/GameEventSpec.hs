@@ -18,6 +18,8 @@ import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
+import qualified Parun.Types.Announced as Announced
+import qualified Parun.Types.AnnouncedChoice as AnnouncedChoice
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackerBlocked as AttackerBlocked
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
@@ -247,6 +249,12 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
       GameEvent.codec
       (GameEvent.ChoseSecretly (ChoseSecretly.MkChoseSecretly (SecretChoice.MkSecretChoice (PlayerId.MkPlayerId 0) (ObjectId.MkObjectId 7) Subtype.Merfolk) (Set.fromList [PlayerId.MkPlayerId 0, PlayerId.MkPlayerId 2])))
       " {\"type\":\"ChoseSecretly\",\"value\":{\"choice\":{\"player\":0,\"object\":7,\"subtype\":\"Merfolk\"},\"audience\":[0,2]}} "
+  Spec.it s "Announced" $
+    Common.assertCodec
+      s
+      GameEvent.codec
+      (GameEvent.Announced (Announced.MkAnnounced (PlayerId.MkPlayerId 0) (ObjectId.MkObjectId 7) (AnnouncedChoice.MkColors (Set.singleton Color.Red))))
+      " {\"type\":\"Announced\",\"value\":{\"player\":0,\"object\":7,\"choice\":{\"type\":\"Colors\",\"value\":[\"Red\"]}}} "
   Spec.it s "ChoiceRevealed" $
     Common.assertCodec
       s

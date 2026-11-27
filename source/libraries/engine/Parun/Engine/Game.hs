@@ -3653,6 +3653,7 @@ castOf event = case event of
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
   GameEvent.ChoseSecretly {} -> Nothing
+  GameEvent.Announced {} -> Nothing
   GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.AttackerDeclared {} -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
@@ -3884,6 +3885,7 @@ abilityResolved event = case event of
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
   GameEvent.ChoseSecretly {} -> Nothing
+  GameEvent.Announced {} -> Nothing
   GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.AttackerDeclared {} -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
@@ -3985,6 +3987,7 @@ discardOf event = case event of
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
   GameEvent.ChoseSecretly {} -> Nothing
+  GameEvent.Announced {} -> Nothing
   GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.AttackerDeclared {} -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
@@ -4245,6 +4248,7 @@ movedChange event = case event of
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
   GameEvent.ChoseSecretly {} -> Nothing
+  GameEvent.Announced {} -> Nothing
   GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.AttackerDeclared {} -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
@@ -4367,6 +4371,7 @@ damageDealt event = case event of
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
   GameEvent.ChoseSecretly {} -> Nothing
+  GameEvent.Announced {} -> Nothing
   GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.AttackerDeclared {} -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
@@ -4672,6 +4677,7 @@ lifeChangeOf direction event = case event of
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
   GameEvent.ChoseSecretly {} -> Nothing
+  GameEvent.Announced {} -> Nothing
   GameEvent.ChoiceRevealed {} -> Nothing
   GameEvent.AttackerDeclared {} -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
