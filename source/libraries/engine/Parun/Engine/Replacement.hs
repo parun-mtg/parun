@@ -1751,6 +1751,9 @@ relationHolds gs candidate rel theirs = case rel of
   -- resolution whose slots it could read.
   ControllerRelation.InSlot _ -> False
   ControllerRelation.Among players -> maybe False (`Set.member` players) theirs
+  -- Unprinted: a pattern watching the player to someone's left, which
+  -- Parun.EffectLintSpec's engineOnlyOffends rejects.
+  ControllerRelation.LeftOf _ -> False
 
 -- CR 109.5 / 614.1: does this PLAYER satisfy a pattern's relation? The players a
 -- pattern names outright rather than through an object -- the token's
@@ -1904,6 +1907,7 @@ matchesRecipientPlayer gs context de rel = case Recipient.playerOf (DamageEvent.
     ControllerRelation.NamedBySource which -> any (\oid -> Set.member pid (Game.sourcePlayersOf which oid gs)) (Filter.source context)
     ControllerRelation.InSlot _ -> False
     ControllerRelation.Among players -> Set.member pid players
+    ControllerRelation.LeftOf _ -> False
 
 -- CR 615.1: does the damage's RECIPIENT have the qualities the pattern's PRINTED
 -- clause names -- Stormwild Capridor's "if noncombat damage would be dealt to

@@ -588,6 +588,8 @@ controllerRelationNames asking x = case x of
   ControllerRelation.NamedBySource _ -> mempty
   ControllerRelation.InSlot slotName -> slotNames asking slotName
   ControllerRelation.Among _playerId -> mempty
+  -- "The player to your left" (CR 800.5) reads "you".
+  ControllerRelation.LeftOf anchor -> maybe (relation asking PlayerRelation.You) (slotNames asking) anchor
 
 copyExceptionNames :: (Monoid r) => Asking r -> (ability -> r) -> CopyException.CopyException ability -> r
 copyExceptionNames asking onAbility = Const.getConst . Children.copyExceptionChildren (copyVisitors asking onAbility (const mempty))

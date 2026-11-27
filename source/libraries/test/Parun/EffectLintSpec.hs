@@ -600,6 +600,7 @@ phasePatternOffends replacement = case replacement of
     (ControllerRelation.NamedBySource SourcePlayer.Enchanted) -> False
     (ControllerRelation.NamedBySource SourcePlayer.Chosen) -> False
     (ControllerRelation.NamedBySource (SourcePlayer.LastChoseWord _)) -> False
+    ControllerRelation.LeftOf _ -> False
   ReplacementEffect.CounterR {} -> False
   ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.ZoneChangeR {} -> False
@@ -733,7 +734,8 @@ isInstructionR replacement = case replacement of
 -- printing either half would be claiming an ability no rule gives it.
 --
 -- ControllerRelation.Among is the same prohibition on every arm's pattern at once:
--- the players a resolution named, which only an install bakes.
+-- the players a resolution named, which only an install bakes. So is LeftOf,
+-- which no printed pattern watches (Replacement.relationHolds).
 --
 -- Exhaustive rather than a wildcard, this file's discipline for a sum.
 engineOnlyOffends :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool
@@ -744,6 +746,7 @@ engineOnlyOffends replacement = any isAmong (Resolve.relationsOf replacement) ||
       ControllerRelation.Related _ -> False
       ControllerRelation.NamedBySource _ -> False
       ControllerRelation.InSlot _ -> False
+      ControllerRelation.LeftOf _ -> True
 
 -- Unprinted: a replacement row watching the SOURCE's chosen player anywhere but
 -- a damage recipient (Sawhorn Nemesis's) -- "if the chosen player would draw",
@@ -1440,6 +1443,7 @@ engineOnlyPatternOffends pattern_ =
       ControllerRelation.InSlot _ -> True
       ControllerRelation.Related _ -> False
       ControllerRelation.NamedBySource _ -> False
+      ControllerRelation.LeftOf _ -> False
 
 -- The non-vacuity half of both lints above: is this a damage-event prohibition
 -- at all -- CR 615.12's or CR 614.9's? A wildcard is right here, where it is not
@@ -3671,6 +3675,11 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (any phasePatternOffends (cardReplacementEffects card))) "the real Eon Hub is symmetric and accepted"
     Spec.assertBool s (any phasePatternOffends (cardReplacementEffects baked)) "and the same card naming a seat is rejected"
     Spec.assertBool s (any engineOnlyOffends (cardReplacementEffects baked)) "and whosePhase is among the relations Resolve.overRelations reaches"
+    let toTheLeft replacement = case replacement of
+          ReplacementEffect.PhaseR phasePattern ->
+            ReplacementEffect.PhaseR phasePattern {PhaseR.phases = (PhaseR.phases phasePattern) {PhasePattern.whosePhase = ControllerRelation.LeftOf Nothing}}
+          other -> other
+    Spec.assertBool s (any (engineOnlyOffends . toTheLeft) (cardReplacementEffects card)) "and so is one watching the player to your left"
   -- CR 500.11 / 614.10a: Engine.walkToNextTurn and takeMarkedTurn look again
   -- after every skipped turn, so a mandatory turn skip that is never spent would
   -- loop them forever. See turnSkipOffends.

@@ -20,7 +20,8 @@ codec =
     ( PlayerRelation.arms ControllerRelation.Related
         <> [ Arm.payload "NamedBySource" SourcePlayer.codec ControllerRelation.NamedBySource (\x -> case x of ControllerRelation.NamedBySource y -> Just y; _ -> Nothing),
              Arm.payload "InSlot" SlotName.codec ControllerRelation.InSlot (\x -> case x of ControllerRelation.InSlot y -> Just y; _ -> Nothing),
-             Arm.payload "Among" (Common.set PlayerId.codec) ControllerRelation.Among (\x -> case x of ControllerRelation.Among y -> Just y; _ -> Nothing)
+             Arm.payload "Among" (Common.set PlayerId.codec) ControllerRelation.Among (\x -> case x of ControllerRelation.Among y -> Just y; _ -> Nothing),
+             Arm.payload "LeftOf" (Common.maybe SlotName.codec) ControllerRelation.LeftOf (\x -> case x of ControllerRelation.LeftOf y -> Just y; _ -> Nothing)
            ]
     )
 
@@ -30,6 +31,7 @@ tagOf x = case x of
   ControllerRelation.NamedBySource {} -> "NamedBySource"
   ControllerRelation.InSlot {} -> "InSlot"
   ControllerRelation.Among {} -> "Among"
+  ControllerRelation.LeftOf {} -> "LeftOf"
 
 -- | 'codec' with its nullary arms written bare, Arm.enum's wire: Filter.HeldBy's
 -- relation, which every card spelled as a bare PlayerRelation before the wrapper.
@@ -42,7 +44,8 @@ bare =
             ControllerRelation.Related relation -> Codec.encode PlayerRelation.codec relation
             ControllerRelation.NamedBySource {} -> Codec.encode codec x
             ControllerRelation.InSlot {} -> Codec.encode codec x
-            ControllerRelation.Among {} -> Codec.encode codec x,
+            ControllerRelation.Among {} -> Codec.encode codec x
+            ControllerRelation.LeftOf {} -> Codec.encode codec x,
           Codec.decode = \value -> case value of
             Value.String _ -> Codec.decode codec . Common.nullary . Text.unpack =<< Common.asText value
             _ -> Codec.decode codec value,

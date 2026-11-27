@@ -107,6 +107,7 @@ import qualified Parun.Types.SelfInclusion as SelfInclusion
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SourcePlayer as SourcePlayer
+import qualified Parun.Types.Status as Status
 import qualified Parun.Types.StickerContent as StickerContent
 import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerRef as StickerRef
@@ -1466,6 +1467,11 @@ data Context = MkContext
     -- active team under shared team turns -- for ControlledByRole Active.
     -- Filled by contextIn from the game it reads (Turn.activePlayers).
     activePlayers :: [PlayerId.PlayerId],
+    -- CR 800.5 / 103.1: the players still in the game in seating order, each
+    -- seated to the left of the one before and the first to the left of the
+    -- last, for ControllerRelation.LeftOf. Filled by contextIn; empty, every LeftOf
+    -- names nobody.
+    seated :: [PlayerId.PlayerId],
     -- The player the surrounding effect is CURRENTLY BEING APPLIED TO, for the
     -- atom that asks (HeldByRecipient) --
     -- Biorhythm's "the number of creatures they control", Stronghold Discipline's "1 life for each creature
@@ -2133,14 +2139,30 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, slotDealtDamage = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, sourcePlayers = Map.empty, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, carrierStickers = Seq.empty, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceChosenObjects = Set.empty, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, graveyardViews = Seq.empty, exiledViews = Seq.empty, libraryTopViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], seated = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, slotDealtDamage = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, sourcePlayers = Map.empty, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, carrierStickers = Seq.empty, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceChosenObjects = Set.empty, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, graveyardViews = Seq.empty, exiledViews = Seq.empty, libraryTopViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
 
 -- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
 -- 805.4a), its draft notes (CR 905.2b), what was exiled before it (CR
--- 607.2n) and its players' counters (CR 122.1) filled from the state, the
--- facts about the table a match may ask.
+-- 607.2n), its players' counters (CR 122.1) and who is still seated (CR 800.5)
+-- filled from the state, the facts about the table a match may ask.
 contextIn :: GameState -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextIn gs p s = (contextFor (GameSettings.teams (MatchScope.settings (GameState.match gs))) p s) {activePlayers = Turn.activePlayers gs, draftNotes = fmap Player.draftNotes (GameState.players gs), exiledBeforeGame = GameState.exiledBeforeGame gs, playerCounters = fmap Player.counters (GameState.players gs)}
+contextIn gs p s = (contextFor (GameSettings.teams (MatchScope.settings (GameState.match gs))) p s) {activePlayers = Turn.activePlayers gs, seated = filter (\pid -> maybe False ((== Status.Playing) . Player.status) (Map.lookup pid (GameState.players gs))) (GameState.seating gs), draftNotes = fmap Player.draftNotes (GameState.players gs), exiledBeforeGame = GameState.exiledBeforeGame gs, playerCounters = fmap Player.counters (GameState.players gs)}
+
+-- | CR 800.5 / 103.1: the player ControllerRelation.LeftOf names -- the nearest
+-- seated player still in the game to the left of the perspective, or of the one
+-- player the slot names. Nothing where the anchor is unreadable, or is alone. A
+-- departed seat is passed over (docs/decisions.md, "Whether the player to your
+-- left closes up over a seat that emptied").
+leftOfAnchor :: Context -> Maybe SlotName.SlotName -> Maybe PlayerId.PlayerId
+leftOfAnchor context anchor =
+  let named = case anchor of
+        Nothing -> perspective context
+        Just slot -> case fmap Set.toList (Map.lookup slot (slotPlayers context)) of
+          Just [pid] -> Just pid
+          _ -> Nothing
+   in named >>= \pid -> case break (== pid) (seated context) of
+        (before, _ : after) -> Maybe.listToMaybe (after <> before)
+        _ -> Nothing
 
 -- The ONE object a slot names, for the readers that can take no more than one --
 -- Quantity.AgainstSlot's evaluation, Count's IsControllerOfBound. Nothing where
@@ -2671,6 +2693,7 @@ matches context view predicate = case predicate of
     (Just h, ControllerRelation.NamedBySource which) -> any (Set.member h) (Map.lookup which (sourcePlayers context))
     (Just _, ControllerRelation.InSlot _) -> False
     (Just _, ControllerRelation.Among _) -> False
+    (Just h, ControllerRelation.LeftOf anchor) -> leftOfAnchor context anchor == Just h
   -- CR 508.5 / 702.39a: the candidate's controller IS the defending player, which
   -- the Context supplies because it is a fact about the combat record rather than
   -- about the candidate -- or, for a source with no attack, IS ONE of the
@@ -2961,6 +2984,10 @@ matches context view predicate = case predicate of
     (Just a, ControllerRelation.NamedBySource which) -> any (Set.member a) (Map.lookup which (sourcePlayers context))
     (Just _, ControllerRelation.InSlot _) -> False
     (Just _, ControllerRelation.Among _) -> False
+    -- Unprinted: a player to someone's left attacked, which
+    -- Parun.FilterPositionLintSpec's "CR 303.4b no card asks IsAttackingPlayer
+    -- or HeldBy of a player the filter cannot read" rejects.
+    (Just _, ControllerRelation.LeftOf _) -> False
   -- CR 508.1b: the atom above one arm of AttackTarget over, and the same posture
   -- in every respect -- the relation is answered against the perspective here, and
   -- either half being unreadable is vacuously False.

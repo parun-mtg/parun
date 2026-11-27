@@ -624,6 +624,8 @@ filterChildren children predicate = case predicate of
   Filter.ManaCostRepeatsSymbol -> pure predicate
   Filter.ManaCostHasSymbol _ -> pure predicate
   Filter.HasManaCost _ -> pure predicate
+  -- ONE: the player to the left of the one player the slot binds.
+  Filter.HeldBy holder (ControllerRelation.LeftOf (Just name)) -> fmap (Filter.HeldBy holder . ControllerRelation.LeftOf . Just) (slot children SlotArity.One name)
   Filter.HeldBy holder whose -> fmap (Filter.HeldBy holder) (relatedChildren children whose)
   Filter.ControllerIsOwner -> pure predicate
   Filter.ControlledByRole _ -> pure predicate
@@ -758,6 +760,9 @@ relatedChildren children whose = case whose of
   ControllerRelation.NamedBySource _ -> pure whose
   ControllerRelation.InSlot _ -> pure whose
   ControllerRelation.Among _ -> pure whose
+  -- "The player to your left" (CR 800.5) reads "you".
+  ControllerRelation.LeftOf Nothing -> whose <$ relation children PlayerRelation.You
+  ControllerRelation.LeftOf (Just _) -> pure whose
 
 -- | An anchor's children: its slot, read at MANY (the whole set it names), or
 -- the Filter it nests.

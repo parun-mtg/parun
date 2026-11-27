@@ -1916,6 +1916,21 @@ Entries are ordered by the first rule each cites.
   a later one.
 - **Issue**: none.
 
+## Whether the player to your left closes up over a seat that emptied
+
+- **Question**: Bowie Base One names "the player to your left". After that
+  player leaves the game, is it the next player still in the game, or nobody?
+- **Rules**: CR 101.4, 102.1, 103.1, 800.4a, 800.5, 801.2c; CR of 2026-11-06.
+- **Decision**: The nearest player still in the game seated to the left.
+- **Rejected**: Nobody, until the game ends. Turn order (CR 101.4, 103.1)
+  passes over the departed seat, as range of influence (CR 801.2c) and Grand
+  Melee's markers ("Which seats Grand Melee's three-seat window counts") do;
+  attack left's reading ("Whether attack left closes up over a seat that
+  emptied") reads a variant's seat rule, which a card's player reference is not.
+- **Site**: `Parun.Engine.Filter.leftOfAnchor`, filled by `contextIn`'s
+  `seated`. The scenario `bowie-base-one-goads-a-creature-of-the-player-to-your-left`.
+- **Issue**: none.
+
 ## Whether a Grand Melee game keeps a turn marker
 
 - **Question**: CR 807.4a gives one turn marker for each full four players, so
@@ -2437,7 +2452,8 @@ Entries are ordered by the first rule each cites.
   or not, which reads "for the first time" as qualifying "you attack" alone and
   leaves the total a condition the ability checks afterwards.
 - **Site**: `Parun.Engine.Event.Match.attacks`, the Declaration arm's
-  FirstTimeEachTurn case. Proved by data/scenarios's
+  FirstTimeEachTurn case, and `armMatches`' DealsDamage arm alike (Stensia's
+  earlier damage, judged as its source then was). Proved by data/scenarios's
   cr-508-3c-desert-were-worm-triggers-on-a-later-attack-after-one-short-of-12.
 - **Issue**: #6694.
 
@@ -3601,23 +3617,3 @@ Entries are ordered by the first rule each cites.
   for triggers.
 - **Site**: `Parun.Engine.Phasing.phasesInAs`; the scenario
   `ood-sphere-s-goaded-creature-phases-in-tapped-from-oubliette`.
-
-## Whether damage dealt before it was a creature spends Stensia's first time
-
-- **Question**: Stensia's "whenever a creature deals damage to one or more
-  players for the first time each turn": an artifact pings a player, becomes a
-  creature, then deals damage to a player again that turn. Does the earlier
-  ping spend the first time?
-- **Rules**: CR 120.1, 400.7, 603.2, 603.2c (CR of 2026-11-06); the card's
-  rulings say each creature gets one counter a turn and nothing of earlier
-  damage.
-- **Decision**: Yes. The first time is the object's first damage to a player
-  this turn of the kind the trigger admits, whatever the object was then.
-- **Rejected**: Re-judging each earlier damage by the trigger's filter as it
-  was dealt, the reading "What a short attack spends of Desert Were-Worm's
-  first time" takes: the board an earlier event was sampled on is cleared once
-  scanned (`Snapshots.battlefieldWhenTriggered`), so the filter cannot be
-  asked of it.
-- **Site**: `Parun.Engine.Event.Match.armMatches`, the DealsDamage arm's
-  FirstTimeEachTurn case.
-- **Issue**: none.

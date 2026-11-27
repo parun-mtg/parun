@@ -823,10 +823,11 @@ trigger n = case Node.tag n of
   "WhenACreatureDealsCombatDamageToAPlayer" -> damaged (Just DamageKind.Combat)
   "WhenAPermanentDealsDamageToAPlayer" -> damaged Nothing
   -- Stensia's "a creature deals damage to one or more players for the first
-  -- time each turn", one occurrence per creature per turn.
+  -- time each turn", one occurrence per creature per turn, of a permanent
+  -- (CR 109.2).
   "WhenAPermanentDealsDamageToAnyNumberOfPlayersForTheFirstTimeEachTurn" -> do
     (who, whom) <- pair n
-    f <- permanents outermost who
+    f <- fmap (\g -> conjoined [g, Filter.IsInZone Zone.Battlefield]) (permanents outermost who)
     relation <- players whom
     Monad.unless (relation == PlayerRelation.AnyPlayer) (Node.untranslated n)
     Right (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching f) Nothing (Set.singleton (DamageRecipient.Player (PlayerRef.Relative relation))) 0 TriggerFrequency.FirstTimeEachTurn), bound [("Trigger_ThatPermanent", Oracle.Trigger.combatDamager), ("Trigger_ThatCreature", Oracle.Trigger.combatDamager)])

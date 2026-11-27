@@ -57,6 +57,20 @@ spec s = Spec.describe s "Parun.Codec.ControllerRelation" $ do
       ControllerRelation.codec
       (ControllerRelation.Among (Set.fromList [PlayerId.MkPlayerId 1, PlayerId.MkPlayerId 2]))
       " {\"type\":\"Among\",\"value\":[1,2]} "
+  -- CR 800.5: Bowie Base One's "the player to your left".
+  Spec.it s "LeftOf you" $
+    Common.assertCodec
+      s
+      ControllerRelation.codec
+      (ControllerRelation.LeftOf Nothing)
+      " {\"type\":\"LeftOf\",\"value\":null} "
+  -- CR 800.5: Caught in a Parallel Universe's "the player to their left".
+  Spec.it s "LeftOf a slot's player" $
+    Common.assertCodec
+      s
+      ControllerRelation.codec
+      (ControllerRelation.LeftOf (Just (SlotName.MkSlotName (Text.pack "player"))))
+      " {\"type\":\"LeftOf\",\"value\":\"player\"} "
   -- Exhaustive over the relation, whose arms the codec derives; see
   -- Parun.Codec.PlayerScopeSpec's twin.
   Spec.it s "speaks every relation under the relation's own tag" $
