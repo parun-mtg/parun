@@ -18,6 +18,10 @@
                       "value": "Creature"
                     },
                     {
+                      "type": "IsInZone",
+                      "value": "Battlefield"
+                    },
+                    {
                       "type": "HeldBy",
                       "value": {
                         "holder": "Controller",

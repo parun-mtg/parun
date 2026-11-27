@@ -1239,20 +1239,24 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     GameEvent.DamageDealt ev ->
       damageBy (Filter.withDealtTargets (ProjectionView.viewOfRecipient (postEventView board gs) gs) ev) (DamageTrigger.actor watched) (DamageEvent.source ev)
         && dealtTo watched ev
-        -- "For the first time each turn" (Stensia): this source's every
-        -- damage the trigger admits so far this turn is in this event's group,
-        -- the last in the log of the game it left; batchScoped makes the group
-        -- one occurrence. An id names one object (CR 400.7), and an earlier
-        -- event is not re-judged by the actor's filter (docs/decisions.md,
-        -- "Whether damage dealt before it was a creature spends Stensia's
-        -- first time").
+        -- "For the first time each turn" (Stensia) narrows the EVENT
+        -- (Parun.Types.TriggerFrequency; docs/decisions.md, "What a short
+        -- attack spends of Desert Were-Worm's first time"): this source's
+        -- first damage this turn the trigger admits is in this event's group,
+        -- which batchScoped makes one occurrence. An id names one object (CR
+        -- 400.7); an earlier event is judged by the actor's filter as its
+        -- source was when it dealt the damage (Filter.dealtByView).
+        -- Scenarios stensia-grows-a-planeswalker-whose-ping-came-before-it-was-a-creature
+        -- and stensia-grows-a-double-striker-once-after-it-bit-a-creature prove it.
         && case DamageTrigger.frequency watched of
           TriggerFrequency.EveryTime -> True
           TriggerFrequency.FirstTimeEachTurn ->
-            let earlier logged = case LoggedEvent.event logged of
-                  GameEvent.DamageDealt e -> DamageEvent.source e == DamageEvent.source ev && dealtTo watched e
-                  _ -> False
-             in Set.size (Set.fromList [LoggedEvent.group logged | logged <- Foldable.toList (Turn.eventsThisTurn atEvent), earlier logged]) <= 1
+            let matched = if event `elem` groupEvents then groupEvents else [event]
+                judged e = case DamageTrigger.actor watched of
+                  ActingPermanent.Self -> True
+                  ActingPermanent.Matching f -> Filter.matches bearerContext (Filter.dealtByView e) f
+                first e = DamageEvent.source e == DamageEvent.source ev && dealtTo watched e && judged e
+             in maybe True (\e -> GameEvent.DamageDealt e `elem` matched) (Foldable.find first [e | GameEvent.DamageDealt e <- fmap LoggedEvent.event (Foldable.toList (Turn.eventsThisTurn atEvent))])
     _ -> False
   -- CR 120.3: the watched permanent was DEALT damage -- enrage's event, and
   -- Death Pits of Rath's. DealsDamage's arm with the check moved from the
