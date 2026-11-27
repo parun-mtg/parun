@@ -189,9 +189,11 @@ rangePerspective source controller gs = if exemptFromRange source gs then Nothin
 -- its controller alone, but in a Two-Headed Giant game every still-playing
 -- member of that controller's team for a planar source ('exemptFromRange'),
 -- the controller first (docs/decisions.md, "A plane's you is each member of
--- the planar team"). A triggered ability triggers once for each, each its
--- instance's controller (Event.Trigger's eventTriggers); a static ability
--- applies as though each controlled it (PlayerEffect's printedRows,
+-- the planar team"). A triggered ability referring to "you"
+-- (Interchangeable.Mentions.refersToYouAsking) triggers once for each, each
+-- its instance's controller (Event.Trigger's eventTriggers); a static ability
+-- applies as though each controlled it, a player ability only when it refers
+-- to "you" (PlayerEffect's printedRows,
 -- Projection's affectsFramed, Replacement's applicable, PlayerDesignation's
 -- gaining).
 -- data/scenarios/planechase/cr-901-12c-tazeem-s-chaos-draws-for-each-member-of-the-planar-team.json

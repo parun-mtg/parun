@@ -18,6 +18,7 @@ module Parun.CardSpec where
 -- triggered ability's effects (Card.allEffects only reaches the spell).
 -- whole card written by somebody else and so an independent witness to the
 
+import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Const as Const
 import qualified Data.List as List
@@ -40,6 +41,7 @@ import qualified Parun.Engine.CostAmount as CostAmount.Engine
 import qualified Parun.Engine.Event.Binding as Event
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.Interchangeable.Mentions as Mentions
 import qualified Parun.Engine.Keyword as KeywordEngine
 import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.Mint as Mint
@@ -58,6 +60,7 @@ import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Engine.Subtype as SubtypeEngine
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
+import qualified Parun.Oracle as Oracle
 import qualified Parun.Registry as Registry
 import qualified Parun.Slug as Slug
 import qualified Parun.Spec as Spec
@@ -6479,6 +6482,38 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
   --
   -- Over withMinted: a conjured card is cast like a printed one (CR 601.2), so
   -- its spell owes the same equality against its own costs.
+  -- CR 901.12c reaches a planar ability "that refers to 'you'", which
+  -- Event.Trigger's teamWide and PlayerEffect.printedRows ask of the data
+  -- (Mentions.refersToYouAsking): every planar triggered or player ability
+  -- whose wording says "you" or "your" must answer
+  -- yes, so a relation the walk drops fails here. The converse is free: "draw a
+  -- card" leaves its "you" unsaid. So does a planeswalk or an encounter's
+  -- "you": only the planar controller causes one (CR 701.31a, 312.5), so its
+  -- effect alone is read.
+  Spec.it s "CR 901.12c every planar triggered or player ability worded with you refers to you" $ do
+    ps <- S.allPrintings s corpus
+    let planar face = any (`Set.member` TypeLine.types (Face.typeLine face)) [CardType.Plane, CardType.Phenomenon]
+        says wording = any (`elem` [Text.pack "you", Text.pack "your"]) (Text.words (Text.map (\c -> if Char.isAlpha c then Char.toLower c else ' ') wording))
+        planeswalks ability = case TriggeredAbility.condition ability of
+          TriggerCondition.TurnedUpOffDeck _ -> True
+          TriggerCondition.SelfPlaneswalkedAwayFrom -> True
+          _ -> False
+        statedPart ability wording = if planeswalks ability then snd (Text.breakOn (Text.pack ", ") wording) else wording
+        ofKind kind = filter ((== kind) . Oracle.kind) . Oracle.described
+        offends face =
+          [ CardName.unwrap (Face.name face) <> Text.pack ": " <> wording
+          | (described, ability) <- zip (ofKind Oracle.Triggered face) (Face.triggeredAbilities face),
+            wording <- take 1 (Oracle.wordings described),
+            says (statedPart ability wording),
+            not (Mentions.refersToYou ability)
+          ]
+            <> [ CardName.unwrap (Face.name face) <> Text.pack ": " <> wording
+               | (described, ability) <- zip (ofKind Oracle.PlayerRule face) (Face.playerAbilities face),
+                 wording <- take 1 (Oracle.wordings described),
+                 says wording,
+                 not (Mentions.playerAbilityRefersToYou ability)
+               ]
+    Spec.assertEq s (concatMap offends (concatMap (filter planar . NonEmpty.toList . Card.Type.faces . Printing.card) ps)) []
   Spec.it s "every mode's slot reads equal its declared slots" $ do
     ps <- S.allPrintings s corpus
     let -- What CASTING binds rather than a target slot declaring it, subtracted

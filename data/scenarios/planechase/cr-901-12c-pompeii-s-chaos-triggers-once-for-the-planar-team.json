@@ -1,0 +1,264 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "alice-forest-1"
+          },
+          {
+            "card": "Forest",
+            "label": "alice-forest-2"
+          }
+        ],
+        "command": [
+          {
+            "card": "Pompeii",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "eruption"
+                },
+                "value": 2
+              }
+            ],
+            "label": "pompeii"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice",
+        "sideDecks": [
+          {
+            "key": "Planar",
+            "value": [
+              {
+                "card": "Academy at Tolaria West",
+                "label": "academy"
+              }
+            ]
+          }
+        ],
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "dave-forest-1"
+          },
+          {
+            "card": "Forest",
+            "label": "dave-forest-2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "dave",
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "bob-forest-1"
+          },
+          {
+            "card": "Forest",
+            "label": "bob-forest-2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob",
+        "team": 2
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "carol-forest-1"
+          },
+          {
+            "card": "Forest",
+            "label": "carol-forest-2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "PrecombatMain",
+    "twoHeadedGiant": true
+  },
+  "description": "CR 901.12c Pompeii's chaos, which never says you, triggers once for the planar team",
+  "final": [
+    {
+      "Life": {
+        "life": 18,
+        "player": "alice"
+      }
+    },
+    {
+      "Life": {
+        "life": 18,
+        "player": "bob"
+      }
+    },
+    {
+      "Count": {
+        "card": "Forest",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Forest",
+        "count": 1,
+        "player": "dave",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Forest",
+        "count": 1,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Forest",
+        "count": 1,
+        "player": "carol",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "$academy"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Command"
+      }
+    }
+  ],
+  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the planar controller (CR 901.12b) under Pompeii with two eruption counters. Its chaos ability refers to no 'you', so CR 901.12c leaves it one ability of the planar controller (CR 311.7): it triggers once, dealing 2 to each player (alice and bob 18), having each player sacrifice one of their two Forests and walking alice to the Academy. A second instance for dave would deal 2 more, take a second Forest from each player and walk away from the Academy.",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "RollPlanarDie"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $pompeii"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseSacrifices",
+          "with": [
+            "$alice-forest-1"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseSacrifices",
+          "with": [
+            "$dave-forest-1"
+          ]
+        }
+      },
+      "player": "dave",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseSacrifices",
+          "with": [
+            "$bob-forest-1"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseSacrifices",
+          "with": [
+            "$carol-forest-1"
+          ]
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

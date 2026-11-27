@@ -3280,26 +3280,39 @@ Entries are ordered by the first rule each cites.
   each land you control" have each member draw for their own lands, or both
   draw for the team's? Does Academy at Tolaria West's "at the beginning of
   your end step, if you have no cards in hand" trigger once for the team, or
-  once for each member whose hand is empty?
+  once for each member whose hand is empty? Which abilities refer to "you"?
 - **Rules**: CR 113.8, 603.3a, 810.5, 901.12c; no ruling; CR of
   2026-11-06.
 - **Decision**: Each member in turn. A triggered ability of a planar card
-  triggers once for each still-playing member of its controller's team, each
-  instance controlled by that member and its "you", so its trigger condition,
+  that refers to "you" triggers once for each still-playing member of its
+  controller's team, each instance controlled by that member and its "you",
+  so its trigger condition,
   intervening "if" and effect read that member alone: Tazeem draws each member
   a card per land they control, and Academy triggers for each member with an
   empty hand. The member, not CR 113.8's planar controller, controls their
   instance, so its choices (Naya's "target creature you control") are theirs.
-  A static ability likewise applies as though each member controlled it:
+  A player ability that refers to "you" likewise applies as though each
+  member controlled it, and any other static ability's reach is the same from
+  each member's seat:
   Naya lets each member play any number of lands, and Grixis and The Caldaia
   reach each member's own cards, and Edge of Malacol's replacement reaches
-  each member's creatures.
+  each member's creatures. An ability refers to "you" when its data reads a
+  player against its controller's own seat or team (You, YourTeam,
+  Teammate), explicitly or as an instruction's unstated subject ("draw a
+  card"); one that does not is its planar controller's alone (CR 311.7,
+  901.6): Pompeii's chaos deals its damage once, Jund's chaos makes two
+  Goblins, and Esper's "artifact spells cost {1} less" reduces once.
 - **Rejected**: The planar controller controlling every instance, each with a
   member's "you": that player would choose among a teammate's creatures,
   which CR 810.5 keeps theirs. "You" as the team, one instance reading both members at once:
   Tazeem would give each member a card per land the team controls, doubling
   every count, and CR 810.5 keeps a team's resources other than life and
-  poison its members' own.
+  poison its members' own. "Refers to you" as the printed word: Panopticon's
+  "draw a card" is its controller's instruction (CR 608.2c), and the
+  engine reads data, not Oracle text. Every relation read against the
+  controller, opponents included: "each opponent discards a card" would
+  take two cards from each opponent, both members naming the same
+  opponents.
 - **Site**: `Parun.Engine.Plane.planarYous`, read by
   `Parun.Engine.Event.Trigger.eventTriggers`' `teamWide`,
   `Parun.Engine.PlayerEffect.printedRows`,
@@ -3308,11 +3321,15 @@ Entries are ordered by the first rule each cites.
   `cr-901-12c-tazeem-s-chaos-draws-for-each-member-of-the-planar-team`,
   `cr-901-12c-academy-at-tolaria-west-triggers-for-each-empty-handed-member-of-the-planar-team`,
   `cr-901-12c-naya-lets-each-member-of-the-planar-team-play-any-number-of-lands`,
-  `cr-901-12c-grixis-gives-unearth-to-a-creature-card-in-each-planar-team-member-s-graveyard`
-  `cr-901-12c-the-caldaia-gives-blitz-to-a-creature-spell-each-planar-team-member-casts`
+  `cr-901-12c-grixis-gives-unearth-to-a-creature-card-in-each-planar-team-member-s-graveyard`,
+  `cr-901-12c-the-caldaia-gives-blitz-to-a-creature-spell-each-planar-team-member-casts`,
+  `cr-901-12c-edge-of-malacol-spares-a-tapped-creature-of-each-member-of-the-planar-team`
   and
-  `cr-901-12c-edge-of-malacol-spares-a-tapped-creature-of-each-member-of-the-planar-team`.
-- **Issue**: #9165, #9178, #10054.
+  `cr-901-12c-ten-wizards-mountain-triggers-on-the-roll-of-the-planar-controller-s-teammate`;
+  "refers to you" is `Parun.Engine.Interchangeable.Mentions.refersToYouAsking`,
+  proved by `cr-901-12c-pompeii-s-chaos-triggers-once-for-the-planar-team`
+  and `cr-901-12c-esper-s-cost-reduction-applies-once-for-the-planar-team`.
+- **Issue**: #9165, #9178, #10054, #10085.
 
 ## Which planar controller controls a Grand Melee plane
 
