@@ -181,6 +181,8 @@ import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.LifeDirection as LifeDirection
+import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.LostPermanent as LostPermanent
 import qualified Parun.Types.MakeForetold as MakeForetold
@@ -304,6 +306,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnFaceDown as TurnFaceDown
 import qualified Parun.Types.TurnKind as TurnKind
+import qualified Parun.Types.TurnTally as TurnTally
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
@@ -312,6 +315,7 @@ import qualified Parun.Types.Undesignate as Undesignate
 import qualified Parun.Types.UntapR as UntapR
 import qualified Parun.Types.UntapRewrite as UntapRewrite
 import qualified Parun.Types.Uses as Uses
+import qualified Parun.Types.WhichTurn as WhichTurn
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 import qualified Parun.Types.ZoneScope as ZoneScope
@@ -4399,6 +4403,20 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
             }
     Spec.assertBool s (not (damageRecipientOffends (planted DamageDirection.DealtBy))) "recipient players beside DealtBy are accepted"
     Spec.assertBool s (damageRecipientOffends (planted DamageDirection.DealtTo)) "recipient players beside DealtTo are rejected"
+  -- CR 608.2i, swept over the pool. See sinceOwnLastTurnTallyOffends.
+  Spec.it s "CR 608.2i no card writes a draw or life tally since your last turn" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace sinceOwnLastTurnTallyOffends . Printing.card) ps
+    Spec.assertEqWith s "no draw or life tally reads SinceOwnLastTurn" (fmap (S.nameOf . Printing.card) offenders) []
+  -- The REJECTING direction, against planted faces: each tally over each turn.
+  Spec.it s "the lint itself catches a draw or life tally since your last turn" $ do
+    let you = PlayerRef.Relative PlayerRelation.You
+        planted quantity = (vanillaFace "Planted" instantLine) {Face.spell = Mint.oneMode (Seq.singleton (Effect.Draw (Draw.MkDraw you quantity Nothing Nothing)))}
+        drawn which = planted (Quantity.Type.Tallied (TurnTally.CardsDrawn which) you)
+        lost which = planted (Quantity.Type.LifeChanged (LifeTally.MkLifeTally you LifeDirection.Lost which))
+    Spec.assertEqWith s "this turn's and last turn's tallies are accepted" (fmap sinceOwnLastTurnTallyOffends [drawn WhichTurn.ThisTurn, drawn WhichTurn.LastTurn, lost WhichTurn.ThisTurn, lost WhichTurn.LastTurn]) [False, False, False, False]
+    Spec.assertBool s (sinceOwnLastTurnTallyOffends (drawn WhichTurn.SinceOwnLastTurn)) "a draw tally since your last turn is rejected"
+    Spec.assertBool s (sinceOwnLastTurnTallyOffends (lost WhichTurn.SinceOwnLastTurn)) "a life tally since your last turn is rejected"
   -- CR 611.2a, swept over the pool. See oncePerEffectOffends.
   Spec.it s "CR 611.2a no card writes OncePerEffect where no stored row carries it" $ do
     ps <- S.allPrintings s corpus
@@ -4524,17 +4542,31 @@ windowOffends card =
 
 -- Unprinted: a Quantity.DamageDealtThisTurn naming recipient players
 -- (Parun.Types.ObjectDamage's to) beside DealtTo, where the tallied object is
--- itself the recipient. Read off the encoding, so every position is swept.
+-- itself the recipient.
 damageRecipientOffends :: Face.Face Card.Type.Card -> Bool
-damageRecipientOffends = offends . Codec.encode (Face.Codec.codec Card.Codec.codec)
+damageRecipientOffends = writesQuantity ["DamageDealtThisTurn"] $ \quantity -> case quantity of
+  Quantity.Type.DamageDealtThisTurn (ObjectDamage.MkObjectDamage DamageDirection.DealtTo _ _ (Just _)) -> True
+  _ -> False
+
+-- Unprinted: a draw or life tally reading WhichTurn.SinceOwnLastTurn, which
+-- Game.drawsDuring and Game.turnLog answer but no printing words (Scryfall,
+-- 2026-11-27).
+sinceOwnLastTurnTallyOffends :: Face.Face Card.Type.Card -> Bool
+sinceOwnLastTurnTallyOffends = writesQuantity ["CardsDrawn", "LifeChanged"] $ \quantity -> case quantity of
+  Quantity.Type.Tallied (TurnTally.CardsDrawn which) _ -> which == WhichTurn.SinceOwnLastTurn
+  Quantity.Type.LifeChanged tally -> LifeTally.turn tally == WhichTurn.SinceOwnLastTurn
+  _ -> False
+
+-- Does the face write a quantity, encoded under one of these tags, that
+-- `offends` holds of? Read off the encoding, so every position is swept.
+writesQuantity :: [String] -> (Quantity.Type.Quantity -> Bool) -> Face.Face Card.Type.Card -> Bool
+writesQuantity tags offends = sweep . Codec.encode (Face.Codec.codec Card.Codec.codec)
   where
-    tag = Pair.MkPair (String.MkString (Text.pack "type")) (Value.String (String.MkString (Text.pack "DamageDealtThisTurn")))
-    here value = case Codec.decode Quantity.Codec.codec value of
-      Right (Quantity.Type.DamageDealtThisTurn (ObjectDamage.MkObjectDamage DamageDirection.DealtTo _ _ (Just _))) -> True
-      _ -> False
-    offends value = case value of
-      Value.Object o -> (elem tag (Object.unwrap o) && here value) || any (offends . Pair.value) (Object.unwrap o)
-      Value.Array a -> any offends (Array.unwrap a)
+    tagged o = any (\tag -> elem (Pair.MkPair (String.MkString (Text.pack "type")) (Value.String (String.MkString (Text.pack tag)))) (Object.unwrap o)) tags
+    here value = either (const False) offends (Codec.decode Quantity.Codec.codec value)
+    sweep value = case value of
+      Value.Object o -> (tagged o && here value) || any (sweep . Pair.value) (Object.unwrap o)
+      Value.Array a -> any sweep (Array.unwrap a)
       Value.String _ -> False
       Value.Null _ -> False
       Value.Boolean _ -> False
