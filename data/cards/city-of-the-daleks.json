@@ -1,0 +1,258 @@
+{
+  "faces": [
+    {
+      "delayedAbilities": {
+        "sacrifice them": {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Ending",
+                "value": "EndStep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Sacrifice",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "tokens"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "name": "City of the Daleks",
+      "oracleText": "Whenever you attack, target opponent loses X life, where X is the number of artifacts you control.\nWhenever chaos ensues, for each opponent, you create a 3/3 black Dalek artifact creature token with menace that attacks that opponent this turn if able. Those tokens gain haste. Sacrifice them at the beginning of the next end step.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Declaration",
+              "value": {
+                "player": "You"
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Members"
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Artifact"
+                                  },
+                                  {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
+                                  }
+                                ]
+                              },
+                              "scope": {
+                                "type": "InZone",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "AnyPlayer"
+                                  },
+                                  "zone": "Battlefield"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "IsPlayer",
+                      "value": "Opponent"
+                    },
+                    "pool": {
+                      "type": "Players"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "Create",
+                              "value": {
+                                "card": {
+                                  "faces": [
+                                    {
+                                      "colorIndicator": [
+                                        "Black"
+                                      ],
+                                      "keywords": [
+                                        {
+                                          "type": "Menace"
+                                        }
+                                      ],
+                                      "name": "Dalek Token",
+                                      "power": {
+                                        "type": "Literal",
+                                        "value": 3
+                                      },
+                                      "toughness": {
+                                        "type": "Literal",
+                                        "value": 3
+                                      },
+                                      "typeLine": {
+                                        "subtypes": [
+                                          "Dalek"
+                                        ],
+                                        "types": [
+                                          "Artifact",
+                                          "Creature"
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                },
+                                "quantity": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "slot": "tokens"
+                              }
+                            },
+                            {
+                              "type": "RequireAttack",
+                              "value": {
+                                "attacker": {
+                                  "type": "Named",
+                                  "value": {
+                                    "type": "InSlot",
+                                    "value": "tokens"
+                                  }
+                                },
+                                "defender": {
+                                  "type": "Players",
+                                  "value": {
+                                    "type": "InSlot",
+                                    "value": "opponent"
+                                  }
+                                },
+                                "duration": {
+                                  "type": "UntilEndOfTurn"
+                                }
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "Players",
+                            "value": {
+                              "players": {
+                                "type": "Relative",
+                                "value": "Opponent"
+                              }
+                            }
+                          },
+                          "slot": "opponent"
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Haste"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "tokens"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ArmDelayedTrigger",
+                        "value": {
+                          "name": "sacrifice them"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Skaro"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}

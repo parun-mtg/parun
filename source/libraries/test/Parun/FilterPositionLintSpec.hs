@@ -2305,7 +2305,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("The End", 1), -- its search's filter, against its exiled target
         ("Test of Talents", 1), -- its search's filter, against its countered target
         ("Light-Paws, Emperor's Voice", 1), -- its search's filter, negated, at AnyPermanent
-        ("Volo, Guide to Monsters", 2) -- its cast trigger's spell filter, negated, at AnyPermanent and AnyGraveyardCard
+        ("Volo, Guide to Monsters", 2), -- its cast trigger's spell filter, negated, at AnyPermanent and AnyGraveyardCard
+        ("Mondassian Colony Ship", 2) -- its pump's power and toughness Count filters, Controller at AnyPermanent
       ]
     -- The cast trigger admits the pooled atoms alone: the same trigger asking a
     -- Bound name is an offence.

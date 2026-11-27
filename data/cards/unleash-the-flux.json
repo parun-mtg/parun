@@ -1,0 +1,84 @@
+{
+  "faces": [
+    {
+      "name": "Unleash the Flux",
+      "oracleText": "When you encounter Unleash the Flux, each player sacrifices a nonland permanent of their choice, then you flip a coin. If you lose the flip, repeat this process. (Then planeswalk away from this phenomenon.)",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "RepeatIf",
+                        "value": {
+                          "condition": {
+                            "type": "Compares",
+                            "value": {
+                              "comparison": "AtLeast",
+                              "measured": {
+                                "type": "InSlot",
+                                "value": "lost"
+                              },
+                              "threshold": {
+                                "type": "Literal",
+                                "value": 1
+                              }
+                            }
+                          },
+                          "ifHolds": [],
+                          "process": [
+                            {
+                              "type": "PlayerSacrifices",
+                              "value": {
+                                "filter": {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "HasCardType",
+                                    "value": "Land"
+                                  }
+                                },
+                                "players": {
+                                  "type": "Relative",
+                                  "value": "AnyPlayer"
+                                },
+                                "quantity": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              }
+                            },
+                            {
+                              "type": "FlipCoin",
+                              "value": {
+                                "misses": "lost",
+                                "slot": "won"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Phenomenon"
+        ]
+      }
+    }
+  ]
+}
