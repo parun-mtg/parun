@@ -1,0 +1,143 @@
+{
+  "faces": [
+    {
+      "name": "Cliffside Market",
+      "oracleText": "When you planeswalk to Cliffside Market and at the beginning of your upkeep, you may exchange life totals with target player.\nWhenever chaos ensues, exchange control of two target permanents that share a card type.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "TurnedUpOffDeck",
+                "value": {
+                  "type": "Self"
+                }
+              },
+              {
+                "type": "StepBegins",
+                "value": {
+                  "phase": {
+                    "type": "Beginning",
+                    "value": "Upkeep"
+                  },
+                  "scope": {
+                    "type": "PlayersTurn",
+                    "value": {
+                      "type": "Relative",
+                      "value": "You"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ExchangeLifeTotals",
+                        "value": {
+                          "sides": {
+                            "type": "WithController",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "Players"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ExchangeControl",
+                        "value": {
+                          "type": "BetweenSlots",
+                          "value": {
+                            "first": "first",
+                            "second": "second"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "first": {
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  },
+                  "second": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Shares",
+                          "value": {
+                            "anchor": {
+                              "type": "Bound",
+                              "value": {
+                                "slot": "first"
+                              }
+                            },
+                            "trait": {
+                              "type": "CardType"
+                            }
+                          }
+                        },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsBound",
+                            "value": "first"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Mercadia"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}

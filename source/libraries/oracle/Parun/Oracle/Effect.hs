@@ -534,32 +534,25 @@ instructions context es = case es of
                 fmap (pt :) (instructions (noting context (e : run)) others)
             )
               <> apart
-  -- Placements on two objects, the verb shared: "put a +1/+1 counter on each
-  -- creature you control and a loyalty counter on each planeswalker you
-  -- control" (Brokers Ascendancy). Free: the first apart, below.
-  e@(Effect.PutCounters p) : f@(Effect.PutCounters q) : others
-    | Maybe.isNothing (PutCounters.totalAtMost p),
-      Maybe.isNothing (PutCounters.totalAtMost q),
-      Maybe.isNothing (PutCounters.putter p),
-      Maybe.isNothing (PutCounters.putter q),
-      null (PutCounters.alternatives p),
-      null (PutCounters.alternatives q),
-      not (placedOn p f) ->
-        let paired = do
-              first <- Target.object context Target.Each (PutCounters.ref p)
-              second <- Target.object (noting context [e]) Target.Each (PutCounters.ref q)
-              these <- Object.counters (Target.keyword context) (PutCounters.kind p) (PutCounters.quantity p)
-              those <- Object.counters (Target.keyword context) (PutCounters.kind q) (PutCounters.quantity q)
-              let put = Text.pack "put " <> these <> Text.pack " on " <> Target.wording first <> Text.pack " and " <> those <> Text.pack " on " <> Target.wording second
-              pure (Predicate.MkPredicate Nothing put [] (Target.mentions first <> Target.mentions second) Nothing False)
+  -- Placements on two or more objects, the verb shared: "put a +1/+1 counter
+  -- on each creature you control and a loyalty counter on each planeswalker
+  -- you control" (Brokers Ascendancy), "put a -1/-1 counter on target
+  -- creature, two -1/-1 counters on another target creature, and three -1/-1
+  -- counters on a third target creature" (Raven's Run). Free: the first two
+  -- or more together, the most first, or the first apart, below.
+  e@(Effect.PutCounters p) : rest
+    | unlimited p,
+      run@(_ : _) <- spread p rest ->
+        let together k = do
+              let placing = e : fmap Effect.PutCounters (take k run)
+              (items, mentioned) <- placements context (p : take k run)
+              let put = Text.pack "put " <> Prose.listing "and" items
+              pt <- [Predicate.MkPredicate Nothing put [] mentioned Nothing False]
+              fmap (pt :) (instructions (noting context placing) (drop (length placing) (e : rest)))
             apart = do
               pe <- effect context e
-              fmap (pe :) (instructions (noting context [e]) (f : others))
-         in ( do
-                pt <- paired
-                fmap (pt :) (instructions (noting context [e, f]) others)
-            )
-              <> apart
+              fmap (pe :) (instructions (noting context [e]) rest)
+         in concatMap together [length run, length run - 1 .. 1] <> apart
   e : rest
     | Just refs <- returnOf context e -> do
         p <- Object.returned context refs
@@ -630,6 +623,29 @@ placedOn :: PutCounters.PutCounters -> Effect.Effect card ability -> Bool
 placedOn p e = case e of
   Effect.PutCounters q -> PutCounters.ref q == PutCounters.ref p && Maybe.isNothing (PutCounters.totalAtMost q) && Maybe.isNothing (PutCounters.putter q) && null (PutCounters.alternatives q)
   _ -> False
+
+-- | Whether a placement is unlimited, of one kind, by the instruction's
+-- controller.
+unlimited :: PutCounters.PutCounters -> Bool
+unlimited p = Maybe.isNothing (PutCounters.totalAtMost p) && Maybe.isNothing (PutCounters.putter p) && null (PutCounters.alternatives p)
+
+-- | The plain placements following one, each on another object than the
+-- one before it.
+spread :: PutCounters.PutCounters -> [Effect.Effect card ability] -> [PutCounters.PutCounters]
+spread p es = case es of
+  f@(Effect.PutCounters q) : rest | unlimited q, not (placedOn p f) -> q : spread q rest
+  _ -> []
+
+-- | Each placement as "[counters] on [object]", each object named in the
+-- context of those before it, and every object mentioned.
+placements :: Target.Context -> [PutCounters.PutCounters] -> [([Text.Text], [SlotName.SlotName])]
+placements context ps = case ps of
+  [] -> [([], [])]
+  p : rest -> do
+    ref <- Target.object context Target.Each (PutCounters.ref p)
+    these <- Object.counters (Target.keyword context) (PutCounters.kind p) (PutCounters.quantity p)
+    (items, mentioned) <- placements (noting context [Effect.PutCounters p]) rest
+    pure (these <> Text.pack " on " <> Target.wording ref : items, Target.mentions ref <> mentioned)
 
 putCounters :: Effect.Effect card ability -> Maybe PutCounters.PutCounters
 putCounters e = case e of

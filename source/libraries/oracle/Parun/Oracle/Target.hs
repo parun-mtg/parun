@@ -561,8 +561,12 @@ heads context slot = case (TargetSlot.pool slot, TargetSlot.filter slot) of
     (one, many) <- described context slot
     (targeted (Text.pack "another target ") one, targeted (Text.pack "other target ") many) : otherThan one many
   where
-    -- "other" stands before "target", as "another" in the singular.
-    targeted other text = maybe (Text.pack "target " <> text) (other <>) (Text.stripPrefix (Text.pack "other ") text)
+    -- "other" stands before "target", as "another" in the singular, and
+    -- "third" with its article (Raven's Run).
+    targeted other text
+      | Just rest <- Text.stripPrefix (Text.pack "other ") text = other <> rest
+      | Just rest <- Text.stripPrefix (Text.pack "third ") text = Text.pack "a third target " <> rest
+      | otherwise = Text.pack "target " <> text
     -- Free: "other" may close the head instead, "target nonland permanent
     -- other than this creature" (Council of Echoes).
     otherThan one many = do

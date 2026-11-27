@@ -747,6 +747,14 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Put a +1/+1 counter on target creature.")) (Oracle.render (spell [clause [counters CounterKind.PlusOnePlusOne 1 (ObjectRef.InSlot target)]] creature))
     Spec.assertEq s (Just (Text.pack "Put two -1/-1 counters on each creature.")) (Oracle.render (spell [clause [counters CounterKind.MinusOneMinusOne 2 (ObjectRef.EachMatching (Filter.HasCardType CardType.Creature))]] []))
     Spec.assertEq s (Just (Text.pack "Put an indestructible counter on target creature.")) (Oracle.render (spell [clause [counters (CounterKind.Keyword Keyword.Indestructible) 1 (ObjectRef.InSlot target)]] creature))
+    -- Raven's Run: three placements on three objects share one verb, the
+    -- third slot excluding the other two.
+    let slot :: Integer -> SlotName.SlotName
+        slot n = SlotName.MkSlotName (Text.pack ("target" <> show n))
+        unbound n = Filter.Not (Filter.IsBound (slot n))
+        three = [(slot 1, TargetSlot.required Pool.Creatures Nothing), (slot 2, TargetSlot.required Pool.Creatures (Just (unbound 1))), (slot 3, TargetSlot.required Pool.Creatures (Just (Filter.And [unbound 1, unbound 2])))]
+        placed = [counters CounterKind.MinusOneMinusOne n (ObjectRef.InSlot (slot n)) | n <- [1 .. 3]]
+    Spec.assertEq s (Just (Text.pack "Put a -1/-1 counter on target creature, two -1/-1 counters on another target creature, and three -1/-1 counters on a third target creature.")) (Oracle.render (spell [clause placed] three))
 
   -- CR 701.41a: support names the instruction it means, on a spell for up to
   -- N target creatures (Lead by Example) and on a permanent for up to N other
