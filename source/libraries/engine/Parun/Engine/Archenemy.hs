@@ -121,7 +121,9 @@ setInMotion named pid = do
 -- scheme already face up is set in motion all the same (My Laughter Echoes);
 -- it is what CR 904.9's "When you set this scheme in motion" triggers on, and
 -- the game is filed after it so a trigger reads the schemes face up then (CR
--- 701.32c).
+-- 701.32c). Before it, with the scheme face up, its "as you set this scheme in
+-- motion" row is applied (ReplacementEffect.SetInMotionR), so a trigger reads
+-- that choice made.
 setOne :: PlayerId -> ObjectId -> Game ()
 setOne pid oid = do
   gs <- State.get
@@ -133,6 +135,7 @@ setOne pid oid = do
           { GameState.command = Set.insert oid (GameState.command g),
             GameState.objects = Map.adjust (\o -> o {Object.timestamp = ts}) oid (GameState.objects g)
           }
+    Monad.void (Event.applyReplacements (ProposedEvent.WouldSetInMotion oid))
     State.modify' (Trigger.fileBoards . Event.recordEvent (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Scheme pid oid Set.empty)))
 
 -- | CR 701.33a: may this scheme be abandoned? Only a face-up ongoing one.

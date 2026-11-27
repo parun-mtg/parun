@@ -2062,6 +2062,7 @@ referentsOfReplacement re = case re of
   ReplacementEffect.TurnUpR _ -> []
   ReplacementEffect.AttachR _ -> []
   ReplacementEffect.TransformR _ -> []
+  ReplacementEffect.SetInMotionR _ -> []
   ReplacementEffect.UntapR _ -> []
   ReplacementEffect.LifeLossR _ -> []
   ReplacementEffect.LifeGainR _ -> []
@@ -5579,20 +5580,22 @@ payGateAgreed resolving source offer earlier payer gate slots owed options = do
             PayObligation.Optional -> Game.choose (Prompt.ChooseToPay (Decide.deciderFor payer gs) payer resolving offer cost earlier)
           pure (if decision == PaymentDecision.Pays then Just cost else Nothing)
 
--- CR 805.2 / 701.21a: the one cost a Jointly gate (Parun.Types.PayerGrouping)
--- splits among the team, as the count of permanents and the criterion each
--- matches: a fixed number sacrificed, no mana and no "different" axes, which
--- each sharer then pays from what they control. Nothing for every other cost.
---
--- A joint TapForTotalPower, Bow to My Command's, is not implemented (#9939).
+-- CR 805.2: the one component a Jointly gate (Parun.Types.PayerGrouping)
+-- splits among the team, each sharer then paying from what they control: a
+-- fixed number sacrificed with no "different" axes (CR 701.21a, My Forces Are
+-- Innumerable) or a tap reaching a total power (Bow to My Command), with no
+-- mana. Nothing for every other cost.
 --
 -- Unprinted: a joint offer of any other cost, which Parun.CardSpec's "no card
 -- writes a joint offer the team cannot split" keeps out of card data.
-jointSacrifice :: Cost.Type.Cost keyword -> Maybe (Natural, Filter.Type.Filter keyword)
-jointSacrifice cost = case Cost.Type.components cost of
-  [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed n)) criterion axes)]
-    | all (null . ManaCost.unwrap) (Cost.Type.mana cost) && Set.null axes -> Just (n, criterion)
-  _ -> Nothing
+jointComponent :: Cost.Type.Cost keyword -> Maybe (CostComponent.CostComponent keyword)
+jointComponent cost
+  | all (null . ManaCost.unwrap) (Cost.Type.mana cost) = case Cost.Type.components cost of
+      [component@(CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed _)) _ axes))]
+        | Set.null axes -> Just component
+      [component@(CostComponent.TapForTotalPower _)] -> Just component
+      _ -> Nothing
+  | otherwise = Nothing
 
 -- CR 608.2c / 608.2h: the slots CR 118.12's payments bound, folded onto the
 -- RESOLVING object once every payer of one offer has paid, so a later

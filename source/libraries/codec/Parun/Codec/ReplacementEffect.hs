@@ -18,6 +18,7 @@ import qualified Parun.Codec.ManaR as ManaR
 import qualified Parun.Codec.PerformerR as PerformerR
 import qualified Parun.Codec.PhaseR as PhaseR
 import qualified Parun.Codec.PlaneswalkR as PlaneswalkR
+import qualified Parun.Codec.PlayerRelation as PlayerRelation
 import qualified Parun.Codec.TokenR as TokenR
 import qualified Parun.Codec.TransformR as TransformR
 import qualified Parun.Codec.TurnUpR as TurnUpR
@@ -52,6 +53,7 @@ codec cardCodec abilityCodec effectCodec =
       Arm.payload "TurnUpR" (TurnUpR.codec abilityCodec effectCodec) ReplacementEffect.TurnUpR (\x -> case x of ReplacementEffect.TurnUpR y -> Just y; _ -> Nothing),
       Arm.payload "AttachR" (AttachR.codec abilityCodec effectCodec) ReplacementEffect.AttachR (\x -> case x of ReplacementEffect.AttachR y -> Just y; _ -> Nothing),
       Arm.payload "TransformR" (TransformR.codec effectCodec) ReplacementEffect.TransformR (\x -> case x of ReplacementEffect.TransformR y -> Just y; _ -> Nothing),
+      Arm.payload "SetInMotionR" PlayerRelation.codec ReplacementEffect.SetInMotionR (\x -> case x of ReplacementEffect.SetInMotionR y -> Just y; _ -> Nothing),
       Arm.payload "UntapR" UntapR.codec ReplacementEffect.UntapR (\x -> case x of ReplacementEffect.UntapR y -> Just y; _ -> Nothing),
       Arm.payload "LifeLossR" LifeLossR.codec ReplacementEffect.LifeLossR (\x -> case x of ReplacementEffect.LifeLossR y -> Just y; _ -> Nothing),
       Arm.payload "LifeGainR" LifeGainR.codec ReplacementEffect.LifeGainR (\x -> case x of ReplacementEffect.LifeGainR y -> Just y; _ -> Nothing),
@@ -78,6 +80,7 @@ tagOf x = case x of
   ReplacementEffect.TurnUpR {} -> "TurnUpR"
   ReplacementEffect.AttachR {} -> "AttachR"
   ReplacementEffect.TransformR {} -> "TransformR"
+  ReplacementEffect.SetInMotionR {} -> "SetInMotionR"
   ReplacementEffect.UntapR {} -> "UntapR"
   ReplacementEffect.LifeLossR {} -> "LifeLossR"
   ReplacementEffect.LifeGainR {} -> "LifeGainR"

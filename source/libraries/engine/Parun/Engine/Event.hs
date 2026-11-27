@@ -3343,6 +3343,7 @@ arrivalCounters candidate = case ReplacementCandidate.effect candidate of
   ReplacementEffect.TurnUpR {} -> Nothing
   ReplacementEffect.AttachR {} -> Nothing
   ReplacementEffect.TransformR {} -> Nothing
+  ReplacementEffect.SetInMotionR {} -> Nothing
   ReplacementEffect.UntapR _ -> Nothing
   ReplacementEffect.LifeLossR {} -> Nothing
   ReplacementEffect.LifeGainR {} -> Nothing
@@ -3380,6 +3381,7 @@ shufflesAfter candidate = case ReplacementCandidate.effect candidate of
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
   ReplacementEffect.TransformR {} -> False
+  ReplacementEffect.SetInMotionR {} -> False
   ReplacementEffect.UntapR _ -> False
   ReplacementEffect.LifeLossR {} -> False
   ReplacementEffect.LifeGainR {} -> False
@@ -6387,6 +6389,12 @@ apply settle batch applied batchPrevented candidate event =
       pure (Just event)
     -- Unreachable: `applies` admits TransformR only against WouldTransform.
     (ReplacementEffect.TransformR {}, _) -> pure (Just event)
+    -- Bow to My Command's "choose an opponent", the transform arm's process.
+    (ReplacementEffect.SetInMotionR relation, ProposedEvent.WouldSetInMotion oid) -> do
+      choosePlayerAs candidate relation oid
+      pure (Just event)
+    -- Unreachable: `applies` admits SetInMotionR only against WouldSetInMotion.
+    (ReplacementEffect.SetInMotionR {}, _) -> pure (Just event)
 
 -- CR 607.2i / 607.5: a permanent spell entering as a copy keeps its own
 -- instances' payments, and their gift promises, only for the own instances it
@@ -6411,9 +6419,10 @@ unlinkLostPayments oid gs = case Game.lookupObject oid gs of
         settled = obj {Object.paidCosts = paid, Object.chosenPlayers = promises}
      in gs {GameState.objects = Map.insert oid settled (GameState.objects gs)}
 
--- CR 614.1c / 701.27i: an "as [this permanent] enters" (Stuffy Doll) or "as
--- [this permanent] transforms" (Shinryu, Transcendent Rival) choice of a player
--- in the relation, made by the permanent's controller and written to
+-- CR 614.1c / 701.27i / 701.32b: an "as [this permanent] enters" (Stuffy
+-- Doll), "as [this permanent] transforms" (Shinryu, Transcendent Rival) or "as
+-- you set this scheme in motion" (Bow to My Command) choice of a player in the
+-- relation, made by the object's controller and written to
 -- Object.chosenPlayers, NOT to the copiable snapshot -- see
 -- EntryRewrite.ChoosePlayer.
 choosePlayerAs :: ReplacementCandidate -> PlayerRelation.PlayerRelation -> ObjectId -> Game ()
@@ -6422,9 +6431,9 @@ choosePlayerAs candidate relation oid = do
   picked <- case Projection.controllerOf oid gs of
     -- Unreachable, and defensive for ChoiceOf's reason: the object is on the
     -- battlefield (an entering one is materialized before the entry loop
-    -- runs), so controllerOf falls back to its owner. Chooses NOBODY, as
-    -- chooseQualityAs does -- and CR 101.3 already ignores the share of a
-    -- later instruction that names nobody.
+    -- runs) or a face-up scheme, so controllerOf falls back to its owner.
+    -- Chooses NOBODY, as chooseQualityAs does -- and CR 101.3 already ignores
+    -- the share of a later instruction that names nobody.
     Nothing -> pure Nothing
     -- CR 801.5a's offer, asked through Players.chooseOne. Nobody left to
     -- choose from is a board CR 104.2a has already ended the game on, and

@@ -2544,6 +2544,7 @@ replacementEffectChildren c replacement = case replacement of
     fmap ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR <$> replacementFilter c matching <*> pure requiring <*> traverse (replacementProcedureCost c) paying <*> turnUpRewriteChildren c rewrite)
   ReplacementEffect.AttachR (AttachR.MkAttachR matching rewrite) -> fmap ReplacementEffect.AttachR (AttachR.MkAttachR <$> replacementFilter c matching <*> attachRewriteChildren c rewrite)
   ReplacementEffect.TransformR (TransformR.MkTransformR matching rewrite) -> fmap ReplacementEffect.TransformR (TransformR.MkTransformR <$> replacementFilter c matching <*> transformRewriteChildren c rewrite)
+  ReplacementEffect.SetInMotionR relation -> pure (ReplacementEffect.SetInMotionR relation)
   ReplacementEffect.UntapR (UntapR.MkUntapR during rewrite) -> fmap ReplacementEffect.UntapR (UntapR.MkUntapR during <$> untapRewriteChildren c rewrite)
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR (LifeLossPattern.MkLifeLossPattern whose cause) rewrite) ->
     fmap ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR <$> (LifeLossPattern.MkLifeLossPattern <$> replacementWhose c whose <*> pure cause) <*> lifeLossRewriteChildren c rewrite)
