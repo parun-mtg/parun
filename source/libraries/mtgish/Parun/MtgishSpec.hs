@@ -249,6 +249,20 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
       ]
       [[(Clause.optionality c, Clause.ifTaken c, Foldable.toList (Clause.effects c)) | c <- Foldable.toList (Mode.clauses m)] | t <- Face.triggeredAbilities (translated realityIsMineToControl), m <- Foldable.toList (Modal.modes (TriggeredAbility.modal t))]
 
+  -- CR 311, CR 311.7, CR 701.31d: a plane card is read as one face, its
+  -- chaos ability, its arrival joined to an upkeep, and its leaving each a
+  -- trigger.
+  Spec.it s "reads a plane card as one face, with chaos, arrival and leaving triggers" $ do
+    case accept letheLake of
+      Left reason -> Spec.assertFailure s (Text.unpack reason)
+      Right card -> do
+        let face = NonEmpty.head (Card.faces card)
+        Spec.assertEq s (Set.singleton CardType.Plane) (TypeLine.types (Face.typeLine face))
+        Spec.assertEq s [TriggerCondition.StepBegins (StepBegins.MkStepBegins (Phase.Beginning BeginningStep.Upkeep) Nothing (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))), TriggerCondition.ChaosEnsues] (fmap TriggeredAbility.condition (Face.triggeredAbilities face))
+    let conditions (ast, text) = fmap (fmap TriggeredAbility.condition . Face.triggeredAbilities . NonEmpty.head . Card.faces) (acceptFaces ast [text])
+    Spec.assertEq s (Right [TriggerCondition.AnyOf [TriggerCondition.TurnedUpOffDeck ActingPermanent.Self, TriggerCondition.StepBegins (StepBegins.MkStepBegins (Phase.Beginning BeginningStep.Upkeep) Nothing (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)))]]) (conditions inysHaenArrival)
+    Spec.assertEq s (Right [TriggerCondition.SelfPlaneswalkedAwayFrom]) (conditions sanctumOfSerraLeaving)
+
   -- CR 614.1d: "This land enters tapped unless [condition]" applies while
   -- the condition fails, so it is held as the complement of what it names.
   Spec.it s "reads entering tapped unless a condition as entering tapped under its complement" $ do
@@ -514,6 +528,28 @@ theVerySoilShallShake :: (String, String)
 theVerySoilShallShake =
   ( "{\"_OracleCard\":\"Scheme\",\"Name\":\"The Very Soil Shall Shake\",\"Typeline\":{\"Supertypes\":[\"Ongoing\"],\"Cardtypes\":[\"Scheme\"],\"Subtypes\":[]},\"Rules\":[{\"_Rule\":\"EachPermanentLayerEffect\",\"args\":[{\"_Permanents\":\"And\",\"args\":[{\"_Permanents\":\"IsCardtype\",\"args\":\"Creature\"},{\"_Permanents\":\"ControlledByAPlayer\",\"args\":{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"You\"}}}]},[{\"_StaticLayerEffect\":\"AdjustPT\",\"args\":[2,2]},{\"_StaticLayerEffect\":\"AddAbility\",\"args\":[{\"_Rule\":\"Trample\"}]}]]},{\"_Rule\":\"TriggerA\",\"args\":[{\"_Trigger\":\"WhenAPermanentDies\",\"args\":{\"_Permanents\":\"And\",\"args\":[{\"_Permanents\":\"IsCardtype\",\"args\":\"Creature\"},{\"_Permanents\":\"ControlledByAPlayer\",\"args\":{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"You\"}}}]}},{\"_Actions\":\"ActionList\",\"args\":[{\"_Action\":\"AbandonScheme\",\"args\":{\"_SingleScheme\":\"ThisScheme\"}}]}]}]}",
     "Creatures you control get +2/+2 and have trample.\nWhen a creature you control dies, abandon this scheme."
+  )
+
+-- | Lethe Lake's AST, a plane card's (CR 311), and its Oracle text.
+letheLake :: (String, String)
+letheLake =
+  ( "{\"_OracleCard\":\"Planar\",\"Name\":\"Lethe Lake\",\"Typeline\":{\"Supertypes\":[],\"Cardtypes\":[\"Plane\"],\"Subtypes\":[\"Arkhos\"]},\"Rules\":[{\"_Rule\":\"TriggerA\",\"args\":[{\"_Trigger\":\"AtTheBeginningOfAPlayersUpkeep\",\"args\":{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"You\"}}},{\"_Actions\":\"ActionList\",\"args\":[{\"_Action\":\"MillNumberCards\",\"args\":{\"_GameNumber\":\"Integer\",\"args\":10}}]}]},{\"_Rule\":\"TriggerA\",\"args\":[{\"_Trigger\":\"WhenChaosEnsues\"},{\"_Actions\":\"Targeted\",\"args\":[[{\"_Target\":\"TargetPlayer\",\"args\":{\"_Players\":\"AnyPlayer\"}}],{\"_Actions\":\"ActionList\",\"args\":[{\"_Action\":\"PlayerAction\",\"args\":[{\"_Player\":\"Ref_TargetPlayer\"},{\"_Action\":\"MillNumberCards\",\"args\":{\"_GameNumber\":\"Integer\",\"args\":10}}]}]}]}]}]}",
+    "At the beginning of your upkeep, mill ten cards.\nWhenever chaos ensues, target player mills ten cards."
+  )
+
+-- | Inys Haen's AST cut to its first ability, and that ability's Oracle text.
+inysHaenArrival :: (String, String)
+inysHaenArrival =
+  ( "{\"_OracleCard\":\"Planar\",\"Name\":\"Inys Haen\",\"Typeline\":{\"Supertypes\":[],\"Cardtypes\":[\"Plane\"],\"Subtypes\":[\"Cridhe\"]},\"Rules\":[{\"_Rule\":\"TriggerA\",\"args\":[{\"_Trigger\":\"Or\",\"args\":[{\"_Trigger\":\"WhenAPlayerPlaneswalksToAPlane\",\"args\":[{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"You\"}},{\"_Planes\":\"SinglePlane\",\"args\":{\"_Plane\":\"ThisPlane\"}}]},{\"_Trigger\":\"AtTheBeginningOfAPlayersUpkeep\",\"args\":{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"You\"}}}]},{\"_Actions\":\"ActionList\",\"args\":[{\"_Action\":\"MillNumberCards\",\"args\":{\"_GameNumber\":\"Integer\",\"args\":3}}]}]}]}",
+    "When you planeswalk to Inys Haen and at the beginning of your upkeep, mill three cards."
+  )
+
+-- | Sanctum of Serra's AST cut to its first ability, and that ability's
+-- Oracle text.
+sanctumOfSerraLeaving :: (String, String)
+sanctumOfSerraLeaving =
+  ( "{\"_OracleCard\":\"Planar\",\"Name\":\"Sanctum of Serra\",\"Typeline\":{\"Supertypes\":[],\"Cardtypes\":[\"Plane\"],\"Subtypes\":[\"SerrasRealm\"]},\"Rules\":[{\"_Rule\":\"TriggerA\",\"args\":[{\"_Trigger\":\"WhenAPlayerPlaneswalksAwayFromAPlane\",\"args\":[{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"You\"}},{\"_Planes\":\"SinglePlane\",\"args\":{\"_Plane\":\"ThisPlane\"}}]},{\"_Actions\":\"ActionList\",\"args\":[{\"_Action\":\"DestroyEachPermanent\",\"args\":{\"_Permanents\":\"IsNonCardtype\",\"args\":\"Land\"}}]}]}]}",
+    "When you planeswalk away from Sanctum of Serra, destroy all nonland permanents."
   )
 
 -- | Sizzle's AST, and its Oracle text.

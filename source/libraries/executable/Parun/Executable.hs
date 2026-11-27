@@ -366,11 +366,12 @@ readUtf8 path = do
       Exit.exitFailure
 
 -- The card name an mtgish AST line is for, read without parsing the line, a
--- vanguard card's (CR 313) and a scheme card's (CR 314) included; a
--- preparation card's (CR 723) joins its prepare spell's, as MTGJSON names it,
--- read from the parsed line, which is one of few.
+-- vanguard card's (CR 313), a scheme card's (CR 314) and a plane or
+-- phenomenon card's (CR 311, CR 312) included; a preparation card's (CR 723)
+-- joins its prepare spell's, as MTGJSON names it, read from the parsed line,
+-- which is one of few.
 lineName :: Text.Text -> Maybe Text.Text
-lineName line = case Foldable.asum [Text.stripPrefix (Text.pack ("{\"_OracleCard\":\"" <> kind <> "\",\"Name\":")) line | kind <- ["Card", "Vanguard", "Scheme"]] of
+lineName line = case Foldable.asum [Text.stripPrefix (Text.pack ("{\"_OracleCard\":\"" <> kind <> "\",\"Name\":")) line | kind <- ["Card", "Vanguard", "Scheme", "Planar"]] of
   Just rest -> do
     let (quoted, _) = Text.breakOn (Text.pack ",\"Typeline\"") rest
     either (const Nothing) Just (Common.parse quoted >>= Common.asText)
