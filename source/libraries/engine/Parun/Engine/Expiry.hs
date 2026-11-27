@@ -86,6 +86,7 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseAnchor as PhaseAnchor
 import Parun.Types.PhaseSelector (PhaseSelector)
 import qualified Parun.Types.PhaseSelector as PhaseSelector
+import qualified Parun.Types.PlaneswalkedFrom as PlaneswalkedFrom
 import qualified Parun.Types.PlayerControl as PlayerControl
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -277,7 +278,7 @@ arm resolution targets controller source duration gs = case duration of
       ( Expiry.OnEvent
           ( EventExpiry.MkEventExpiry controller $ case event of
               DurationEvent.SourceTurnedFaceDown -> event
-              DurationEvent.Planeswalked -> event
+              DurationEvent.Planeswalked _ -> event
               DurationEvent.SourceExiledCard -> event
               DurationEvent.SourceLeftBattlefield -> event
               DurationEvent.SpellCast criterion -> DurationEvent.SpellCast (Filter.bakeBound (Binding.playersIn targets) Map.empty Map.empty Map.empty criterion)
@@ -481,8 +482,9 @@ data Moment
   | -- | CR 601.2i: this card, under the id it had before CR 601.2a moved it,
     -- became cast as this spell.
     Cast ObjectId ObjectId
-  | -- | CR 901.11: a player planeswalked.
-    Planeswalked
+  | -- | CR 901.11: a player planeswalked, away from a plane (APlane) or from
+    -- phenomena or nothing only (AnyCard).
+    Planeswalked PlaneswalkedFrom.PlaneswalkedFrom
   | -- | CR 607.2a: an instruction of this object exiled a card. Ends the
     -- effects it is the source of, PaidFor's grain.
     ExiledWith ObjectId
@@ -584,11 +586,16 @@ endsAt gs moment source expiry = case expiry of
   Expiry.OnEvent (EventExpiry.MkEventExpiry you (DurationEvent.SpellCast criterion)) -> case moment of
     Cast _ spell -> Filter.matches (Projection.sourceContext gs (Just you) source) (Projection.viewOfObject spell gs) criterion
     _ -> False
-  -- CR 901.11: ended by any player's planeswalk, which
-  -- Parun.Engine.Planechase.encounterTop sweeps. Not by its source leaving: the
-  -- effect is a resolved one, and its plane is walked away from by the very
-  -- planeswalk that ends it.
-  Expiry.OnEvent (EventExpiry.MkEventExpiry _ DurationEvent.Planeswalked) -> moment == Planeswalked
+  -- CR 901.11: ended by any player's planeswalk, or by one away from a plane
+  -- (Chaotic Aether's ruling: walking away from a phenomenon does not end it),
+  -- which Parun.Engine.Planechase.encounterTop sweeps. Not by its source
+  -- leaving: the effect is a resolved one, and its plane is walked away from by
+  -- the very planeswalk that ends it.
+  Expiry.OnEvent (EventExpiry.MkEventExpiry _ (DurationEvent.Planeswalked wanted)) -> case moment of
+    Planeswalked walked -> case wanted of
+      PlaneswalkedFrom.AnyCard -> True
+      PlaneswalkedFrom.APlane -> walked == PlaneswalkedFrom.APlane
+    _ -> False
   -- CR 607.2a: ended by its own source exiling a card. Not by its source
   -- leaving (Furious Rise's 2020-06-23 ruling): the row names the old id, which
   -- CR 400.7 means a later object's exile can't end.

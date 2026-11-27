@@ -193,6 +193,9 @@ data PlayerEffect
     StateBasedActionDoesntApply StateBasedAction.StateBasedAction (Filter.Filter Keyword.Keyword)
   | -- | CR 701.32 / 904.9 / All in Good Time: schemes can't be set in motion.
     CantSetSchemesInMotion
+  | -- | CR 901.9b / Chaotic Aether: a blank roll of this player's planar die is
+    -- a chaos roll as well.
+    BlankPlanarDieRollsAreChaos
   | -- | CR 500.1 / Topsy Turvy: this player's turns take their phases in the
     -- reverse order, each phase's steps in their usual order.
     PhasesReversed

@@ -8,6 +8,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.DurationEvent as DurationEvent
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.PlaneswalkedFrom as PlaneswalkedFrom
 import qualified Parun.Types.SlotName as SlotName
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -26,13 +27,13 @@ spec s = Spec.describe s "Parun.Codec.DurationEvent" $ do
       Codec.codec
       (DurationEvent.SpellCast (Filter.HasCardType CardType.Creature))
       " {\"type\":\"SpellCast\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
-  -- CR 901.11 (Agyrem).
-  Spec.it s "Planeswalked" $
+  -- CR 901.11 (Chaotic Aether's "away from a plane").
+  Spec.it s "Planeswalked carries what it walks away from" $
     Common.assertCodec
       s
       Codec.codec
-      DurationEvent.Planeswalked
-      " {\"type\":\"Planeswalked\"} "
+      (DurationEvent.Planeswalked PlaneswalkedFrom.APlane)
+      " {\"type\":\"Planeswalked\",\"value\":\"APlane\"} "
   -- CR 607.2a (Furious Rise).
   Spec.it s "SourceExiledCard" $
     Common.assertCodec

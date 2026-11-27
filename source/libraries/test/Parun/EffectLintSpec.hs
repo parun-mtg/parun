@@ -1284,6 +1284,7 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   PlayerEffect.StateBasedActionDoesntApply _ _ -> False
   PlayerEffect.CantSetSchemesInMotion -> False
   PlayerEffect.PhasesReversed -> False
+  PlayerEffect.BlankPlanarDieRollsAreChaos -> False
   PlayerEffect.TurnOrderReversed -> False
   PlayerEffect.DrawsDuringDrawSteps _ -> False
   PlayerEffect.EntriesTrigger _ -> False
@@ -1376,6 +1377,7 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.StateBasedActionDoesntApply _ _ -> False
   PlayerEffect.CantSetSchemesInMotion -> False
   PlayerEffect.PhasesReversed -> False
+  PlayerEffect.BlankPlanarDieRollsAreChaos -> False
   PlayerEffect.TurnOrderReversed -> False
   PlayerEffect.DrawsDuringDrawSteps _ -> False
   PlayerEffect.EntriesTrigger _ -> False

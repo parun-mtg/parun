@@ -32,6 +32,7 @@ import qualified Parun.Engine.GrandMelee as GrandMelee
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.MoveDuration as MoveDuration
 import qualified Parun.Engine.Plane as Plane
+import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.Bookkeeping as Bookkeeping
@@ -63,6 +64,7 @@ import qualified Parun.Types.PlanarDieTrigger as PlanarDieTrigger
 import qualified Parun.Types.Planeswalk as Planeswalk
 import qualified Parun.Types.PlaneswalkAway as PlaneswalkAway
 import qualified Parun.Types.PlaneswalkCause as PlaneswalkCause
+import qualified Parun.Types.PlaneswalkedFrom as PlaneswalkedFrom
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Prompt as Prompt
@@ -163,10 +165,20 @@ planeswalk cause from to pid = proposed cause pid $ do
         PlaneswalkAway.FromPhenomenaOnly -> maybe False Plane.isPhenomenonFace (Game.faceOf oid now)
       away = filter leaves (faceUp now)
       marker = markerOf pid now
+      walked = walkedFrom now away
   bottomAll away
   case to of
-    Nothing -> encounterTop marker pid (Set.fromList away)
-    Just cards -> encounterAll marker pid cards (Set.fromList away)
+    Nothing -> encounterTop marker pid walked (Set.fromList away)
+    Just cards -> encounterAll marker pid cards walked (Set.fromList away)
+
+-- CR 901.11b: does a planeswalk away from these face-up cards walk away from a
+-- plane? Read before they go to the bottom.
+walkedFrom :: GameState -> [ObjectId] -> PlaneswalkedFrom.PlaneswalkedFrom
+walkedFrom gs away =
+  let isPlane oid = maybe False (not . Plane.isPhenomenonFace) (Game.faceOf oid gs)
+   in case filter isPlane away of
+        [] -> PlaneswalkedFrom.AnyCard
+        _ : _ -> PlaneswalkedFrom.APlane
 
 -- CR 614.1a: propose this player's planeswalk for this cause, and perform it
 -- unless a replacement took its place. Nothing for a player CR 701.31a does not
@@ -256,7 +268,7 @@ playersLeft before pids = do
     gs <- State.get
     let walkers = ListUtils.nubOrd [(walker, Object.planarMarker obj) | oid <- left, not (ceases && departing (controllerOfFaceUp oid before)), Just obj <- [Game.lookupObject oid before], Just walker <- [Plane.planarControllerOf obj gs]]
         away = Set.fromList (left <> filter (\oid -> isPlane oid && List.notElem oid ceased) (faceUp before))
-    Monad.forM_ walkers (\(walker, marker) -> proposed PlaneswalkCause.OwnerLeft walker (encounterTop marker walker away))
+    Monad.forM_ walkers (\(walker, marker) -> proposed PlaneswalkCause.OwnerLeft walker (encounterTop marker walker (walkedFrom before (Set.toList away)) away))
   markerlessToBottom
 
 -- | CR 807.4g: a face-up plane or phenomenon card whose Grand Melee turn marker
@@ -287,16 +299,17 @@ isPlaneswalkingAbility oid gs = case fmap Object.source (Game.lookupObject oid g
 -- It records the GameEvent.TurnedUpOffDeck that CR 312.5's "When you
 -- encounter" and CR 701.31d's "When you planeswalk to" and "away from" trigger
 -- on, naming the cards `away` held face up, and ends every effect lasting
--- "until a player planeswalks", marking every CR 610.3 and 610.4 watch on it
+-- "until a player planeswalks" (and, when `walked` says it walked away from a
+-- plane, "away from a plane"), marking every CR 610.3 and 610.4 watch on it
 -- (Parun.Engine.MoveDuration.markPlaneswalked). CR 103.7's starting plane is turned up by
 -- turnUpTop alone, CR 901.5 letting nothing trigger.
-encounterTop :: Maybe Natural -> PlayerId -> Set.Set ObjectId -> Game ()
-encounterTop marker pid away = do
+encounterTop :: Maybe Natural -> PlayerId -> PlaneswalkedFrom.PlaneswalkedFrom -> Set.Set ObjectId -> Game ()
+encounterTop marker pid walked away = do
   turned <- turnUpTop marker pid
   Monad.forM_ turned $ \oid -> do
     State.modify' MoveDuration.markPlaneswalked
     State.modify' (Event.recordEvent (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Planar pid oid away)))
-    State.modify' (Expiry.sweep Expiry.Planeswalked)
+    State.modify' (Expiry.sweep (Expiry.Planeswalked walked))
 
 -- CR 901.11 for several cards at once: turn each of `cards` still in this
 -- player's planar deck face up, then record a GameEvent.TurnedUpOffDeck for
@@ -305,13 +318,13 @@ encounterTop marker pid away = do
 -- "away from" triggers once. Effects lasting "until a player planeswalks" end
 -- once. Parun.PlanechaseSpec's "CR 701.31d Spatial Merging planeswalks to two
 -- planes at once" proves it.
-encounterAll :: Maybe Natural -> PlayerId -> [ObjectId] -> Set.Set ObjectId -> Game ()
-encounterAll marker pid cards away = do
+encounterAll :: Maybe Natural -> PlayerId -> [ObjectId] -> PlaneswalkedFrom.PlaneswalkedFrom -> Set.Set ObjectId -> Game ()
+encounterAll marker pid cards walked away = do
   turned <- Monad.filterM (turnUp marker pid) cards
   Monad.unless (null turned) (State.modify' MoveDuration.markPlaneswalked)
   Monad.forM_ (zip turned (away : repeat Set.empty)) $ \(oid, from) ->
     State.modify' (Event.recordEvent (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Planar pid oid from)))
-  Monad.unless (null turned) (State.modify' (Expiry.sweep Expiry.Planeswalked))
+  Monad.unless (null turned) (State.modify' (Expiry.sweep (Expiry.Planeswalked walked)))
 
 -- | CR 704.6f / 312.7: the face-up phenomena that make their planar controller
 -- planeswalk, each the source of no triggered ability on the stack or among
@@ -443,9 +456,14 @@ roll perform pid = do
       kept <- maybe (pure []) ($ Throw.MkThrow {Throw.thrower = pid, Throw.kind = ThrowKind.PlanarDie, Throw.units = Seq.singleton 1, Throw.ignored = 0, Throw.instead = False}) (Settle.throwRecorded (ManaAbilityPerformer.settle perform))
       -- Exactly one: nothing adds a die to the planar die's roll.
       Foldable.for_ (Maybe.listToMaybe kept) $ \rolled -> do
-        State.modify' (Event.recordEvent (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled pid (faceOf rolled))))
-        -- CR 901.9b: the chaos symbol makes chaos ensue.
-        Monad.when (faceOf rolled == PlanarDieFace.Chaos) (State.modify' (Event.recordEvent (GameEvent.ChaosEnsued Nothing)))
+        let face = faceOf rolled
+        chaos <- State.gets (PlayerEffect.isChaosRoll pid face)
+        State.modify' (Event.recordEvent (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled pid face)))
+        -- CR 901.9b: the chaos symbol makes chaos ensue, and so does a blank
+        -- roll Chaotic Aether makes a chaos roll, which stays a blank roll
+        -- (docs/decisions.md, "Whether Chaotic Aether's chaos roll is still a
+        -- blank roll").
+        Monad.when chaos (State.modify' (Event.recordEvent (GameEvent.ChaosEnsued Nothing)))
 
 -- | CR 901.8: the planeswalking ability, paired with each player, for
 -- Parun.Engine.Event.Trigger.inherentTriggers. Planechase games have it; it "has

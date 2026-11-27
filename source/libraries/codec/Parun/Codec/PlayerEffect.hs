@@ -139,6 +139,7 @@ codec =
           Arm.payload "HasProtectionFrom" filterCodec PlayerEffect.HasProtectionFrom (\x -> case x of PlayerEffect.HasProtectionFrom y -> Just y; _ -> Nothing),
           Arm.payload "StateBasedActionDoesntApply" sbaExemption (uncurry PlayerEffect.StateBasedActionDoesntApply) (\x -> case x of PlayerEffect.StateBasedActionDoesntApply y z -> Just (y, z); _ -> Nothing),
           Arm.nullary "CantSetSchemesInMotion" PlayerEffect.CantSetSchemesInMotion,
+          Arm.nullary "BlankPlanarDieRollsAreChaos" PlayerEffect.BlankPlanarDieRollsAreChaos,
           Arm.nullary "PhasesReversed" PlayerEffect.PhasesReversed,
           Arm.nullary "TurnOrderReversed" PlayerEffect.TurnOrderReversed,
           Arm.payload "DrawsDuringDrawSteps" PlayerRelation.codec PlayerEffect.DrawsDuringDrawSteps (\x -> case x of PlayerEffect.DrawsDuringDrawSteps y -> Just y; _ -> Nothing),
@@ -204,6 +205,7 @@ tagOf x = case x of
   PlayerEffect.HasProtectionFrom {} -> "HasProtectionFrom"
   PlayerEffect.StateBasedActionDoesntApply {} -> "StateBasedActionDoesntApply"
   PlayerEffect.CantSetSchemesInMotion {} -> "CantSetSchemesInMotion"
+  PlayerEffect.BlankPlanarDieRollsAreChaos {} -> "BlankPlanarDieRollsAreChaos"
   PlayerEffect.PhasesReversed {} -> "PhasesReversed"
   PlayerEffect.TurnOrderReversed {} -> "TurnOrderReversed"
   PlayerEffect.DrawsDuringDrawSteps {} -> "DrawsDuringDrawSteps"

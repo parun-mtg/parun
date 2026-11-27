@@ -2382,6 +2382,7 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.StateBasedActionDoesntApply action exempted -> PlayerEffect.StateBasedActionDoesntApply action <$> playerFilter c exempted
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.PhasesReversed -> pure effect
+  PlayerEffect.BlankPlanarDieRollsAreChaos -> pure effect
   PlayerEffect.TurnOrderReversed -> pure effect
   PlayerEffect.DrawsDuringDrawSteps _ -> pure effect
   PlayerEffect.EntriesTrigger (EntriesTrigger.MkEntriesTrigger entrants bearers move triggering) ->
@@ -2865,7 +2866,7 @@ durationEventChildren :: (Applicative f) => DurationChildren f -> DurationEvent.
 durationEventChildren c event = case event of
   DurationEvent.SourceTurnedFaceDown -> pure event
   DurationEvent.SpellCast criterion -> DurationEvent.SpellCast <$> durationFilter c criterion
-  DurationEvent.Planeswalked -> pure event
+  DurationEvent.Planeswalked _ -> pure event
   DurationEvent.SourceExiledCard -> pure event
   DurationEvent.SourceLeftBattlefield -> pure event
   DurationEvent.BoundCardCast bound -> DurationEvent.BoundCardCast <$> durationSlot c bound
