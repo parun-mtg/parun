@@ -468,7 +468,8 @@ unread oid =
       Mentions.history = mempty,
       Mentions.prevention = mempty,
       Mentions.sourceLinks = mempty,
-      Mentions.melded = id
+      Mentions.melded = id,
+      Mentions.relation = mempty
     }
 
 -- CR 613.7a: an object's static abilities apply at its own timestamp, so a

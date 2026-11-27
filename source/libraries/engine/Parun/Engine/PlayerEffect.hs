@@ -45,6 +45,7 @@ import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.IgnoredAbility as IgnoredAbility
+import qualified Parun.Engine.Interchangeable.Mentions as Mentions
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.ManaFilter as ManaFilter
 import qualified Parun.Engine.Plane as Plane
@@ -421,10 +422,12 @@ printedRows gs =
                     -- permanent on the battlefield.
                     --
                     -- CR 901.12c: a planar card's rows once per member of the
-                    -- planar team, each its own "you" (Plane.planarYous).
+                    -- planar team, each its own "you" (Plane.planarYous), a
+                    -- teammate's only of an ability referring to "you".
                     let changes = Projection.readerTextChanges oid gs
                         stamped = fmap ((,) (Projection.staticTimestampOf oid object gs)) kept
-                     in concatMap (\you -> rowsOf gs changes oid you stamped) (Plane.planarYous oid controller gs)
+                        own teammate = if teammate then filter (Mentions.playerAbilityRefersToYou . snd) stamped else stamped
+                     in concat (zipWith (\teammate you -> rowsOf gs changes oid you (own teammate)) (False : repeat True) (Plane.planarYous oid controller gs))
                   else []
       -- CR 613.1f / 613.10 / 613.11: the player abilities layer 6 GRANTED a permanent
       -- (Nerd Rage's "You have no maximum hand size"), read off the finished

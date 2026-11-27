@@ -457,7 +457,8 @@ historyReads =
       Mentions.history = Set.singleton,
       Mentions.prevention = Set.empty,
       Mentions.sourceLinks = Set.empty,
-      Mentions.melded = id
+      Mentions.melded = id,
+      Mentions.relation = const Set.empty
     }
 
 -- | Does this logged event record part of what `reading` reads? Through the read

@@ -226,6 +226,7 @@ import qualified Parun.Types.EachKind as EachKind
 import qualified Parun.Types.Earthbend as Earthbend
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Emerge as Emerge
+import qualified Parun.Types.EnteredZone as EnteredZone
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntersWith as EntersWith
 import qualified Parun.Types.EntriesTrigger as EntriesTrigger
@@ -389,6 +390,7 @@ import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
 import qualified Parun.Types.PlacesSticker as PlacesSticker
+import qualified Parun.Types.PlanarDieTrigger as PlanarDieTrigger
 import qualified Parun.Types.Planeswalk as Planeswalk
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
 import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
@@ -400,10 +402,13 @@ import qualified Parun.Types.PlayerCounters as PlayerCounters
 import qualified Parun.Types.PlayerDesignationTally as PlayerDesignationTally
 import qualified Parun.Types.PlayerDrawsNthCard as PlayerDrawsNthCard
 import qualified Parun.Types.PlayerEffect as PlayerEffect
+import qualified Parun.Types.PlayerExpends as PlayerExpends
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
+import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlayerSlot as PlayerSlot
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PlayersWho as PlayersWho
@@ -568,7 +573,9 @@ data Children keyword f = MkChildren
     -- recipients through player and nest.
     scope :: Scope.Scope keyword -> f (Scope.Scope keyword),
     -- | A player reference, whole.
-    player :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef
+    player :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef,
+    -- | A player relation an atom reads against the perspective (CR 109.5).
+    relation :: PlayerRelation.PlayerRelation -> f PlayerRelation.PlayerRelation
   }
 
 -- | Every child left as it is: the base a walk overrides.
@@ -584,7 +591,8 @@ leaves =
       member = pure,
       redirected = pure,
       scope = pure,
-      player = pure
+      player = pure,
+      relation = pure
     }
 
 -- | Every nested Filter, connective or nest alike, handed to one recursion.
@@ -616,7 +624,7 @@ filterChildren children predicate = case predicate of
   Filter.ManaCostRepeatsSymbol -> pure predicate
   Filter.ManaCostHasSymbol _ -> pure predicate
   Filter.HasManaCost _ -> pure predicate
-  Filter.HeldBy _ _ -> pure predicate
+  Filter.HeldBy holder whose -> fmap (Filter.HeldBy holder) (relatedChildren children whose)
   Filter.ControllerIsOwner -> pure predicate
   Filter.ControlledByRole _ -> pure predicate
   -- ONE: `matches` answers it off a slot naming exactly one player.
@@ -631,13 +639,13 @@ filterChildren children predicate = case predicate of
   Filter.TargetsOnlyOne f -> fmap Filter.TargetsOnlyOne (nest children f)
   Filter.HasSingleTarget -> pure predicate
   Filter.TargetsMatching f -> fmap Filter.TargetsMatching (nest children f)
-  Filter.TargetsPlayer _ -> pure predicate
+  Filter.TargetsPlayer rel -> fmap Filter.TargetsPlayer (relation children rel)
   -- MANY: the whole bound set, so a group is every one of its members.
   Filter.IsBound name -> fmap Filter.IsBound (slot children SlotArity.Many name)
   Filter.IsTarget -> pure predicate
   -- MANY: under a host hop, a group answers with every member's host's
   -- controller.
-  Filter.ControllerRelatesToBound relation hop name -> fmap (Filter.ControllerRelatesToBound relation hop) (slot children SlotArity.Many name)
+  Filter.ControllerRelatesToBound rel hop name -> liftA2 (`Filter.ControllerRelatesToBound` hop) (relation children rel) (slot children SlotArity.Many name)
   Filter.HasChosenName _ -> pure predicate
   Filter.HasChosenColor -> pure predicate
   Filter.Noted _ -> pure predicate
@@ -648,11 +656,11 @@ filterChildren children predicate = case predicate of
   Filter.IsChosenObject -> pure predicate
   Filter.OfChosenPlayer -> pure predicate
   Filter.NameStartsLikeCarrierSticker -> pure predicate
-  Filter.OfRelatedPlayer _ -> pure predicate
+  Filter.OfRelatedPlayer rel -> fmap Filter.OfRelatedPlayer (relation children rel)
   Filter.OfSpecificPlayer _ -> pure predicate
   -- ONE: the one player the slot names, HeldByBound's reading.
   Filter.OfBoundPlayer name -> fmap Filter.OfBoundPlayer (slot children SlotArity.One name)
-  Filter.IsPlayer _ -> pure predicate
+  Filter.IsPlayer rel -> fmap Filter.IsPlayer (relation children rel)
   Filter.IsPlayerInRole _ -> pure predicate
   -- ONE: the controller of the one object the slot names (CR 608.2h), read
   -- through Parun.Engine.Filter.slotOneObject.
@@ -664,9 +672,9 @@ filterChildren children predicate = case predicate of
   Filter.IsAttacking _ -> pure predicate
   -- ONE: an InSlot relation names the one player the slot binds.
   Filter.IsAttackingPlayer (ControllerRelation.InSlot name) -> fmap (Filter.IsAttackingPlayer . ControllerRelation.InSlot) (slot children SlotArity.One name)
-  Filter.IsAttackingPlayer _ -> pure predicate
-  Filter.IsAttackingPlaneswalker _ -> pure predicate
-  Filter.IsAttackingBattle _ -> pure predicate
+  Filter.IsAttackingPlayer whose -> fmap Filter.IsAttackingPlayer (relatedChildren children whose)
+  Filter.IsAttackingPlaneswalker rel -> fmap Filter.IsAttackingPlaneswalker (relation children rel)
+  Filter.IsAttackingBattle rel -> fmap Filter.IsAttackingBattle (relation children rel)
   -- MANY: `matches` asks whether any of the slot's players declared it.
   Filter.DeclaredAttackedThisCombat name -> fmap Filter.DeclaredAttackedThisCombat (traverse (slot children SlotArity.Many) name)
   Filter.IsBlocking f -> fmap Filter.IsBlocking (traverse (nest children) f)
@@ -687,7 +695,7 @@ filterChildren children predicate = case predicate of
   Filter.ActivatedThisTurn -> pure predicate
   Filter.ActedThisTurn _ -> pure predicate
   Filter.DealtDamageTo asked -> fmap Filter.DealtDamageTo (dealtDamageToChildren children asked)
-  Filter.EnteredThisTurn _ -> pure predicate
+  Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to from window under) -> fmap (Filter.EnteredThisTurn . EnteredZone.MkEnteredZone to from window) (traverse (relation children) under)
   Filter.CountersMovedThisTurn motion kind -> fmap (Filter.CountersMovedThisTurn motion) (traverse (counterKindChildren children) kind)
   Filter.ControlledSinceTurnBegan -> pure predicate
   Filter.AttachedTo f -> fmap Filter.AttachedTo (nest children f)
@@ -741,6 +749,15 @@ filterChildren children predicate = case predicate of
   Filter.Or fs -> fmap Filter.Or (traverse (connective children) fs)
   Filter.Not f -> fmap Filter.Not (connective children f)
   Filter.Unwritten f -> fmap Filter.Unwritten (connective children f)
+
+-- | A ControllerRelation's Related arm through the relation visitor; the
+-- other arms as they are, their slot read by the atom's own arm.
+relatedChildren :: (Applicative f) => Children keyword f -> ControllerRelation.ControllerRelation -> f ControllerRelation.ControllerRelation
+relatedChildren children whose = case whose of
+  ControllerRelation.Related rel -> fmap ControllerRelation.Related (relation children rel)
+  ControllerRelation.NamedBySource _ -> pure whose
+  ControllerRelation.InSlot _ -> pure whose
+  ControllerRelation.Among _ -> pure whose
 
 -- | An anchor's children: its slot, read at MANY (the whole set it names), or
 -- the Filter it nests.
@@ -1638,6 +1655,8 @@ data TriggerChildren f = MkTriggerChildren
     triggerMana :: ManaSpecification.ManaSpecification -> f ManaSpecification.ManaSpecification,
     -- | A player a damage recipient names (CR 120.1), whole.
     triggerPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef,
+    -- | The relation to the perspective of the player an event names (CR 109.5).
+    triggerRelation :: PlayerRelation.PlayerRelation -> f PlayerRelation.PlayerRelation,
     -- | A rule-702 ability a field names (CR 702), whole.
     triggerDesignator :: KeywordDesignator.KeywordDesignator Keyword.Keyword -> f (KeywordDesignator.KeywordDesignator Keyword.Keyword)
   }
@@ -1657,6 +1676,7 @@ triggerLeaves =
       triggerCounters = pure,
       triggerMana = pure,
       triggerPlayer = pure,
+      triggerRelation = pure,
       triggerDesignator = pure
     }
 
@@ -1690,7 +1710,7 @@ triggerConditionChildren c condition = case condition of
           DiscardSubject.Self -> pure subject
           DiscardSubject.Discarder acts -> fmap DiscardSubject.Discarder (playerActsOnChildren c acts)
       )
-  TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard relation nth within) -> fmap (TriggerCondition.PlayerDrawsNthCard . PlayerDrawsNthCard.MkPlayerDrawsNthCard relation nth) (traverse (stepBeginsChildren c) within)
+  TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard who nth within) -> fmap TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard <$> triggerRelation c who <*> pure nth <*> traverse (stepBeginsChildren c) within)
   TriggerCondition.Attacks trigger -> fmap TriggerCondition.Attacks (attackTriggerChildren c trigger)
   TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role creature count batching while_) ->
     fmap
@@ -1723,7 +1743,7 @@ triggerConditionChildren c condition = case condition of
           <*> traverse (triggerDesignator c) whileActivating
       )
   TriggerCondition.LeavesZone (LeavesZoneTrigger.MkLeavesZoneTrigger card from to whose turn batching) ->
-    fmap TriggerCondition.LeavesZone (LeavesZoneTrigger.MkLeavesZoneTrigger <$> actingChildren c card <*> pure from <*> pure to <*> pure whose <*> triggerTurn c turn <*> pure batching)
+    fmap TriggerCondition.LeavesZone (LeavesZoneTrigger.MkLeavesZoneTrigger <$> actingChildren c card <*> pure from <*> pure to <*> traverse (triggerRelation c) whose <*> triggerTurn c turn <*> pure batching)
   TriggerCondition.PutIntoZone (PutIntoZoneTrigger.MkPutIntoZoneTrigger card from to turn duringResolution batching) ->
     fmap TriggerCondition.PutIntoZone (PutIntoZoneTrigger.MkPutIntoZoneTrigger <$> actingChildren c card <*> pure from <*> pure to <*> triggerTurn c turn <*> pure duringResolution <*> pure batching)
   TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status actor batching paying tapper while_) -> fmap TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status <$> actingChildren c actor <*> pure batching <*> pure paying <*> pure tapper <*> traverse (triggerState c) while_)
@@ -1735,19 +1755,20 @@ triggerConditionChildren c condition = case condition of
                   TappedPermanent.Attached -> pure permanent
                   TappedPermanent.Matching filter_ -> fmap TappedPermanent.Matching (triggerFilter c filter_)
               )
-          <*> pure who
+          <*> triggerRelation c who
           <*> triggerMana c mana
       )
-  TriggerCondition.AbilityAddsMana (AbilityAddsMana.MkAbilityAddsMana who source mana) -> fmap TriggerCondition.AbilityAddsMana (AbilityAddsMana.MkAbilityAddsMana who <$> triggerFilter c source <*> triggerMana c mana)
+  TriggerCondition.AbilityAddsMana (AbilityAddsMana.MkAbilityAddsMana who source mana) -> fmap TriggerCondition.AbilityAddsMana (AbilityAddsMana.MkAbilityAddsMana <$> triggerRelation c who <*> triggerFilter c source <*> triggerMana c mana)
   TriggerCondition.SelfManaAbilityResolves -> pure condition
-  TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger {}) -> pure condition
+  TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger countered counterer caster) -> fmap TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger countered <$> triggerRelation c counterer <*> triggerRelation c caster)
   TriggerCondition.DamageToPlayerPrevented _ -> pure condition
   TriggerCondition.SelfPreventsDamage filter_ -> fmap TriggerCondition.SelfPreventsDamage (triggerFilter c filter_)
   TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger direction who turn batching frequency exactly) ->
     fmap
       TriggerCondition.LifeChanges
-      ( LifeTrigger.MkLifeTrigger direction who
-          <$> triggerTurn c turn
+      ( LifeTrigger.MkLifeTrigger direction
+          <$> triggerRelation c who
+          <*> triggerTurn c turn
           <*> pure batching
           <*> triggerFrequency
             c
@@ -1776,22 +1797,23 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.SpellCast (SpellCast.MkSpellCast spell turn zone ordinal phase copies while_) ->
     fmap TriggerCondition.SpellCast (SpellCast.MkSpellCast <$> actingChildren c spell <*> triggerTurn c turn <*> pure zone <*> traverse (triggerOrdinal c HistoryRead.Casts) ordinal <*> pure phase <*> pure copies <*> traverse (triggerState c) while_)
   TriggerCondition.AbilityActivated filter_ -> fmap TriggerCondition.AbilityActivated (triggerFilter c filter_)
-  TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger subject relation kinds batching zones frequency sourceKeyword sourceFilter) ->
+  TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger subject targeter kinds batching zones frequency sourceKeyword sourceFilter) ->
     fmap
-      (\renamed frequency' sourceFilter' -> TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger renamed relation kinds batching zones frequency' sourceKeyword sourceFilter'))
+      (\renamed relation' frequency' sourceFilter' -> TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger renamed relation' kinds batching zones frequency' sourceKeyword sourceFilter'))
       ( case subject of
           TargetedSubject.Permanent permanent -> fmap TargetedSubject.Permanent (actingChildren c permanent)
-          TargetedSubject.Player _ -> pure subject
+          TargetedSubject.Player who -> fmap TargetedSubject.Player (triggerRelation c who)
           TargetedSubject.NamedBySource _ -> pure subject
-          TargetedSubject.PlayerOrPermanent who permanent -> fmap (TargetedSubject.PlayerOrPermanent who) (actingChildren c permanent)
+          TargetedSubject.PlayerOrPermanent who permanent -> TargetedSubject.PlayerOrPermanent <$> triggerRelation c who <*> actingChildren c permanent
       )
+      <*> triggerRelation c targeter
       <*> triggerFrequency c HistoryRead.Targetings frequency
       <*> traverse (triggerFilter c) sourceFilter
   TriggerCondition.SelfHalfUnlocked _ -> pure condition
   TriggerCondition.RoomFullyUnlocked _ -> pure condition
   TriggerCondition.AnyOf conditions -> fmap TriggerCondition.AnyOf (traverse (triggerNested c) conditions)
   TriggerCondition.CausedBy (CausedBy.MkCausedBy controller sourceKeyword narrowed) -> fmap (TriggerCondition.CausedBy . CausedBy.MkCausedBy controller sourceKeyword) (triggerNested c narrowed)
-  TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.MkTurnedFaceUpTrigger permanent turner) -> fmap (\renamed -> TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.MkTurnedFaceUpTrigger renamed turner)) (actingChildren c permanent)
+  TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.MkTurnedFaceUpTrigger permanent turner) -> fmap TriggerCondition.TurnedFaceUp (TurnedFaceUpTrigger.MkTurnedFaceUpTrigger <$> actingChildren c permanent <*> triggerRelation c turner)
   TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger permanent intoItself) -> fmap (\renamed -> TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger renamed intoItself)) (actingChildren c permanent)
   TriggerCondition.FaceDownPermanentLeavesRevealed -> pure condition
   TriggerCondition.PermanentBecomesDesignated (PermanentBecomesDesignated.MkPermanentBecomesDesignated designation filter_) ->
@@ -1811,26 +1833,26 @@ triggerConditionChildren c condition = case condition of
     LostPermanent.Matching acts -> fmap (TriggerCondition.LosesControl . LostPermanent.Matching) (playerActsOnChildren c acts)
   TriggerCondition.RoomEntered _ -> pure condition
   TriggerCondition.PlayerLosesGame _ -> pure condition
-  TriggerCondition.PlayerPlaysLand (PlaysLand.MkPlaysLand who from filter_) -> fmap (TriggerCondition.PlayerPlaysLand . PlaysLand.MkPlaysLand who from) (triggerFilter c filter_)
+  TriggerCondition.PlayerPlaysLand (PlaysLand.MkPlaysLand who from filter_) -> fmap TriggerCondition.PlayerPlaysLand (PlaysLand.MkPlaysLand <$> triggerRelation c who <*> pure from <*> triggerFilter c filter_)
   TriggerCondition.PlayerManifestsDread _ -> pure condition
   TriggerCondition.PlayerFacesDilemma _ -> pure condition
   TriggerCondition.PlayerCommitsCrime _ -> pure condition
-  TriggerCondition.PlayerExpends _ -> pure condition
+  TriggerCondition.PlayerExpends (PlayerExpends.MkPlayerExpends who amount) -> fmap (TriggerCondition.PlayerExpends . (`PlayerExpends.MkPlayerExpends` amount)) (triggerRelation c who)
   TriggerCondition.ChaosEnsues -> pure condition
   TriggerCondition.DaytimeChanges -> pure condition
   TriggerCondition.GameBegins -> pure condition
-  TriggerCondition.PlayerRollsPlanarDie _ -> pure condition
+  TriggerCondition.PlayerRollsPlanarDie (PlanarDieTrigger.MkPlanarDieTrigger who face) -> fmap (TriggerCondition.PlayerRollsPlanarDie . (`PlanarDieTrigger.MkPlanarDieTrigger` face)) (triggerRelation c who)
   TriggerCondition.TurnedUpOffDeck subject -> fmap TriggerCondition.TurnedUpOffDeck (actingChildren c subject)
   TriggerCondition.SelfPlaneswalkedAwayFrom -> pure condition
-  TriggerCondition.PlayerRollsResult (RollTrigger.MkRollTrigger {}) -> pure condition
+  TriggerCondition.PlayerRollsResult (RollTrigger.MkRollTrigger roller result roll reading) -> fmap (\who -> TriggerCondition.PlayerRollsResult (RollTrigger.MkRollTrigger who result roll reading)) (triggerRelation c roller)
   TriggerCondition.Visit -> pure condition
-  TriggerCondition.FlipsCoin (CoinFlipTrigger.MkCoinFlipTrigger _ _) -> pure condition
+  TriggerCondition.FlipsCoin (CoinFlipTrigger.MkCoinFlipTrigger who outcome) -> fmap (TriggerCondition.FlipsCoin . (`CoinFlipTrigger.MkCoinFlipTrigger` outcome)) (triggerRelation c who)
   TriggerCondition.SelfBecomesPlotted -> pure condition
   TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger end direction other) -> (\renamed qualified -> TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger renamed direction qualified)) <$> attachmentEndChildren c end <*> triggerFilter c other
   TriggerCondition.Reflexive -> pure condition
   TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed action permanent revealed) batching) -> (\p r -> TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed action p r) batching)) <$> actingChildren c permanent <*> traverse (triggerFilter c) revealed
-  TriggerCondition.PlayerActs (PlayerActed.MkPlayerActed _ _) -> pure condition
-  TriggerCondition.PlacesSticker (PlacesSticker.MkPlacesSticker placer kinds stickered) -> fmap (TriggerCondition.PlacesSticker . PlacesSticker.MkPlacesSticker placer kinds) (triggerFilter c stickered)
+  TriggerCondition.PlayerActs (PlayerActed.MkPlayerActed action who) -> fmap (TriggerCondition.PlayerActs . PlayerActed.MkPlayerActed action) (triggerRelation c who)
+  TriggerCondition.PlacesSticker (PlacesSticker.MkPlacesSticker placer kinds stickered) -> fmap TriggerCondition.PlacesSticker (PlacesSticker.MkPlacesSticker <$> triggerRelation c placer <*> pure kinds <*> triggerFilter c stickered)
 
 attackTriggerChildren :: (Applicative f) => TriggerChildren f -> AttackTrigger.AttackTrigger -> f AttackTrigger.AttackTrigger
 attackTriggerChildren c trigger = case trigger of
@@ -1856,12 +1878,13 @@ attackTriggerChildren c trigger = case trigger of
   AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger who attacked attackers) ->
     fmap
       AttackTrigger.Attacked
-      (AttackedTrigger.MkAttackedTrigger who attacked <$> traverse (attackCountChildren c) attackers)
+      (AttackedTrigger.MkAttackedTrigger <$> traverse (triggerRelation c) who <*> pure attacked <*> traverse (attackCountChildren c) attackers)
   AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger who attackers frequency while_) ->
     fmap
       AttackTrigger.Declaration
-      ( DeclarationTrigger.MkDeclarationTrigger who
-          <$> traverse (attackCountChildren c) attackers
+      ( DeclarationTrigger.MkDeclarationTrigger
+          <$> triggerRelation c who
+          <*> traverse (attackCountChildren c) attackers
           <*> triggerFrequency c HistoryRead.Attacks frequency
           <*> traverse (triggerState c) while_
       )
@@ -1891,7 +1914,7 @@ attachmentEndChildren c end = case end of
   AttachmentEnd.Neither filter_ -> fmap AttachmentEnd.Neither (triggerFilter c filter_)
 
 playerActsOnChildren :: (Applicative f) => TriggerChildren f -> PlayerActsOn.PlayerActsOn -> f PlayerActsOn.PlayerActsOn
-playerActsOnChildren c (PlayerActsOn.MkPlayerActsOn who filter_) = fmap (PlayerActsOn.MkPlayerActsOn who) (triggerFilter c filter_)
+playerActsOnChildren c (PlayerActsOn.MkPlayerActsOn who filter_) = PlayerActsOn.MkPlayerActsOn <$> triggerRelation c who <*> triggerFilter c filter_
 
 -- | One visitor per kind of child a keyword (CR 702) holds. Its payloads are
 -- matched positionally in keywordChildren; a type visited whole has walks of
@@ -2554,7 +2577,7 @@ replacementEffectChildren c replacement = case replacement of
     fmap ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR <$> replacementFilter c matching <*> pure requiring <*> traverse (replacementProcedureCost c) paying <*> turnUpRewriteChildren c rewrite)
   ReplacementEffect.AttachR (AttachR.MkAttachR matching rewrite) -> fmap ReplacementEffect.AttachR (AttachR.MkAttachR <$> replacementFilter c matching <*> attachRewriteChildren c rewrite)
   ReplacementEffect.TransformR (TransformR.MkTransformR matching rewrite) -> fmap ReplacementEffect.TransformR (TransformR.MkTransformR <$> replacementFilter c matching <*> transformRewriteChildren c rewrite)
-  ReplacementEffect.SetInMotionR relation -> pure (ReplacementEffect.SetInMotionR relation)
+  ReplacementEffect.SetInMotionR who -> pure (ReplacementEffect.SetInMotionR who)
   ReplacementEffect.UntapR (UntapR.MkUntapR matching during rewrite) -> fmap ReplacementEffect.UntapR (UntapR.MkUntapR <$> traverse (replacementFilter c) matching <*> pure during <*> untapRewriteChildren c rewrite)
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR (LifeLossPattern.MkLifeLossPattern whose cause) rewrite) ->
     fmap ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR <$> (LifeLossPattern.MkLifeLossPattern <$> replacementWhose c whose <*> pure cause) <*> lifeLossRewriteChildren c rewrite)
@@ -2909,7 +2932,9 @@ data AbilityChildren card ability effect f = MkAbilityChildren
     -- | The slot an activated ability binds its announced player under (CR 115.10a).
     abilitySlot :: SlotName.SlotName -> f SlotName.SlotName,
     -- | The player an activated ability's activation instructions name (CR 602.1b).
-    abilityPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef
+    abilityPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef,
+    -- | The players a player static ability affects (CR 613.10), whole.
+    abilityScope :: PlayerScope.PlayerScope -> f PlayerScope.PlayerScope
   }
 
 -- | Every child of an ability record left as it is: the base a walk overrides.
@@ -2933,7 +2958,8 @@ abilityLeaves =
       abilityRules = pure,
       abilitySpendMana = pure,
       abilitySlot = pure,
-      abilityPlayer = pure
+      abilityPlayer = pure,
+      abilityScope = pure
     }
 
 -- | An activated ability's children. Each choice's costs go to abilityCost.
@@ -2984,8 +3010,9 @@ staticAbilityChildren c (StaticAbility.MkStaticAbility affected condition functi
 -- | A player static ability's children.
 playerStaticAbilityChildren :: (Applicative f) => AbilityChildren card ability effect f -> PlayerStaticAbility.PlayerStaticAbility -> f PlayerStaticAbility.PlayerStaticAbility
 playerStaticAbilityChildren c (PlayerStaticAbility.MkPlayerStaticAbility players condition functionsFrom name effect) =
-  PlayerStaticAbility.MkPlayerStaticAbility players
-    <$> traverse (abilityCondition c) condition
+  PlayerStaticAbility.MkPlayerStaticAbility
+    <$> abilityScope c players
+    <*> traverse (abilityCondition c) condition
     <*> pure functionsFrom
     <*> pure name
     <*> abilityPlayerEffect c effect

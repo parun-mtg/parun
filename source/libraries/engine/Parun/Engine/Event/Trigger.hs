@@ -26,6 +26,7 @@ import Parun.Engine.Event.Match (additionalAttackTriggers, additionalLifeGainTri
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.Interchangeable.Mentions as Mentions
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.Plane as Plane
@@ -2415,7 +2416,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.TriggeredAbilityResolved _ -> Map.empty
         GameEvent.TriggeredAbilityFinished _ -> Map.empty
         GameEvent.CardArrived _ -> Map.empty
-      forOne board logged (oid, (sampled, abilities)) =
+      forOne board logged (oid, ((sampled, teammate), abilities)) =
         let event = LoggedEvent.event logged
             -- CR 603.3a's "at the time it triggered" is, for a look-back ability
             -- (CR 603.10), immediately before the event, so a bearer standing
@@ -2444,8 +2445,11 @@ eventTriggersGiven scope standing events gs =
             -- or anywhere for a planar bearer (CR 801.18).
             -- CR 613.11: and no effect silences the ability whatever its
             -- event (Match.bearerTriggers, Nowhere to Run).
+            -- CR 901.12c: a teammate's instance only of an ability referring to
+            -- "you" (`teamWide`).
             fires (cond, ab) =
-              matchesTriggerGiven bindings Nothing board (LoggedEvent.group logged) gs oid (controllerFor cond) cond event
+              (not teammate || Mentions.refersToYou ab)
+                && matchesTriggerGiven bindings Nothing board (LoggedEvent.group logged) gs oid (controllerFor cond) cond event
                 && eventWithinRange board gs (Plane.rangePerspective oid (controllerFor cond) gs) event
                 && bearerTriggers gs (controllerFor cond) oid ab (LoggedEvent.group logged) (looksBack cond)
             -- CR 400.7d: an ability of a permanent may read what costs were
@@ -2544,8 +2548,10 @@ eventTriggersGiven scope standing events gs =
       -- abilities the scan would, plus its keyword-minted ones.
       candidates onBattlefield logged later same graveyard = let event = LoggedEvent.event logged in Map.toAscList (restrict (Map.unions [lookedBackAt onBattlefield logged, onBattlefield, leftBattlefield event, later, same, walkedAwayFrom event, chaosEnsuedOn event, cycledCard event, spellCast event, revealedInHand event, graveyard, inCommand, Map.unionWith (\(c, a) (_, b) -> (c, a <> b)) inExile (exiledForMadness event), inStatedZones]))
       -- CR 901.12c: a planar bearer's candidate once per member of its
-      -- controller's team (Plane.planarYous).
-      teamWide (oid, (sampled, abilities)) = fmap (\you -> (oid, (you, abilities))) (Plane.planarYous oid sampled gs)
+      -- controller's team (Plane.planarYous), each member after the first a
+      -- teammate whose instance `fires` confines to an ability referring to
+      -- "you".
+      teamWide (oid, (sampled, abilities)) = zipWith (\teammate you -> (oid, ((you, teammate), abilities))) (False : repeat True) (Plane.planarYous oid sampled gs)
       scanOne board later same graveyard logged = concatMap (forOne board logged) (concatMap teamWide (candidates (onBattlefieldOf (restrict board)) logged later same graveyard))
       -- The battlefield reading is per GROUP and so is hoisted out of the block:
       -- every event in one group happened at the same time, so they share it. A
