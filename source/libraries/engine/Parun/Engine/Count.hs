@@ -1376,6 +1376,9 @@ lastKnownView peers oid gs lastKnown =
           -- CR 701.15b / 608.2h: goaded as it left, by either carrier. Baeloth
           -- Barrityl, Entertainer's scenarios prove it.
           Filter.goaded = not (Set.null (PC.goadedBy (LastKnown.characteristics lastKnown))) || not (Set.null (LastKnown.goadedBy lastKnown)),
+          -- CR 903.3 / 608.2h: a commander as it left. My Champion Stands
+          -- Supreme's scenarios prove it.
+          Filter.commander = LastKnown.commander lastKnown,
           Filter.attacking = LastKnown.attacking lastKnown,
           -- `attackingAlone` keeps the snapshot's empty set: LastKnown records no
           -- fellow attackers, and no card asks CR 506.5 or 506.6 of a departed
@@ -1899,9 +1902,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.isCard = False,
       -- CR 903.3's designation is recoverable only from an OBJECT, which a
       -- ProjectedCharacteristics is not -- `owner` above's situation one rule
-      -- over, and no arm passes one. So IsCommander is vacuously false of a
-      -- snapshot, which no card in `data/cards/` notices: every printed
-      -- "commander creatures you own" is a battlefield static ability.
+      -- over; lastKnownView fills it from the record for a departed object.
       Filter.commander = False,
       -- CR 113.3b: a snapshot holds characteristics rather than an
       -- object on the stack, so there is no ability here to be either kind.

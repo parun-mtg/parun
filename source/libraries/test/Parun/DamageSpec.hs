@@ -847,7 +847,8 @@ lastKnownRiderSpec s registry =
                     LastKnown.faceDown = False,
                     LastKnown.designations = Set.empty,
                     LastKnown.designationValues = Map.empty,
-                    LastKnown.goadedBy = Set.empty
+                    LastKnown.goadedBy = Set.empty,
+                    LastKnown.commander = False
                   }
               humbled = S.withHumility humility equipped
               planted =
