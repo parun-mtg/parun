@@ -1751,7 +1751,7 @@ stripsHandAbilities card =
         _ -> Projection.setsLandSubtype m
       reachesHand affected = case affected of
         Affected.MatchingAnywhere f -> not (excludesHand f)
-        Affected.MatchingOffBattlefield f -> not (excludesHand f)
+        Affected.MatchingOffBattlefield f _ -> not (excludesHand f)
         _ -> False
       offends ability = reachesHand (StaticAbility.affected ability) && any removes (StaticAbility.modifications ability)
    in any offends (Face.staticAbilities card <> grantedStaticAbilities card)
@@ -3575,7 +3575,7 @@ affectedFilters affected = case affected of
   Affected.TheseObjects _ -> []
   Affected.Matching f -> [f]
   Affected.MatchingAnywhere f -> [f]
-  Affected.MatchingOffBattlefield f -> [f]
+  Affected.MatchingOffBattlefield f _ -> [f]
   Affected.Attached -> []
   Affected.AttachedPlayerControls f -> [f]
   Affected.PlayedThisWay _ -> []
@@ -6770,7 +6770,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         reaching affected = face {Face.staticAbilities = fmap (\ability -> ability {StaticAbility.affected = affected}) (Face.staticAbilities face)}
         landSubtype = face {Face.staticAbilities = fmap (\ability -> ability {StaticAbility.affected = Affected.MatchingAnywhere (Filter.Type.And []), StaticAbility.modifications = pure (Modification.LandSubtype ChangeMode.Replace Subtype.Swamp)}) (Face.staticAbilities face)}
     Spec.assertBool s (not (stripsHandAbilities face)) "the real Yixlid Jailer is accepted"
-    Spec.assertBool s (stripsHandAbilities (reaching (Affected.MatchingOffBattlefield (Filter.Type.IsInZone Zone.Hand)))) "cards in hands losing all abilities is rejected"
+    Spec.assertBool s (stripsHandAbilities (reaching (Affected.MatchingOffBattlefield (Filter.Type.IsInZone Zone.Hand) Nothing))) "cards in hands losing all abilities is rejected"
     Spec.assertBool s (stripsHandAbilities (reaching (Affected.MatchingAnywhere (Filter.Type.HasCardType CardType.Land)))) "lands in every zone losing all abilities is rejected"
     Spec.assertBool s (not (stripsHandAbilities (reaching (Affected.Matching (Filter.Type.And []))))) "permanents losing all abilities is accepted"
     Spec.assertBool s (stripsHandAbilities landSubtype) "CR 305.7 a land type set in every zone is rejected"

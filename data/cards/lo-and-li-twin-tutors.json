@@ -58,24 +58,26 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "IsInZone",
-                  "value": "Stack"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Controller",
-                    "relation": "You"
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "IsInZone",
+                    "value": "Stack"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  },
+                  {
+                    "type": "HasSubtype",
+                    "value": "Lesson"
                   }
-                },
-                {
-                  "type": "HasSubtype",
-                  "value": "Lesson"
-                }
-              ]
+                ]
+              }
             }
           },
           "modifications": [

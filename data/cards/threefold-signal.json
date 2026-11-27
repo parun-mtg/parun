@@ -14,30 +14,32 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "WasCastFrom"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Controller",
-                    "relation": "You"
-                  }
-                },
-                {
-                  "type": "Measures",
-                  "value": {
-                    "comparison": "Exactly",
-                    "measure": "ColorCount",
-                    "operand": {
-                      "type": "Literal",
-                      "value": 3
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "WasCastFrom"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  },
+                  {
+                    "type": "Measures",
+                    "value": {
+                      "comparison": "Exactly",
+                      "measure": "ColorCount",
+                      "operand": {
+                        "type": "Literal",
+                        "value": 3
+                      }
                     }
                   }
-                }
-              ]
+                ]
+              }
             }
           },
           "modifications": [

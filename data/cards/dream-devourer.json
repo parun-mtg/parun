@@ -25,34 +25,36 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "Not",
-                  "value": {
-                    "type": "HasCardType",
-                    "value": "Land"
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "Not",
+                    "value": {
+                      "type": "HasCardType",
+                      "value": "Land"
+                    }
+                  },
+                  {
+                    "type": "IsInZone",
+                    "value": "Hand"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Owner",
+                      "relation": "You"
+                    }
+                  },
+                  {
+                    "type": "Not",
+                    "value": {
+                      "type": "HasKeywordFamily",
+                      "value": "Foretell"
+                    }
                   }
-                },
-                {
-                  "type": "IsInZone",
-                  "value": "Hand"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Owner",
-                    "relation": "You"
-                  }
-                },
-                {
-                  "type": "Not",
-                  "value": {
-                    "type": "HasKeywordFamily",
-                    "value": "Foretell"
-                  }
-                }
-              ]
+                ]
+              }
             }
           },
           "modifications": [

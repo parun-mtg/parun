@@ -20,20 +20,22 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "HasSubtype",
-                  "value": "Goblin"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Owner",
-                    "relation": "You"
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasSubtype",
+                    "value": "Goblin"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Owner",
+                      "relation": "You"
+                    }
                   }
-                }
-              ]
+                ]
+              }
             }
           },
           "modifications": [
