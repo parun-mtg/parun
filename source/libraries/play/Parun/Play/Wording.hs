@@ -28,6 +28,8 @@ import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
+import qualified Parun.Types.Announced as Announced
+import qualified Parun.Types.AnnouncedChoice as AnnouncedChoice
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.Ballot as Ballot
@@ -688,6 +690,7 @@ event reader view logged = case LoggedEvent.event logged of
   GameEvent.VotesRevealed ballots -> said [Text.pack "The votes are revealed:", listing (fmap ballot (Foldable.toList ballots))]
   GameEvent.ChoseSecretly c -> said [subject reader (SecretChoice.player (ChoseSecretly.choice c)), Text.pack "secretly", conjugated reader (SecretChoice.player (ChoseSecretly.choice c)) "chooses", Maybe.fromMaybe (Text.pack (show (SecretChoice.subtype (ChoseSecretly.choice c)))) (Subtype.creatureTypeWord (SecretChoice.subtype (ChoseSecretly.choice c)))]
   GameEvent.ChoiceRevealed c -> said [acts reader (SecretChoice.player c) "reveals the chosen", Maybe.fromMaybe (Text.pack (show (SecretChoice.subtype c))) (Subtype.creatureTypeWord (SecretChoice.subtype c))]
+  GameEvent.Announced a -> said [acts reader (Announced.player a) "chooses", announcement (Announced.choice a), Text.pack "for", name (Announced.object a)]
   GameEvent.AbilityCountered c -> said [name (Countering.countered c), Text.pack "is countered"]
   GameEvent.CountersPut c -> said [acts reader (CountersPlaced.putter c) "puts", counters (CountersPlaced.after c `less` CountersPlaced.before c) (CountersPlaced.kind c), Text.pack "on", name (CountersPlaced.object c)]
   GameEvent.PlayerCountersPut c -> said [acts reader (PlayerCountersPlaced.putter c) "puts", count (PlayerCountersPlaced.after c `less` PlayerCountersPlaced.before c) (Char.toLower <$> show (PlayerCountersPlaced.kind c) <> " counter"), Text.pack "on", if PlayerCountersPlaced.player c == PlayerCountersPlaced.putter c && reader == Just (PlayerCountersPlaced.putter c) then Text.pack "yourself" else objective reader (PlayerCountersPlaced.player c)]
@@ -741,6 +744,20 @@ event reader view logged = case LoggedEvent.event logged of
       source : _ -> name source <> Text.pack "'s ability"
       [] -> name oid
     said parts = Just (Text.unwords parts <> Text.pack ".")
+    lower :: (Show x) => x -> Text.Text
+    lower = Text.toLower . Text.pack . show
+    -- CR 608.2d: what an announced choice chose.
+    announcement choice = case choice of
+      AnnouncedChoice.MkColors colors -> listing (fmap lower (Set.toList colors))
+      AnnouncedChoice.MkColorless -> Text.pack "colorless"
+      AnnouncedChoice.MkSubtype subtype -> Maybe.fromMaybe (Text.pack (show subtype)) (Subtype.creatureTypeWord subtype)
+      AnnouncedChoice.MkCardType cardType -> lower cardType
+      AnnouncedChoice.MkNumber n -> Text.pack (show n)
+      AnnouncedChoice.MkParity parity -> lower parity
+      AnnouncedChoice.MkWord word -> word
+      AnnouncedChoice.MkName named' -> CardName.unwrap named'
+      AnnouncedChoice.MkCard card -> name card
+      AnnouncedChoice.MkPlayer pid -> objective reader pid
     less a b = if a > b then a - b else 0
     by actors one many object =
       let names = fmap name (Set.toList actors)

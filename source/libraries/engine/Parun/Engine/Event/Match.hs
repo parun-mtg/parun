@@ -1114,6 +1114,7 @@ anyTriggerReads event = case event of
   GameEvent.Voted {} -> False
   GameEvent.VotesRevealed {} -> False
   GameEvent.ChoseSecretly {} -> False
+  GameEvent.Announced {} -> False
   GameEvent.ChoiceRevealed {} -> False
   GameEvent.SpellCountered {} -> True
   GameEvent.AbilityCountered {} -> True

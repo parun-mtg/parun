@@ -219,6 +219,9 @@ library codec
     Parun.Codec.AmassKindSpec
     Parun.Codec.Anchor
     Parun.Codec.AnchorSpec
+    Parun.Codec.Announced
+    Parun.Codec.AnnouncedChoice
+    Parun.Codec.AnnouncedChoiceSpec
     Parun.Codec.AnotherCounter
     Parun.Codec.AnotherCounterSpec
     Parun.Codec.Answer
@@ -3082,6 +3085,8 @@ library types
     Parun.Types.AmassKind
     Parun.Types.Anchor
     Parun.Types.AnchorPool
+    Parun.Types.Announced
+    Parun.Types.AnnouncedChoice
     Parun.Types.Announcement
     Parun.Types.AnotherCounter
     Parun.Types.Answer

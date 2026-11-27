@@ -9,6 +9,7 @@ module Parun.Codec.GameEvent where
 import qualified Parun.Codec.AbilityTriggered as AbilityTriggered
 import qualified Parun.Codec.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Codec.ActivatedAbilitySource as ActivatedAbilitySource
+import qualified Parun.Codec.Announced as Announced
 import qualified Parun.Codec.AttackerBlocked as AttackerBlocked
 import qualified Parun.Codec.AttackerDeclared as AttackerDeclared
 import qualified Parun.Codec.AttackerUnblocked as AttackerUnblocked
@@ -116,6 +117,7 @@ codec =
       Arm.payload "VotesRevealed" (Common.seq Ballot.codec) GameEvent.VotesRevealed (\x -> case x of GameEvent.VotesRevealed y -> Just y; _ -> Nothing),
       Arm.payload "ChoseSecretly" ChoseSecretly.codec GameEvent.ChoseSecretly (\x -> case x of GameEvent.ChoseSecretly y -> Just y; _ -> Nothing),
       Arm.payload "ChoiceRevealed" SecretChoice.codec GameEvent.ChoiceRevealed (\x -> case x of GameEvent.ChoiceRevealed y -> Just y; _ -> Nothing),
+      Arm.payload "Announced" Announced.codec GameEvent.Announced (\x -> case x of GameEvent.Announced y -> Just y; _ -> Nothing),
       Arm.payload "SpellCountered" Countering.codec GameEvent.SpellCountered (\x -> case x of GameEvent.SpellCountered y -> Just y; _ -> Nothing),
       Arm.payload "AbilityCountered" Countering.codec GameEvent.AbilityCountered (\x -> case x of GameEvent.AbilityCountered y -> Just y; _ -> Nothing),
       Arm.payload "LifeLost" LifeChange.codec GameEvent.LifeLost (\x -> case x of GameEvent.LifeLost y -> Just y; _ -> Nothing),
@@ -205,6 +207,7 @@ tagOf x = case x of
   GameEvent.Voted {} -> "Voted"
   GameEvent.ChoseSecretly {} -> "ChoseSecretly"
   GameEvent.ChoiceRevealed {} -> "ChoiceRevealed"
+  GameEvent.Announced {} -> "Announced"
   GameEvent.VotesRevealed {} -> "VotesRevealed"
   GameEvent.SpellCountered {} -> "SpellCountered"
   GameEvent.AbilityCountered {} -> "AbilityCountered"

@@ -4,6 +4,7 @@ import Data.Sequence (Seq)
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
+import qualified Parun.Types.Announced as Announced
 import qualified Parun.Types.AttackerBlocked as AttackerBlocked
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.AttackerUnblocked as AttackerUnblocked
@@ -259,6 +260,8 @@ data GameEvent
   | -- | A secret choice was revealed (CostComponent.RevealSecretChoice): A
     -- Killer Among Us's ruling (2024-02-02).
     ChoiceRevealed SecretChoice.SecretChoice
+  | -- | CR 608.2d: a player announced a choice made in the open.
+    Announced Announced.Announced
   | -- | CR 701.6a: a spell was COUNTERED. Emitted by Parun.Engine.Event.counter,
     -- the one funnel every countering goes through, and distinct from the Moved
     -- event the same removal records: CR 608.2n sends a resolved spell to the

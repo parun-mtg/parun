@@ -486,6 +486,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
             }
         controlled = gs {GameState.control = Map.singleton S.alice (row NonEmpty.:| [])}
     Spec.assertBool s (length chosen == 1 && not (any Map.null chosen)) ("alice secretly chose one type: " <> show chosen)
+    Spec.assertEqWith s "bob's log does not announce it" (filter (Text.isInfixOf (Text.pack "chooses")) (loggedFor S.bob resolved)) []
     Spec.assertEqWith s "no log entry is left to tell it" (PlayerView.Type.witnessed (PlayerView.viewFor S.alice gs)) []
     Spec.assertEqWith s "alice sees her type" (shown S.alice gs) chosen
     Spec.assertEqWith s "bob does not" (shown S.bob gs) [Map.empty]
@@ -502,6 +503,35 @@ spec s registry = Spec.describe s "PlayerView" $ do
     Spec.assertEqWith s "the Servant chose a colour" (length chosen) 1
     Spec.assertEqWith s "alice sees it" (shown S.alice) chosen
     Spec.assertEqWith s "bob sees it" (shown S.bob) chosen
+  -- CR 608.2d: Brave the Elements' colour, chosen as it resolves and on no
+  -- permanent after, is told in the other seat's log.
+  Spec.it s "CR 608.2d a choice announced as a spell resolves is in every seat's log" $ do
+    brave <- S.printingOf s registry "Brave the Elements"
+    plains <- S.printingOf s registry "Plains"
+    let (spell, staged) = S.addHandCard brave S.alice (S.landsFor plains S.alice 1 (Setup.emptyGame S.bothPlayers))
+        gs = S.runPure S.identityAnswer (primedMain staged) (S.cast S.alice spell >> Engine.priorityLoop)
+        told = filter (Text.isInfixOf (Text.pack "chooses")) (loggedFor S.bob gs)
+    Spec.assertEqWith s "bob's log names alice's colour" told [Text.pack "Player 1 chooses white for Brave the Elements."]
+  Spec.it s "CR 608.2d a player chosen as a spell resolves is in every seat's log" $ do
+    handoff <- S.printingOf s registry "Fateful Handoff"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    swamp <- S.printingOf s registry "Swamp"
+    let (spell, staged) = S.addHandCard handoff S.alice (snd (S.addObjectIn Zone.Battlefield bears S.alice (S.landsFor swamp S.alice 4 (Setup.emptyGame S.bothPlayers))))
+        gs = S.runPure S.identityAnswer (primedMain staged) (S.cast S.alice spell >> Engine.priorityLoop)
+        told = filter (Text.isInfixOf (Text.pack "chooses")) (loggedFor S.bob gs)
+    Spec.assertEqWith s "bob's log names him" told [Text.pack "Player 1 chooses you for Fateful Handoff."]
+  Spec.it s "CR 608.2d a card name chosen as a spell resolves is in every seat's log" $ do
+    ban <- S.printingOf s registry "Conjurer's Ban"
+    plains <- S.printingOf s registry "Plains"
+    swamp <- S.printingOf s registry "Swamp"
+    let (spell, staged) = S.addHandCard ban S.alice (S.landsFor swamp S.alice 1 (S.landsFor plains S.alice 1 (Setup.emptyGame S.bothPlayers)))
+        naming :: Prompt.Prompt r -> r
+        naming p = case p of
+          Prompt.ChooseCardName {} -> CardName.MkCardName (Text.pack "Shock")
+          _ -> S.identityAnswer p
+        gs = S.runPure naming (primedMain staged) (S.cast S.alice spell >> Engine.priorityLoop)
+        told = filter (Text.isInfixOf (Text.pack "chooses")) (loggedFor S.bob gs)
+    Spec.assertEqWith s "bob's log names the name" told [Text.pack "Player 1 chooses Shock for Conjurer's Ban."]
   Spec.it s "a look reaches only its audience" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (oid, placed) = S.addObjectIn Zone.Hand piker S.alice (Setup.emptyGame S.bothPlayers)

@@ -66,6 +66,7 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AddPhases as AddPhases
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.Amass as Amass.Type
+import qualified Parun.Types.AnnouncedChoice as AnnouncedChoice
 import qualified Parun.Types.AnotherCounter as AnotherCounter
 import qualified Parun.Types.BindAmount as BindAmount
 import qualified Parun.Types.BindLeaders as BindLeaders
@@ -524,6 +525,8 @@ chooseCardName resolving source controller legal (ChooseCardName.MkChooseCardNam
   -- still keeps a named card (its CR 608.2h scenario under data/scenarios).
   Monad.unless (Map.null picked) $
     State.modify' (Game.recordChoice Chosen.Names (Game.readingAcquisition resolving source gs source) (const (Just picked)) source)
+  -- CR 608.2d: each name announced.
+  Foldable.for_ (Map.toList picked) $ \(chooser, names) -> Event.announce chooser source (fmap AnnouncedChoice.MkName (Set.toList names))
 
 -- CR 608.2d: Mystic Compass's "the basic land type of your choice" and
 -- Persecute's "choose a color", the resolving controller's, through
@@ -547,7 +550,10 @@ chooseQuality resolving source controller choice = do
     (QualityChooser.EachPlayer distinct, ChosenQuality.Word offered) -> Event.chooseWordEach (Players.table (Plane.rangePerspective source controller gs) gs) distinct offered acquisition source
     -- Unprinted (ChooseQuality.chooser): each player choosing another quality.
     (QualityChooser.EachPlayer _, _) -> pure ()
-    (QualityChooser.Controller, quality) -> Event.chooseQuality quality controller (resolvingAbilityName resolving gs) acquisition source
+    -- CR 608.2d: announced, unless secret.
+    (QualityChooser.Controller, quality) -> do
+      chosen <- Event.chooseQuality quality controller (resolvingAbilityName resolving gs) acquisition source
+      Monad.unless (ChooseQuality.secret choice) (Event.announce controller source chosen)
   -- A Killer Among Us's ruling: a secret choice remembers its chooser, the one
   -- player who may reveal it (CostComponent.RevealSecretChoice), and is shown
   -- to them and whoever controls them (CR 724.4) alone.

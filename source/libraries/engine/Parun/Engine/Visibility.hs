@@ -74,6 +74,7 @@ witnessed pid logged = case LoggedEvent.event logged of
   GameEvent.VotesRevealed _ -> Visibility.Visible
   GameEvent.ChoseSecretly chose -> visibleIf (Set.member pid (ChoseSecretly.audience chose))
   GameEvent.ChoiceRevealed _ -> Visibility.Visible
+  GameEvent.Announced _ -> Visibility.Visible -- CR 608.2d
   GameEvent.Moved moved -> visibleIf (Moved.revealed moved || Moved.seenArriving moved)
   GameEvent.CardArrived change -> visibleIf (not (Game.isHiddenZone (ZoneChange.to change)))
   GameEvent.DamageDealt {} -> Visibility.Visible
