@@ -227,15 +227,17 @@ accepted translated = translated <$ traverse said (Card.faces translated)
 
 -- | One line of mtgish's AST file as the card it means, or the node kind it
 -- stopped at. Only a card of one normal face is read, a vanguard card (CR
--- 313) or a scheme card (CR 314) as one, or a preparation card (CR 723), its
--- own face first and its prepare spell's after ('Layout.Preparation').
+-- 313), a scheme card (CR 314) or a plane or phenomenon card (CR 310, CR 312)
+-- as one, or a preparation card (CR 723), its own face first and its prepare
+-- spell's after ('Layout.Preparation').
 card :: Value.Value -> Translated Card.Card
 card value = do
   pairs <- Common.asObject value
   oracleCard <- Common.field "_OracleCard" pairs >>= Common.asText
   case Text.unpack oracleCard of
-    -- A scheme card (CR 314) is one face too.
-    kind | kind `elem` ["Card", "Scheme"] -> do
+    -- A scheme card (CR 314) is one face too, as is a plane or phenomenon
+    -- card (CR 310, CR 312), which mtgish calls planar.
+    kind | kind `elem` ["Card", "Scheme", "Planar"] -> do
       f <- readFace [] pairs
       pure Card.MkCard {Card.synthetic = False, Card.layout = Layout.Normal, Card.faces = f NonEmpty.:| []}
     -- Its modifiers are CANDIDATES' ('Ingest.reprint'), as its type line is.
@@ -833,8 +835,32 @@ trigger n = case Node.tag n of
   -- CR 904.9: "When you set this scheme in motion".
   "WhenAPlayerSetsASchemeInMotion" -> do
     (who, what) <- pair n
-    Monad.unless (singlePlayer who == Just "You" && singleScheme what == Just "ThisScheme") (Node.untranslated n)
+    Monad.unless (singlePlayer who == Just "You" && singleOf "SingleScheme" what == Just "ThisScheme") (Node.untranslated n)
     Right (TriggerCondition.TurnedUpOffDeck ActingPermanent.Self, outermost)
+  -- CR 701.31d: "When you planeswalk to [this plane]".
+  "WhenAPlayerPlaneswalksToAPlane" -> do
+    (who, what) <- pair n
+    Monad.unless (singlePlayer who == Just "You" && singleOf "SinglePlane" what == Just "ThisPlane") (Node.untranslated n)
+    Right (TriggerCondition.TurnedUpOffDeck ActingPermanent.Self, outermost)
+  -- CR 312.5: "When you encounter [this phenomenon]".
+  "WhenAPlayerEncountersAPhenomenon" -> do
+    (who, what) <- pair n
+    Monad.unless (singlePlayer who == Just "You" && singleOf "SinglePhenomenon" what == Just "ThisPhenomenon") (Node.untranslated n)
+    Right (TriggerCondition.TurnedUpOffDeck ActingPermanent.Self, outermost)
+  -- CR 701.31d: "When you planeswalk away from [this plane]".
+  "WhenAPlayerPlaneswalksAwayFromAPlane" -> do
+    (who, what) <- pair n
+    Monad.unless (singlePlayer who == Just "You" && singleOf "SinglePlane" what == Just "ThisPlane") (Node.untranslated n)
+    Right (TriggerCondition.SelfPlaneswalkedAwayFrom, outermost)
+  -- CR 311.7: "Whenever chaos ensues".
+  "WhenChaosEnsues" -> Right (TriggerCondition.ChaosEnsues, outermost)
+  -- CR 603.1b: several events, the rest of the ability naming only what
+  -- every one of them names.
+  "Or" -> do
+    events <- Node.argument n >>= Common.asArray >>= traverse (Node.node Monad.>=> trigger)
+    case fmap (bindings . snd) events of
+      first : rest -> Right (TriggerCondition.AnyOf (fmap fst events), outermost {bindings = List.foldl' Map.intersection first rest})
+      [] -> Node.untranslated n
   "AtTheBeginningOfTheEndStep" -> Right (TriggerCondition.StepBegins (StepBegins.MkStepBegins (Phase.Ending EndingStep.EndStep) Nothing (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))), outermost)
   _ -> Node.untranslated n
   where
@@ -971,10 +997,11 @@ single value = case Node.node value of
   Right n | Node.tag n == "SinglePermanent", Right p <- Node.child n -> Just (Node.tag p)
   _ -> Nothing
 
--- | The one scheme a description of schemes names, by its tag.
-singleScheme :: Value.Value -> Maybe String
-singleScheme value = case Node.node value of
-  Right n | Node.tag n == "SingleScheme", Right p <- Node.child n -> Just (Node.tag p)
+-- | The one object a description names, by its tag, given the tag of the
+-- description's single-object node ("SingleScheme", "SinglePlane").
+singleOf :: String -> Value.Value -> Maybe String
+singleOf kind value = case Node.node value of
+  Right n | Node.tag n == kind, Right p <- Node.child n -> Just (Node.tag p)
   _ -> Nothing
 
 -- | The one player a description of players names, by its tag: 'single' for

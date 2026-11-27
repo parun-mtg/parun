@@ -1,0 +1,48 @@
+{
+  "faces": [
+    {
+      "name": "Planewide Disaster",
+      "oracleText": "When you encounter Planewide Disaster, destroy all creatures. (Then planeswalk away from this phenomenon.)",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Destroy",
+                        "value": {
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            }
+                          },
+                          "regenerability": "Regenerable"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Phenomenon"
+        ]
+      }
+    }
+  ]
+}

@@ -95,6 +95,12 @@ event context creature c = case c of
   TriggerCondition.AnyOf [TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource (BlockCount.EachCreature f) Batching.EachOccurrence Nothing), TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker Filter.Type.IsSource (BlockCount.EachCreature g) Batching.EachOccurrence Nothing)] | f == g -> do
     (one, that) <- described context f
     itself recurring (Text.pack ("blocks or becomes blocked by " <> one)) [(thatAttacker, that), (thatBlocker, that)] []
+  -- CR 701.31d: the plane's own arrival, then a step beginning: "When you
+  -- planeswalk to Amy's Home and at the beginning of your upkeep".
+  TriggerCondition.AnyOf [TriggerCondition.TurnedUpOffDeck ActingPermanent.Self, begins@TriggerCondition.StepBegins {}] -> do
+    later <- event context creature begins
+    Just rest <- [Text.stripPrefix (Text.pack "At ") (opening later)]
+    [later {opening = Text.pack ("When you planeswalk to " <> self <> " and at ") <> rest, named = True}]
   TriggerCondition.AnyOf cs@(_ : _ : _) -> do
     parts <- traverse (selfEvent context creature) cs
     let openings = if all ((== ["When"]) . fst3) parts then ["When"] else recurring
@@ -239,6 +245,11 @@ event context creature c = case c of
   TriggerCondition.TurnedUpOffDeck ActingPermanent.Self -> do
     happens <- ["set " <> self <> " in motion", "encounter " <> self, "planeswalk to " <> self]
     [MkEvent (Text.pack ("When you " <> happens)) True Map.empty []]
+  -- CR 701.31d: "When you planeswalk away from [this plane]".
+  TriggerCondition.SelfPlaneswalkedAwayFrom -> [MkEvent (Text.pack ("When you planeswalk away from " <> self)) True Map.empty []]
+  -- CR 311.7: a plane's chaos ability. Free: "Whenever" or "When" (Bad Wolf
+  -- Bay).
+  TriggerCondition.ChaosEnsues -> [other (opening' <> " chaos ensues") [] | opening' <- recurring]
   TriggerCondition.PlayerFacesDilemma PlayerRelation.You -> [other "Whenever you face a dilemma" []]
   TriggerCondition.PlayerExpends (PlayerExpends.MkPlayerExpends PlayerRelation.You n) -> [other ("Whenever you expend " <> show n) []]
   _ -> []
