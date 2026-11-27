@@ -148,7 +148,10 @@ event context creature c = case c of
       if noncreature f
         then ["is put into a graveyard from the battlefield"]
         else "dies" : ["is put into a graveyard from the battlefield" | eitherKind f]
-    [other ("Whenever " <> subject <> " " <> verb) [(becameSlot, word), (departedPermanent, word)]]
+    -- Free: "Whenever", or "When" for a source that removes itself (The Very
+    -- Soil Shall Shake).
+    opening' <- recurring
+    [other (opening' <> " " <> subject <> " " <> verb) [(becameSlot, word), (departedPermanent, word)]]
   TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker f BlockCount.Once Batching.EachOccurrence Nothing) -> do
     (one, that) <- described context f
     -- Free: the attacker is "it" (Somberwald Alpha) or "that creature".
