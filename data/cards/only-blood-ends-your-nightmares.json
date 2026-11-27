@@ -1,0 +1,87 @@
+{
+  "faces": [
+    {
+      "name": "Only Blood Ends Your Nightmares",
+      "oracleText": "When you set this scheme in motion, each opponent sacrifices a creature of their choice. Then each opponent who didn't sacrifice a creature discards two cards.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PlayerSacrifices",
+                        "value": {
+                          "filter": {
+                            "type": "HasCardType",
+                            "value": "Creature"
+                          },
+                          "permanents": "sacrificed",
+                          "players": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "BindPlayers",
+                        "value": {
+                          "players": {
+                            "type": "HoldersOfBound",
+                            "value": {
+                              "holder": "Controller",
+                              "hop": "Itself",
+                              "slot": "sacrificed"
+                            }
+                          },
+                          "slot": "sacrificers"
+                        }
+                      },
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "Counted",
+                          "value": {
+                            "player": {
+                              "type": "EachOpponentExcept",
+                              "value": "sacrificers"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 2
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Scheme"
+        ]
+      }
+    }
+  ]
+}
