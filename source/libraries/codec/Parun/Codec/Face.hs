@@ -197,7 +197,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
   openingHandActions <- Fields.defaulted "openingHandActions" [] (Common.list (HandAction.codec cardCodec)) Face.openingHandActions
   gameStartActions <- Fields.defaulted "gameStartActions" [] (Common.list (HandAction.codec cardCodec)) Face.gameStartActions
   -- CR 116.2: the special actions this face grants (Parun.Types.Face).
-  specialActions <- Fields.defaulted "specialActions" [] (Common.list SpecialAction.codec) Face.specialActions
+  specialActions <- Fields.defaulted "specialActions" [] (Common.list (SpecialAction.codec (Effect.codec cardCodec (GrantedAbility.codec cardCodec)))) Face.specialActions
   -- CR 113.6g: Counterable is the absence of a card stating it can't be
   -- countered.
   counterability <- Fields.defaulted "counterability" Counterability.Type.Counterable Counterability.codec Face.counterability

@@ -3200,7 +3200,7 @@ data FaceChildren card f = MkFaceChildren
     -- | An action taken from a hand at the mulligan or the game's start (CR 103.6), whole.
     faceHandAction :: HandAction.HandAction card -> f (HandAction.HandAction card),
     -- | A special action (CR 116.2), whole.
-    faceSpecialAction :: SpecialAction.SpecialAction -> f SpecialAction.SpecialAction
+    faceSpecialAction :: SpecialAction.SpecialAction (Effect.Effect card (GrantedAbility.GrantedAbility card)) -> f (SpecialAction.SpecialAction (Effect.Effect card (GrantedAbility.GrantedAbility card)))
   }
 
 -- | Every child of a face left as it is: the base a walk overrides.
@@ -3695,6 +3695,14 @@ counterRestrictionChildren c (CounterRestriction.MkCounterRestriction affected k
 counterLimitChildren :: (Applicative f) => RuleChildren f -> CounterLimit.CounterLimit -> f CounterLimit.CounterLimit
 counterLimitChildren c (CounterLimit.MkCounterLimit kind atMost) =
   CounterLimit.MkCounterLimit <$> ruleCounterKind c kind <*> pure atMost
+
+-- | A special action's effects (CR 116.2, 307.5), each through `visit`; a
+-- CR 116.2d ignore is left whole.
+specialActionChildren :: (Applicative f) => (effect -> f effect) -> SpecialAction.SpecialAction effect -> f (SpecialAction.SpecialAction effect)
+specialActionChildren visit x = case x of
+  SpecialAction.DiscardThisAnyTime -> pure x
+  SpecialAction.IgnoreThisUntilEndOfTurn {} -> pure x
+  SpecialAction.PerformAsASorcery effects -> SpecialAction.PerformAsASorcery <$> traverse visit effects
 
 -- | A keyword cost restriction's children (CR 702.122d, 702.196b).
 keywordCostRestrictionChildren :: (Applicative f) => RuleChildren f -> KeywordCostRestriction.KeywordCostRestriction -> f KeywordCostRestriction.KeywordCostRestriction

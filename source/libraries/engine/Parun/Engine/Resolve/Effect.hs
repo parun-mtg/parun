@@ -147,6 +147,7 @@ import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Settle as Settle
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Snapshots as Snapshots
+import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
 import qualified Parun.Types.TapPermanents as TapPermanents
@@ -877,6 +878,16 @@ runPreventionRider runSubgame prevention = Foldable.for_ (Prevention.rider preve
 runLaterPayment :: Game Result -> PreventionRider.PreventionRider -> Game ()
 runLaterPayment runSubgame payoff =
   Monad.void (runCarrying runSubgame (PreventionRider.source payoff) (PreventionRider.controller payoff) Map.empty (PreventionRider.targets payoff) (PreventionRider.effects payoff))
+
+-- CR 307.5: run the effects of the sorcery-timed special action `source` grants
+-- (SpecialAction.PerformAsASorcery), `pid` being CR 109.5's "you", without the
+-- stack (CR 116.1). The first such grant: no printing prints two.
+runSorcerySpeedAction :: Game Result -> PlayerId -> ObjectId -> Game ()
+runSorcerySpeedAction runSubgame pid source = do
+  gs <- State.get
+  case [effects | SpecialAction.PerformAsASorcery effects <- Projection.specialActionsOf source gs] of
+    effects : _ -> Monad.void (runCarrying runSubgame source pid Map.empty Map.empty effects)
+    [] -> pure ()
 
 -- CR 707.10: a StoredEffects.copyCasts row's "if you cast a spell this way,
 -- copy this ability if ...", run as the spell it allowed becomes cast (CR

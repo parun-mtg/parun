@@ -1,5 +1,6 @@
 module Parun.Types.SpecialAction where
 
+import qualified Data.Sequence as Seq
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Keyword as Keyword
@@ -21,7 +22,9 @@ import qualified Parun.Types.Keyword as Keyword
 -- here; and CR 116.2c's permission is created by a
 -- RESOLUTION rather than printed, so it rides the stored effect it ends (Parun.Types.Expiry's WhenPaid)
 -- or its own stored row (Parun.Types.LaterPayment) rather than a face's text; see #875.
-data SpecialAction
+--
+-- Parametric in the effect for Parun.Types.LaterPayment's reason.
+data SpecialAction effect
   = -- | CR 116.2e: "You may discard this card any time you could cast an
     -- instant." Circling Vultures is the card the rule names.
     --
@@ -64,4 +67,9 @@ data SpecialAction
     -- totalled through CR 601.2f: a special action is neither a spell being cast
     -- nor an ability being activated.
     IgnoreThisUntilEndOfTurn AbilityName.AbilityName (Cost.Cost Keyword.Keyword)
+  | -- | CR 307.5: "any time you could cast a sorcery, you may" do these
+    -- effects, without the stack -- a special action by Talon Gates' ruling,
+    -- though CR 116.2 lists no such row. "You" is the granting object's
+    -- controller (Parun.Engine.Action.sorcerySpeedGrants).
+    PerformAsASorcery (Seq.Seq effect)
   deriving (Eq, Ord, Show)

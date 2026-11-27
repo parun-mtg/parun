@@ -1,5 +1,6 @@
 module Parun.Codec.SpecialActionSpec where
 
+import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Parun.Codec.SpecialAction as SpecialAction
 import qualified Parun.JsonCodec.Common as Common
@@ -15,7 +16,7 @@ spec s = Spec.describe s "Parun.Codec.SpecialAction" $ do
   Spec.it s "DiscardThisAnyTime" $
     Common.assertCodec
       s
-      SpecialAction.codec
+      (SpecialAction.codec Common.text)
       SpecialAction.DiscardThisAnyTime
       " {\"type\":\"DiscardThisAnyTime\"} "
   -- Leonin Arbiter's {2}, which is the whole of its ignore cost, under the name
@@ -23,7 +24,7 @@ spec s = Spec.describe s "Parun.Codec.SpecialAction" $ do
   Spec.it s "IgnoreThisUntilEndOfTurn" $
     Common.assertCodec
       s
-      SpecialAction.codec
+      (SpecialAction.codec Common.text)
       ( SpecialAction.IgnoreThisUntilEndOfTurn
           (AbilityName.MkAbilityName (Text.pack "search ban"))
           Cost.MkCost
@@ -32,5 +33,12 @@ spec s = Spec.describe s "Parun.Codec.SpecialAction" $ do
             }
       )
       " {\"type\":\"IgnoreThisUntilEndOfTurn\",\"value\":{\"ability\":\"search ban\",\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":2}]}}} "
+  -- CR 307.5: Talon Gates' sorcery-timed suspend, its effects stood in for.
+  Spec.it s "PerformAsASorcery" $
+    Common.assertCodec
+      s
+      (SpecialAction.codec Common.text)
+      (SpecialAction.PerformAsASorcery (Seq.singleton (Text.pack "suspend")))
+      " {\"type\":\"PerformAsASorcery\",\"value\":[\"suspend\"]} "
   Spec.it s "has a schema" $
-    Common.assertHasSchema s SpecialAction.codec
+    Common.assertHasSchema s (SpecialAction.codec Common.text)

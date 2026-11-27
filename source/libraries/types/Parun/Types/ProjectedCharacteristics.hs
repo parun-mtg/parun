@@ -241,7 +241,7 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- own printed face never mentions. Seeded and touched by no layer but CR
     -- 612.5's exchange and CR 612.6's full text, exactly as playerAbilities
     -- above is, and read by Parun.Engine.Projection.specialActionsOf.
-    specialActions :: [SpecialAction.SpecialAction],
+    specialActions :: [SpecialAction.SpecialAction (Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card))],
     -- | CR 602 / 613 layer 6: the object's activated abilities after the layer
     -- system. Seeded from the card and added to by CR 613.1f's grant (Presence of
     -- Gond); emptied by LoseAllAbilities (Humility) and by CR 305.7's strip at
