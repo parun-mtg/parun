@@ -312,8 +312,8 @@ data Quantity
     -- would have begun.
     AttackersInTheirLastTurn PlayerRef.PlayerRef
   | -- | CR 608.2i / 800.4i: how many times the players named did what the tally
-    -- names this turn, summed.
-    TalliedThisTurn TurnTally.TurnTally PlayerRef.PlayerRef
+    -- names, during the turn it names, summed.
+    Tallied TurnTally.TurnTally PlayerRef.PlayerRef
   | -- | CR 119.3 / 608.2i: how much life that player gained or lost during the
     -- turn the tally names, summed from that turn's GameEvent.LifeGained or
     -- LifeLost log.

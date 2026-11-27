@@ -185,10 +185,12 @@
                 "value": []
               },
               "perEach": {
-                "type": "CardsDrawnThisTurn",
+                "type": "CardsDrawn",
                 "value": {
-                  "type": "Relative",
-                  "value": "Opponent"
+                  "player": {
+                    "type": "Relative",
+                    "value": "Opponent"
+                  }
                 }
               },
               "subject": {

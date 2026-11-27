@@ -2,14 +2,17 @@ module Parun.Types.TurnTally where
 
 import qualified Data.Set as Set
 import qualified Parun.Types.PlayerAction as PlayerAction
+import qualified Parun.Types.WhichTurn as WhichTurn
 import qualified Parun.Types.Zone as Zone
 
--- | What Parun.Types.Quantity's TalliedThisTurn counts players doing this turn.
+-- | What Parun.Types.Quantity's Tallied counts players doing this turn, or
+-- during the turn a draw tally names.
 data TurnTally
   = -- | CR 701.9a: cards discarded, a cycled card included (CR 702.29a).
     CardsDiscarded
-  | -- | CR 121.1: cards drawn -- Deem Inferior's "each card you've drawn this turn".
-    CardsDrawn
+  | -- | CR 121.1: cards drawn during the turn named -- Deem Inferior's "each card
+    -- you've drawn this turn", Mine Is the Only Truth's "you drew a card last turn".
+    CardsDrawn WhichTurn.WhichTurn
   | -- | CR 603.1b / 608.2i: how many of these acts (Parun.Types.PlayerAction)
     -- were done, each counted once.
     ActionsDone (Set.Set PlayerAction.PlayerAction)

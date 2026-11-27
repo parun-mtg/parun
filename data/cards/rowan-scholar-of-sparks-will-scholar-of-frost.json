@@ -22,10 +22,12 @@
                       "value": {
                         "comparison": "AtMost",
                         "measured": {
-                          "type": "CardsDrawnThisTurn",
+                          "type": "CardsDrawn",
                           "value": {
-                            "type": "Relative",
-                            "value": "You"
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           }
                         },
                         "threshold": {
@@ -65,10 +67,12 @@
                       "value": {
                         "comparison": "AtLeast",
                         "measured": {
-                          "type": "CardsDrawnThisTurn",
+                          "type": "CardsDrawn",
                           "value": {
-                            "type": "Relative",
-                            "value": "You"
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
                           }
                         },
                         "threshold": {

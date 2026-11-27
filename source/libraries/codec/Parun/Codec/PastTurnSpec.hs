@@ -1,5 +1,6 @@
 module Parun.Codec.PastTurnSpec where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Parun.Codec.PastTurn as PastTurn
 import qualified Parun.JsonCodec.Common as Common
@@ -28,8 +29,9 @@ spec s = Spec.describe s "Parun.Codec.PastTurn" $ do
               LoggedEvent.MkLoggedEvent
                 { LoggedEvent.group = EventGroup.next EventGroup.first,
                   LoggedEvent.event = GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Ending EndingStep.EndStep) (PlayerId.MkPlayerId 2))
-                }
+                },
+          PastTurn.draws = Map.singleton (PlayerId.MkPlayerId 0) 2
         }
-      " {\"activePlayers\":[2,0],\"events\":[{\"group\":1,\"event\":{\"type\":\"StepBegan\",\"value\":{\"phase\":{\"type\":\"Ending\",\"value\":\"EndStep\"},\"player\":2}}}]} "
+      " {\"activePlayers\":[2,0],\"events\":[{\"group\":1,\"event\":{\"type\":\"StepBegan\",\"value\":{\"phase\":{\"type\":\"Ending\",\"value\":\"EndStep\"},\"player\":2}}}],\"draws\":{\"0\":2}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s PastTurn.codec

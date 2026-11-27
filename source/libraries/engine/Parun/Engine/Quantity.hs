@@ -929,7 +929,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- CR 508.1a / 608.2i: how many creatures that player has declared as attackers
         -- this turn -- rule 207.2c's raid, compared against 1. OpponentsAttacked's arm
         -- in arity: Nothing for a reference naming anything but exactly one player,
-        -- since "whose attack?" has no sum. TalliedThisTurn's in footing: a fold over
+        -- since "whose attack?" has no sum. Tallied's in footing: a fold over
         -- TurnRegisters.events, whose extent Engine.beginTurnOf's clearing makes
         -- "this turn".
         --
@@ -938,7 +938,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- is checked, would read an empty record. Game.attackersDeclaredThisTurn is the
         -- fold, so a second reader cannot drift from this one.
         --
-        -- An EMPTY log answers 0 rather than Nothing, as TalliedThisTurn's does.
+        -- An EMPTY log answers 0 rather than Nothing, as Tallied's does.
         -- What is unanswered is only the reference.
         Quantity.AttackersDeclaredThisTurn ref -> case playersOf ref of
           Just [pid] -> Just (toInteger (Game.attackersDeclaredThisTurn gs pid))
@@ -960,13 +960,14 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
           Just [pid] -> Just (toInteger (Game.attackersInTheirLastTurn gs pid))
           _ -> Nothing
         -- CR 608.2i: how many times the players the reference names did what the
-        -- tally names this turn, SUMMED -- Heliod, the Warped Eclipse's "each card
-        -- your opponents have drawn this turn". The history roster, LifeChanged's:
-        -- CR 800.4i finds an action taken by a player who has since left the game.
+        -- tally names during the turn it names, SUMMED -- Heliod, the Warped
+        -- Eclipse's "each card your opponents have drawn this turn". The history
+        -- roster, LifeChanged's: CR 800.4i finds an action taken by a player who
+        -- has since left the game.
         -- An EMPTY record answers 0 rather than Nothing: nobody having discarded is
         -- an answered question. What is unanswered is only the reference.
-        Quantity.TalliedThisTurn tally ref ->
-          fmap (sum . fmap (\pid -> talliedThisTurn tally pid gs)) (historyPlayersOf ref)
+        Quantity.Tallied tally ref ->
+          fmap (sum . fmap (\pid -> tallied tally (Filter.perspective context) pid gs)) (historyPlayersOf ref)
         -- CR 119.3 / 608.2i: how much life the players the tally names gained or lost
         -- during the turn it names, SUMMED -- a live fold over that turn's log
         -- (Game.turnLog). Summed rather than asked of one player, so "an opponent
@@ -984,7 +985,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- Voldaren Scion's, 2021-09-24). Game.lifeChangedAmong is the fold spectacle
         -- shares.
         --
-        -- An EMPTY log answers 0 rather than Nothing, as TalliedThisTurn's does.
+        -- An EMPTY log answers 0 rather than Nothing, as Tallied's does.
         -- What is unanswered is only the reference.
         Quantity.LifeChanged tally -> case historyPlayersOf (LifeTally.player tally) of
           Just pids -> Just (toInteger (Game.lifeChangedAmong (LifeTally.direction tally) (Game.turnLog (LifeTally.turn tally) (Filter.perspective context) gs) (`elem` pids)))
@@ -1004,7 +1005,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- The history roster, LifeChanged's: an opponent dealt damage who has since
         -- left the game still counts (CR 800.4i; Tymna the Weaver's ruling).
         --
-        -- An EMPTY log answers 0 rather than Nothing, as TalliedThisTurn's does.
+        -- An EMPTY log answers 0 rather than Nothing, as Tallied's does.
         -- What is unanswered is only the reference.
         --
         -- The kind narrows the log to CR 510.2's combat damage where a card says
@@ -1048,7 +1049,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- more spells this turn" the same maximum compared to 2. Summing the seats
         -- would answer those wrongly when two players cast one spell each.
         --
-        -- An ABSENT entry answers 0 rather than Nothing, as TalliedThisTurn's
+        -- An ABSENT entry answers 0 rather than Nothing, as Tallied's
         -- empty log does: nobody having cast is an answered question. What is
         -- unanswered is only the reference.
         --
@@ -1238,7 +1239,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         --
         -- BlockersBeyond's arm in shape -- read LIVE off game state rather than
         -- through the injected view, an entry being an event and not a characteristic --
-        -- and TalliedThisTurn's in extent: Engine.beginTurnOf clears the log at
+        -- and Tallied's in extent: Engine.beginTurnOf clears the log at
         -- the turn handoff, so "this turn" is the log's own reach and nothing here names
         -- a window. LIVE matters for CR 611.3a -- Projection.conditionHolds
         -- re-asks this every time the projection is taken, so the hexproof goes
@@ -1923,7 +1924,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.AttackersDeclaredThisCombat -> False
   Quantity.AttackedInLastTurnOf _ -> False
   Quantity.AttackersInTheirLastTurn _ -> False
-  Quantity.TalliedThisTurn _ _ -> True
+  Quantity.Tallied _ _ -> True
   Quantity.LifeChanged _ -> True
   Quantity.PlayersDealtDamage _ -> True
   Quantity.DamageDealtToPlayersThisTurn _ -> True
@@ -2062,8 +2063,9 @@ controlGainedThisTurn :: GameState -> PlayerId.PlayerId -> ObjectId -> Maybe Pla
 controlGainedThisTurn gs pid oid current =
   any ((== pid) . ControlChanged.after) (Game.controlChangesThisTurn oid gs) || Game.enteredUnderThisTurn oid current gs == Just pid
 
--- | CR 608.2i: how many times this player did what the tally names this turn.
--- Discards fold TurnRegisters.events, which the turn handoff clears
+-- | CR 608.2i: how many times this player did what the tally names this turn,
+-- or during the turn a draw tally names (Game.drawsDuring, read from the
+-- perspective's seat for "since your last turn"). Discards fold TurnRegisters.events, which the turn handoff clears
 -- (Engine.beginTurnOf), so the log's extent IS "this turn"; Game.discardOf
 -- rather than the Moved event the same discard files, and a cycled card counts
 -- (CR 702.29a). Draws read the turn-scoped tally Event keeps per draw; acts
@@ -2076,10 +2078,10 @@ controlGainedThisTurn gs pid oid current =
 -- controller's, on their turn), so dropping the gate leaves the suite green.
 -- Excluding an origin, they fold the log's GameEvent.LandPlayed instead, which
 -- names the zone (CR 305.1).
-talliedThisTurn :: TurnTally.TurnTally -> PlayerId.PlayerId -> GameState -> Integer
-talliedThisTurn tally pid gs = case tally of
+tallied :: TurnTally.TurnTally -> Maybe PlayerId.PlayerId -> PlayerId.PlayerId -> GameState -> Integer
+tallied tally perspective pid gs = case tally of
   TurnTally.CardsDiscarded -> toInteger (length (filter ((== Just pid) . Game.discardOf . LoggedEvent.event) (Foldable.toList (Turn.eventsThisTurn gs))))
-  TurnTally.CardsDrawn -> toInteger (Seq.length (Map.findWithDefault Seq.empty pid (Turn.drawsThisTurn gs)))
+  TurnTally.CardsDrawn which -> toInteger (Game.drawsDuring which perspective pid gs)
   TurnTally.ActionsDone acts -> toInteger (Game.actionsDoneThisTurn acts gs pid)
   TurnTally.DilemmasFaced -> toInteger (Game.doneThisTurn Game.dilemmaFacer gs pid)
   TurnTally.CrimesCommitted -> toInteger (Game.doneThisTurn Game.criminal gs pid)

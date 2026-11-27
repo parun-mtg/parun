@@ -2,6 +2,7 @@
 
 module Parun.Codec.PastTurn where
 
+import qualified Data.Map.Strict as Map
 import qualified Parun.Codec.LoggedEvent as LoggedEvent
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.JsonCodec.Codec as Codec
@@ -15,8 +16,10 @@ codec :: Codec.Codec PastTurn.PastTurn
 codec = Fields.object $ do
   activePlayers <- Fields.required "activePlayers" (Common.list PlayerId.codec) PastTurn.activePlayers
   events <- Fields.required "events" (Common.seq LoggedEvent.codec) PastTurn.events
+  draws <- Fields.defaulted "draws" Map.empty (Common.naturalMap PlayerId.codec Common.natural) PastTurn.draws
   pure
     PastTurn.MkPastTurn
       { PastTurn.activePlayers = activePlayers,
-        PastTurn.events = events
+        PastTurn.events = events,
+        PastTurn.draws = draws
       }

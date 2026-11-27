@@ -1552,7 +1552,8 @@ withLastTurn events gs =
               History.pastTurns (GameState.history gs)
                 Seq.|> PastTurn.MkPastTurn
                   { PastTurn.activePlayers = [TurnRegisters.activePlayer (GameState.turn gs)],
-                    PastTurn.events = events
+                    PastTurn.events = events,
+                    PastTurn.draws = Map.empty
                   }
           }
     }

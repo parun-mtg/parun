@@ -36,9 +36,11 @@
                   "aggregation": {
                     "type": "Greatest",
                     "value": {
-                      "type": "CardsDrawnThisTurn",
+                      "type": "CardsDrawn",
                       "value": {
-                        "type": "Candidate"
+                        "player": {
+                          "type": "Candidate"
+                        }
                       }
                     }
                   },

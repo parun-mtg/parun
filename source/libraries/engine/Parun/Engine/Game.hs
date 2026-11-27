@@ -3739,6 +3739,27 @@ turnLog which perspective gs = case which of
     past = History.pastTurns (GameState.history gs)
     live = Turn.eventsThisTurn gs
 
+-- | CR 121.1: how many cards the player drew during the turn named, turnLog's
+-- turns: the live one off Turn.drawsThisTurn, a finished one off its
+-- PastTurn.draws, since the log's GameEvent.Drew counts CR 103.5's opening
+-- hands into the first turn's.
+--
+-- Unprinted: a draw tally reading WhichTurn.SinceOwnLastTurn; no lint keeps it
+-- out of card data.
+drawsDuring :: WhichTurn.WhichTurn -> Maybe PlayerId -> PlayerId -> GameState -> Natural
+drawsDuring which perspective pid gs = case which of
+  WhichTurn.ThisTurn -> live
+  WhichTurn.LastTurn -> case Seq.viewr past of
+    _ Seq.:> newest -> drawn newest
+    Seq.EmptyR -> 0
+  WhichTurn.SinceOwnLastTurn -> case perspective of
+    Just you -> sum (fmap drawn (Seq.drop (maybe 0 (+ 1) (ownLastTurn you gs)) past)) + live
+    Nothing -> 0
+  where
+    past = History.pastTurns (GameState.history gs)
+    drawn = Map.findWithDefault 0 pid . PastTurn.draws
+    live = Natural.length (Map.findWithDefault Seq.empty pid (Turn.drawsThisTurn gs))
+
 -- CR 102.1 / 805.4: the player's own most recent finished turn, as its index
 -- in History.pastTurns: the newest whose active players hold them. Nothing
 -- before their first turn has ended. The one answer to "your last turn".

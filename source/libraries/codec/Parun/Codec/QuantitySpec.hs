@@ -742,40 +742,48 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.TalliedThisTurn TurnTally.CardsDiscarded (PlayerRef.Relative PlayerRelation.You))
+      (Quantity.Tallied TurnTally.CardsDiscarded (PlayerRef.Relative PlayerRelation.You))
       " {\"type\":\"CardsDiscardedThisTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.TalliedThisTurn TurnTally.CardsDiscarded (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))))
+      (Quantity.Tallied TurnTally.CardsDiscarded (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))))
       " {\"type\":\"CardsDiscardedThisTurn\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
-  Spec.it s "CardsDrawnThisTurn" $
+  -- CR 121.1: this turn's draws omit the turn.
+  Spec.it s "CardsDrawn this turn" $
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.TalliedThisTurn TurnTally.CardsDrawn (PlayerRef.Relative PlayerRelation.You))
-      " {\"type\":\"CardsDrawnThisTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
+      (Quantity.Tallied (TurnTally.CardsDrawn WhichTurn.ThisTurn) (PlayerRef.Relative PlayerRelation.You))
+      " {\"type\":\"CardsDrawn\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"}}} "
+  -- Mine Is the Only Truth's "you drew a card last turn".
+  Spec.it s "CardsDrawn last turn" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.Tallied (TurnTally.CardsDrawn WhichTurn.LastTurn) (PlayerRef.Relative PlayerRelation.You))
+      " {\"type\":\"CardsDrawn\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"turn\":\"LastTurn\"}} "
   -- CR 603.1b / 608.2i: the acts, as a set, beside the player. Surveillance
   -- Phantasm's scry and surveil.
   Spec.it s "ActionsDoneThisTurn" $
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.TalliedThisTurn (TurnTally.ActionsDone (Set.fromList [PlayerAction.Scry, PlayerAction.Surveil])) (PlayerRef.Relative PlayerRelation.You))
+      (Quantity.Tallied (TurnTally.ActionsDone (Set.fromList [PlayerAction.Scry, PlayerAction.Surveil])) (PlayerRef.Relative PlayerRelation.You))
       " {\"type\":\"ActionsDoneThisTurn\",\"value\":{\"actions\":[\"Scry\",\"Surveil\"],\"player\":{\"type\":\"Relative\",\"value\":\"You\"}}} "
   -- CR 700.17, on CardsDiscardedThisTurn's terms. The Caretaker's.
   Spec.it s "DilemmasFacedThisTurn" $
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.TalliedThisTurn TurnTally.DilemmasFaced (PlayerRef.Relative PlayerRelation.You))
+      (Quantity.Tallied TurnTally.DilemmasFaced (PlayerRef.Relative PlayerRelation.You))
       " {\"type\":\"DilemmasFacedThisTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
   -- CR 700.13, on CardsDiscardedThisTurn's terms. Nimble Brigand's.
   Spec.it s "CrimesCommittedThisTurn" $
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.TalliedThisTurn TurnTally.CrimesCommitted (PlayerRef.Relative PlayerRelation.You))
+      (Quantity.Tallied TurnTally.CrimesCommitted (PlayerRef.Relative PlayerRelation.You))
       " {\"type\":\"CrimesCommittedThisTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
   -- CR 305.2a, on CardsDiscardedThisTurn's terms. Fastbond's excludes no
   -- origin, Spider-Man 2099's your hand.
@@ -783,12 +791,12 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.TalliedThisTurn (TurnTally.LandsPlayed Set.empty) (PlayerRef.Relative PlayerRelation.You))
+      (Quantity.Tallied (TurnTally.LandsPlayed Set.empty) (PlayerRef.Relative PlayerRelation.You))
       " {\"type\":\"LandsPlayedThisTurn\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"}}} "
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.TalliedThisTurn (TurnTally.LandsPlayed (Set.singleton Zone.Hand)) (PlayerRef.Relative PlayerRelation.You))
+      (Quantity.Tallied (TurnTally.LandsPlayed (Set.singleton Zone.Hand)) (PlayerRef.Relative PlayerRelation.You))
       " {\"type\":\"LandsPlayedThisTurn\",\"value\":{\"excluding\":[\"Hand\"],\"player\":{\"type\":\"Relative\",\"value\":\"You\"}}} "
   -- CR 119.3: the tally's record, whose own spec covers its fields. Fortifying
   -- Draught's is this turn's gain; First Response's last turn's loss.

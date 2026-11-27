@@ -148,10 +148,12 @@
                             "parts": [
                               {
                                 "quantity": {
-                                  "type": "CardsDrawnThisTurn",
+                                  "type": "CardsDrawn",
                                   "value": {
-                                    "type": "InSlot",
-                                    "value": "opponent"
+                                    "player": {
+                                      "type": "InSlot",
+                                      "value": "opponent"
+                                    }
                                   }
                                 },
                                 "ref": {
