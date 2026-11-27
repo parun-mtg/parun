@@ -91,7 +91,7 @@
                       },
                       {
                         "type": "Planeswalk",
-                        "value": null
+                        "value": {}
                       }
                     ]
                   }
