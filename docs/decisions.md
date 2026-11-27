@@ -3260,7 +3260,8 @@ Entries are ordered by the first rule each cites.
   instance, so its choices (Naya's "target creature you control") are theirs.
   A static ability likewise applies as though each member controlled it:
   Naya lets each member play any number of lands, and Grixis and The Caldaia
-  reach each member's own cards.
+  reach each member's own cards, and Edge of Malacol's replacement reaches
+  each member's creatures.
 - **Rejected**: The planar controller controlling every instance, each with a
   member's "you": that player would choose among a teammate's creatures,
   which CR 810.5 keeps theirs. "You" as the team, one instance reading both members at once:
@@ -3269,15 +3270,17 @@ Entries are ordered by the first rule each cites.
   poison its members' own.
 - **Site**: `Parun.Engine.Plane.planarYous`, read by
   `Parun.Engine.Event.Trigger.eventTriggers`' `teamWide`,
-  `Parun.Engine.PlayerEffect.printedRows` and
-  `Parun.Engine.Projection.affectsFramed`, proved by the scenarios
+  `Parun.Engine.PlayerEffect.printedRows`,
+  `Parun.Engine.Projection.affectsFramed` and
+  `Parun.Engine.Replacement.applicable`, proved by the scenarios
   `cr-901-12c-tazeem-s-chaos-draws-for-each-member-of-the-planar-team`,
   `cr-901-12c-academy-at-tolaria-west-triggers-for-each-empty-handed-member-of-the-planar-team`,
   `cr-901-12c-naya-lets-each-member-of-the-planar-team-play-any-number-of-lands`,
   `cr-901-12c-grixis-gives-unearth-to-a-creature-card-in-each-planar-team-member-s-graveyard`
+  `cr-901-12c-the-caldaia-gives-blitz-to-a-creature-spell-each-planar-team-member-casts`
   and
-  `cr-901-12c-the-caldaia-gives-blitz-to-a-creature-spell-each-planar-team-member-casts`.
-- **Issue**: #9165, #9178.
+  `cr-901-12c-edge-of-malacol-spares-a-tapped-creature-of-each-member-of-the-planar-team`.
+- **Issue**: #9165, #9178, #10054.
 
 ## Which planar controller controls a Grand Melee plane
 
