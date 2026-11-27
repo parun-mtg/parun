@@ -355,6 +355,7 @@ import qualified Parun.Codec.DestroySpec
 import qualified Parun.Codec.DestructionCauseSpec
 import qualified Parun.Codec.DestructionRSpec
 import qualified Parun.Codec.DestructionRewriteSpec
+import qualified Parun.Codec.DevotionColorsSpec
 import qualified Parun.Codec.DevotionSpec
 import qualified Parun.Codec.DevourCountSpec
 import qualified Parun.Codec.DevourSpec
@@ -1585,6 +1586,7 @@ spec s reference corpus = do
   Parun.Codec.DestructionRewriteSpec.spec s
   Parun.Codec.DestructionRSpec.spec s
   Parun.Codec.DevotionSpec.spec s
+  Parun.Codec.DevotionColorsSpec.spec s
   Parun.Codec.CommanderColorsSpec.spec s
   Parun.Codec.ComputedLifeSpec.spec s
   Parun.Codec.DevourCountSpec.spec s

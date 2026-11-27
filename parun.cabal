@@ -794,6 +794,8 @@ library codec
     Parun.Codec.DestructionRewriteSpec
     Parun.Codec.DestructionRSpec
     Parun.Codec.Devotion
+    Parun.Codec.DevotionColors
+    Parun.Codec.DevotionColorsSpec
     Parun.Codec.DevotionSpec
     Parun.Codec.Devour
     Parun.Codec.DevourCount
@@ -3400,6 +3402,7 @@ library types
     Parun.Types.DestructionRewrite
     Parun.Types.Desync
     Parun.Types.Devotion
+    Parun.Types.DevotionColors
     Parun.Types.Devour
     Parun.Types.DevourCount
     Parun.Types.DiceReading

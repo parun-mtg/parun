@@ -35,6 +35,7 @@ import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Devotion as Devotion
+import qualified Parun.Types.DevotionColors as DevotionColors
 import qualified Parun.Types.DistinctOf as DistinctOf
 import qualified Parun.Types.DraftNoteTally as DraftNoteTally
 import qualified Parun.Types.EventTeam as EventTeam
@@ -644,13 +645,13 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.Devotion (Devotion.MkDevotion (PlayerRef.Relative PlayerRelation.You) (Set.singleton Color.Red)))
-      " {\"type\":\"Devotion\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"colors\":[\"Red\"]}} "
+      (Quantity.Devotion (Devotion.MkDevotion (PlayerRef.Relative PlayerRelation.You) (DevotionColors.Listed (Set.singleton Color.Red))))
+      " {\"type\":\"Devotion\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"colors\":{\"type\":\"Listed\",\"value\":[\"Red\"]}}} "
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.Devotion (Devotion.MkDevotion (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (Set.fromList [Color.Black, Color.Green])))
-      " {\"type\":\"Devotion\",\"value\":{\"player\":{\"type\":\"InSlot\",\"value\":\"target\"},\"colors\":[\"Black\",\"Green\"]}} "
+      (Quantity.Devotion (Devotion.MkDevotion (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (DevotionColors.Listed (Set.fromList [Color.Black, Color.Green]))))
+      " {\"type\":\"Devotion\",\"value\":{\"player\":{\"type\":\"InSlot\",\"value\":\"target\"},\"colors\":{\"type\":\"Listed\",\"value\":[\"Black\",\"Green\"]}}} "
   Spec.it s "PartySize, relative and from a slot" $ do
     Common.assertCodec
       s
