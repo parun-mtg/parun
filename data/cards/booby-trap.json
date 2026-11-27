@@ -18,7 +18,8 @@
             }
           },
           "scope": {
-            "type": "ChosenPlayer"
+            "type": "NamedBySource",
+            "value": "Chosen"
           }
         }
       ],

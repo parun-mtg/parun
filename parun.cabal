@@ -1823,6 +1823,8 @@ library codec
     Parun.Codec.SourceChoicesSpec
     Parun.Codec.SourceDealtDamage
     Parun.Codec.SourceDealtDamageSpec
+    Parun.Codec.SourcePlayer
+    Parun.Codec.SourcePlayerSpec
     Parun.Codec.SourceSpec
     Parun.Codec.SpecialAction
     Parun.Codec.SpecialActionSpec
@@ -4004,6 +4006,7 @@ library types
     Parun.Types.Source
     Parun.Types.SourceChoices
     Parun.Types.SourceDealtDamage
+    Parun.Types.SourcePlayer
     Parun.Types.SpecialAction
     Parun.Types.SpeedDecrease
     Parun.Types.SpellCast

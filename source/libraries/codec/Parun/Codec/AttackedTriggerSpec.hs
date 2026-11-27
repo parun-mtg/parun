@@ -11,6 +11,7 @@ import qualified Parun.Types.AttackedSubject as AttackedSubject
 import qualified Parun.Types.AttackedTrigger as AttackedTrigger
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.Subtype as Subtype
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -28,8 +29,8 @@ spec s = Spec.describe s "Parun.Codec.AttackedTrigger" $ do
     Common.assertCodec
       s
       AttackedTrigger.codec
-      (AttackedTrigger.MkAttackedTrigger Nothing AttackedSubject.Enchanted Nothing)
-      " {\"attacked\":{\"type\":\"Enchanted\"}} "
+      (AttackedTrigger.MkAttackedTrigger Nothing (AttackedSubject.NamedBySource SourcePlayer.Enchanted) Nothing)
+      " {\"attacked\":{\"type\":\"NamedBySource\",\"value\":\"Enchanted\"}} "
   -- Attuma, Atlantean Warlord's "whenever one or more Merfolk you control
   -- attack a player".
   Spec.it s "a count writes its attackers" $

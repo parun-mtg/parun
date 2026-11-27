@@ -38,6 +38,8 @@ import qualified Parun.Codec.Keyword as Keyword.Codec
 import qualified Parun.Codec.PhaseSelector as PhaseSelector.Codec
 import qualified Parun.Codec.Quantity as Quantity.Codec
 import qualified Parun.Codec.Scope as Scope.Codec
+import qualified Parun.Codec.SourcePlayer as SourcePlayer.Codec
+import qualified Parun.Codec.TargetedSubject as TargetedSubject.Codec
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Children as Children
@@ -292,12 +294,14 @@ import qualified Parun.Types.SkipWindow as SkipWindow
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.Superlative as Superlative
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.Tap as Tap
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
+import qualified Parun.Types.TargetedSubject as TargetedSubject
 import qualified Parun.Types.TheseDiscard as TheseDiscard
 import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
@@ -317,6 +321,7 @@ import qualified Parun.Types.UntapRewrite as UntapRewrite
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.WhichTurn as WhichTurn
 import qualified Parun.Types.Zone as Zone
+import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
 import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 import qualified Parun.Types.ZoneScope as ZoneScope
 
@@ -588,8 +593,8 @@ phasePatternOffends replacement = case replacement of
     ControllerRelation.Among _ -> True
     ControllerRelation.InSlot _ -> True
     ControllerRelation.Related _ -> False
-    ControllerRelation.EnchantedPlayers -> False
-    ControllerRelation.ChosenPlayers -> False
+    (ControllerRelation.NamedBySource SourcePlayer.Enchanted) -> False
+    (ControllerRelation.NamedBySource SourcePlayer.Chosen) -> False
   ReplacementEffect.CounterR {} -> False
   ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.ZoneChangeR {} -> False
@@ -730,9 +735,17 @@ engineOnlyOffends replacement = any isAmong (Resolve.relationsOf replacement) ||
     isAmong rel = case rel of
       ControllerRelation.Among _ -> True
       ControllerRelation.Related _ -> False
-      ControllerRelation.EnchantedPlayers -> False
-      ControllerRelation.ChosenPlayers -> False
+      ControllerRelation.NamedBySource _ -> False
       ControllerRelation.InSlot _ -> False
+
+-- Unprinted: a replacement row watching the SOURCE's chosen player anywhere but
+-- a damage recipient (Sawhorn Nemesis's) -- "if the chosen player would draw",
+-- say. Replacement.relationHolds would read it; no card prints one. A DamageR's
+-- one relation is that recipient (Resolve.overRelations).
+chosenRelationOffends :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool
+chosenRelationOffends replacement = case replacement of
+  ReplacementEffect.DamageR _ -> False
+  _ -> elem (ControllerRelation.NamedBySource SourcePlayer.Chosen) (Resolve.relationsOf replacement)
 
 engineOnlyArmOffends :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool
 engineOnlyArmOffends replacement = case replacement of
@@ -911,6 +924,27 @@ beginningPhaseOutsideWindow value
       Value.Null _ -> 0
       Value.Boolean _ -> 0
       Value.Number _ -> 0
+
+-- | How many BecomesTargeted conditions in an encoding watch this subject. By
+-- the condition's own key, since every NamedBySource carrier spells its arm alike.
+targetedSubjects :: TargetedSubject.TargetedSubject -> Value.Value -> Int
+targetedSubjects subject value =
+  let field name o = Pair.value <$> List.find ((== Text.pack name) . String.unwrap . Pair.name) (Object.unwrap o)
+      here :: Int
+      here = case value of
+        Value.Object o
+          | field "type" o == Just (Value.string "BecomesTargeted"),
+            Just (Value.Object v) <- field "value" o,
+            field "subject" v == Just (Codec.encode TargetedSubject.Codec.codec subject) ->
+              1
+        _ -> 0
+   in here + case value of
+        Value.Array a -> sum (fmap (targetedSubjects subject) (Array.unwrap a))
+        Value.Object o -> sum (fmap (targetedSubjects subject . Pair.value) (Object.unwrap o))
+        Value.String _ -> 0
+        Value.Null _ -> 0
+        Value.Boolean _ -> 0
+        Value.Number _ -> 0
 
 -- | Every subtree equal to `old` replaced by `new`.
 substituteJson :: Value.Value -> Value.Value -> Value.Value -> Value.Value
@@ -1393,8 +1427,7 @@ engineOnlyPatternOffends pattern_ =
       ControllerRelation.Among _ -> True
       ControllerRelation.InSlot _ -> True
       ControllerRelation.Related _ -> False
-      ControllerRelation.EnchantedPlayers -> False
-      ControllerRelation.ChosenPlayers -> False
+      ControllerRelation.NamedBySource _ -> False
 
 -- The non-vacuity half of both lints above: is this a damage-event prohibition
 -- at all -- CR 615.12's or CR 614.9's? A wildcard is right here, where it is not
@@ -3737,6 +3770,36 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           other -> other
     Spec.assertBool s (not (any engineOnlyOffends slotted)) "Plagiarize naming its player by slot is accepted"
     Spec.assertBool s (any (engineOnlyOffends . bakeAmong) slotted) "while the same row naming a player by id is rejected"
+  -- See chosenRelationOffends.
+  Spec.it s "CR 607.2d no card watches the source's chosen player in a replacement row but a damage recipient" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace (any chosenRelationOffends . cardReplacementEffects) . Printing.card) ps
+    Spec.assertEqWith s "no offender" (fmap (S.nameOf . Printing.card) offenders) []
+  Spec.it s "the lint itself catches a chosen player in a zone-change row" $ do
+    wheel <- S.printingOf s registry "Wheel of Sun and Moon"
+    sawhorn <- S.printingOf s registry "Sawhorn Nemesis"
+    let printed = cardReplacementEffects (S.combinedFace wheel)
+        chosen replacement = case replacement of
+          ReplacementEffect.ZoneChangeR r -> ReplacementEffect.ZoneChangeR r {ZoneChangeR.matching = (ZoneChangeR.matching r) {ZoneChangePattern.whoseObject = ControllerRelation.NamedBySource SourcePlayer.Chosen}}
+          other -> other
+    Spec.assertBool s (elem (ControllerRelation.NamedBySource SourcePlayer.Enchanted) (foldMap Resolve.relationsOf printed)) "setup: the Wheel watches its enchanted player"
+    Spec.assertBool s (not (any chosenRelationOffends printed)) "the real Wheel is accepted"
+    Spec.assertBool s (any (chosenRelationOffends . chosen) printed) "the same row watching the chosen player is rejected"
+    Spec.assertBool s (elem (ControllerRelation.NamedBySource SourcePlayer.Chosen) (foldMap Resolve.relationsOf (cardReplacementEffects (S.combinedFace sawhorn)))) "setup: Sawhorn Nemesis watches its chosen player"
+    Spec.assertBool s (not (any chosenRelationOffends (cardReplacementEffects (S.combinedFace sawhorn)))) "as a damage recipient, which is accepted"
+  -- See TargetedSubject.NamedBySource.
+  Spec.it s "CR 303.4b no card watches the enchanted player become a target" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace ((/= 0) . targetedSubjects (TargetedSubject.NamedBySource SourcePlayer.Enchanted) . encodeFace) . Printing.card) ps
+    Spec.assertEqWith s "no offender" (fmap (S.nameOf . Printing.card) offenders) []
+  Spec.it s "the lint itself catches the enchanted player as a targeted subject" $ do
+    imprison <- S.printingOf s registry "Imprison This Insolent Wretch"
+    let printed = encodeFace (S.combinedFace imprison)
+        chosen = Codec.encode SourcePlayer.Codec.codec SourcePlayer.Chosen
+        enchanted = Codec.encode SourcePlayer.Codec.codec SourcePlayer.Enchanted
+    Spec.assertEqWith s "setup: Imprison watches its chosen player become a target" (targetedSubjects (TargetedSubject.NamedBySource SourcePlayer.Chosen) printed) 1
+    Spec.assertEqWith s "the real Imprison is accepted" (targetedSubjects (TargetedSubject.NamedBySource SourcePlayer.Enchanted) printed) 0
+    Spec.assertEqWith s "the same condition watching the enchanted player is rejected" (targetedSubjects (TargetedSubject.NamedBySource SourcePlayer.Enchanted) (substituteJson chosen enchanted printed)) 1
   -- CR 615.5's rider is a PREVENTION effect's, which the type cannot say. See
   -- riderWithoutPreventionOffends.
   Spec.it s "no card hangs CR 615.5's additional effect off a rewrite that prevents nothing" $ do
@@ -4834,9 +4897,9 @@ namesOneGraveyard scope = case scope of
   -- A shared team turn has several active players (CR 805.4a), and a
   -- combat several defending ones (CR 802.2a).
   ZoneScope.Scoped (PlayerScope.InRole _) -> False
-  ZoneScope.Scoped PlayerScope.ChosenPlayer -> True
+  ZoneScope.Scoped (PlayerScope.NamedBySource SourcePlayer.Chosen) -> True
   ZoneScope.Scoped PlayerScope.SourceOwner -> True
-  ZoneScope.Scoped PlayerScope.EnchantedPlayer -> True
+  ZoneScope.Scoped (PlayerScope.NamedBySource SourcePlayer.Enchanted) -> True
   -- Several opponents may each have attacked you.
   ZoneScope.Scoped PlayerScope.AttackedYou {} -> False
   ZoneScope.InSlot _ -> True

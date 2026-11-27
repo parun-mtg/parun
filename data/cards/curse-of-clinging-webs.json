@@ -52,7 +52,10 @@
                       "type": "HeldBy",
                       "value": {
                         "holder": "Controller",
-                        "relation": "EnchantedPlayers"
+                        "relation": {
+                          "type": "NamedBySource",
+                          "value": "Enchanted"
+                        }
                       }
                     }
                   ]

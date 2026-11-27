@@ -43,7 +43,6 @@ import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.Binding as Binding.Type
 import Parun.Types.Card (Card)
 import qualified Parun.Types.CardType as CardType
-import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.DifferingValue as DifferingValue
@@ -66,7 +65,6 @@ import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.Pile as Pile
 import qualified Parun.Types.PileDraw as PileDraw
-import qualified Parun.Types.PlayerChoice as PlayerChoice
 import Parun.Types.PlayerEffect (PlayerEffect)
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -84,6 +82,7 @@ import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SlotCount as SlotCount
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.TargetCount as TargetCount
@@ -756,7 +755,7 @@ targetable pcs rowsOf perspective source sourceView gs recipient =
             protects =
               Filter.matches
                 (Filter.contextIn gs controller (Just source))
-                  { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players oid gs >>= Map.lookup PlayerChoice.ChosenPlayer,
+                  { Filter.carrierChosenPlayer = Game.sourcePlayerOf SourcePlayer.Chosen oid gs,
                     Filter.carrierStickers = Game.stickersOn oid gs,
                     Filter.aimingController = Just perspective
                   }

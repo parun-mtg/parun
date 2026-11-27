@@ -74,7 +74,6 @@ import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastOrigin as CastOrigin
 import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.CastingPermission as CastingPermission
-import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.CostAddition as CostAddition
 import Parun.Types.CostAdjustments (CostAdjustments)
 import qualified Parun.Types.CostAdjustments as CostAdjustments
@@ -133,7 +132,6 @@ import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.PlayAsCopy as PlayAsCopy
-import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import Parun.Types.PlayerEffect (PlayerEffect)
 import qualified Parun.Types.PlayerEffect as PlayerEffect
@@ -195,7 +193,7 @@ inScope pid controller = inScopeWithin Nothing (Just controller) pid controller
 -- inScope with the range a Superlative ranks over named: @reach@ is
 -- Plane.rangePerspective's, the anchor's own but for a planar source (CR
 -- 801.18), whose printed rows rank the whole table. And with the @source@ a
--- ChosenPlayer reads, which only a printed row has.
+-- NamedBySource reads, which only a printed row has.
 inScopeWithin :: Maybe ObjectId -> Maybe PlayerId -> PlayerId -> PlayerId -> GameState -> PlayerScope -> Bool
 inScopeWithin source reach pid controller gs scope = case scope of
   -- PlayerRelation.holds, the judge every player-naming position shares: CR
@@ -204,9 +202,8 @@ inScopeWithin source reach pid controller gs scope = case scope of
   PlayerScope.Related relation -> PlayerRelation.holds (Game.teams gs) relation controller pid
   PlayerScope.Superlative leading -> maybe False (List.elem pid) (leaders reach (Just controller) gs leading)
   PlayerScope.InRole role -> List.elem pid (Turn.roleHolders role gs)
-  PlayerScope.ChosenPlayer -> (source >>= \oid -> Game.currentChoice Chosen.Players oid gs >>= Map.lookup PlayerChoice.ChosenPlayer) == Just pid
+  PlayerScope.NamedBySource which -> (source >>= \oid -> Game.sourcePlayerOf which oid gs) == Just pid
   PlayerScope.SourceOwner -> (source >>= \oid -> fmap Object.owner (Game.lookupObject oid gs)) == Just pid
-  PlayerScope.EnchantedPlayer -> (source >>= \oid -> Game.enchantedPlayerOf oid gs) == Just pid
   PlayerScope.AttackedYou during kinds -> Game.attacked gs during kinds pid controller
 
 -- The same question over a CARRIER's affected set rather than over a bare scope:
@@ -263,11 +260,10 @@ playersInScope reach perspective gs scope = case scope of
   PlayerScope.Related relation -> Players.relatedAmong (Players.table reach gs) perspective gs relation
   PlayerScope.Superlative leading -> leaders reach perspective gs leading
   PlayerScope.InRole role -> Just (filter (`List.elem` Turn.roleHolders role gs) (Players.table reach gs))
-  -- No source to have chosen or to own anybody: undeterminable,
+  -- No source to name or to own anybody: undeterminable,
   -- PlayerRef.Candidate's posture.
-  PlayerScope.ChosenPlayer -> Nothing
+  PlayerScope.NamedBySource _ -> Nothing
   PlayerScope.SourceOwner -> Nothing
-  PlayerScope.EnchantedPlayer -> Nothing
   PlayerScope.AttackedYou during kinds -> fmap (\you -> filter (\pid -> Game.attacked gs during kinds pid you) (Players.table reach gs)) perspective
 
 -- CR 707.2a: the player abilities this permanent's copiable rules text gives it
@@ -3449,12 +3445,10 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
             PlayerScope.Superlative _ -> False
             -- A role is a question about the caster too, and nobody holds it.
             PlayerScope.InRole _ -> False
-            -- Nobody chose a sourceless caster.
-            PlayerScope.ChosenPlayer -> False
+            -- No source names a sourceless caster.
+            PlayerScope.NamedBySource _ -> False
             -- Nor owns one.
             PlayerScope.SourceOwner -> False
-            -- Nor enchants one.
-            PlayerScope.EnchantedPlayer -> False
             -- Nor attacked anyone.
             PlayerScope.AttackedYou {} -> False
         PlayerEffect.CantCastSpells -> False

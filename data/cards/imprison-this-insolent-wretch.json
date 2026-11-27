@@ -41,7 +41,8 @@
               "type": "Attacked",
               "value": {
                 "attacked": {
-                  "type": "Chosen"
+                  "type": "NamedBySource",
+                  "value": "Chosen"
                 }
               }
             }
@@ -67,7 +68,8 @@
             "type": "BecomesTargeted",
             "value": {
               "subject": {
-                "type": "ChosenPlayer"
+                "type": "NamedBySource",
+                "value": "Chosen"
               }
             }
           },
@@ -104,7 +106,10 @@
               "type": "HeldBy",
               "value": {
                 "holder": "Controller",
-                "relation": "ChosenPlayers"
+                "relation": {
+                  "type": "NamedBySource",
+                  "value": "Chosen"
+                }
               }
             }
           }

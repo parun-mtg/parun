@@ -77,7 +77,6 @@ import Parun.Types.Card (Card)
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardArrivedIn as CardArrivedIn
 import qualified Parun.Types.Cause as Cause
-import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ComparedTo as ComparedTo
 import qualified Parun.Types.Condition as Condition.Type
 import Parun.Types.ControllerRelation (ControllerRelation)
@@ -158,7 +157,6 @@ import qualified Parun.Types.PhaseRewrite as PhaseRewrite
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
 import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
 import qualified Parun.Types.Player as Player
-import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerInstruction as PlayerInstruction
@@ -195,6 +193,7 @@ import Parun.Types.SkipWindow (SkipWindow)
 import qualified Parun.Types.SkipWindow as SkipWindow
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Throw as Throw
@@ -1717,15 +1716,18 @@ matchesPutter gs candidate subject cause = case (subject, cause) of
 -- Projection.controllerOf's already, so `theirs` is Nothing only for an id
 -- naming no object, which no proposed event carries.
 --
--- CR 303.4b's enchanted player is read off the SOURCE's attachment rather than
--- supplied, because every reader has the source in hand and no segment bakes
--- one: a floating row's source has left the battlefield, so it enchants nobody
--- and the arm admits nothing.
+-- CR 303.4b / 607.2d's source player is read off the SOURCE (Game.sourcePlayerOf)
+-- rather than supplied, because every reader has the source in hand and no
+-- segment bakes one: a floating row's source has left the battlefield, so it
+-- enchants and chose nobody and the arm admits nothing.
+--
+-- Unprinted: a row watching the source's chosen player here, which no card
+-- prints; Parun.EffectLintSpec's "CR 607.2d no card watches the source's chosen
+-- player in a replacement row but a damage recipient" keeps it out.
 relationHolds :: GameState -> ReplacementCandidate -> ControllerRelation -> Maybe PlayerId -> Bool
 relationHolds gs candidate rel theirs = case rel of
   ControllerRelation.Related relation -> PlayerRelation.holdsFor (Game.teams gs) relation (ReplacementCandidate.controller candidate) theirs
-  ControllerRelation.EnchantedPlayers -> Maybe.isJust theirs && Game.enchantedPlayerOf (ReplacementCandidate.source candidate) gs == theirs
-  ControllerRelation.ChosenPlayers -> Maybe.isJust theirs && Game.chosenPlayerOf (ReplacementCandidate.source candidate) gs == theirs
+  ControllerRelation.NamedBySource which -> Maybe.isJust theirs && Game.sourcePlayerOf which (ReplacementCandidate.source candidate) gs == theirs
   -- An InSlot the install never baked names nobody: a printed row has no
   -- resolution whose slots it could read.
   ControllerRelation.InSlot _ -> False
@@ -1873,15 +1875,14 @@ matchesPrintedRecipient viewOf gs context de pat = case (DamagePattern.whatRecip
 -- baked when the row was installed (candidateContext) rather than a controller
 -- re-derived from a source the resolution has already left behind. A context with
 -- no perspective is judged as relationHolds judges a candidate with no "you"; an
--- unbaked InSlot names nobody, and CR 303.4b's enchanted player is read off the
--- context's source, both relationHolds' answers.
+-- unbaked InSlot names nobody, and a NamedBySource is read off the context's
+-- source, both relationHolds' answers.
 matchesRecipientPlayer :: GameState -> Filter.Context -> DamageEvent.DamageEvent -> ControllerRelation -> Bool
 matchesRecipientPlayer gs context de rel = case Recipient.playerOf (DamageEvent.target de) of
   Nothing -> False
   Just pid -> case rel of
     ControllerRelation.Related relation -> PlayerRelation.holdsFor (Filter.teams context) relation (Filter.perspective context) (Just pid)
-    ControllerRelation.EnchantedPlayers -> (Filter.source context >>= (`Game.enchantedPlayerOf` gs)) == Just pid
-    ControllerRelation.ChosenPlayers -> (Filter.source context >>= (`Game.chosenPlayerOf` gs)) == Just pid
+    ControllerRelation.NamedBySource which -> (Filter.source context >>= \oid -> Game.sourcePlayerOf which oid gs) == Just pid
     ControllerRelation.InSlot _ -> False
     ControllerRelation.Among players -> Set.member pid players
 
@@ -2132,7 +2133,7 @@ candidateContext gs candidate =
         gs
         (ReplacementCandidate.slots candidate)
         (Projection.framedWith choices source gs (Projection.sourceContext gs (ReplacementCandidate.controller candidate) source))
-          { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players source gs >>= Map.lookup PlayerChoice.ChosenPlayer,
+          { Filter.carrierChosenPlayer = Game.sourcePlayerOf SourcePlayer.Chosen source gs,
             Filter.carrierStickers = Game.stickersOn source gs
           }
 

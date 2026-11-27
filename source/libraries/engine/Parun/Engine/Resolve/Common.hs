@@ -1835,8 +1835,7 @@ bakeRelation :: Map.Map SlotName (Set PlayerId) -> ControllerRelation.Controller
 bakeRelation players rel = case rel of
   ControllerRelation.InSlot slot -> ControllerRelation.Among (Map.findWithDefault Set.empty slot players)
   ControllerRelation.Related _ -> rel
-  ControllerRelation.EnchantedPlayers -> rel
-  ControllerRelation.ChosenPlayers -> rel
+  ControllerRelation.NamedBySource _ -> rel
   ControllerRelation.Among _ -> rel
 
 -- CR 608.2h: every Filter.HeldByBound a floating row's filters carry, baked to

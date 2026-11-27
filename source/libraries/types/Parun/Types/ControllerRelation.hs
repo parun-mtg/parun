@@ -4,6 +4,7 @@ import qualified Data.Set as Set
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 
 -- | CR 614.1 / 109.5: whose object a replacement's pattern admits, relative to the
 -- candidate's "you" (ReplacementCandidate.controller): a permanent's controller,
@@ -17,12 +18,8 @@ import qualified Parun.Types.SlotName as SlotName
 data ControllerRelation
   = -- | The player in this relation to the candidate's "you" (CR 109.5, 102.3).
     Related PlayerRelation.PlayerRelation
-  | -- | CR 303.4b: the player the source enchants -- Wheel of Sun and Moon's
-    -- "enchanted player's graveyard".
-    EnchantedPlayers
-  | -- | CR 607.2d: the source's chosen player -- Imprison This Insolent
-    -- Wretch's "permanents the chosen player controls".
-    ChosenPlayers
+  | -- | CR 303.4b / 607.2d: the player the source names.
+    NamedBySource SourcePlayer.SourcePlayer
   | -- | CR 601.2c / 608.2b: the players a slot of the INSTALLING resolution names
     -- -- Plagiarize's "if target player would draw". Parun.Engine.Resolve.Effect
     -- bakes it into Among as the row is installed; unbaked, it admits nobody.

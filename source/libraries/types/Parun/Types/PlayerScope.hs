@@ -4,6 +4,7 @@ import Data.Set (Set)
 import qualified Parun.Types.AttackTargetKind as AttackTargetKind
 import qualified Parun.Types.AttackedDuring as AttackedDuring
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.Superlative as Superlative
 import qualified Parun.Types.TurnRole as TurnRole
 
@@ -58,17 +59,10 @@ data PlayerScope
     -- the active players a "the active player" ability chooses one of (Siren's
     -- Call), or the defending players.
     InRole TurnRole.TurnRole
-  | -- | CR 607.2d / 614.1c / 701.27i: the SOURCE's chosen player
-    -- (PlayerChoice.ChosenPlayer) -- Booby Trap's "the chosen player reveals each card they
-    -- draw", Shinryu, Transcendent Rival's "when the chosen player loses the
-    -- game". Nobody where the carrier has no source to read, or the source
-    -- chose nobody.
-    ChosenPlayer
+  | -- | CR 303.4b / 607.2d: the player the source names, nobody without a source.
+    NamedBySource SourcePlayer.SourcePlayer
   | -- | CR 108.3: the source's owner, nobody where the carrier has no source.
     SourceOwner
-  | -- | CR 303.4b: the player the source enchants, nobody where the carrier has
-    -- no source or the source enchants no player.
-    EnchantedPlayer
   | -- | CR 508.1b / 508.5: the players who, in the window, attacked the perspective or a
     -- permanent of one of these kinds the perspective then defended.
     AttackedYou AttackedDuring.AttackedDuring (Set AttackTargetKind.AttackTargetKind)

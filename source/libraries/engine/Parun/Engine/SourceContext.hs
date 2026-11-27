@@ -57,12 +57,7 @@ framedWith viewOf choices source gs context =
     { -- CR 608.2h / 113.7a: a source that has left still names the host it
       -- had as it left.
       Filter.sourceAttachedTo = Game.hostWithLastKnown source gs,
-      -- CR 608.2h / 603.10a: a source that has left still names the player it
-      -- enchanted as it left.
-      Filter.sourceEnchantedPlayer = Game.enchantedPlayerWithLastKnown source gs,
-      -- CR 607.2d: live, so a scheme abandoned and set in motion again, a new
-      -- object (CR 400.9), has chosen nobody until it chooses.
-      Filter.sourceChosenPlayer = Game.chosenPlayerOf source gs,
+      Filter.sourcePlayers = Map.fromList (Maybe.mapMaybe (\which -> fmap ((,) which) (Game.sourcePlayerWithLastKnown which source gs)) [minBound .. maxBound]),
       -- CR 108.3 fixes an owner when the game starts, so a live read; a source
       -- the state no longer holds answers Nothing.
       Filter.sourceOwner = fmap Object.owner (Game.lookupObject source gs),

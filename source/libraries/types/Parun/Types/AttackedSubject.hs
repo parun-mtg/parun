@@ -3,6 +3,7 @@ module Parun.Types.AttackedSubject where
 import Data.Set (Set)
 import qualified Parun.Types.AttackTargetKind as AttackTargetKind
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 
 -- | CR 508.3b / 508.3e: which attacked player or permanent fires the ability.
 data AttackedSubject
@@ -12,10 +13,8 @@ data AttackedSubject
     -- Unprinted: a battle among the kinds, or no kind at all.
     -- Parun.Codec.AttackedSubject refuses both.
     Related PlayerRelation.PlayerRelation (Set AttackTargetKind.AttackTargetKind)
-  | -- | CR 303.4b: the player this ability's source enchants.
-    Enchanted
-  | -- | CR 607.2d: the source's chosen player (Imprison This Insolent Wretch).
-    Chosen
+  | -- | CR 303.4b / 607.2d: the player this ability's source names.
+    NamedBySource SourcePlayer.SourcePlayer
   | -- | CR 508.3b: the ability's own source, a planeswalker or battle.
     Source
   deriving (Eq, Ord, Show)

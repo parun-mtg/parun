@@ -7,6 +7,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.AttackTargetKind as AttackTargetKind
 import qualified Parun.Codec.PlayerRelation as PlayerRelation
+import qualified Parun.Codec.SourcePlayer as SourcePlayer
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -20,16 +21,14 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.payload "Related" related (uncurry AttackedSubject.Related) (\x -> case x of AttackedSubject.Related relation kinds -> Just (relation, kinds); _ -> Nothing),
-      Arm.nullary "Enchanted" AttackedSubject.Enchanted,
-      Arm.nullary "Chosen" AttackedSubject.Chosen,
+      Arm.payload "NamedBySource" SourcePlayer.codec AttackedSubject.NamedBySource (\x -> case x of AttackedSubject.NamedBySource y -> Just y; _ -> Nothing),
       Arm.nullary "Source" AttackedSubject.Source
     ]
 
 tagOf :: AttackedSubject.AttackedSubject -> String
 tagOf x = case x of
   AttackedSubject.Related {} -> "Related"
-  AttackedSubject.Enchanted -> "Enchanted"
-  AttackedSubject.Chosen -> "Chosen"
+  AttackedSubject.NamedBySource {} -> "NamedBySource"
   AttackedSubject.Source -> "Source"
 
 -- | Related's two keys, "kinds" defaulting to the player alone, as "attacks

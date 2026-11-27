@@ -123,6 +123,7 @@ import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.Status as Status
@@ -1214,6 +1215,23 @@ hostOf oid gs = lookupObject oid gs >>= Object.attachedTo >>= Recipient.objectOf
 -- object is attached to nothing or to an object, and likewise no projection.
 enchantedPlayerOf :: ObjectId -> GameState -> Maybe PlayerId
 enchantedPlayerOf oid gs = lookupObject oid gs >>= Object.attachedTo >>= Recipient.playerOf
+
+-- | CR 303.4b / 607.2d: the player this object names as `which`, live off the
+-- board -- the ONE reading every SourcePlayer carrier goes through. Nothing
+-- where it enchants or chose nobody.
+sourcePlayerOf :: SourcePlayer.SourcePlayer -> ObjectId -> GameState -> Maybe PlayerId
+sourcePlayerOf which = case which of
+  SourcePlayer.Enchanted -> enchantedPlayerOf
+  SourcePlayer.Chosen -> chosenPlayerOf
+
+-- sourcePlayerOf through CR 608.2h / 603.10a: an Aura that has left still names
+-- the player it enchanted as it left. A chosen player is read live, so a scheme
+-- abandoned and set in motion again, a new object (CR 400.9), has chosen nobody
+-- until it chooses.
+sourcePlayerWithLastKnown :: SourcePlayer.SourcePlayer -> ObjectId -> GameState -> Maybe PlayerId
+sourcePlayerWithLastKnown which = case which of
+  SourcePlayer.Enchanted -> enchantedPlayerWithLastKnown
+  SourcePlayer.Chosen -> chosenPlayerOf
 
 -- hostOf through CR 608.2h: for an object that has left, what it was attached
 -- to as it left (Parun.Types.LastKnown.host).

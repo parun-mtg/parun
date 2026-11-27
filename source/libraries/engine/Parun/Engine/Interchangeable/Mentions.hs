@@ -521,8 +521,7 @@ conditionNames asking =
 controllerRelationNames :: (Monoid r) => Asking r -> ControllerRelation.ControllerRelation -> r
 controllerRelationNames asking x = case x of
   ControllerRelation.Related _ -> mempty
-  ControllerRelation.EnchantedPlayers -> mempty
-  ControllerRelation.ChosenPlayers -> mempty
+  ControllerRelation.NamedBySource _ -> mempty
   ControllerRelation.InSlot slotName -> slotNames asking slotName
   ControllerRelation.Among _playerId -> mempty
 

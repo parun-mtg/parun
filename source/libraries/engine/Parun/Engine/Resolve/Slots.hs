@@ -1976,8 +1976,7 @@ relationSlots :: ControllerRelation.ControllerRelation -> Map.Map SlotName SlotA
 relationSlots rel = case rel of
   ControllerRelation.InSlot slot -> Map.singleton slot SlotArity.Many
   ControllerRelation.Related _ -> Map.empty
-  ControllerRelation.EnchantedPlayers -> Map.empty
-  ControllerRelation.ChosenPlayers -> Map.empty
+  ControllerRelation.NamedBySource _ -> Map.empty
   ControllerRelation.Among _ -> Map.empty
 
 -- Every ControllerRelation one row's pattern carries.
