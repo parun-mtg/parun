@@ -293,8 +293,9 @@ data Object = MkObject
     -- twice, Parun.ResolveSpec).
     chosenNames :: Map.Map Acquisition.Acquisition (Map.Map PlayerId.PlayerId (Set.Set CardName.CardName)),
     -- | CR 614.1c / 701.27i / 702.174a: the players chosen for this object, keyed
-    -- by which choice -- the one its controller made as it entered (Stuffy Doll)
-    -- or transformed (Shinryu, Transcendent Rival), and the
+    -- by which choice -- the one its controller made as it entered (Stuffy Doll),
+    -- transformed (Shinryu, Transcendent Rival) or resolved a linked choice
+    -- (Imprison This Insolent Wretch, ChoosePlayer.linked), and the
     -- opponent each gift instance's cost promised (Scrapshooter), one per paid
     -- instance (CR 118.8a), and the player who secretly made the object's choice
     -- (PlayerChoice.SecretChooser, A Killer Among Us). Read by PlayerRef.ChosenPlayerOfBound off the

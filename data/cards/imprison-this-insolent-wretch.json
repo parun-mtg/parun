@@ -1,0 +1,115 @@
+{
+  "faces": [
+    {
+      "name": "Imprison This Insolent Wretch",
+      "oracleText": "(An ongoing scheme remains face up until it's abandoned.)\nWhen you set this scheme in motion, choose an opponent.\nPermanents the chosen player controls don't untap during their untap step.\nWhen the chosen player is attacked or becomes the target of a spell or ability, abandon this scheme.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ChoosePlayer",
+                        "value": {
+                          "linked": true,
+                          "scope": {
+                            "type": "Opponent"
+                          },
+                          "slot": "opponent"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacked",
+              "value": {
+                "attacked": {
+                  "type": "Chosen"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Abandon"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "BecomesTargeted",
+            "value": {
+              "subject": {
+                "type": "ChosenPlayer"
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Abandon"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "supertypes": [
+          "Ongoing"
+        ],
+        "types": [
+          "Scheme"
+        ]
+      },
+      "untapRestrictions": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "HeldBy",
+              "value": {
+                "holder": "Controller",
+                "relation": "ChosenPlayers"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

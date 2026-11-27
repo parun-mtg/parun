@@ -20,6 +20,9 @@ data ControllerRelation
   | -- | CR 303.4b: the player the source enchants -- Wheel of Sun and Moon's
     -- "enchanted player's graveyard".
     EnchantedPlayers
+  | -- | CR 607.2d: the source's chosen player -- Imprison This Insolent
+    -- Wretch's "permanents the chosen player controls".
+    ChosenPlayers
   | -- | CR 601.2c / 608.2b: the players a slot of the INSTALLING resolution names
     -- -- Plagiarize's "if target player would draw". Parun.Engine.Resolve.Effect
     -- bakes it into Among as the row is installed; unbaked, it admits nobody.

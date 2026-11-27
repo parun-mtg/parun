@@ -14,6 +14,8 @@ data AttackedSubject
     Related PlayerRelation.PlayerRelation (Set AttackTargetKind.AttackTargetKind)
   | -- | CR 303.4b: the player this ability's source enchants.
     Enchanted
+  | -- | CR 607.2d: the source's chosen player (Imprison This Insolent Wretch).
+    Chosen
   | -- | CR 508.3b: the ability's own source, a planeswalker or battle.
     Source
   deriving (Eq, Ord, Show)

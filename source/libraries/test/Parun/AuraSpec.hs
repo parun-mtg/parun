@@ -1802,7 +1802,7 @@ attachRestrictionSpec s registry = Spec.describe s "AttachRestriction" $ do
     let (nemesisId, base1) = S.addPermanent nemesis S.bob S.threePlayerGame
         (auraId, base2) = S.addPermanent pacifism S.alice base1
         wearing = S.attach auraId nemesisId base2
-        chose who = S.settleSba (wearing {GameState.objects = Map.adjust (\o -> o {Object.chosenPlayers = Map.singleton Acquisition.Own (Map.singleton PlayerChoice.AsEntersOrTransforms who)}) nemesisId (GameState.objects wearing)})
+        chose who = S.settleSba (wearing {GameState.objects = Map.adjust (\o -> o {Object.chosenPlayers = Map.singleton Acquisition.Own (Map.singleton PlayerChoice.ChosenPlayer who)}) nemesisId (GameState.objects wearing)})
         choseAlice = chose S.alice
         choseCarol = chose S.carol
     Spec.assertBool s (Set.member auraId (GameState.battlefield (S.settleSba wearing))) "before any choice the Aura is legally attached"

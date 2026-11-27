@@ -1,0 +1,143 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice",
+        "sideDecks": [
+          {
+            "key": "Scheme",
+            "value": [
+              {
+                "card": "Imprison This Insolent Wretch",
+                "label": "imp"
+              }
+            ]
+          }
+        ],
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "bf",
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob",
+        "team": 2
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "cf",
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "Upkeep"
+  },
+  "description": "Imprison This Insolent Wretch keeps the chosen opponent's permanents tapped during their untap step",
+  "note": "CR 904.2's two teams sharing their turns, so turn 2 is bob's and carol's untap step; bob's Forest, an unchosen opponent's, untaps beside carol's.",
+  "timeline": [
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOpponent",
+          "with": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$cf",
+          "tapped": true
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$bf",
+          "tapped": false
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}

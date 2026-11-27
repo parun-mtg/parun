@@ -4851,10 +4851,12 @@ attachRestrictionFilters restriction =
 
 -- CR 502.3's affected set, plus the CR 611.3a "as long as" it applies under
 -- (Static Orb's "as long as this artifact is untapped"), whose Count holds a
--- Filter.
+-- Filter. The set is AffectedSetFramed for combatRestrictionFilters' reason:
+-- Parun.Engine.UntapRestriction.gathered matches it through
+-- Projection.affectsOn (Imprison This Insolent Wretch's chosen player).
 untapRestrictionFilters :: UntapRestriction.UntapRestriction -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 untapRestrictionFilters restriction =
-  unframed (affectedFilters (UntapRestriction.affected restriction))
+  fmap ((,) AffectedSetFramed) (affectedFilters (UntapRestriction.affected restriction))
     <> foldMap conditionFilters (UntapRestriction.while restriction)
 
 -- CR 508.1d's subject, plus the CR 604.2 clause the second reading of that rule

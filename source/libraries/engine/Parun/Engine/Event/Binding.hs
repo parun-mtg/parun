@@ -1202,6 +1202,7 @@ attacksPlayersAlone :: AttackedSubject.AttackedSubject -> Bool
 attacksPlayersAlone subject = case subject of
   AttackedSubject.Related _ kinds -> kinds == Set.singleton AttackTargetKind.OfPlayer
   AttackedSubject.Enchanted -> True
+  AttackedSubject.Chosen -> True
   AttackedSubject.Source -> False
 
 -- CR 400.7: what eventBindings stamps for a LeavesZone, as (guaranteed given

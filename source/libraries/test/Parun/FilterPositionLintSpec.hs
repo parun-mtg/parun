@@ -1651,11 +1651,16 @@ relationAtoms =
 relationAtomsIn :: (ControllerRelation.ControllerRelation -> Bool) -> Value.Value -> Int
 relationAtomsIn wanted value = sum [decodedAtoms tag (maybe False wanted . relationOf) value | (tag, relationOf) <- relationAtoms]
 
--- How many EnchantedPlayers atoms (IsAttackingPlayer, HeldBy) this card asks
+-- The relations read off the source (Filter.Context's sourceEnchantedPlayer
+-- and sourceChosenPlayer).
+sourceRelation :: ControllerRelation.ControllerRelation -> Bool
+sourceRelation rel = rel == ControllerRelation.EnchantedPlayers || rel == ControllerRelation.ChosenPlayers
+
+-- How many sourceRelation atoms (IsAttackingPlayer, HeldBy) this card asks
 -- where `sourceFramed` admits them, and how many elsewhere.
 enchantedAttackedCounts :: Surveyed -> (Int, Int)
 enchantedAttackedCounts card =
-  let atoms framing = sum [relationAtomsIn (== ControllerRelation.EnchantedPlayers) (atomJson f) | (position, f) <- surveyedFilters card, framing position]
+  let atoms framing = sum [relationAtomsIn sourceRelation (atomJson f) | (position, f) <- surveyedFilters card, framing position]
    in (atoms sourceFramed, atoms (not . sourceFramed))
 
 -- The atom asked outside `sourceFramed`, the traversal and the codec disagreeing
@@ -1670,7 +1675,7 @@ attackedPlayerOffends card =
         ControllerRelation.Among _ -> True
         _ -> False
    in elsewhere /= 0
-        || framed + elsewhere /= relationAtomsIn (== ControllerRelation.EnchantedPlayers) encoded
+        || framed + elsewhere /= relationAtomsIn sourceRelation encoded
         || relationAtomsIn baked encoded /= 0
 
 -- CR 406.1's exiled pool as Filter.Shares anchors it, in an encoding:
@@ -2835,7 +2840,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "CR 303.4b no card asks IsAttackingPlayer or HeldBy of a player the filter cannot read" $ do
     let offenders = fmap fst (filter (any attackedPlayerOffends . snd) pool)
     Spec.assertEqWith s "the atom names only a player its position supplies" (fmap (S.nameOf . Printing.card) offenders) []
-    assertAuthors s registry pool "each author's atoms are framed" enchantedAttackedCounts [("Curse of Clinging Webs", 1), ("Curse of Hospitality", 1), ("Curse of Shaken Faith", 3), ("Curse of Silence", 1), ("Radiant Grace", 1)]
+    assertAuthors s registry pool "each author's atoms are framed" enchantedAttackedCounts [("Curse of Clinging Webs", 1), ("Curse of Hospitality", 1), ("Curse of Shaken Faith", 3), ("Curse of Silence", 1), ("Imprison This Insolent Wretch", 1), ("Radiant Grace", 1)]
     -- The rejected side: the atom in a spell's life-gain amount, which no source
     -- frames, and an InSlot relation in a target slot, which one does.
     piker <- S.printingOf s registry "Goblin Piker"
@@ -2857,6 +2862,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (attackedPlayerOffends (survey (slotted enchanted)))) "a target slot is framed by its source"
     Spec.assertBool s (attackedPlayerOffends (survey (slotted inSlot))) "an InSlot relation is an offence"
     Spec.assertBool s (attackedPlayerOffends (survey (counting (Filter.Type.HeldBy Holder.Controller ControllerRelation.EnchantedPlayers)))) "and HeldBy's atom is one too"
+    Spec.assertBool s (attackedPlayerOffends (survey (counting (Filter.Type.HeldBy Holder.Controller ControllerRelation.ChosenPlayers)))) "and so is the chosen player's"
     Spec.assertBool s (attackedPlayerOffends (survey (slotted (Filter.Type.HeldBy Holder.Controller (ControllerRelation.InSlot (SlotName.MkSlotName (Text.pack "target"))))))) "as is HeldBy's InSlot relation"
     Spec.assertBool s (not (attackedPlayerOffends (survey (S.combinedFace curse)))) "and the Curse itself is not"
   -- CR 406.1's exiled pool is answerable only where Filter.Context.exiledViews

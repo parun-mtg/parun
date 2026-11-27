@@ -585,6 +585,7 @@ phasePatternOffends replacement = case replacement of
     ControllerRelation.InSlot _ -> True
     ControllerRelation.Related _ -> False
     ControllerRelation.EnchantedPlayers -> False
+    ControllerRelation.ChosenPlayers -> False
   ReplacementEffect.CounterR {} -> False
   ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.ZoneChangeR {} -> False
@@ -726,6 +727,7 @@ engineOnlyOffends replacement = any isAmong (Resolve.relationsOf replacement) ||
       ControllerRelation.Among _ -> True
       ControllerRelation.Related _ -> False
       ControllerRelation.EnchantedPlayers -> False
+      ControllerRelation.ChosenPlayers -> False
       ControllerRelation.InSlot _ -> False
 
 engineOnlyArmOffends :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool
@@ -1388,6 +1390,7 @@ engineOnlyPatternOffends pattern_ =
       ControllerRelation.InSlot _ -> True
       ControllerRelation.Related _ -> False
       ControllerRelation.EnchantedPlayers -> False
+      ControllerRelation.ChosenPlayers -> False
 
 -- The non-vacuity half of both lints above: is this a damage-event prohibition
 -- at all -- CR 615.12's or CR 614.9's? A wildcard is right here, where it is not

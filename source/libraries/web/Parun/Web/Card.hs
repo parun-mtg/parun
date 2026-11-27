@@ -175,7 +175,7 @@ chosen view o =
         let label = "Named " <> list
       ]
     picked which p = case which of
-      PlayerChoice.AsEntersOrTransforms -> (seat p, "Chosen player: " <> seat p)
+      PlayerChoice.ChosenPlayer -> (seat p, "Chosen player: " <> seat p)
       PlayerChoice.Promised _ _ -> ("Gift: " <> seat p, "Gift promised to " <> seat p <> " (CR 702.174a)")
       PlayerChoice.SecretChooser -> ("Chosen secretly", seat p <> " chose secretly")
 

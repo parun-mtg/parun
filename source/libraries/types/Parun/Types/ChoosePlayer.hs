@@ -21,6 +21,10 @@ data ChoosePlayer = MkChoosePlayer
     excluding :: Maybe SlotName.SlotName,
     -- | Whether only players the effect's source could become attached to are
     -- offered -- Curse of Leeches' "attach it to a player" (CR 701.3a, 608.2d).
-    attaching :: Bool
+    attaching :: Bool,
+    -- | CR 607.2d: whether the choice is also written to the source as its
+    -- PlayerChoice.ChosenPlayer, which its other abilities read as "the chosen
+    -- player" (Imprison This Insolent Wretch).
+    linked :: Bool
   }
   deriving (Eq, Ord, Show)

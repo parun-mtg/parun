@@ -6405,7 +6405,7 @@ unlinkLostPayments oid gs = case Game.lookupObject oid gs of
         paid = Map.filter (not . Map.null) (Map.mapWithKey (\keyword -> Map.filterWithKey (\which _ -> kept keyword which)) (Object.paidCosts obj))
         promise choice = case choice of
           PlayerChoice.Promised something which -> kept (Keyword.Type.Gift something) which
-          PlayerChoice.AsEntersOrTransforms -> True
+          PlayerChoice.ChosenPlayer -> True
           PlayerChoice.SecretChooser -> True
         promises = fmap (Map.filterWithKey (\choice _ -> promise choice)) (Object.chosenPlayers obj)
         settled = obj {Object.paidCosts = paid, Object.chosenPlayers = promises}
@@ -6432,7 +6432,7 @@ choosePlayerAs candidate relation oid = do
     -- with no legal protector.
     Just controller -> Players.chooseOne controller oid Nothing (Players.offer controller gs relation)
   Replacement.consume (ReplacementCandidate.identity candidate)
-  let withPick held = case Map.alter (const picked) PlayerChoice.AsEntersOrTransforms (Maybe.fromMaybe Map.empty held) of
+  let withPick held = case Map.alter (const picked) PlayerChoice.ChosenPlayer (Maybe.fromMaybe Map.empty held) of
         chosen | Map.null chosen -> Nothing
         chosen -> Just chosen
   State.modify' $ \g -> Game.recordChoice Chosen.Players (Game.acquisitionOf oid g) withPick oid g
