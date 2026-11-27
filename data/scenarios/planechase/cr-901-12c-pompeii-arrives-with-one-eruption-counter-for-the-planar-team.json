@@ -1,0 +1,125 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "command": [
+          {
+            "card": "Academy at Tolaria West",
+            "label": "academy"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice",
+        "sideDecks": [
+          {
+            "key": "Planar",
+            "value": [
+              {
+                "card": "Pompeii",
+                "label": "pompeii"
+              }
+            ]
+          }
+        ],
+        "team": 1
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "dave",
+        "team": 1
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob",
+        "team": 2
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "PrecombatMain",
+    "twoHeadedGiant": true
+  },
+  "description": "CR 901.12c Pompeii arrives with one eruption counter for the planar team",
+  "final": [
+    {
+      "Counters": {
+        "count": 1,
+        "kind": {
+          "type": "Named",
+          "value": "eruption"
+        },
+        "object": "$pompeii"
+      }
+    }
+  ],
+  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the planar controller (CR 901.12b). Pompeii's 'When you planeswalk to Pompeii and at the beginning of your upkeep' refers to you, so CR 901.12c gives dave an instance too, but only alice planeswalks (CR 701.31a): her roll walks her to Pompeii and only her instance triggers, putting one eruption counter on it. Dave's instance triggering on her planeswalk would put a second.",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "RollPlanarDie"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 6
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $pompeii"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
