@@ -64,7 +64,7 @@
       }
     }
   ],
-  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the active team's primary player and so the planar controller (CR 901.12b). The Caldaia's 'you' applies to dave as well (CR 901.12c), as his own 'you' (docs/decisions.md, \"A plane's you is each member of the planar team\"), so the Hill Giant he casts from his hand has blitz {3}, offered beside its printed {3}{R}, and he casts it for that.",
+  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the active team's primary player and so the planar controller (CR 901.12b). The Caldaia's \"you\" is the planar team (CR 901.12c; docs/decisions.md, \"A plane's you is the planar team\"), so the Hill Giant dave casts from his hand has blitz {3}, offered beside its printed {3}{R}, and he casts it for that.",
   "timeline": [
     {
       "do": {

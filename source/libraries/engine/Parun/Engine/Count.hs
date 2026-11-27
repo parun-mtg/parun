@@ -159,7 +159,7 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
       aggregation = Count.Type.aggregation count
    in case Count.Type.scope count of
         Scope.InZone (InZone.MkInZone zone ref) -> do
-          pids <- playersFor viewOf context gs ref
+          pids <- playersFor viewOf context gs (zoneHolder context ref)
           let ids = concatMap (\pid -> residents zone pid gs) pids
               kept = Maybe.mapMaybe (\oid -> fmap ((,) (Just oid)) (keep predicate context (viewOf oid))) ids
           pure (aggregate quantityOf (Filter.evaluatedView context) aggregation kept)
@@ -740,6 +740,15 @@ playersFor viewOf context gs =
         Players.reaches = const True
       }
     gs
+
+-- CR 901.12c: whose zone a Count's "your" names -- every member of the
+-- planar team for a planar ability in a Two-Headed Giant game
+-- (Filter.youIsTeam), so Academy at Tolaria West's "if you have no cards in
+-- hand" asks the team's hands.
+zoneHolder :: Filter.Context -> PlayerRef.PlayerRef -> PlayerRef.PlayerRef
+zoneHolder context ref = case ref of
+  PlayerRef.Relative relation | Filter.youIsTeam context -> PlayerRef.Relative (PlayerRelation.asPlanarTeam relation)
+  _ -> ref
 
 -- CR 800.4i: playersFor for a tally of what HAPPENED to players, judged over
 -- every seat that began the game rather than over those still in it: a player

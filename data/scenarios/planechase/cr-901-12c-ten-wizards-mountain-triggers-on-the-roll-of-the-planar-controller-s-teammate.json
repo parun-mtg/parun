@@ -104,7 +104,7 @@
       }
     }
   ],
-  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the planar controller (CR 901.12b) under Ten Wizards Mountain. Its 'whenever you roll the planar die' refers to 'you', so it triggers for each member of her team as its own 'you' (CR 901.12c; docs/decisions.md, \"A plane's you is each member of the planar team\"): dave's blank roll (CR 901.12d) triggers his instance, which he controls and aims at his own Grizzly Bears. Read as an ability that refers to no 'you', it would be alice's alone, and dave's roll would trigger nothing.",
+  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the planar controller (CR 901.12b) under Ten Wizards Mountain. Its \"you\" is the planar team (CR 901.12c; docs/decisions.md, \"A plane's you is the planar team\"), so dave's blank roll (CR 901.12d) matches \"whenever you roll the planar die\", and the one ability it triggers is alice's (CR 311.7, 901.6): she, not dave, announces its target, and picks dave's Grizzly Bears. Read with alice alone as its \"you\", dave's roll would trigger nothing.",
   "timeline": [
     {
       "do": "Pass",
@@ -145,7 +145,7 @@
           ]
         }
       },
-      "player": "dave",
+      "player": "alice",
       "step": "PrecombatMain",
       "turn": 1
     },
@@ -166,7 +166,7 @@
           ]
         }
       },
-      "player": "dave",
+      "player": "alice",
       "step": "PrecombatMain",
       "turn": 1
     },

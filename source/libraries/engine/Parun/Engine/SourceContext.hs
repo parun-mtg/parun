@@ -22,6 +22,7 @@ import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Defender as Defender
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.CounterLink as CounterLink
@@ -55,7 +56,9 @@ framedBy viewOf source gs = framedWith viewOf (choicesOf (Game.acquisitionOf sou
 framedWith :: Count.ViewOf -> SourceChoices.SourceChoices -> ObjectId.ObjectId -> GameState.GameState -> Filter.Context -> Filter.Context
 framedWith viewOf choices source gs context =
   (withChoices choices context)
-    { -- CR 608.2h / 113.7a: a source that has left still names the host it
+    { -- CR 901.12c: a planar source's "you" is the planar team.
+      Filter.youIsTeam = Plane.readsYouAsTeam source gs,
+      -- CR 608.2h / 113.7a: a source that has left still names the host it
       -- had as it left.
       Filter.sourceAttachedTo = Game.hostWithLastKnown source gs,
       -- CR 607.2f: a word's choosers under the choices' acquisition (CR 607.5).

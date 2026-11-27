@@ -54,6 +54,14 @@
         "team": 1
       },
       {
+        "hand": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
         "library": [
           {
             "card": "Plains"
@@ -84,6 +92,11 @@
         "team": 1
       },
       {
+        "hand": [
+          {
+            "card": "Swamp"
+          }
+        ],
         "library": [
           {
             "card": "Swamp"
@@ -145,58 +158,71 @@
       }
     ],
     "sharedTeamTurns": true,
-    "step": "PostcombatMain",
+    "step": "PrecombatMain",
     "twoHeadedGiant": true
   },
-  "description": "CR 901.12c Academy at Tolaria West triggers for each empty-handed member of the planar team",
+  "description": "CR 901.12c Academy at Tolaria West's chaos discards each planar team member's hand",
   "final": [
     {
       "Count": {
+        "card": "Island",
+        "count": 1,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
         "card": "Plains",
-        "count": 7,
+        "count": 0,
         "player": "dave",
         "zone": "Hand"
       }
     },
     {
       "Count": {
-        "card": "Island",
-        "count": 1,
-        "player": "alice",
-        "zone": "Hand"
-      }
-    },
-    {
-      "Count": {
         "card": "Swamp",
-        "count": 0,
+        "count": 1,
         "player": "bob",
-        "zone": "Hand"
-      }
-    },
-    {
-      "Count": {
-        "card": "Mountain",
-        "count": 0,
-        "player": "carol",
         "zone": "Hand"
       }
     }
   ],
-  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the active team's primary player and so the planar controller (CR 901.12b). Academy's 'your end step' and 'you have no cards in hand' apply to both members of her team (CR 901.12c), each its own 'you' (docs/decisions.md, \"A plane's you is each member of the planar team\"): at their shared end step only dave, whose hand is empty, triggers it and draws seven; alice, holding an Island, does not.",
+  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the active team's primary player and so the planar controller (CR 901.12b). She rolls chaos under Academy at Tolaria West, whose ability triggers once, hers (CR 311.7, 901.6); its \"discard your hand\" reads \"you\" as the planar team (CR 901.12c; docs/decisions.md, \"A plane's you is the planar team\"), so alice discards her Island and dave his two Plains, and bob, on the other team, keeps his Swamp.",
   "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "RollPlanarDie"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
     {
       "check": {
         "Count": {
-          "card": "Island",
-          "count": 1,
-          "player": "alice",
-          "zone": "Hand"
+          "card": "Plains",
+          "count": 2,
+          "player": "dave",
+          "zone": "Graveyard"
         }
       },
-      "player": "bob",
-      "step": "Upkeep",
-      "turn": 2
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
     }
   ]
 }

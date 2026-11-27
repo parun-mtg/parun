@@ -39,7 +39,6 @@ import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.NameWords as NameWords
-import qualified Parun.Engine.Plane as Plane
 import Parun.Engine.Projection.Rewrite (Modification, composeWordChanges, rewriteActivatedAbility, rewriteAffected, rewriteCharacteristicPT, rewriteCondition, rewriteModification, rewritePlayerStaticAbility, rewritePrintedReplacement, rewriteRuleAbilities, rewriteStaticAbility, rewriteTriggeredAbility)
 import Parun.Engine.Projection.View (ControlGrant, abilitiesFromCharacteristics, abilityFaceOf, abilityFaceOfId, abilitySources, controlGrants, controllerOf, controllerOfGiven, copiableCharacteristics, copiableRuleAbilitiesOf, copiableSnapshotOf, copiableSpecialActionsOf, correspondsTo, countersOf, definesColorless, definesEveryCreatureType, functionsFromZone, grantedStaticAbilitiesOf, inSourceRangeGiven, lapsedGrantsOf, retainedThroughCardTypeSet, staticAbilitiesOf, staticTimestampOf, viewOfCard, viewOfCharacteristics, withAnnouncedX)
 import qualified Parun.Engine.Quantity as Quantity
@@ -1504,14 +1503,14 @@ affectsFramed frame grants peers source oid a partial gs = case a of
   -- derived, so a projection's own read of the template names nothing.
   Affected.PlayedThisWay _ -> False
   where
-    -- CR 109.5: "you" is the SOURCE's controller, and under CR 901.12c each
-    -- member of a planar source's team (Plane.planarYous), the candidate
-    -- matching for any of them. Safe to force: controlGrants consults no
-    -- liveness gate and so cannot re-enter this function.
-    perspectives = maybe [Nothing] (\controller -> fmap Just (Plane.planarYous source controller gs)) (controllerOfGiven grants source gs)
+    -- CR 109.5: "you" is the SOURCE's controller, read as the planar team
+    -- under CR 901.12c by the framed context (Filter.youIsTeam). Safe to
+    -- force: controlGrants consults no liveness gate and so cannot re-enter
+    -- this function.
+    perspective = controllerOfGiven grants source gs
     matchesForSome f =
       let view = viewOfCharacteristics peers oid partial (controllerOfGiven grants oid gs) (countersOf oid gs) gs
-       in any (\perspective -> Filter.matches (frame (affectedContext peers source perspective gs)) view f) perspectives
+       in Filter.matches (frame (affectedContext peers source perspective gs)) view f
     -- CR 601.2i: the candidate is the turn's nth cast matching the Filter, on a
     -- turn the scope admits, as Parun.Engine.PlayerEffect.nthCast reads
     -- CostModifier.onlyNth: each earlier cast as it was cast (CR 608.2i), and
@@ -1530,10 +1529,8 @@ affectsFramed frame grants peers source oid a partial gs = case a of
             -- CR 601.2a: the snapshot records no zone, and the cast put it on the stack.
             onStack cast' = cast' {Filter.zone = Just Zone.Stack}
             castMatches context cast = maybe False (\cast' -> Filter.matches context (onStack cast') f) (Count.snapshotView peers context gs (EventShape.SpellCast CastWindow.ThisTurn) (GameEvent.SpellCast cast))
-            nth perspective =
-              let context = frame (affectedContext peers source perspective gs)
-               in admits context && Filter.matches context view f && Natural.length (filter (castMatches context) earlier) + 1 == n
-         in any nth perspectives
+            framed = frame (affectedContext peers source perspective gs)
+         in admits framed && Filter.matches framed view f && Natural.length (filter (castMatches framed) earlier) + 1 == n
     -- CR 801.10: a static ability's effect reaches only objects within its
     -- controller's range of influence. Parun.RangeOfInfluenceSpec's "CR 801.10 a
     -- static ability does not reach a permanent outside its controller's range"

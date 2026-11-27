@@ -60,7 +60,7 @@
       }
     }
   ],
-  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the active team's primary player and so the planar controller (CR 901.12b). Grixis's 'your graveyard' reads dave's too (CR 901.12c), each member his own 'you' (docs/decisions.md, \"A plane's you is each member of the planar team\"), so dave's Wind Drake has unearth at its mana cost and he unearths it.",
+  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the active team's primary player and so the planar controller (CR 901.12b). Grixis's \"your graveyard\" reads \"you\" as the planar team (CR 901.12c; docs/decisions.md, \"A plane's you is the planar team\"), so dave's Wind Drake has unearth at its mana cost and he unearths it.",
   "timeline": [
     {
       "do": {

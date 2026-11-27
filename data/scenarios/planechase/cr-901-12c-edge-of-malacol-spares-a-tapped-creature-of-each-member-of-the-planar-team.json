@@ -113,7 +113,7 @@
     "twoHeadedGiant": true
   },
   "description": "CR 901.12c Edge of Malacol puts two counters on a tapped creature of each member of the planar team",
-  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol. In their team's untap step alice is the planar controller (CR 901.12b), and Edge of Malacol's 'a creature you control' reaches dave's creatures too (CR 901.12c; docs/decisions.md, \"A plane's you is each member of the planar team\"): dave's tapped Bears stays tapped with two +1/+1 counters while his Forest untaps, as alice's Bears does. Bob's Bears, outside its controller's untap step, gets none.",
+  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol. In their team's untap step alice is the planar controller (CR 901.12b), and Edge of Malacol's 'a creature you control' reaches dave's creatures too (CR 901.12c; docs/decisions.md, \"A plane's you is the planar team\"): dave's tapped Bears stays tapped with two +1/+1 counters while his Forest untaps, as alice's Bears does. Bob's Bears, outside its controller's untap step, gets none.",
   "timeline": [
     {
       "check": {

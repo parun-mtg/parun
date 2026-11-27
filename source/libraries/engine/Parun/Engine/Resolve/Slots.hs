@@ -3355,7 +3355,10 @@ objectRefObjects legal resolving controller source gs ref = case ref of
   -- CR 400.1's per-player zone again, but only the RESOLVING CONTROLLER's, so no
   -- scope to fold over and no APNAP order to impose. In the zone's own order,
   -- which no rule reads: CR 402.3 leaves a hand's arrangement to its owner.
-  ObjectRef.EachCardInYourHand -> Game.cardsIn Zone.Hand controller gs
+  -- CR 901.12c: each member's, for a planar source in Two-Headed Giant
+  -- (Plane.planarYous), Academy at Tolaria West's "discard your hand" --
+  -- data/scenarios/planechase/cr-901-12c-academy-at-tolaria-west-s-chaos-discards-each-member-s-hand.json.
+  ObjectRef.EachCardInYourHand -> concatMap (\you -> Game.cardsIn Zone.Hand you gs) (Plane.planarYous source controller gs)
   -- The arm above's zone under EachCardInGraveyard's scope and filter: CR
   -- 109.2a's reading again, over the hands Target.zoneScopePlayers names rather
   -- than the resolving controller's alone. In APNAP order (CR 608.2f) across

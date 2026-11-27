@@ -1355,6 +1355,11 @@ data Context = MkContext
     -- between teams, which is what a match with no board behind it gets.
     teams :: Teams.Teams,
     perspective :: Maybe PlayerId.PlayerId,
+    -- | CR 901.12c: the perspective's "you" reads as its team, for an ability
+    -- of a planar card in a Two-Headed Giant game (Plane.readsYouAsTeam).
+    -- Filled by Parun.Engine.SourceContext.framedWith; off, "you" is the
+    -- perspective alone.
+    youIsTeam :: Bool,
     source :: Maybe ObjectId.ObjectId,
     -- CR 202.3 / 208.1: the SOURCE's measures, for the Measures atom's OfSource
     -- operand (CR 702.134a's mentor, CR 702.85a's cascade, Ironclaw Curse); a
@@ -2139,7 +2144,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], seated = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, slotDealtDamage = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, sourcePlayers = Map.empty, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, carrierStickers = Seq.empty, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceChosenObjects = Set.empty, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, graveyardViews = Seq.empty, exiledViews = Seq.empty, libraryTopViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
+contextFor t p s = MkContext {teams = t, perspective = p, youIsTeam = False, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, sourceBefore = Nothing, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], seated = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, slotDealtDamage = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, sourcePlayers = Map.empty, evaluated = Nothing, evaluatedView = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, carrierStickers = Seq.empty, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceChosenObjects = Set.empty, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, graveyardViews = Seq.empty, exiledViews = Seq.empty, libraryTopViews = Seq.empty, zeroMissingPowerToughness = False, asCast = const (Just 0)}
 
 -- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
 -- 805.4a), its draft notes (CR 905.2b), what was exiled before it (CR
@@ -2147,6 +2152,11 @@ contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeas
 -- filled from the state, the facts about the table a match may ask.
 contextIn :: GameState -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
 contextIn gs p s = (contextFor (GameSettings.teams (MatchScope.settings (GameState.match gs))) p s) {activePlayers = Turn.activePlayers gs, seated = filter (\pid -> maybe False ((== Status.Playing) . Player.status) (Map.lookup pid (GameState.players gs))) (GameState.seating gs), draftNotes = fmap Player.draftNotes (GameState.players gs), exiledBeforeGame = GameState.exiledBeforeGame gs, playerCounters = fmap Player.counters (GameState.players gs)}
+
+-- | PlayerRelation.holds against the context's perspective, its "you" read as
+-- the team where CR 901.12c says so (youIsTeam).
+relationHolds :: Context -> PlayerRelation.PlayerRelation -> PlayerId.PlayerId -> PlayerId.PlayerId -> Bool
+relationHolds context relation = PlayerRelation.holds (teams context) (if youIsTeam context then PlayerRelation.asPlanarTeam relation else relation)
 
 -- | CR 800.5 / 103.1: the player ControllerRelation.LeftOf names -- the nearest
 -- seated player still in the game to the left of the perspective, or of the one
@@ -2689,7 +2699,7 @@ matches context view predicate = case predicate of
   -- or HeldBy of a player the filter cannot read" rejects either.
   Filter.HeldBy holder rel -> case (heldBy holder view, rel) of
     (Nothing, _) -> False
-    (Just h, ControllerRelation.Related relation) -> maybe False (\p -> PlayerRelation.holds (teams context) relation p h) (perspective context)
+    (Just h, ControllerRelation.Related relation) -> maybe False (\p -> relationHolds context relation p h) (perspective context)
     (Just h, ControllerRelation.NamedBySource which) -> any (Set.member h) (Map.lookup which (sourcePlayers context))
     (Just _, ControllerRelation.InSlot _) -> False
     (Just _, ControllerRelation.Among _) -> False
@@ -2789,7 +2799,7 @@ matches context view predicate = case predicate of
   -- the creature and not its controller. A player with no entry in
   -- targetViews has left the game, which CR 115.9b ignores.
   Filter.TargetsPlayer relation -> case perspective context of
-    Just p -> any (\r -> case r of Recipient.ToPlayer q -> Map.member r (targetViews view) && PlayerRelation.holds (teams context) relation p q; _ -> False) (targets view)
+    Just p -> any (\r -> case r of Recipient.ToPlayer q -> Map.member r (targetViews view) && relationHolds context relation p q; _ -> False) (targets view)
     Nothing -> False
   -- IsSource one field over: the id the RESOLUTION bound rather than the id the
   -- evaluation is sourced at. Vacuously False for a slot naming nothing, which
@@ -2818,7 +2828,7 @@ matches context view predicate = case predicate of
   -- and EMPTY is the other case: a bound object with no controller (CR 108.4), and
   -- nothing shares a controller with it.
   Filter.ControllerRelatesToBound relation hop slot ->
-    let relates pids = maybe False (\c -> any (\p -> PlayerRelation.holds (teams context) relation p c) pids) (controller view)
+    let relates pids = maybe False (\c -> any (\p -> relationHolds context relation p c) pids) (controller view)
      in case hop of
           Hop.Itself -> maybe True relates (Map.lookup slot (slotControllers context))
           -- CR 110.2 asked of the bound object's HOST (CR 303.4b), one link along
@@ -2911,7 +2921,7 @@ matches context view predicate = case predicate of
   -- read against the perspective, the protection carrier's controller.
   Filter.OfRelatedPlayer relation -> case perspective context of
     Nothing -> False
-    Just you -> ofPlayer (maybe False (PlayerRelation.holds (teams context) relation you)) (aimingController context) view
+    Just you -> ofPlayer (maybe False (relationHolds context relation you)) (aimingController context) view
   -- The arm above with its players fixed (CR 608.2h), so no perspective is read.
   Filter.OfSpecificPlayer pid -> ofPlayer (== Just pid) (aimingController context) view
   -- Baked to the arm above before any match (bakeBound,
@@ -2921,7 +2931,7 @@ matches context view predicate = case predicate of
   -- above argues for. Vacuously False for an object candidate,
   -- which has no playerIdentity, and for a match with no perspective.
   Filter.IsPlayer relation -> case (playerIdentity view, perspective context) of
-    (Just candidate, Just you) -> PlayerRelation.holds (teams context) relation you candidate
+    (Just candidate, Just you) -> relationHolds context relation you candidate
     _ -> False
   -- ControlledByRole's two readings, asked of the candidate PLAYER rather than
   -- an object's controller. Vacuously False for an object candidate.
@@ -2980,7 +2990,7 @@ matches context view predicate = case predicate of
   -- cannot read" rejects either.
   Filter.IsAttackingPlayer rel -> case (attackingPlayer view, rel) of
     (Nothing, _) -> False
-    (Just a, ControllerRelation.Related relation) -> maybe False (\p -> PlayerRelation.holds (teams context) relation p a) (perspective context)
+    (Just a, ControllerRelation.Related relation) -> maybe False (\p -> relationHolds context relation p a) (perspective context)
     (Just a, ControllerRelation.NamedBySource which) -> any (Set.member a) (Map.lookup which (sourcePlayers context))
     (Just _, ControllerRelation.InSlot _) -> False
     (Just _, ControllerRelation.Among _) -> False
@@ -2997,7 +3007,7 @@ matches context view predicate = case predicate of
   -- OWNER instead would answer a different player for a planeswalker a Confiscate
   -- has moved, which Parun.CombatEffectSpec's Soul Snare pair is the board for.
   Filter.IsAttackingPlaneswalker relation -> case (attackingPlaneswalkerController view, perspective context) of
-    (Just c, Just p) -> PlayerRelation.holds (teams context) relation p c
+    (Just c, Just p) -> relationHolds context relation p c
     _ -> False
   -- CR 310.9d: the last arm of AttackTarget, and the same posture again. The seat
   -- compared is the battle's PROTECTOR, which Parun.Engine.Projection fills through
@@ -3005,7 +3015,7 @@ matches context view predicate = case predicate of
   -- different player for every Siege (CR 310.12a), which Parun.BattleSpec's
   -- Synthetic Bulwark Snare trio is the board for.
   Filter.IsAttackingBattle relation -> case (attackingBattleProtector view, perspective context) of
-    (Just guard, Just p) -> PlayerRelation.holds (teams context) relation p guard
+    (Just guard, Just p) -> relationHolds context relation p guard
     _ -> False
   -- CR 509.1g: the same live read IsAttacking is, off the other map. Never the
   -- question Parun.Engine.Combat.isBlocked asks: CR 509.1h keeps an attacker
@@ -3112,7 +3122,7 @@ matches context view predicate = case predicate of
           DamagedParty.Anyone -> True
           DamagedParty.Source -> Maybe.isJust (source context) && Recipient.objectOf damaged == source context
           DamagedParty.Related relation -> case (Recipient.playerOf damaged, perspective context) of
-            (Just player, Just you) -> PlayerRelation.holds (teams context) relation you player
+            (Just player, Just you) -> relationHolds context relation you player
             _ -> False
           DamagedParty.InSlot slot -> case Recipient.objectOf damaged of
             Just oid -> Set.member oid (Map.findWithDefault Set.empty slot (slotObjects context))
@@ -3144,7 +3154,7 @@ matches context view predicate = case predicate of
           EntryWindow.ThisTurn -> arrivalThisTurn view
           EntryWindow.SinceOwnLastTurn -> perspective context >>= \you -> Map.lookup you (arrivalSinceOwnLastTurn view)
         enteredUnder relation = case (perspective context, enteredUnderThisTurn view) of
-          (Just you, Just player) -> PlayerRelation.holds (teams context) relation you player
+          (Just you, Just player) -> relationHolds context relation you player
           _ -> False
      in case arrival of
           Just moved -> MovedBetween.to moved == to && (Set.null from || Set.member (MovedBetween.from moved) from) && all enteredUnder under
@@ -3158,7 +3168,7 @@ matches context view predicate = case predicate of
     let moved admits = any (\(mover, placed) -> all (== placed) kind && admits mover) (countersMovedThisTurn view)
      in case motion of
           CounterMotion.Put relation -> case perspective context of
-            Just you -> moved (maybe False (PlayerRelation.holds (teams context) relation you))
+            Just you -> moved (maybe False (relationHolds context relation you))
             Nothing -> False
           CounterMotion.Removed -> moved Maybe.isNothing
   -- CR 702.122c: the same look-back asked of a RELATION rather than of one
