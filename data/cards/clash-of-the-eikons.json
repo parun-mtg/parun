@@ -69,7 +69,10 @@
                         "type": "Literal",
                         "value": 1
                       },
-                      "slot": "waning"
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "waning"
+                      }
                     }
                   }
                 ]

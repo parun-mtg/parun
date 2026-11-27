@@ -868,6 +868,7 @@ objectRefPositions =
         ("redirect-damage", Effect.RedirectDamage (RedirectDamage.MkRedirectDamage Duration.UntilEndOfTurn Nothing Nothing (Just (plantedRef "rd-from")) Nothing Nothing (plantedRef "rd-to") Nothing Uses.Unlimited (Filter.Type.And [])), [plantedRef "rd-from", plantedRef "rd-to"]),
         ("counter", Effect.Counter (Counter.MkCounter (plantedRef "co") Nothing Nothing Nothing), [plantedRef "co"]),
         ("put-counters", Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne [] (Quantity.Type.Literal 1) (plantedRef "pc") Nothing Nothing Nothing), [plantedRef "pc"]),
+        ("remove-counters", Effect.RemoveCounters (RemoveCounters.MkRemoveCounters CounterKind.PlusOnePlusOne (Quantity.Type.Literal 1) (plantedRef "rc") Nothing), [plantedRef "rc"]),
         ("divide", Effect.Divide (Divide.MkDivide (Quantity.Type.Literal 3) (plantedRef "dv") (PlayerRef.Relative PlayerRelation.You) (SlotName.MkSlotName (Text.pack "split"))), [plantedRef "dv"]),
         ("move-counters", Effect.MoveCounters (MoveCounters.MkMoveCounters (plantedRef "mc-from") MovedKinds.Every Nothing (plantedRef "mc-to")), [plantedRef "mc-from", plantedRef "mc-to"]),
         ("put-counters-from", Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom (SlotName.MkSlotName (Text.pack "giver")) Nothing (plantedRef "pf")), [plantedRef "pf"]),
@@ -5840,7 +5841,7 @@ effectFilters effect = case effect of
   Effect.MoveCounters (MoveCounters.MkMoveCounters from kinds _ to) -> frame Unframed (foldMap counterKindFilters (MovedKinds.kindOf kinds) <> foldMap quantityFilters (MovedKinds.quantityOf kinds)) <> frame SourceHostFramed (objectRefFilters from <> objectRefFilters to)
   -- The count and CR 122.1b's kind, PutCounters' two unframed positions: the
   -- slot beside them is a bare SlotName and carries no Filter.
-  Effect.RemoveCounters (RemoveCounters.MkRemoveCounters kind quantity _ _) -> frame Unframed (counterKindFilters kind <> quantityFilters quantity)
+  Effect.RemoveCounters (RemoveCounters.MkRemoveCounters kind quantity ref _) -> frame Unframed (counterKindFilters kind <> quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref)
   -- RemoveCounters' two unframed positions, and MoveCounters' `from`.
   Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong count from which _) -> frame Unframed (whichCountersFilters which <> foldMap quantityFilters (RemovalCount.quantityOf count)) <> frame SourceHostFramed (objectRefFilters from)
   Effect.GainPlayerCounters (PlayerCounters.MkPlayerCounters _ _ quantity) -> frame Unframed (quantityFilters quantity)

@@ -94,7 +94,10 @@
                           }
                         }
                       },
-                      "slot": "walker"
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "walker"
+                      }
                     }
                   }
                 ]

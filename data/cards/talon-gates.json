@@ -104,23 +104,15 @@
                   {
                     "effects": [
                       {
-                        "type": "ForEach",
+                        "type": "RemoveCounters",
                         "value": {
-                          "body": [
-                            {
-                              "type": "RemoveCounters",
-                              "value": {
-                                "kind": {
-                                  "type": "Time"
-                                },
-                                "quantity": {
-                                  "type": "Literal",
-                                  "value": 2
-                                },
-                                "slot": "suspended"
-                              }
-                            }
-                          ],
+                          "kind": {
+                            "type": "Time"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          },
                           "ref": {
                             "type": "EachCard",
                             "value": {
@@ -151,8 +143,7 @@
                                 }
                               ]
                             }
-                          },
-                          "slot": "suspended"
+                          }
                         }
                       }
                     ]

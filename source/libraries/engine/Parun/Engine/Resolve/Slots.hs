@@ -1471,7 +1471,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   -- destination is an ObjectRef and may sweep.
   Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom from _ _) -> oneSlot from
   Effect.PutCounterOfEachKind {} -> Map.empty
-  Effect.RemoveCounters (RemoveCounters.MkRemoveCounters _ quantity slot _) -> insertOne slot (quantitySlots quantity)
+  Effect.RemoveCounters (RemoveCounters.MkRemoveCounters _ quantity _ _) -> quantitySlots quantity
   Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong count _ _ _) -> foldMap quantitySlots (RemovalCount.quantityOf count)
   -- CR 122.5's pair: BOTH sides are ObjectRefs, joined at slotsOf's head with
   -- every other ref, so neither is read here. The count reads

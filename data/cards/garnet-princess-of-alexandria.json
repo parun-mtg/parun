@@ -83,28 +83,19 @@
                         }
                       },
                       {
-                        "type": "ForEach",
+                        "type": "RemoveCounters",
                         "value": {
-                          "body": [
-                            {
-                              "type": "RemoveCounters",
-                              "value": {
-                                "kind": {
-                                  "type": "Lore"
-                                },
-                                "quantity": {
-                                  "type": "Literal",
-                                  "value": 1
-                                },
-                                "slot": "saga"
-                              }
-                            }
-                          ],
+                          "kind": {
+                            "type": "Lore"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
                           "ref": {
                             "type": "InSlot",
                             "value": "sagas"
-                          },
-                          "slot": "saga"
+                          }
                         }
                       }
                     ],

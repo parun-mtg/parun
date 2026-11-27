@@ -8854,7 +8854,7 @@ vanishing = [timeCounterUpkeep, vanishingLastCounter]
 -- second.
 timeCounterUpkeep :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 timeCounterUpkeep =
-  let effect = Effect.RemoveCounters (RemoveCounters.MkRemoveCounters CounterKind.Time (Quantity.Literal 1) Binding.triggerSource Nothing)
+  let effect = Effect.RemoveCounters (RemoveCounters.MkRemoveCounters CounterKind.Time (Quantity.Literal 1) (ObjectRef.InSlot Binding.triggerSource) Nothing)
    in Mint.triggerIf
         Mint.yourUpkeep
         suspendedNow
@@ -8879,7 +8879,7 @@ vanishingLastCounter =
 -- intervening "if" (CR 603.4) widened to impendingHolds.
 impendingEndStep :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 impendingEndStep =
-  let effect = Effect.RemoveCounters (RemoveCounters.MkRemoveCounters CounterKind.Time (Quantity.Literal 1) Binding.triggerSource Nothing)
+  let effect = Effect.RemoveCounters (RemoveCounters.MkRemoveCounters CounterKind.Time (Quantity.Literal 1) (ObjectRef.InSlot Binding.triggerSource) Nothing)
    in Mint.triggerIf
         (TriggerCondition.StepBegins (StepBegins.MkStepBegins (Phase.Ending EndingStep.EndStep) Nothing (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))))
         impendingHolds
@@ -8909,7 +8909,7 @@ fading =
       removeClause =
         Mint.mandatoryIf
           (Condition.Compares (Compares.MkCompares counted Comparison.AtLeast (Quantity.Literal 1)))
-          (Seq.singleton (Effect.RemoveCounters (RemoveCounters.MkRemoveCounters CounterKind.Fade (Quantity.Literal 1) Binding.triggerSource Nothing)))
+          (Seq.singleton (Effect.RemoveCounters (RemoveCounters.MkRemoveCounters CounterKind.Fade (Quantity.Literal 1) (ObjectRef.InSlot Binding.triggerSource) Nothing)))
    in Mint.triggerOf
         Mint.yourUpkeep
         Nothing

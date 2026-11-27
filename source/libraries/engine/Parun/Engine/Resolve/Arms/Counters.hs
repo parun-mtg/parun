@@ -596,30 +596,33 @@ exileThisSpell settle resolving = do
 -- CR 122: PutCounters' mirror, deliberately NOT through a CR 614.16 gate --
 -- that rule is about placing, and no ReplacementEffect class pairs with a
 -- removal an effect makes.
+--
+-- CR 608.2f: one instruction on every permanent the ref names, processed
+-- simultaneously inside one event group, PutCounters' bracket, so no order is
+-- asked for: Pestilent Haze's "each planeswalker". The quantity is read once
+-- (CR 608.2h); an illegal slot (CR 608.2b) or a player recipient names nothing.
 removeCounters :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> RemoveCounters.RemoveCounters -> Game ()
-removeCounters resolving source controller legal (RemoveCounters.MkRemoveCounters kind quantity slot mTally) = do
+removeCounters resolving source controller legal (RemoveCounters.MkRemoveCounters kind quantity ref mTally) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
-  case legalOne slot legal of
-    Just recipient -> case Recipient.objectOf recipient of
-      Nothing -> pure () -- a player recipient has no object counters
-      Just target -> case Quantity.evaluateFor viewOf context gs resolving source quantity of
-        Nothing -> pure () -- unevaluable quantity: no-op (the powerOf posture)
-        Just n -> do
+      targets = objectRefObjects legal resolving controller source gs ref
+  case Quantity.evaluateFor viewOf context gs resolving source quantity of
+    Nothing -> pure () -- unevaluable quantity: no-op (the powerOf posture)
+    Just n -> do
+      let asked = Integer.toNaturalSaturating n
           -- What the card's "that much" reads is the number that ACTUALLY came
           -- off, so it is measured against what was there rather than against
           -- the instruction's own number -- Event.removeCounters saturates at
           -- the count on the object, and an "all" written as a stale reading
           -- would otherwise bind more than it removed. Read BEFORE the removal,
           -- there being nothing left to count after it.
-          before <- State.gets (maybe 0 (Map.findWithDefault 0 kind . Object.counters) . Game.lookupObject target)
-          Monad.when (n > 0) (Event.removeCounters target kind (Integer.toNaturalSaturating n))
-          -- Bound even where nothing came off, which is the answer "that much"
-          -- wants: Ashling the Pilgrim with no counters deals 0 damage rather
-          -- than leaving the clause unanswered.
-          Monad.forM_ mTally $ \tally -> State.modify' (Common.bindAmountSlot resolving source tally (min before (Integer.toNaturalSaturating n)))
-    _ -> pure () -- illegal slot at resolution (CR 608.2b): no-op
+          present target = maybe 0 (Map.findWithDefault 0 kind . Object.counters) (Game.lookupObject target gs)
+      Monad.when (asked > 0 && not (null targets)) (Event.simultaneously (Monad.forM_ targets (\target -> Event.removeCounters target kind asked)))
+      -- Bound even where nothing came off, which is the answer "that much"
+      -- wants: Ashling the Pilgrim with no counters deals 0 damage rather
+      -- than leaving the clause unanswered.
+      Monad.forM_ mTally $ \tally -> State.modify' (Common.bindAmountSlot resolving source tally (sum (fmap (min asked . present) targets)))
 
 removeCountersAmong :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> RemoveCountersAmong.RemoveCountersAmong -> Game ()
 removeCountersAmong resolving source controller legal (RemoveCountersAmong.MkRemoveCountersAmong count fromRef which mTally) = do

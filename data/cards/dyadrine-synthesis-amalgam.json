@@ -172,28 +172,19 @@
                         }
                       },
                       {
-                        "type": "ForEach",
+                        "type": "RemoveCounters",
                         "value": {
-                          "body": [
-                            {
-                              "type": "RemoveCounters",
-                              "value": {
-                                "kind": {
-                                  "type": "PlusOnePlusOne"
-                                },
-                                "quantity": {
-                                  "type": "Literal",
-                                  "value": 1
-                                },
-                                "slot": "creature"
-                              }
-                            }
-                          ],
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
                           "ref": {
                             "type": "InSlot",
                             "value": "pair"
-                          },
-                          "slot": "creature"
+                          }
                         }
                       }
                     ],

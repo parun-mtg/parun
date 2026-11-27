@@ -241,7 +241,10 @@
                               "type": "Time"
                             }
                           },
-                          "slot": "self"
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
                         }
                       },
                       {

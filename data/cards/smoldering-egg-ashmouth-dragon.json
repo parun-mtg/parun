@@ -137,7 +137,10 @@
                               "value": "ember"
                             }
                           },
-                          "slot": "self"
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
                         }
                       },
                       {

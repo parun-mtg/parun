@@ -164,7 +164,10 @@
                                             "type": "Literal",
                                             "value": 10
                                           },
-                                          "slot": "target"
+                                          "ref": {
+                                            "type": "InSlot",
+                                            "value": "target"
+                                          }
                                         }
                                       }
                                     ]

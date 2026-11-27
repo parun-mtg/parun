@@ -3833,12 +3833,12 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.Counter {} -> False
   Effect.PutCounters {} -> False
   Effect.Divide {} -> False
-  -- CR 122.1 / 608.2d: a permanent bearing none of the kind has none of
-  -- them to lose.
-  Effect.RemoveCounters (RemoveCounters.MkRemoveCounters kind quantity slot _) -> case legalOne slot legal >>= Recipient.objectOf of
-    Nothing -> False
-    Just target -> case Quantity.evaluateFor viewOf context gs resolving source quantity of
-      Just n | n > 0 -> maybe False ((== 0) . Map.findWithDefault 0 kind . Object.counters) (Game.lookupObject target gs)
+  -- CR 122.1 / 608.2d: permanents bearing none of the kind have none of
+  -- them to lose. A ref naming nothing stays open, the arm's no-op.
+  Effect.RemoveCounters (RemoveCounters.MkRemoveCounters kind quantity ref _) -> case objectRefObjects legal resolving controller source gs ref of
+    [] -> False
+    targets -> case Quantity.evaluateFor viewOf context gs resolving source quantity of
+      Just n | n > 0 -> all (\target -> maybe False ((== 0) . Map.findWithDefault 0 kind . Object.counters) (Game.lookupObject target gs)) targets
       _ -> False
   -- CR 608.2d: "remove three" is not an option where fewer are there. "Up to"
   -- and "any number" always are, none being an answer, and "all" takes what

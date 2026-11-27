@@ -4,6 +4,7 @@ module Parun.Codec.RemoveCounters where
 
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.ObjectRef as ObjectRef
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.JsonCodec.Codec as Codec
@@ -19,12 +20,12 @@ codec :: Codec.Codec RemoveCounters.RemoveCounters
 codec = Fields.object $ do
   kind <- Fields.required "kind" (CounterKind.codec Keyword.codec) RemoveCounters.kind
   quantity <- Fields.required "quantity" Quantity.codec RemoveCounters.quantity
-  slot <- Fields.required "slot" SlotName.codec RemoveCounters.slot
+  ref <- Fields.required "ref" ObjectRef.codec RemoveCounters.ref
   tally <- Fields.defaulted "tally" Nothing (Common.maybe SlotName.codec) RemoveCounters.tally
   pure
     RemoveCounters.MkRemoveCounters
       { RemoveCounters.kind = kind,
         RemoveCounters.quantity = quantity,
-        RemoveCounters.slot = slot,
+        RemoveCounters.ref = ref,
         RemoveCounters.tally = tally
       }
