@@ -2468,7 +2468,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Fear, Fire, Foes!", 1), -- its damage's object, relative to the target's controller
         ("Legions to Ashes", 1), -- its exile's object, relative to the target's controller
         ("The Fall of Kroog", 1), -- its land target slot, Cloak and Dagger, Entwined's shape
-        ("Skulking Killer", 1) -- its clause's if, relative to the target's controller
+        ("Skulking Killer", 1), -- its clause's if, relative to the target's controller
+        ("Which of You Burns Brightest?", 1) -- its damage's object, Flame Wave's sentence
       ]
     -- The REJECTING direction, hand-built for the reason every sibling lint's is:
     -- a card that offends must not be loadable, so no file can carry one. Buried
