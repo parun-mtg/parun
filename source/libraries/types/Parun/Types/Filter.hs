@@ -24,6 +24,7 @@ import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.DeclaredRole as DeclaredRole
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.EnteredZone as EnteredZone
+import qualified Parun.Types.ExileMark as ExileMark
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Expansion as Expansion
 import qualified Parun.Types.Holder as Holder
@@ -653,9 +654,9 @@ data Filter keyword
     -- a player offered their own foretold card by that rule is still refused it
     -- by Riftsweeper's own words.
     IsExiledFaceDown
-  | -- | CR 702.185b: the candidate is a WARPED card in exile, read off
-    -- Object.warped.
-    IsWarped
+  | -- | CR 702.185b / 702.143c: the candidate carries this exile mark (a warped
+    -- card, a foretold card or spell).
+    HasExileMark ExileMark.ExileMark
   | -- | CR 701.27h: the candidate is a "transformed permanent" -- a double-faced
     -- permanent on the battlefield with its back face up. Both of the rule's
     -- exclusions are in the answer: a permanent showing its front face is never

@@ -59,6 +59,7 @@ import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.DraftNoteTally as DraftNoteTally
 import qualified Parun.Types.EventTeamTally as EventTeamTally
+import qualified Parun.Types.ExileMark as ExileMark
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Exponentiation as Exponentiation
 import qualified Parun.Types.Face as Face
@@ -726,7 +727,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- CR 702.143c's "if this spell was foretold" as a 0/1, off the view: the
         -- object it reads is the RESOLVING SPELL, which is still on the stack while
         -- its own clause conditions are gated (Parun.Engine.Resolve.gateHolds).
-        Quantity.WasForetold -> fmap (\view -> if Filter.foretold view then 1 else 0) mView
+        Quantity.WasForetold -> fmap (\view -> if Set.member ExileMark.Foretold (Filter.exileMarks view) then 1 else 0) mView
         -- CR 702.104b's yes-or-no as a 0/1, WasForetold's arm above in every
         -- respect. The object it reads is the PERMANENT the tribute creature is,
         -- which the card's own enters trigger asks about at CR 603.4 and again at

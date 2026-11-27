@@ -61,6 +61,7 @@ import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.EnteredZone as EnteredZone
 import qualified Parun.Types.EntryWindow as EntryWindow
 import qualified Parun.Types.ExileLink as ExileLink
+import qualified Parun.Types.ExileMark as ExileMark
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Expansion as Expansion
 import qualified Parun.Types.Filter as Filter
@@ -739,10 +740,13 @@ data View = MkView
     -- False for every candidate with no object behind it: a printed face, a
     -- player, an event snapshot. Each says so at its own site.
     exiledFaceDown :: Bool,
-    -- | CR 702.185b: the candidate is a warped card in exile, read straight
-    -- off Object.warped, which CR 400.7's new incarnation clears; False for
-    -- every candidate with no object behind it, `exiledFaceDown`'s posture.
-    warped :: Bool,
+    -- | CR 702.185b / 702.143c: the exile marks the candidate carries, read
+    -- live off Object.warped and Object.foretold. CR 400.7's new incarnation
+    -- clears the first; Parun.Engine.Cast carries the second onto the spell a
+    -- foretold card is cast as. Empty for every candidate with no object
+    -- behind it, `exiledFaceDown`'s posture. Filter.HasExileMark and
+    -- Parun.Engine.Quantity's WasForetold arm are the readers.
+    exileMarks :: Set.Set ExileMark.ExileMark,
     -- | CR 701.27h's "transformed permanent": a double-faced permanent on the
     -- battlefield with its back face up. Not a characteristic either (CR
     -- 712.6c/e make which face is up the thing characteristics are read off), so
@@ -903,11 +907,6 @@ data View = MkView
     -- battlefield, read off Object.enteredUsing, or LastKnown.enteredUsing for
     -- an object that has left it. Filter.EnteredUsing is the reader.
     enteredUsing :: Maybe Keyword.Type.Keyword,
-    -- CR 702.143c: is this candidate a foretold card, or a spell that was one
-    -- before it was cast? Read off Object.foretold, which Parun.Engine.Cast
-    -- carries onto the stack, and False where there is no live object, as
-    -- `tributePaid` above. Parun.Engine.Quantity's WasForetold arm is the reader.
-    foretold :: Bool,
     -- CR 719.3c / 719.3d: is this candidate a prototyped spell, or a permanent
     -- that was one, or a copy of either? PC.prototyped off the projection, which
     -- is how a Clone of one answers (its own Object.prototyped is False), or'd
@@ -1278,7 +1277,7 @@ nobodyView =
       -- CR 406.2's exiled card is a CARD, and CR 109.1 makes a player none of
       -- those either.
       exiledFaceDown = False,
-      warped = False,
+      exileMarks = Set.empty,
       -- CR 701.27h asks about a PERMANENT, and CR 109.1 makes a player none.
       transformed = False,
       doubleFaced = False,
@@ -1314,7 +1313,6 @@ nobodyView =
       tributePaid = False,
       castUsing = Nothing,
       enteredUsing = Nothing,
-      foretold = False,
       prototyped = False,
       preparedSpell = False,
       modesChosen = Nothing,
@@ -3263,7 +3261,7 @@ matches context view predicate = case predicate of
   -- CR 406.3, which is NOT the status one line up: CR 110.5d says the two have
   -- no correlation, and the fields differ accordingly.
   Filter.IsExiledFaceDown -> exiledFaceDown view
-  Filter.IsWarped -> warped view
+  Filter.HasExileMark mark -> Set.member mark (exileMarks view)
   -- CR 701.27h, both exclusions inside the field: see the atom's own comment in
   -- Parun.Types.Filter, and the field below.
   Filter.Transformed -> transformed view
@@ -3842,7 +3840,7 @@ manaValueThresholds predicate = case predicate of
   Filter.IsTapped -> []
   Filter.IsFaceDown -> []
   Filter.IsExiledFaceDown -> []
-  Filter.IsWarped -> []
+  Filter.HasExileMark _ -> []
   Filter.Transformed -> []
   Filter.IsDoubleFaced -> []
   Filter.IsRingBearer -> []
@@ -4050,7 +4048,7 @@ statesAQuality predicate = case predicate of
   -- is itself a stated quality under CR 701.23b, and the trivial nest states it.
   Filter.RepresentedByCard _ -> True
   Filter.IsExiledFaceDown -> True
-  Filter.IsWarped -> True
+  Filter.HasExileMark _ -> True
   Filter.Transformed -> True
   Filter.IsDoubleFaced -> True
   Filter.IsRingBearer -> True
@@ -4230,7 +4228,7 @@ readsSourceValues predicate = case predicate of
   Filter.IsFaceDown -> False
   Filter.RepresentedByCard f -> readsSourceValues f
   Filter.IsExiledFaceDown -> False
-  Filter.IsWarped -> False
+  Filter.HasExileMark _ -> False
   Filter.Transformed -> False
   Filter.IsDoubleFaced -> False
   Filter.IsRingBearer -> False
@@ -4378,7 +4376,7 @@ talliesWhatHappened predicate = case predicate of
   Filter.IsFaceDown {} -> False
   Filter.RepresentedByCard {} -> False
   Filter.IsExiledFaceDown {} -> False
-  Filter.IsWarped {} -> False
+  Filter.HasExileMark {} -> False
   Filter.Transformed {} -> False
   Filter.IsDoubleFaced {} -> False
   Filter.IsRingBearer {} -> False
