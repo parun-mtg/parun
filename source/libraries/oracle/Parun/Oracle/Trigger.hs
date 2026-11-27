@@ -169,7 +169,7 @@ event context creature c = case c of
     word <- ["it", that]
     subject <- also one
     [other ("Whenever " <> subject <> " attacks and isn't blocked") [(attackingCreature, word), (thatPlayer, "defending player")]]
-  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching f) (Just DamageKind.Combat) recipients 0)
+  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching f) (Just DamageKind.Combat) recipients 0 TriggerFrequency.EveryTime)
     | [DamageRecipient.Player relation] <- Set.toList recipients -> do
         (one, that) <- described context f
         (whom, player') <- player relation
@@ -177,9 +177,16 @@ event context creature c = case c of
     | Set.null recipients -> do
         (one, that) <- described context f
         [other ("Whenever " <> one <> " deals combat damage") [(combatDamager, that)]]
+  -- Stensia's "one or more players": the first time is one occurrence however
+  -- many players that damage reached.
+  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching f) Nothing recipients 0 TriggerFrequency.FirstTimeEachTurn)
+    | [DamageRecipient.Player (PlayerRef.Relative PlayerRelation.AnyPlayer)] <- Set.toList recipients -> do
+        (one, that) <- described context f
+        word <- ["it", that]
+        [other ("Whenever " <> one <> " deals damage to one or more players for the first time each turn") [(combatDamager, word)]]
   -- CR 603.2c: one damage event is one source's damage to one player, all at
   -- once, so the floor reads "by a single source" (Pain Magnification).
-  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching (Filter.Type.And [])) Nothing recipients atLeast)
+  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching (Filter.Type.And [])) Nothing recipients atLeast TriggerFrequency.EveryTime)
     | [DamageRecipient.Player relation] <- Set.toList recipients,
       atLeast > 0 -> do
         (whom, that) <- player relation
@@ -329,13 +336,13 @@ selfEvent context creature c = case c of
   TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage ActingPermanent.Self Nothing Nothing) Batching.OneOrMore False False 0) -> [(recurring <> ["Enrage \8212 Whenever"], "is dealt damage", [])]
   TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage ActingPermanent.Self Nothing Nothing) Batching.OneOrMore False False atLeast) -> [(recurring, "is dealt " <> show atLeast <> " or more damage", [])]
   TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage ActingPermanent.Self (Just DamageKind.Combat) Nothing) Batching.OneOrMore False False 0) -> [(recurring, "is dealt combat damage", [])]
-  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self Nothing recipients atLeast)
+  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self Nothing recipients atLeast TriggerFrequency.EveryTime)
     | Set.null recipients, atLeast > 0 -> [(recurring, "deals " <> show atLeast <> " or more damage", [])]
     | [DamageRecipient.Player relation] <- Set.toList recipients,
       atLeast > 0 -> do
         (whom, that) <- player relation
         [(recurring, "deals " <> show atLeast <> " or more damage to " <> whom, [(thatPlayer, that)])]
-  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self kind recipients 0)
+  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self kind recipients 0 TriggerFrequency.EveryTime)
     | Set.null recipients, Nothing <- kind -> [(recurring, "deals damage", [])]
     | Set.null recipients, Just DamageKind.Combat <- kind -> [(recurring, "deals combat damage", [])]
     | [DamageRecipient.Player relation] <- Set.toList recipients,

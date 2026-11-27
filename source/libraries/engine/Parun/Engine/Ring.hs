@@ -439,7 +439,8 @@ theRingDrainsOnCombatDamage =
               { DamageTrigger.actor = ActingPermanent.Matching yourRingBearer,
                 DamageTrigger.kind = Just DamageKind.Combat,
                 DamageTrigger.recipients = Set.singleton (DamageRecipient.Player (PlayerRef.Relative PlayerRelation.AnyPlayer)),
-                DamageTrigger.atLeast = 0
+                DamageTrigger.atLeast = 0,
+                DamageTrigger.frequency = TriggerFrequency.EveryTime
               }
         )
         (Seq.singleton effect)

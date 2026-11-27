@@ -985,7 +985,8 @@ batchPartition cond bindings = case cond of
   -- combat damage" fires for each creature that connected in the CR 510.2 step,
   -- and Spirit Link's "deals damage" for its host's one damage event. A Self
   -- reading has one damager, the bearer, so the split leaves it whole, and a
-  -- trigger naming a recipient is not batch-scoped at all.
+  -- trigger naming a recipient is batch-scoped only for the first time each
+  -- turn (Stensia), split per damager the same way.
   TriggerCondition.DealsDamage _ -> object Binding.combatDamager
   TriggerCondition.PermanentsDealDamageToPlayer _ -> seat Binding.damagersController <> seat Binding.triggerPlayer <> object Binding.became
   -- CR 727.2's "one or more creatures A PLAYER controls": one occurrence per

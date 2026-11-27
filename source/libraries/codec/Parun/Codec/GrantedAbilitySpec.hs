@@ -53,6 +53,7 @@ import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.SpendScope as SpendScope
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.TriggerCondition as TriggerCondition
+import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 
@@ -98,7 +99,7 @@ spec s = Spec.describe s "Parun.Codec.GrantedAbility" $ do
       codec
       ( GrantedAbility.Triggered
           ( TriggeredAbility.MkTriggeredAbility
-              (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.singleton (DamageRecipient.Player (PlayerRef.Relative PlayerRelation.AnyPlayer))) 0))
+              (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.singleton (DamageRecipient.Player (PlayerRef.Relative PlayerRelation.AnyPlayer))) 0 TriggerFrequency.EveryTime))
               emptyModal
               Nothing
               Nothing

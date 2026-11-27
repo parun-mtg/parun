@@ -187,6 +187,7 @@ import qualified Parun.Types.TheseDiscard as TheseDiscard
 import qualified Parun.Types.Times as Times
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TriggerCondition as TriggerCondition
+import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnScope as TurnScope
@@ -819,6 +820,14 @@ trigger n = case Node.tag n of
   "WhenACreatureBecomesBlockedByACreature" -> other (blocks BlockRole.Attacker Filter.IsSource . BlockCount.EachCreature) Oracle.Trigger.thatBlocker
   "WhenACreatureDealsCombatDamageToAPlayer" -> damaged (Just DamageKind.Combat)
   "WhenAPermanentDealsDamageToAPlayer" -> damaged Nothing
+  -- Stensia's "a creature deals damage to one or more players for the first
+  -- time each turn", one occurrence per creature per turn.
+  "WhenAPermanentDealsDamageToAnyNumberOfPlayersForTheFirstTimeEachTurn" -> do
+    (who, whom) <- pair n
+    f <- permanents outermost who
+    relation <- players whom
+    Monad.unless (relation == PlayerRelation.AnyPlayer) (Node.untranslated n)
+    Right (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching f) Nothing (Set.singleton (DamageRecipient.Player (PlayerRef.Relative relation))) 0 TriggerFrequency.FirstTimeEachTurn), bound [("Trigger_ThatPermanent", Oracle.Trigger.combatDamager), ("Trigger_ThatCreature", Oracle.Trigger.combatDamager)])
   "AtTheBeginningOfAPlayersUpkeep" -> step (Phase.Beginning BeginningStep.Upkeep)
   "AtTheBeginningOfAPlayersDrawStep" -> step (Phase.Beginning BeginningStep.DrawStep)
   "AtTheBeginningOfAPlayersEndStep" -> step (Phase.Ending EndingStep.EndStep)
@@ -884,7 +893,7 @@ trigger n = case Node.tag n of
       (who, whom) <- pair n
       Monad.unless (single who == Just "ThisPermanent") (Node.untranslated n)
       relation <- players whom
-      Right (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self kind (Set.singleton (DamageRecipient.Player (PlayerRef.Relative relation))) 0), bound [("Trigger_ThatCreature", Oracle.Target.selfSlot), ("Trigger_ThatPlayer", Oracle.Trigger.thatPlayer)])
+      Right (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self kind (Set.singleton (DamageRecipient.Player (PlayerRef.Relative relation))) 0 TriggerFrequency.EveryTime), bound [("Trigger_ThatCreature", Oracle.Target.selfSlot), ("Trigger_ThatPlayer", Oracle.Trigger.thatPlayer)])
     step phase = do
       whose <- Node.argument n
       scope <- case singlePlayer whose of

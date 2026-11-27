@@ -46,6 +46,7 @@ import qualified Parun.Types.StepBegins as StepBegins
 import Parun.Types.TargetSlot (TargetSlot)
 import Parun.Types.TriggerCondition (TriggerCondition)
 import qualified Parun.Types.TriggerCondition as TriggerCondition
+import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnScope as TurnScope
@@ -140,7 +141,8 @@ dealsCombatDamageToAPlayer =
       { DamageTrigger.actor = ActingPermanent.Self,
         DamageTrigger.kind = Just DamageKind.Combat,
         DamageTrigger.recipients = Set.singleton (DamageRecipient.Player (PlayerRef.Relative PlayerRelation.AnyPlayer)),
-        DamageTrigger.atLeast = 0
+        DamageTrigger.atLeast = 0,
+        DamageTrigger.frequency = TriggerFrequency.EveryTime
       }
 
 -- | CR 305.6's intrinsic mana ability is "{T}: Add [the type]", printed on no card

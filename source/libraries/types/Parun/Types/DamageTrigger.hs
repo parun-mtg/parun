@@ -6,6 +6,7 @@ import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 
 -- | CR 603.2 over CR 120.1's damage: whose damage, of which kind, and to which
 -- recipients, and how much of it.
@@ -20,6 +21,10 @@ data DamageTrigger = MkDamageTrigger
     -- | The least damage the trigger event deals, summed over a batch the
     -- recipients leave whole (CR 603.2c); 0 for any amount (Spinneret and
     -- Spiderling's "deals 4 or more damage").
-    atLeast :: Natural
+    atLeast :: Natural,
+    -- | FirstTimeEachTurn for Stensia's "for the first time each turn": one
+    -- occurrence per damager per turn, whichever recipients the first damage
+    -- reached.
+    frequency :: TriggerFrequency.TriggerFrequency
   }
   deriving (Eq, Ord, Show)
