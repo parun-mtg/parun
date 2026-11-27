@@ -328,6 +328,11 @@ data LastKnown = MkLastKnown
     -- | CR 701.15b / 608.2h: the players who had goaded it -- Object.goadedBy as
     -- it left; `characteristics` carries the projected PC.goadedBy. What Baeloth
     -- Barrityl, Entertainer's dies trigger asks (data/scenarios/goad).
-    goadedBy :: !(Set.Set PlayerId.PlayerId)
+    goadedBy :: !(Set.Set PlayerId.PlayerId),
+    -- | CR 903.3 / 608.2h: was it a commander -- Parun.Engine.Commander.isCommander
+    -- as it left, the designation being the card's and the record holding no
+    -- identity. What My Champion Stands Supreme's "when your commander leaves the
+    -- battlefield" asks (data/scenarios/archenemy).
+    commander :: !Bool
   }
   deriving (Eq, Ord, Show)

@@ -12645,6 +12645,8 @@ lastKnownFrom gs oid obj =
     (Object.designationValues obj)
     -- CR 701.15b's goaded, per-incarnation (CR 400.7) like the designations.
     (Object.goadedBy obj)
+    -- CR 903.3's designation, read while the object still names its card.
+    (Commander.isCommander oid gs)
   where
     -- CR 305.7's strip written in, so the record says what the land had.
     characteristics = Projection.withRulesTextStrip oid gs (Projection.project oid gs)
