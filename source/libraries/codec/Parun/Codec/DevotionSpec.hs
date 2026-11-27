@@ -6,6 +6,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Devotion as Devotion
+import qualified Parun.Types.DevotionColors as DevotionColors
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 
@@ -19,8 +20,8 @@ spec s = Spec.describe s "Parun.Codec.Devotion" $ do
       Devotion.codec
       ( Devotion.MkDevotion
           { Devotion.player = PlayerRef.Relative PlayerRelation.You,
-            Devotion.colors = Set.fromList [Color.White, Color.Black]
+            Devotion.colors = DevotionColors.Listed (Set.fromList [Color.White, Color.Black])
           }
       )
-      " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"colors\":[\"White\",\"Black\"]} "
+      " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"colors\":{\"type\":\"Listed\",\"value\":[\"White\",\"Black\"]}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s Devotion.codec

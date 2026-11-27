@@ -34,6 +34,7 @@ import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.Devotion as Devotion
+import qualified Parun.Types.DevotionColors as DevotionColors
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntryRiders as EntryRiders
@@ -898,7 +899,10 @@ rewriteQuantity pairs quantity = case quantity of
   -- reading.
   Quantity.Type.ManaCount count -> Quantity.Type.ManaCount count {ManaCount.filter = rewriteManaFilter pairs (ManaCount.filter count)}
   -- CR 700.5's "devotion to black": a colour word used as one (CR 612.2).
-  Quantity.Type.Devotion devotion -> Quantity.Type.Devotion devotion {Devotion.colors = Set.map (TextWord.Engine.colorAfter pairs) (Devotion.colors devotion)}
+  Quantity.Type.Devotion devotion -> case Devotion.colors devotion of
+    DevotionColors.Listed colors -> Quantity.Type.Devotion devotion {Devotion.colors = DevotionColors.Listed (Set.map (TextWord.Engine.colorAfter pairs) colors)}
+    -- No colour word is printed for CR 612.2 to change.
+    DevotionColors.SourceChosen -> quantity
   -- CR 903.4's "each color" enumerates CR 105.1's colours rather than printing
   -- colour words, and CR 700.8's party types are the rule's: the traversal
   -- leaves both alone.

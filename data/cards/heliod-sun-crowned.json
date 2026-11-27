@@ -102,9 +102,12 @@
               "measured": {
                 "type": "Devotion",
                 "value": {
-                  "colors": [
-                    "White"
-                  ],
+                  "colors": {
+                    "type": "Listed",
+                    "value": [
+                      "White"
+                    ]
+                  },
                   "player": {
                     "type": "Relative",
                     "value": "You"

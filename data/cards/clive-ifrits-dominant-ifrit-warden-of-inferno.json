@@ -139,9 +139,12 @@
                           "quantity": {
                             "type": "Devotion",
                             "value": {
-                              "colors": [
-                                "Red"
-                              ],
+                              "colors": {
+                                "type": "Listed",
+                                "value": [
+                                  "Red"
+                                ]
+                              },
                               "player": {
                                 "type": "Relative",
                                 "value": "You"

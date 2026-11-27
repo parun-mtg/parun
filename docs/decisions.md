@@ -681,6 +681,22 @@ Entries are ordered by the first rule each cites.
   `cr-601-3-discord-s-permission-outlives-it-is-spent-by-one-cast-and-copies-nothing-once-it-has`.
 - **Issue**: #5303.
 
+## What Hotel of Fears' "another creature" excludes
+
+- **Question**: Hotel of Fears' chaos ability puts counters on "target
+  creature you control" and then has you "sacrifice another creature". Its
+  source is a plane, never a creature: is "another" other than the target, or
+  vacuous, letting the target be sacrificed?
+- **Rules**: CR 701.21a, 901.6; the card has no ruling; CR of 2026-11-06.
+- **Decision**: Other than the target: the sentence's only other creature is
+  the one it just named.
+- **Rejected**: Reading "another" against the source, which a plane can never
+  match, so the word would say nothing and the target could be the
+  sacrifice.
+- **Site**: `data/cards/hotel-of-fears.json`'s `Not (IsBound "target")`;
+  `data/scenarios/planechase/hotel-of-fears-chaos-counts-devotion-to-the-chosen-colour-then-sacrifices-another-creature.json`.
+- **Issue**: #10015.
+
 ## Whether a search printed over a portion of a library searches that library
 
 - **Question**: Assemble the Team says "search the top third of your library".

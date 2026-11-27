@@ -56,6 +56,7 @@ import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.DelayedKind as DelayedKind
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Devotion as Devotion
+import qualified Parun.Types.DevotionColors as DevotionColors
 import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.DraftNoteTally as DraftNoteTally
 import qualified Parun.Types.EventTeamTally as EventTeamTally
@@ -671,8 +672,14 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- Projection.conditionHolds hands a static ability's gate a view bounded
         -- at that ability's own layer, which keeps a devotion-gated continuous
         -- effect from reading its own output.
-        Quantity.Devotion (Devotion.MkDevotion ref colors) -> case playersOf ref of
+        Quantity.Devotion (Devotion.MkDevotion ref counted) -> case playersOf ref of
           Just [pid] -> Just (devotionOf viewOf colors pid gs)
+            where
+              colors = case counted of
+                DevotionColors.Listed listed -> listed
+                -- CR 608.2d: a ChooseQuality earlier in the same resolution
+                -- wrote the source's choice (Nyx, Hotel of Fears).
+                DevotionColors.SourceChosen -> Filter.sourceChosenColors context
           _ -> Nothing
         -- CR 700.8a: the size of that player's party, Devotion's arity and
         -- control-off-the-view for Devotion's reasons. See partySizeOf.

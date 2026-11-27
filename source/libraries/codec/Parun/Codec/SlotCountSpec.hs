@@ -6,6 +6,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Devotion as Devotion
+import qualified Parun.Types.DevotionColors as DevotionColors
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
@@ -41,7 +42,7 @@ spec s = Spec.describe s "Parun.Codec.SlotCount" $ do
     Common.assertCodec
       s
       SlotCount.codec
-      (SlotCount.UpToComputed (Quantity.Devotion (Devotion.MkDevotion (PlayerRef.Relative PlayerRelation.You) (Set.singleton Color.Black))))
-      " {\"type\":\"UpToComputed\",\"value\":{\"type\":\"Devotion\",\"value\":{\"colors\":[\"Black\"],\"player\":{\"type\":\"Relative\",\"value\":\"You\"}}}} "
+      (SlotCount.UpToComputed (Quantity.Devotion (Devotion.MkDevotion (PlayerRef.Relative PlayerRelation.You) (DevotionColors.Listed (Set.singleton Color.Black)))))
+      " {\"type\":\"UpToComputed\",\"value\":{\"type\":\"Devotion\",\"value\":{\"colors\":{\"type\":\"Listed\",\"value\":[\"Black\"]},\"player\":{\"type\":\"Relative\",\"value\":\"You\"}}}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s SlotCount.codec
