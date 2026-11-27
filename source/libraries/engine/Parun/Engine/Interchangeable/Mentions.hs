@@ -1089,11 +1089,12 @@ quantityNames asking x =
         Quantity.AttackersDeclaredThisTurn _ -> history asking HistoryRead.Attacks
         Quantity.AttackersInTheirLastTurn _ -> history asking HistoryRead.Attacks
         -- Draws and land plays from anywhere read player-keyed tallies naming no
-        -- object (TurnRegisters.drawsThisTurn, GameState.landsPlayed), so no
+        -- object (TurnRegisters.drawsThisTurn, PastTurn.draws,
+        -- GameState.landsPlayed), so no
         -- history; land plays excluding an origin read the log's.
-        Quantity.TalliedThisTurn tally _ -> case tally of
+        Quantity.Tallied tally _ -> case tally of
           TurnTally.CardsDiscarded -> history asking HistoryRead.Discards
-          TurnTally.CardsDrawn -> mempty
+          TurnTally.CardsDrawn _ -> mempty
           TurnTally.ActionsDone acts -> history asking (HistoryRead.Acts acts)
           TurnTally.DilemmasFaced -> history asking HistoryRead.Dilemmas
           TurnTally.CrimesCommitted -> history asking HistoryRead.Crimes

@@ -45,6 +45,7 @@ import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.Codec.SpellTally as SpellTally
 import qualified Parun.Codec.Times as Times
 import qualified Parun.Codec.VotesReceived as VotesReceived
+import qualified Parun.Codec.WhichTurn as WhichTurn
 import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
@@ -58,6 +59,7 @@ import qualified Parun.Types.PlayerRef as PlayerRefType
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnTally as TurnTally
+import qualified Parun.Types.WhichTurn as WhichTurnType
 import qualified Parun.Types.Zone as ZoneType
 
 -- | Quantity.Count's arm is tagged HERE, like every other arm. Parun.Codec.Count
@@ -203,18 +205,19 @@ codec =
       Arm.payload "AttackedInLastTurnOf" PlayerRef.codec Quantity.AttackedInLastTurnOf (\x -> case x of Quantity.AttackedInLastTurnOf y -> Just y; _ -> Nothing),
       Arm.payload "AttackersInTheirLastTurn" PlayerRef.codec Quantity.AttackersInTheirLastTurn (\x -> case x of Quantity.AttackersInTheirLastTurn y -> Just y; _ -> Nothing),
       -- The tally is the tag, as ControlGained's window is: CR 701.9a's discards,
-      -- CR 121.1's draws, CR 603.1b's bending verbs, CR 700.17's dilemmas, CR
-      -- 700.13's crimes and CR 305.2a's land plays, with only a PlayerRef on the wire
+      -- CR 603.1b's bending verbs, CR 700.17's dilemmas, CR 700.13's crimes and
+      -- CR 305.2a's land plays, with only a PlayerRef on the wire
       -- (beside the acts done and the origins a land play is not counted from) for
       -- OpponentsAttackedThisTurn's reason: what is counted comes from the turn's record
       -- rather than from anything the card names, and the turn is the record's
       -- extent rather than a window a card could state.
-      Arm.payload "CardsDiscardedThisTurn" PlayerRef.codec (Quantity.TalliedThisTurn TurnTally.CardsDiscarded) (\x -> case x of Quantity.TalliedThisTurn TurnTally.CardsDiscarded y -> Just y; _ -> Nothing),
-      Arm.payload "CardsDrawnThisTurn" PlayerRef.codec (Quantity.TalliedThisTurn TurnTally.CardsDrawn) (\x -> case x of Quantity.TalliedThisTurn TurnTally.CardsDrawn y -> Just y; _ -> Nothing),
-      Arm.payload "ActionsDoneThisTurn" actionsDoneCodec (\(acts, ref) -> Quantity.TalliedThisTurn (TurnTally.ActionsDone acts) ref) (\x -> case x of Quantity.TalliedThisTurn (TurnTally.ActionsDone acts) ref -> Just (acts, ref); _ -> Nothing),
-      Arm.payload "DilemmasFacedThisTurn" PlayerRef.codec (Quantity.TalliedThisTurn TurnTally.DilemmasFaced) (\x -> case x of Quantity.TalliedThisTurn TurnTally.DilemmasFaced y -> Just y; _ -> Nothing),
-      Arm.payload "CrimesCommittedThisTurn" PlayerRef.codec (Quantity.TalliedThisTurn TurnTally.CrimesCommitted) (\x -> case x of Quantity.TalliedThisTurn TurnTally.CrimesCommitted y -> Just y; _ -> Nothing),
-      Arm.payload "LandsPlayedThisTurn" landsPlayedCodec (\(excluding, ref) -> Quantity.TalliedThisTurn (TurnTally.LandsPlayed excluding) ref) (\x -> case x of Quantity.TalliedThisTurn (TurnTally.LandsPlayed excluding) ref -> Just (excluding, ref); _ -> Nothing),
+      Arm.payload "CardsDiscardedThisTurn" PlayerRef.codec (Quantity.Tallied TurnTally.CardsDiscarded) (\x -> case x of Quantity.Tallied TurnTally.CardsDiscarded y -> Just y; _ -> Nothing),
+      -- CR 121.1's draws name the turn as well, SpellsCast's way.
+      Arm.payload "CardsDrawn" cardsDrawnCodec (\(which, ref) -> Quantity.Tallied (TurnTally.CardsDrawn which) ref) (\x -> case x of Quantity.Tallied (TurnTally.CardsDrawn which) ref -> Just (which, ref); _ -> Nothing),
+      Arm.payload "ActionsDoneThisTurn" actionsDoneCodec (\(acts, ref) -> Quantity.Tallied (TurnTally.ActionsDone acts) ref) (\x -> case x of Quantity.Tallied (TurnTally.ActionsDone acts) ref -> Just (acts, ref); _ -> Nothing),
+      Arm.payload "DilemmasFacedThisTurn" PlayerRef.codec (Quantity.Tallied TurnTally.DilemmasFaced) (\x -> case x of Quantity.Tallied TurnTally.DilemmasFaced y -> Just y; _ -> Nothing),
+      Arm.payload "CrimesCommittedThisTurn" PlayerRef.codec (Quantity.Tallied TurnTally.CrimesCommitted) (\x -> case x of Quantity.Tallied TurnTally.CrimesCommitted y -> Just y; _ -> Nothing),
+      Arm.payload "LandsPlayedThisTurn" landsPlayedCodec (\(excluding, ref) -> Quantity.Tallied (TurnTally.LandsPlayed excluding) ref) (\x -> case x of Quantity.Tallied (TurnTally.LandsPlayed excluding) ref -> Just (excluding, ref); _ -> Nothing),
       -- CR 119.3's life gained, with only a PlayerRef on the wire for
       -- CardsDiscardedThisTurn's reason above. What is SUMMED is the amounts and
       -- not the events, which is the arm's own reading rather than anything on
@@ -303,6 +306,15 @@ landsPlayedCodec =
       <$> Fields.defaulted "excluding" Set.empty (Common.set Zone.codec) fst
       <*> Fields.required "player" PlayerRef.codec snd
 
+-- TurnTally.CardsDrawn's payload: which turn, this one unless the card names
+-- another, and whose draws.
+cardsDrawnCodec :: Codec.Codec (WhichTurnType.WhichTurn, PlayerRefType.PlayerRef)
+cardsDrawnCodec =
+  Fields.object $
+    flip (,)
+      <$> Fields.required "player" PlayerRef.codec snd
+      <*> Fields.defaulted "turn" WhichTurnType.ThisTurn WhichTurn.codec fst
+
 -- TurnTally.ActionsDone's payload: which acts, and whose.
 actionsDoneCodec :: Codec.Codec (Set.Set PlayerActionType.PlayerAction, PlayerRefType.PlayerRef)
 actionsDoneCodec =
@@ -388,12 +400,12 @@ tagOf x = case x of
   Quantity.AttackersDeclaredThisCombat {} -> "AttackersDeclaredThisCombat"
   Quantity.AttackedInLastTurnOf {} -> "AttackedInLastTurnOf"
   Quantity.AttackersInTheirLastTurn {} -> "AttackersInTheirLastTurn"
-  Quantity.TalliedThisTurn TurnTally.CardsDiscarded _ -> "CardsDiscardedThisTurn"
-  Quantity.TalliedThisTurn TurnTally.CardsDrawn _ -> "CardsDrawnThisTurn"
-  Quantity.TalliedThisTurn TurnTally.ActionsDone {} _ -> "ActionsDoneThisTurn"
-  Quantity.TalliedThisTurn TurnTally.DilemmasFaced _ -> "DilemmasFacedThisTurn"
-  Quantity.TalliedThisTurn TurnTally.CrimesCommitted _ -> "CrimesCommittedThisTurn"
-  Quantity.TalliedThisTurn TurnTally.LandsPlayed {} _ -> "LandsPlayedThisTurn"
+  Quantity.Tallied TurnTally.CardsDiscarded _ -> "CardsDiscardedThisTurn"
+  Quantity.Tallied TurnTally.CardsDrawn {} _ -> "CardsDrawn"
+  Quantity.Tallied TurnTally.ActionsDone {} _ -> "ActionsDoneThisTurn"
+  Quantity.Tallied TurnTally.DilemmasFaced _ -> "DilemmasFacedThisTurn"
+  Quantity.Tallied TurnTally.CrimesCommitted _ -> "CrimesCommittedThisTurn"
+  Quantity.Tallied TurnTally.LandsPlayed {} _ -> "LandsPlayedThisTurn"
   Quantity.LifeChanged {} -> "LifeChanged"
   Quantity.PlayersDealtDamage {} -> "PlayersDealtDamage"
   Quantity.DamageDealtToPlayersThisTurn {} -> "DamageDealtToPlayersThisTurn"

@@ -413,7 +413,7 @@ gameStateRoundTripSpec s registry corpus = do
         second = S.withEvents [GameEvent.DamageDealt dealt, GameEvent.DamageDealt dealt] handed
         again = Engine.beginTurnOf S.alice second
         filed = Foldable.toList . History.pastTurns . GameState.history
-        expected turn = PastTurn.MkPastTurn {PastTurn.activePlayers = [TurnRegisters.activePlayer (GameState.turn turn)], PastTurn.events = TurnRegisters.events (GameState.turn turn)}
+        expected turn = PastTurn.MkPastTurn {PastTurn.activePlayers = [TurnRegisters.activePlayer (GameState.turn turn)], PastTurn.events = TurnRegisters.events (GameState.turn turn), PastTurn.draws = Map.empty}
     Spec.assertEqWith s "nothing is filed before a handoff" (filed first) []
     Spec.assertEqWith s "the first turn's log is not empty" (Seq.length (TurnRegisters.events (GameState.turn first))) 1
     Spec.assertEqWith s "the handoff filed alice's turn" (filed handed) [expected first]

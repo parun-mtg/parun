@@ -1668,7 +1668,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "the lint itself catches a slot read only from inside a number" $ do
     let drawsTally ref =
           Mode.MkMode
-            (Seq.singleton (Mint.mandatory (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.TalliedThisTurn TurnTally.CardsDiscarded ref) Nothing Nothing)))))
+            (Seq.singleton (Mint.mandatory (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Tallied TurnTally.CardsDiscarded ref) Nothing Nothing)))))
             Map.empty
     Spec.assertBool
       s

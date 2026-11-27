@@ -47,7 +47,7 @@ spec s = Spec.describe s "Parun.Codec.AlternativeCost" $ do
             Just
               ( Condition.Compares
                   ( Compares.MkCompares
-                      (Quantity.TalliedThisTurn TurnTally.CardsDiscarded (PlayerRef.Relative PlayerRelation.You))
+                      (Quantity.Tallied TurnTally.CardsDiscarded (PlayerRef.Relative PlayerRelation.You))
                       Comparison.AtLeast
                       (Quantity.Literal 1)
                   )

@@ -3855,7 +3855,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.AttackersDeclaredThisCombat -> []
   Quantity.Type.AttackedInLastTurnOf _ -> []
   Quantity.Type.AttackersInTheirLastTurn _ -> []
-  Quantity.Type.TalliedThisTurn _ _ -> []
+  Quantity.Type.Tallied _ _ -> []
   Quantity.Type.LifeChanged _ -> []
   Quantity.Type.PlayersDealtDamage _ -> []
   Quantity.Type.DamageDealtToPlayersThisTurn _ -> []

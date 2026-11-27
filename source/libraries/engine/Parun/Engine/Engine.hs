@@ -2575,7 +2575,8 @@ closeTurn gs =
               { -- CR 608.2i: the outgoing turn, whole, joins the game's finished
                 -- turns before the log holding it is cleared above, for the per-seat
                 -- view, for every "last turn" tally a CARD asks (Quantity's
-                -- SpellsCast and LifeChanged at WhichTurn.LastTurn), for the
+                -- SpellsCast and LifeChanged at WhichTurn.LastTurn, and the draw
+                -- tally off the draws filed beside the log), for the
                 -- game's casts (Game.castsThisGame) and earlier damage
                 -- (Game.damageBeforeThisTurn), and, by its stamp, for the count
                 -- the NEXT turn's untap step asks about (CR 502.2,
@@ -2586,7 +2587,8 @@ closeTurn gs =
                   seq (length outgoing) . (History.pastTurns (GameState.history gs) Seq.|>) $!
                     PastTurn.MkPastTurn
                       { PastTurn.activePlayers = outgoing,
-                        PastTurn.events = TurnRegisters.events (GameState.turn gs)
+                        PastTurn.events = TurnRegisters.events (GameState.turn gs),
+                        PastTurn.draws = fmap Natural.length (TurnRegisters.drawsThisTurn (GameState.turn gs))
                       }
               }
         }

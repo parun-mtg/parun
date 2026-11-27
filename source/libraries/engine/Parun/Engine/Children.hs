@@ -892,7 +892,7 @@ quantityChildren children quantity = case quantity of
   Quantity.AttackersDeclaredThisCombat -> pure quantity
   Quantity.AttackedInLastTurnOf ref -> fmap Quantity.AttackedInLastTurnOf (player children ref)
   Quantity.AttackersInTheirLastTurn ref -> fmap Quantity.AttackersInTheirLastTurn (player children ref)
-  Quantity.TalliedThisTurn tally ref -> fmap (Quantity.TalliedThisTurn tally) (player children ref)
+  Quantity.Tallied tally ref -> fmap (Quantity.Tallied tally) (player children ref)
   Quantity.LifeChanged (LifeTally.MkLifeTally ref direction turn) -> fmap (\renamed -> Quantity.LifeChanged (LifeTally.MkLifeTally renamed direction turn)) (player children ref)
   Quantity.PlayersDealtDamage (DamageTally.MkDamageTally dealt turn) -> fmap (\renamed -> Quantity.PlayersDealtDamage (DamageTally.MkDamageTally renamed turn)) (dealtDamageChildren children dealt)
   Quantity.DamageDealtToPlayersThisTurn dealt -> fmap Quantity.DamageDealtToPlayersThisTurn (dealtDamageChildren children dealt)
