@@ -33,6 +33,7 @@ import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.Clause as Clause
+import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CombatStep as CombatStep
@@ -40,6 +41,8 @@ import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ControllerRelation as ControllerRelation
+import qualified Parun.Types.CopyStackObject as CopyStackObject
+import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostChange as CostChange
@@ -64,18 +67,21 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.Hybrid as Hybrid
+import qualified Parun.Types.IfTaken as IfTaken
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.MayPass as MayPass
 import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.Phase as Phase
@@ -229,6 +235,19 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
     Spec.assertEq s [Effect.Abandon] [e | t <- Face.triggeredAbilities (translated theVerySoilShallShake), m <- Foldable.toList (Modal.modes (TriggeredAbility.modal t)), c <- Foldable.toList (Mode.clauses m), e <- Foldable.toList (Clause.effects c)]
     let other = Text.unpack (Text.replace (Text.pack "\"_SingleScheme\":\"ThisScheme\"") (Text.pack "\"_SingleScheme\":\"ThatScheme\"") (Text.pack (fst theVerySoilShallShake)))
     Spec.assertEq s (Left (Text.pack "_SingleScheme:ThatScheme")) (accepts (other, snd theVerySoilShallShake))
+
+  -- CR 701.33, CR 118.12: "you may abandon this scheme. If you do", an
+  -- optional clause and one that runs if it ran.
+  Spec.it s "reads abandoning this scheme by choice as gating what follows" $ do
+    Spec.assertEq s (Right ()) (accepts realityIsMineToControl)
+    let copy = Effect.CopyStackObject CopyStackObject.MkCopyStackObject {CopyStackObject.ref = ObjectRef.InSlot Oracle.Trigger.castSpell, CopyStackObject.targets = CopyTargets.ChosenByController, CopyStackObject.quantity = CopyStackObject.defaultQuantity, CopyStackObject.copier = CopyStackObject.defaultCopier, CopyStackObject.exceptions = [], CopyStackObject.slot = Nothing}
+    Spec.assertEq
+      s
+      [ [ (Optionality.Optional (PlayerRef.Relative PlayerRelation.You) MayPass.AllSeatsFirst, Nothing, [Effect.Abandon]),
+          (Optionality.Mandatory, Just (IfTaken.AnyTaken (pure (ClauseIndex.MkClauseIndex 0))), [copy])
+        ]
+      ]
+      [[(Clause.optionality c, Clause.ifTaken c, Foldable.toList (Clause.effects c)) | c <- Foldable.toList (Mode.clauses m)] | t <- Face.triggeredAbilities (translated realityIsMineToControl), m <- Foldable.toList (Modal.modes (TriggeredAbility.modal t))]
 
   -- CR 614.1d: "This land enters tapped unless [condition]" applies while
   -- the condition fails, so it is held as the complement of what it names.
@@ -481,6 +500,13 @@ rootsOfAllEvil :: (String, String)
 rootsOfAllEvil =
   ( "{\"_OracleCard\":\"Scheme\",\"Name\":\"Roots of All Evil\",\"Typeline\":{\"Supertypes\":[],\"Cardtypes\":[\"Scheme\"],\"Subtypes\":[]},\"Rules\":[{\"_Rule\":\"TriggerA\",\"args\":[{\"_Trigger\":\"WhenAPlayerSetsASchemeInMotion\",\"args\":[{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"You\"}},{\"_Schemes\":\"SingleScheme\",\"args\":{\"_SingleScheme\":\"ThisScheme\"}}]},{\"_Actions\":\"ActionList\",\"args\":[{\"_Action\":\"CreateTokens\",\"args\":[[{\"_CreatableToken\":\"NumberTokens\",\"args\":[{\"_GameNumber\":\"Integer\",\"args\":5},{\"_CreatableToken\":\"TokenWithPT\",\"args\":[{\"_PT\":\"PT\",\"args\":[1,1]},{\"_TokenColorList\":\"Colors\",\"args\":[\"Green\"]},[],[\"Creature\"],{\"_TokenSubtypes\":\"SubtypesList\",\"args\":[\"Saproling\"]},[]]}]}],[]]}]}]}]}",
     "When you set this scheme in motion, create five 1/1 green Saproling creature tokens."
+  )
+
+-- | Reality Is Mine to Control's AST, and its Oracle text less its reminders.
+realityIsMineToControl :: (String, String)
+realityIsMineToControl =
+  ( "{\"_OracleCard\":\"Scheme\",\"Name\":\"Reality Is Mine to Control\",\"Typeline\":{\"Supertypes\":[\"Ongoing\"],\"Cardtypes\":[\"Scheme\"],\"Subtypes\":[]},\"Rules\":[{\"_Rule\":\"TriggerA\",\"args\":[{\"_Trigger\":\"WhenAPlayerCastsASpell\",\"args\":[{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"You\"}},{\"_Spells\":\"AnySpell\"}]},{\"_Actions\":\"ActionList\",\"args\":[{\"_Action\":\"MayCost\",\"args\":{\"_Cost\":\"AbandonScheme\",\"args\":{\"_SingleScheme\":\"ThisScheme\"}}},{\"_Action\":\"If\",\"args\":[{\"_Condition\":\"CostWasPaid\"},[{\"_Action\":\"CopySpellAndMayChooseNewTargets\",\"args\":{\"_Spell\":\"Trigger_ThatSpell\"}}]]}]}]}]}",
+    "Whenever you cast a spell, you may abandon this scheme. If you do, copy that spell, and you may choose new targets for the copy."
   )
 
 -- | The Very Soil Shall Shake's AST, and its Oracle text less its reminder.

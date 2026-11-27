@@ -229,7 +229,10 @@ event context creature c = case c of
           _ -> []
     one <- plain : thats
     opening' <- recurring
-    [other (opening' <> " " <> who <> " " <> Text.unpack (Prose.article one) <> " " <> Text.unpack one) [(thatPlayer, "that player"), (castSpell, "it")]]
+    -- The rest calls the spell "it" or "that spell" (Reality Is Mine to
+    -- Control).
+    spell' <- ["it", "that spell"]
+    [other (opening' <> " " <> who <> " " <> Text.unpack (Prose.article one) <> " " <> Text.unpack one) [(thatPlayer, "that player"), (castSpell, spell')]]
   -- A scheme's (CR 904.9), a phenomenon's (CR 312.5) or a plane's (CR
   -- 701.31d), which its Oracle text picks; the event names the source, which
   -- the rest calls "it" (There Is No Refuge).

@@ -21,6 +21,8 @@ import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.AmassKind as AmassKind
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardSelection as CardSelection
+import qualified Parun.Types.CopyStackObject as CopyStackObject
+import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Counter as Counter
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Create as Create
@@ -75,6 +77,21 @@ countered context c
     Maybe.isNothing (Counter.instead c) = do
       ref <- Target.object context Target.All (Counter.ref c)
       [Predicate.MkPredicate Nothing (Text.pack "counter " <> Target.wording ref) [] (Target.mentions ref) Nothing False]
+  | otherwise = []
+
+-- | "Copy [spell]. You may choose new targets for the copy" (CR 707.10c),
+-- one copy you make, joined as Twincast, Mica, Reader of Ruins or Reality
+-- Is Mine to Control prints it. Any other copy renders nothing.
+copied :: Target.Context -> CopyStackObject.CopyStackObject ability -> [Predicate.Predicate]
+copied context c
+  | CopyStackObject.targets c == CopyTargets.ChosenByController,
+    CopyStackObject.quantity c == CopyStackObject.defaultQuantity,
+    CopyStackObject.copier c == CopyStackObject.defaultCopier,
+    null (CopyStackObject.exceptions c),
+    Maybe.isNothing (CopyStackObject.slot c) = do
+      ref <- Target.object context Target.All (CopyStackObject.ref c)
+      joined <- [". You may", " and you may", ", and you may"]
+      [Predicate.MkPredicate Nothing (Text.pack "copy " <> Target.wording ref <> Text.pack joined <> Text.pack " choose new targets for the copy") [] (Target.mentions ref) Nothing False]
   | otherwise = []
 
 -- | "Create [tokens]" (CR 111.1). A token that IS a die (Create.die), or one
