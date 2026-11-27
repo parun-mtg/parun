@@ -27,6 +27,8 @@ codec filterCodec =
       anyObject "AnyOtherExiledCard" AnchorPool.ExiledCards SelfInclusion.ExcludesCandidate,
       anyObject "AnyGraveyardCard" AnchorPool.GraveyardCards SelfInclusion.IncludesCandidate,
       anyObject "AnyOtherGraveyardCard" AnchorPool.GraveyardCards SelfInclusion.ExcludesCandidate,
+      anyObject "AnyLibraryTop" AnchorPool.LibraryTops SelfInclusion.IncludesCandidate,
+      anyObject "AnyOtherLibraryTop" AnchorPool.LibraryTops SelfInclusion.ExcludesCandidate,
       Arm.nullary "YourCommander" Anchor.YourCommander,
       Arm.nullary "Host" Anchor.Host
     ]
@@ -52,5 +54,7 @@ tagOf x = case x of
   Anchor.AnyObject AnchorPool.ExiledCards SelfInclusion.ExcludesCandidate _ -> "AnyOtherExiledCard"
   Anchor.AnyObject AnchorPool.GraveyardCards SelfInclusion.IncludesCandidate _ -> "AnyGraveyardCard"
   Anchor.AnyObject AnchorPool.GraveyardCards SelfInclusion.ExcludesCandidate _ -> "AnyOtherGraveyardCard"
+  Anchor.AnyObject AnchorPool.LibraryTops SelfInclusion.IncludesCandidate _ -> "AnyLibraryTop"
+  Anchor.AnyObject AnchorPool.LibraryTops SelfInclusion.ExcludesCandidate _ -> "AnyOtherLibraryTop"
   Anchor.YourCommander {} -> "YourCommander"
   Anchor.Host {} -> "Host"
