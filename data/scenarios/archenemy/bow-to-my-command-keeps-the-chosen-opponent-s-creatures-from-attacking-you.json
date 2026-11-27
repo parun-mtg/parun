@@ -1,0 +1,163 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice",
+        "sideDecks": [
+          {
+            "key": "Scheme",
+            "value": [
+              {
+                "card": "Bow to My Command",
+                "label": "bow"
+              },
+              {
+                "card": "Mortal Flesh Is Weak"
+              }
+            ]
+          }
+        ],
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bb",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob",
+        "team": 2
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "cb",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "Upkeep"
+  },
+  "description": "CR 701.32b Bow to My Command's opponent is chosen as it is set in motion, and the chosen player's creatures can't attack the archenemy while the other opponent's can",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOpponent",
+          "with": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$bow"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Command"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Attack": [
+          "$bb",
+          "$cb"
+        ]
+      },
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": [
+          "$bb"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "EndOfCombat",
+      "turn": 2
+    }
+  ]
+}

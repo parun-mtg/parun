@@ -1779,6 +1779,7 @@ replacementRowReads re = case re of
   ReplacementEffect.AttachR (AttachR.MkAttachR pat (AttachRewrite.ChooseQuality _)) -> ([pat], [])
   -- The effects are replacementRowEffects' answer.
   ReplacementEffect.TransformR (TransformR.MkTransformR pat _) -> ([pat], [])
+  ReplacementEffect.SetInMotionR _ -> ([], [])
   ReplacementEffect.UntapR _ -> ([], [])
   -- A LifeLossPattern is one ControllerRelation and one LifeLossCause, and no arm
   -- of LifeLossRewrite carries a Filter or a Quantity: no read at all.
@@ -2029,6 +2030,7 @@ overRelations f re = case re of
   ReplacementEffect.TurnUpR _ -> pure re
   ReplacementEffect.AttachR _ -> pure re
   ReplacementEffect.TransformR _ -> pure re
+  ReplacementEffect.SetInMotionR _ -> pure re
   ReplacementEffect.UntapR _ -> pure re
   where
     overSubject subject = case subject of
@@ -2078,6 +2080,7 @@ replacementRowEffects re = case re of
   -- CR 701.27i's "as [this permanent] transforms, [do something]".
   ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.RunEffects effects)) -> Foldable.toList effects
   ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.ChoosePlayer _)) -> []
+  ReplacementEffect.SetInMotionR _ -> []
   ReplacementEffect.UntapR _ -> []
   ReplacementEffect.LifeLossR _ -> []
   ReplacementEffect.LifeGainR _ -> []

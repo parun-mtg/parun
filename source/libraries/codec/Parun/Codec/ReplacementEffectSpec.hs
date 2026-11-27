@@ -412,4 +412,11 @@ spec s =
             codec
             (ReplacementEffect.TransformR (TransformR.MkTransformR Filter.IsSource (TransformRewrite.RunEffects (Seq.singleton (Effect.Type.Proliferate Nothing)))))
             " {\"type\":\"TransformR\",\"value\":{\"matching\":{\"type\":\"IsSource\"},\"rewrite\":{\"type\":\"RunEffects\",\"value\":[{\"type\":\"Proliferate\"}]}}} "
+        -- CR 701.32b: Bow to My Command's "as you set this scheme in motion".
+        Spec.it s "SetInMotionR (Bow to My Command)" $
+          Common.assertCodec
+            s
+            codec
+            (ReplacementEffect.SetInMotionR PlayerRelation.Opponent)
+            " {\"type\":\"SetInMotionR\",\"value\":\"Opponent\"} "
         Spec.it s "has a schema" $ Common.assertHasSchema s codec

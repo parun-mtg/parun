@@ -139,6 +139,10 @@ data ProposedEvent
     -- over goes through, once the face is written; nothing replaces the turn
     -- itself.
     WouldTransform ObjectId.ObjectId
+  | -- | CR 701.32b: a scheme is being set in motion. Raised by
+    -- Parun.Engine.Archenemy.setOne once the scheme is face up; nothing
+    -- replaces setting it in motion itself.
+    WouldSetInMotion ObjectId.ObjectId
   | -- | CR 701.26b / 122.1d: a permanent would become untapped. Raised by
     -- Parun.Engine.Event.proposeUntap, the one funnel CR 502.3's turn-based
     -- action, Effect.Untap and CR 107.6's untap symbol in a cost all go through.

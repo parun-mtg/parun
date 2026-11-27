@@ -236,6 +236,7 @@ asZoneChange event = case event of
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
   ProposedEvent.WouldBecomeAttached {} -> Nothing
   ProposedEvent.WouldTransform {} -> Nothing
+  ProposedEvent.WouldSetInMotion {} -> Nothing
   ProposedEvent.WouldUntap _ -> Nothing
   ProposedEvent.WouldLoseLife {} -> Nothing
   ProposedEvent.WouldGainLife {} -> Nothing
@@ -863,6 +864,7 @@ affected event = case event of
   ProposedEvent.WouldTurnFaceUp oid _ -> ([oid], [])
   ProposedEvent.WouldBecomeAttached oid -> ([oid], [])
   ProposedEvent.WouldTransform oid -> ([oid], [])
+  ProposedEvent.WouldSetInMotion oid -> ([oid], [])
   ProposedEvent.WouldUntap oid -> ([oid], [])
   ProposedEvent.WouldLoseLife _ pid _ -> ([], [pid])
   ProposedEvent.WouldGainLife _ pid _ -> ([], [pid])
@@ -1129,6 +1131,8 @@ matchesPrinted viewOf gs event candidate =
         -- Parun.Engine.Event.transformed has already turned up (CR 701.27i).
         (ReplacementEffect.TransformR transformR, ProposedEvent.WouldTransform oid) ->
           matchesFiltered viewOf gs candidate (TransformR.matching transformR) oid
+        -- CR 701.32b: the row watches its own scheme, UntapR's self-scope below.
+        (ReplacementEffect.SetInMotionR _, ProposedEvent.WouldSetInMotion oid) -> src == oid
         -- CR 122.1d's "a permanent with a stun counter on it" is the self-scope
         -- DestructionR's arm reads one event class over: the row is minted onto
         -- the permanent holding the counters, so `src` IS the rule's subject and
@@ -1290,6 +1294,7 @@ matchesPrinted viewOf gs event candidate =
         (ReplacementEffect.TurnUpR {}, _) -> False
         (ReplacementEffect.AttachR {}, _) -> False
         (ReplacementEffect.TransformR {}, _) -> False
+        (ReplacementEffect.SetInMotionR {}, _) -> False
         (ReplacementEffect.UntapR _, _) -> False
         (ReplacementEffect.LifeLossR {}, _) -> False
         (ReplacementEffect.CounterLossR {}, _) -> False
@@ -2378,6 +2383,7 @@ bucketOfEffect re = case re of
   ReplacementEffect.AttachR {} -> ReplacementBucket.Other
   -- Nor is transforming, so CR 616.1e.
   ReplacementEffect.TransformR {} -> ReplacementBucket.Other
+  ReplacementEffect.SetInMotionR {} -> ReplacementBucket.Other
   -- CR 616.1b-d are all about entering the battlefield and copying; becoming
   -- untapped is neither, so CR 616.1e.
   ReplacementEffect.UntapR _ -> ReplacementBucket.Other
@@ -2632,6 +2638,7 @@ readsApplier re = case re of
   -- transforming permanent's controller, read off the event --
   -- EntryRewrite.RunEffects' and EntryRewrite.ChoosePlayer's answer.
   ReplacementEffect.TransformR (TransformR.MkTransformR _ _) -> False
+  ReplacementEffect.SetInMotionR _ -> False
   -- CR 122.1d acts on the permanent becoming untapped and names no player -- CR
   -- 701.19a's answer one event class over, and for its reason.
   ReplacementEffect.UntapR _ -> False
@@ -2801,6 +2808,7 @@ substitutesAction effect = case effect of
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
   ReplacementEffect.TransformR {} -> False
+  ReplacementEffect.SetInMotionR {} -> False
   ReplacementEffect.UntapR _ -> False
   ReplacementEffect.LifeLossR {} -> False
   ReplacementEffect.LifeGainR {} -> False
@@ -2954,6 +2962,7 @@ readsSource effect = case effect of
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
   ReplacementEffect.TransformR {} -> False
+  ReplacementEffect.SetInMotionR {} -> False
   ReplacementEffect.UntapR _ -> False
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.Scaled scaling)) -> computedScaling scaling
   -- Enduring Angel transforms the row's own source, so two such rows leave
@@ -3436,6 +3445,7 @@ recordsAChoice effect = case effect of
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
   ReplacementEffect.TransformR {} -> False
+  ReplacementEffect.SetInMotionR {} -> False
   ReplacementEffect.UntapR {} -> False
   ReplacementEffect.LifeLossR {} -> False
   ReplacementEffect.LifeGainR {} -> False
@@ -3526,6 +3536,7 @@ affectedChooserOf gs event = case event of
   -- CR 616.1's affected object is the permanent transforming, and its
   -- controller is the "you" of its own "as this transforms" ability.
   ProposedEvent.WouldTransform oid -> Projection.controllerOf oid gs
+  ProposedEvent.WouldSetInMotion oid -> Projection.controllerOf oid gs
   -- CR 616.1's affected object is the permanent that would become untapped, and
   -- CR 616.1 gives its controller the choice among applicable rows even at CR
   -- 502.3's turn-based action, where that controller is the active player.
@@ -5031,6 +5042,7 @@ contestedResource gs candidate = case ReplacementCandidate.effect candidate of
   ReplacementEffect.TurnUpR {} -> Nothing
   ReplacementEffect.AttachR {} -> Nothing
   ReplacementEffect.TransformR {} -> Nothing
+  ReplacementEffect.SetInMotionR {} -> Nothing
   ReplacementEffect.UntapR _ -> Nothing
   -- CR 614.1a: neither resizing life-total rewrite is a supply a batch can run out
   -- of. A floor is re-read off the board every application, and once the player is
@@ -5084,6 +5096,7 @@ asDamageEvent event = case event of
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
   ProposedEvent.WouldBecomeAttached {} -> Nothing
   ProposedEvent.WouldTransform {} -> Nothing
+  ProposedEvent.WouldSetInMotion {} -> Nothing
   ProposedEvent.WouldUntap _ -> Nothing
   ProposedEvent.WouldLoseLife {} -> Nothing
   ProposedEvent.WouldGainLife {} -> Nothing
@@ -5107,6 +5120,7 @@ asDestruction event = case event of
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
   ProposedEvent.WouldBecomeAttached {} -> Nothing
   ProposedEvent.WouldTransform {} -> Nothing
+  ProposedEvent.WouldSetInMotion {} -> Nothing
   ProposedEvent.WouldUntap _ -> Nothing
   ProposedEvent.WouldLoseLife {} -> Nothing
   ProposedEvent.WouldGainLife {} -> Nothing
@@ -5133,6 +5147,7 @@ asUntap event = case event of
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
   ProposedEvent.WouldBecomeAttached {} -> Nothing
   ProposedEvent.WouldTransform {} -> Nothing
+  ProposedEvent.WouldSetInMotion {} -> Nothing
   ProposedEvent.WouldLoseLife {} -> Nothing
   ProposedEvent.WouldGainLife {} -> Nothing
   ProposedEvent.WouldDraw _ _ -> Nothing
@@ -5162,6 +5177,7 @@ asDraw event = case event of
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
   ProposedEvent.WouldBecomeAttached {} -> Nothing
   ProposedEvent.WouldTransform {} -> Nothing
+  ProposedEvent.WouldSetInMotion {} -> Nothing
   ProposedEvent.WouldUntap _ -> Nothing
   ProposedEvent.WouldLoseLife {} -> Nothing
   ProposedEvent.WouldGainLife {} -> Nothing
@@ -5192,6 +5208,7 @@ asPerformed instruction event = case event of
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
   ProposedEvent.WouldBecomeAttached {} -> Nothing
   ProposedEvent.WouldTransform {} -> Nothing
+  ProposedEvent.WouldSetInMotion {} -> Nothing
   ProposedEvent.WouldUntap _ -> Nothing
   ProposedEvent.WouldLoseLife {} -> Nothing
   ProposedEvent.WouldGainLife {} -> Nothing
@@ -5218,6 +5235,7 @@ asThrow event = case event of
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
   ProposedEvent.WouldBecomeAttached {} -> Nothing
   ProposedEvent.WouldTransform {} -> Nothing
+  ProposedEvent.WouldSetInMotion {} -> Nothing
   ProposedEvent.WouldUntap _ -> Nothing
   ProposedEvent.WouldLoseLife {} -> Nothing
   ProposedEvent.WouldGainLife {} -> Nothing
@@ -5236,6 +5254,7 @@ asCounters event = case event of
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
   ProposedEvent.WouldBecomeAttached {} -> Nothing
   ProposedEvent.WouldTransform {} -> Nothing
+  ProposedEvent.WouldSetInMotion {} -> Nothing
   ProposedEvent.WouldUntap _ -> Nothing
   ProposedEvent.WouldLoseLife {} -> Nothing
   ProposedEvent.WouldGainLife {} -> Nothing
@@ -5262,6 +5281,7 @@ asPlayerCounters event = case event of
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
   ProposedEvent.WouldBecomeAttached {} -> Nothing
   ProposedEvent.WouldTransform {} -> Nothing
+  ProposedEvent.WouldSetInMotion {} -> Nothing
   ProposedEvent.WouldUntap _ -> Nothing
   ProposedEvent.WouldLoseLife {} -> Nothing
   ProposedEvent.WouldGainLife {} -> Nothing
@@ -5292,6 +5312,7 @@ asLifeLoss event = case event of
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
   ProposedEvent.WouldBecomeAttached {} -> Nothing
   ProposedEvent.WouldTransform {} -> Nothing
+  ProposedEvent.WouldSetInMotion {} -> Nothing
   ProposedEvent.WouldUntap _ -> Nothing
   ProposedEvent.WouldDraw _ _ -> Nothing
   ProposedEvent.WouldPerform {} -> Nothing
@@ -5317,6 +5338,7 @@ asCounterLoss event = case event of
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
   ProposedEvent.WouldBecomeAttached {} -> Nothing
   ProposedEvent.WouldTransform {} -> Nothing
+  ProposedEvent.WouldSetInMotion {} -> Nothing
   ProposedEvent.WouldUntap _ -> Nothing
   ProposedEvent.WouldDraw _ _ -> Nothing
   ProposedEvent.WouldPerform {} -> Nothing
@@ -5347,6 +5369,7 @@ asLifeGain event = case event of
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
   ProposedEvent.WouldBecomeAttached {} -> Nothing
   ProposedEvent.WouldTransform {} -> Nothing
+  ProposedEvent.WouldSetInMotion {} -> Nothing
   ProposedEvent.WouldUntap _ -> Nothing
   ProposedEvent.WouldDraw _ _ -> Nothing
   ProposedEvent.WouldPerform {} -> Nothing
@@ -5368,6 +5391,7 @@ asTokens event = case event of
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
   ProposedEvent.WouldBecomeAttached {} -> Nothing
   ProposedEvent.WouldTransform {} -> Nothing
+  ProposedEvent.WouldSetInMotion {} -> Nothing
   ProposedEvent.WouldUntap _ -> Nothing
   ProposedEvent.WouldLoseLife {} -> Nothing
   ProposedEvent.WouldGainLife {} -> Nothing
@@ -5592,6 +5616,7 @@ asPhaseBegin event = case event of
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
   ProposedEvent.WouldBecomeAttached {} -> Nothing
   ProposedEvent.WouldTransform {} -> Nothing
+  ProposedEvent.WouldSetInMotion {} -> Nothing
   ProposedEvent.WouldUntap _ -> Nothing
   ProposedEvent.WouldLoseLife {} -> Nothing
   ProposedEvent.WouldGainLife {} -> Nothing

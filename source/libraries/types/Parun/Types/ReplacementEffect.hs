@@ -17,6 +17,7 @@ import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TransformR as TransformR
 import qualified Parun.Types.TurnUpR as TurnUpR
@@ -128,6 +129,13 @@ data ReplacementEffect card ability effect
     -- transforms neither enters nor becomes attached. Raised by
     -- Parun.Engine.Event.transformed, after the face is written.
     TransformR (TransformR.TransformR effect)
+  | -- | CR 701.32b: "As you set this scheme in motion, choose an opponent"
+    -- (Bow to My Command): the relation of the player the scheme's controller
+    -- chooses, written to Object.chosenPlayers. Its own arm because setting a
+    -- scheme in motion is its own event class: the scheme neither enters nor
+    -- transforms. No subject, UntapR's posture: "this scheme" is the row's own
+    -- source. Raised by Parun.Engine.Archenemy.setOne.
+    SetInMotionR PlayerRelation.PlayerRelation
   | -- | CR 614.1a / 122.1d: "If a permanent with a stun counter on it would
     -- become untapped, instead remove a stun counter from it." A separate arm
     -- from every other because becoming untapped is its own event class: CR

@@ -148,6 +148,8 @@ import qualified Parun.Types.Settle as Settle
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StoredEffects as StoredEffects
+import qualified Parun.Types.TapForTotalPower as TapForTotalPower
+import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Throw as Throw
 import qualified Parun.Types.ThrowKind as ThrowKind
@@ -2233,19 +2235,22 @@ payOffers runSubgame resolving source controller offer legal gate offers = do
 -- cost; Nothing when the team does not pay. The team answers through its
 -- primary player, to whom CR 805.2 gives a team's unsettled choice: whether to
 -- pay (Prompt.ChooseToPay, unless the cost is mandatory or every player
--- committed to it) and which permanents (Prompt.ChooseSacrifices, elided where
--- the count leaves no choice), from everything any of the team controls
--- matching the cost -- My Forces Are Innumerable's ruling, "Those creatures may
--- be controlled by different teammates".
+-- committed to it) and which permanents, from everything any of the team
+-- controls matching the cost -- the rulings of My Forces Are Innumerable and
+-- Bow to My Command, "may be controlled by different teammates".
 --
--- Each controller sacrifices their own (CR 701.21a): a share is the gate's
--- sacrifice narrowed to the permanents picked that they control, which
--- Cost.pay takes without asking again, and payOffers makes the shares one
--- event. CR 118.3 first: a team controlling too few between them is not asked.
--- Reject-not-repair, Cost.pay's Sacrifice posture: an answer that is not a
--- size-n subset of the offer pays nothing.
+-- A sacrifice's permanents are picked by Prompt.ChooseSacrifices, elided where
+-- the count leaves no choice; a total-power tap's by
+-- Prompt.ChooseTapsForTotalPower, never elided (Cost.pay's posture), the total
+-- being the team's. Each controller then sacrifices (CR 701.21a) or taps
+-- their own: a share is the gate's component narrowed to the picked
+-- permanents they control, exactly that many, which Cost.pay takes without
+-- asking again, and payOffers makes the shares one event. CR 118.3 first: a
+-- team controlling too few, or too little power, between them is not asked.
+-- Reject-not-repair, Cost.pay's posture: an answer outside the offer, or one
+-- short of the count or the total, pays nothing.
 --
--- A cost jointSacrifice cannot split, or a choice of costs, is offered to
+-- A cost Common.jointComponent refuses, or a choice of costs, is offered to
 -- nobody; Parun.CardSpec's "no card writes a joint offer the team cannot
 -- split" keeps both out of card data.
 jointOffer :: ObjectId -> ObjectId -> PlayerId -> PayOffer.PayOffer -> Map.Map SlotName (Set Recipient) -> Set PlayerId -> PayGate.PayGate -> [PlayerId] -> Game (Maybe [(PlayerId, PayGate.PayGate)])
@@ -2254,29 +2259,44 @@ jointOffer resolving source controller offer legal committed gate team = do
   let (slots, options) = Common.gateCostOf resolving source controller legal gate gs
   case (team, options) of
     (first : _, option NonEmpty.:| [])
-      | Just (n, criterion) <- Common.jointSacrifice option -> do
+      | Just component <- Common.jointComponent option -> do
           let asker = Maybe.fromMaybe first (List.find (== Game.primaryOf gs first) team)
               decider = Decide.deciderFor asker gs
-              pools = [(payer, Replacement.sacrificeCandidates (Just payer) slots payer (Just source) criterion gs) | payer <- team]
-              pool = concatMap snd pools
-              share picked = option {Cost.Type.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed (Natural.length picked))) (Filter.Type.And [criterion, Filter.Type.Or (fmap Filter.Type.IsObject (Set.toAscList picked))]) Set.empty)]}
-              shareOf picked = gate {PayGate.grouping = PayerGrouping.Severally, PayGate.cost = CostChoice.MkCostChoice (NonEmpty.singleton (share picked)), PayGate.obligation = PayObligation.Mandatory}
               forced = PayGate.obligation gate == PayObligation.Mandatory || all (`Set.member` committed) team
-          if Natural.length pool < n
-            then pure Nothing
-            else do
-              decision <- if forced then pure PaymentDecision.Pays else Game.choose (Prompt.ChooseToPay decider asker resolving offer option Seq.empty)
-              if decision /= PaymentDecision.Pays
-                then pure Nothing
-                else do
-                  chosen <-
-                    if n == 0 || Natural.length pool <= n
-                      then pure (Set.fromList (List.genericTake n pool))
-                      else Game.choose (Prompt.ChooseSacrifices decider asker source pool n Seq.empty)
-                  pure $
-                    if Set.isSubsetOf chosen (Set.fromList pool) && Natural.length chosen == n
-                      then Just [(payer, shareOf picked) | (payer, mine) <- pools, let picked = Set.intersection chosen (Set.fromList mine), not (Set.null picked)]
-                      else Nothing
+              among picked = Filter.Type.Or (fmap Filter.Type.IsObject (Set.toAscList picked))
+              shareOf part = gate {PayGate.grouping = PayerGrouping.Severally, PayGate.cost = CostChoice.MkCostChoice (NonEmpty.singleton option {Cost.Type.components = [part]}), PayGate.obligation = PayObligation.Mandatory}
+              split pools part chosen = [(payer, shareOf (part picked)) | (payer, mine) <- pools, let picked = Set.intersection chosen (Set.fromList mine), not (Set.null picked)]
+              offered payable pick
+                | not payable = pure Nothing
+                | otherwise = do
+                    decision <- if forced then pure PaymentDecision.Pays else Game.choose (Prompt.ChooseToPay decider asker resolving offer option Seq.empty)
+                    if decision /= PaymentDecision.Pays then pure Nothing else pick
+          case component of
+            CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed n)) criterion _) -> do
+              let pools = [(payer, Replacement.sacrificeCandidates (Just payer) slots payer (Just source) criterion gs) | payer <- team]
+                  pool = concatMap snd pools
+                  part picked = CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed (Natural.length picked))) (Filter.Type.And [criterion, among picked]) Set.empty)
+              offered (Natural.length pool >= n) $ do
+                chosen <-
+                  if n == 0 || Natural.length pool <= n
+                    then pure (Set.fromList (List.genericTake n pool))
+                    else Game.choose (Prompt.ChooseSacrifices decider asker source pool n Seq.empty)
+                pure $
+                  if Set.isSubsetOf chosen (Set.fromList pool) && Natural.length chosen == n
+                    then Just (split pools part chosen)
+                    else Nothing
+            CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n criterion keyword) -> do
+              let pools = [(payer, filter (\c -> Projection.controllerOf c gs == Just payer) (Cost.tapCandidates slots payer source criterion gs)) | payer <- team]
+                  powers = [(c, Cost.tapPower keyword payer source c gs) | (payer, mine) <- pools, c <- mine]
+                  total picked = sum [power | (c, power) <- powers, Set.member c picked]
+                  part picked = CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed (Natural.length picked)) (Filter.Type.And [criterion, among picked]) False TapState.Tapped)
+              offered (sum (fmap (max 0 . snd) powers) >= toInteger n) $ do
+                chosen <- Game.choose (Prompt.ChooseTapsForTotalPower decider asker source powers n)
+                pure $
+                  if Set.isSubsetOf chosen (Set.fromList (fmap fst powers)) && total chosen >= toInteger n
+                    then Just (split pools part chosen)
+                    else Nothing
+            _ -> pure Nothing
     _ -> pure Nothing
 
 -- CR 118.12a over CR 608.2f's loop: the members whose ForEach.payGate branch
