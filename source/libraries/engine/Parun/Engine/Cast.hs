@@ -1720,25 +1720,26 @@ permittedFrom pid oid face gs zone = case zone of
 --     are the pair that proves both directions.
 permitsCastFromExile :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
 permitsCastFromExile pid oid face gs =
-  exileOpen pid oid face gs || PlayerEffect.mayCastFrom pid Zone.Exile oid gs
+  exileOpen True pid oid face gs || PlayerEffect.mayCastFrom pid Zone.Exile oid gs
 
 -- permitsCastFromExile's six permissions an exiled card carries for itself,
 -- without a player's CR 601.3 CastFrom grant (Dawnhand Dissident's): a cast one
 -- of these admits need be made under no such grant, so it pays none of that
--- grant's additional costs (castWays).
-exileOpen :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
-exileOpen pid oid face gs =
-  exileGranted pid oid face gs
+-- grant's additional costs (castWays). `foretold` says whether CR 702.143a's
+-- permission counts, which castWays asks only of a foretell cost.
+exileOpen :: Bool -> PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
+exileOpen foretold pid oid face gs =
+  exileGranted foretold pid oid face gs
     || Cost.ownPermissionOpens Zone.Exile pid oid face gs
 
 -- exileOpen's five permissions something other than the card's own text gives
 -- it: what a card exiled face down may still be cast under, its text being
 -- none until it is turned up (CR 406.3a, faceDownGateOk).
-exileGranted :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
-exileGranted pid oid face gs =
+exileGranted :: Bool -> PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Bool
+exileGranted foretold pid oid face gs =
   any (heldAdmits oid face gs) (Expiry.openPermissions pid oid gs)
     || Cost.permitsCastPlotted pid oid gs
-    || Cost.permitsCastForetold pid oid gs
+    || (foretold && Cost.permitsCastForetold pid oid gs)
     || permitsCastPrepared pid oid gs
     || permitsCastWarped pid oid gs
 
@@ -2395,7 +2396,7 @@ couldBeginToCast pid oid name gs =
 faceDownGateOk :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> GameState -> Bool
 faceDownGateOk pid oid name before proposed =
   not (maybe False Object.exiledFaceDown (Game.lookupObject oid before))
-    || maybe False (\face -> exileGranted pid oid face proposed || (Exile.mayLookAt pid oid before && PlayerEffect.mayCastFrom pid Zone.Exile oid proposed)) (proposedFace oid name proposed)
+    || maybe False (\face -> exileGranted True pid oid face proposed || (Exile.mayLookAt pid oid before && PlayerEffect.mayCastFrom pid Zone.Exile oid proposed)) (proposedFace oid name proposed)
 
 -- `castWays`' options a cast may still be made under once CR 601.3f has been
 -- asked (`faceDownGateOk`): every one where the caster may look at the card, and
@@ -3588,7 +3589,12 @@ castWays :: (ObjectId -> Bool) -> PlayerId -> ObjectId -> CastOrigin.CastOrigin 
 castWays rides pid oid origin face gs castFor =
   let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFrom Zone.Graveyard _ (Just family) [] Nothing Nothing <- Cost.permissionsOf (Projection.project oid gs) oid face gs]
       ownOpen = case origin of
-        CastOrigin.FromZone Zone.Exile -> exileOpen pid oid face gs
+        -- CR 702.143a / 118.9a: a foretold card's own permission is to cast it
+        -- for its foretell cost, and for no other cost
+        -- (Cost.candidateCostsGiven's foretold arm). CR 702.170d's still opens
+        -- to every cost: no grant in data/cards/ that a way tells apart from
+        -- it (a budget, a rider, a cost) reaches a plotted card.
+        CastOrigin.FromZone Zone.Exile -> exileOpen ((castFor >>= Keyword.familyOf) == Just KeywordFamily.Foretell) pid oid face gs
         CastOrigin.FromZone Zone.Graveyard -> permitsCastUnderPermission pid oid face gs || PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Cast pid oid gs || named
         _ -> False
       -- CR 118.8: a cast an effect offers never asks, that offer being the
