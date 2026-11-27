@@ -42,6 +42,7 @@ import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.Binding as Binding.Type
 import Parun.Types.Card (Card)
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.DifferentIn as DifferentIn
@@ -2232,20 +2233,34 @@ askChooser reader controller chooser oid source seed x slots sets mine = do
             (\slot (lo, hi) -> max lo (min hi (Map.findWithDefault lo slot announced)))
             ranges
       asked = Map.intersectionWith (,) counts offered
+      -- TargetSlot's `selection`: a slot randomness fills is drawn among the
+      -- players it is offered, one Prompt.RandomPlayer per target, and kept out
+      -- of the chooser's prompt.
+      --
+      -- Not implemented: a random slot offering objects, which falls to the
+      -- chooser's prompt (#10076).
+      drawsPlayer name = case Map.lookup name slots of
+        Just slot -> TargetSlot.selection slot == CardSelection.AtRandom && all (Maybe.isJust . Recipient.playerOf) (Map.findWithDefault Set.empty name offered)
+        Nothing -> False
+      (random, decided) = Map.partitionWithKey (\name _ -> drawsPlayer name) asked
       -- Every slot taking all it is offered admits one answer, so it is bound
       -- unasked. Should that answer fail the joint check, no other passes either.
-      forced = all (\(n, legal) -> Natural.length legal == n) asked
+      forced = all (\(n, legal) -> Natural.length legal == n) decided
   case unoffered of
     slot : _ -> pure (Map.singleton slot (Set.singleton (Recipient.ToObject oid)), Set.empty)
     []
       | Map.null asked -> pure (Map.empty, Set.empty)
       | otherwise -> do
-          answer <- if forced then pure (fmap snd asked) else Game.choose (Prompt.ChooseTargets decider chooser oid asked)
+          picked <- traverse (\(n, legal) -> fmap (Set.fromList . fmap Recipient.ToPlayer) (Game.drawDistinct Prompt.RandomPlayer n (Maybe.mapMaybe Recipient.playerOf (Set.toAscList legal)))) random
+          answer <-
+            if forced
+              then pure (fmap snd decided)
+              else Game.choose (Prompt.ChooseTargets decider chooser oid decided)
           -- CR 406.4's draw, taken before selectionLegal judges the announcement:
           -- the drawn card can be one the slot's Filter refuses, and CR 601.2e is
           -- what then reverses the casting.
           drawn <- traverse (drawFromPiles (Just chooser)) answer
-          pure (fmap fst drawn, foldMap snd drawn)
+          pure (Map.union picked (fmap fst drawn), foldMap snd drawn)
 
 -- CR 601.2d: each divided slot's announced division, asked once CR 601.2c's
 -- targets are fixed, every target getting at least one. Asked of the seat that

@@ -1,6 +1,7 @@
 module Parun.Types.TargetSlot where
 
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -130,7 +131,11 @@ data TargetSlot = MkTargetSlot
     -- | CR 601.2c: what a target must also be when first chosen as the spell is
     -- cast (Parun.Engine.Target.announcedSlots), never read on resolution, on a
     -- changed target or by an attachment (Enthralling Hold's ruling).
-    asCast :: Maybe (Filter.Filter Keyword.Keyword)
+    asCast :: Maybe (Filter.Filter Keyword.Keyword),
+    -- | CR 601.2c: whether the chooser names this slot's targets or randomness
+    -- does among the legal ones (Furnace Layer's "select target player at
+    -- random"), drawn by Parun.Engine.Target.askChooser.
+    selection :: CardSelection.CardSelection
   }
   deriving (Eq, Ord, Show)
 
@@ -138,22 +143,22 @@ data TargetSlot = MkTargetSlot
 -- almost every slot in the engine and the corpus is one, so writing the count out
 -- at each would bury the handful that are not.
 required :: Pool.Pool -> Maybe (Filter.Filter Keyword.Keyword) -> TargetSlot
-required p f = MkTargetSlot p f (SlotCount.Printed TargetCount.one) Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+required p f = MkTargetSlot p f (SlotCount.Printed TargetCount.one) Nothing Nothing Nothing Nothing Nothing Nothing Nothing CardSelection.ByChoice
 
 -- CR 115.6 / 601.2c's "up to N targets": a slot the caster may fill any number of
 -- times up to N, the empty answer included.
 upTo :: Natural.Natural -> Pool.Pool -> Maybe (Filter.Filter Keyword.Keyword) -> TargetSlot
-upTo n p f = MkTargetSlot p f (SlotCount.Printed (TargetCount.upTo n)) Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+upTo n p f = MkTargetSlot p f (SlotCount.Printed (TargetCount.upTo n)) Nothing Nothing Nothing Nothing Nothing Nothing Nothing CardSelection.ByChoice
 
 -- CR 601.2c's "any number of target ...": the same slot with no printed ceiling,
 -- so the board's candidates are the only bound.
 anyNumber :: Pool.Pool -> Maybe (Filter.Filter Keyword.Keyword) -> TargetSlot
-anyNumber p f = MkTargetSlot p f (SlotCount.Printed TargetCount.anyNumber) Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+anyNumber p f = MkTargetSlot p f (SlotCount.Printed TargetCount.anyNumber) Nothing Nothing Nothing Nothing Nothing Nothing Nothing CardSelection.ByChoice
 
 -- CR 601.2c with CR 601.2b: a slot taking exactly the X the caster announced
 -- ("each of X target creatures", Rot-Curse Rakshasa).
 announcedX :: Pool.Pool -> Maybe (Filter.Filter Keyword.Keyword) -> TargetSlot
-announcedX p f = MkTargetSlot p f SlotCount.AnnouncedX Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+announcedX p f = MkTargetSlot p f SlotCount.AnnouncedX Nothing Nothing Nothing Nothing Nothing Nothing Nothing CardSelection.ByChoice
 
 -- CR 601.2c: the same slot with the computed bound its Filter compares against --
 -- see `amount` above. Separate from the three builders so that the slots that

@@ -1852,7 +1852,8 @@ slot pool f =
       TargetSlot.divided = Nothing,
       TargetSlot.together = Nothing,
       TargetSlot.total = Nothing,
-      TargetSlot.asCast = Nothing
+      TargetSlot.asCast = Nothing,
+      TargetSlot.selection = CardSelection.ByChoice
     }
 
 -- | A slot of permanents: creatures (CR 109.2) where the description says
