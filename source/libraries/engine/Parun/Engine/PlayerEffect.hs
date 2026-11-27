@@ -45,7 +45,6 @@ import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.IgnoredAbility as IgnoredAbility
-import qualified Parun.Engine.Interchangeable.Mentions as Mentions
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.ManaFilter as ManaFilter
 import qualified Parun.Engine.Plane as Plane
@@ -201,7 +200,8 @@ inScopeWithin source reach pid controller gs scope = case scope of
   -- PlayerRelation.holds, the judge every player-naming position shares: CR
   -- 102.3's opponents are every player not on the controller's team, and
   -- AnyPlayer includes the controller (Thalia's ruling: "including your own").
-  PlayerScope.Related relation -> PlayerRelation.holds (Game.teams gs) relation controller pid
+  -- CR 901.12c: a planar row's "you" is the planar team (Plane.readsYouAsTeam).
+  PlayerScope.Related relation -> PlayerRelation.holds (Game.teams gs) (if any (`Plane.readsYouAsTeam` gs) source then PlayerRelation.asPlanarTeam relation else relation) controller pid
   PlayerScope.Superlative leading -> maybe False (List.elem pid) (leaders reach (Just controller) gs leading)
   PlayerScope.InRole role -> List.elem pid (Turn.roleHolders role gs)
   PlayerScope.NamedBySource which -> any (\oid -> Set.member pid (Game.sourcePlayersOf which oid gs)) source
@@ -421,14 +421,9 @@ printedRows gs =
                     -- permanent that prints no player ability, so the fold runs
                     -- once per ability-bearing permanent instead of once per
                     -- permanent on the battlefield.
-                    --
-                    -- CR 901.12c: a planar card's rows once per member of the
-                    -- planar team, each its own "you" (Plane.planarYous), a
-                    -- teammate's only of an ability referring to "you".
                     let changes = Projection.readerTextChanges oid gs
                         stamped = fmap ((,) (Projection.staticTimestampOf oid object gs)) kept
-                        own teammate = if teammate then filter (Mentions.playerAbilityRefersToYou . snd) stamped else stamped
-                     in concat (zipWith (\teammate you -> rowsOf gs changes oid you (own teammate)) (False : repeat True) (Plane.planarYous oid controller gs))
+                     in rowsOf gs changes oid controller stamped
                   else []
       -- CR 613.1f / 613.10 / 613.11: the player abilities layer 6 GRANTED a permanent
       -- (Nerd Rage's "You have no maximum hand size"), read off the finished

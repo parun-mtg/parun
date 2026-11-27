@@ -2610,10 +2610,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     _ -> False
   -- CR 701.32b / 904.9: "When you set this scheme in motion", against the
   -- event naming this very scheme -- and CR 312.5's encounter and CR 701.31d's
-  -- "When you planeswalk to", the same move off a planar deck. Each says
-  -- "you", so the mover is CR 109.5's "you": a CR 901.12c teammate's instance
-  -- does not see the planar controller's planeswalk (CR 701.31a) -- proved by
-  -- data/scenarios/planechase/cr-901-12c-pompeii-arrives-with-one-eruption-counter-for-the-planar-team.json.
+  -- "When you planeswalk to", the same move off a planar deck.
   --
   -- A Matching subject is My Laughter Echoes' "whenever you set a non-ongoing
   -- scheme in motion": the player is CR 109.5's "you", and CR 314.4 has the
@@ -2622,7 +2619,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   -- data/scenarios/archenemy/cr-701-32c-my-laughter-echoes-misses-the-scheme-set-in-motion-before-it.json.
   TriggerCondition.TurnedUpOffDeck subject -> case event of
     GameEvent.TurnedUpOffDeck e -> case subject of
-      ActingPermanent.Self -> TurnedUpOffDeck.card e == bearer && TurnedUpOffDeck.player e == you
+      ActingPermanent.Self -> TurnedUpOffDeck.card e == bearer
       ActingPermanent.Matching f ->
         TurnedUpOffDeck.player e == you
           && Set.member bearer (GameState.command atEvent)

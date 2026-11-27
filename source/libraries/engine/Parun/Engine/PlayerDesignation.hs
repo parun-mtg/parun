@@ -71,11 +71,12 @@ settle = do
 --
 -- The carriers are the permanents each player controls and the face-up plane
 -- or phenomenon cards in the command zone, each carried by every player its
--- "you" names (CR 901.6, CR 901.12c: Plane.planarYous). The Golden City of
--- Orazca's rulings read its ascend as a permanent's.
+-- "you" names, who count their permanents together (CR 901.6, CR 901.12c:
+-- Plane.planarYous). The Golden City of Orazca's rulings read its ascend as a
+-- permanent's.
 -- data/scenarios/planechase/the-golden-city-of-orazca-blesses-its-planar-controller-with-ten-permanents.json
 -- and
--- data/scenarios/planechase/cr-901-12c-the-golden-city-of-orazca-blesses-each-member-of-the-planar-team.json
+-- data/scenarios/planechase/cr-901-12c-the-golden-city-of-orazca-blesses-the-planar-team-for-its-ten-permanents.json
 -- prove it.
 --
 -- Ascending, and the two rules in a fixed order, so the pass's writes are
@@ -90,24 +91,24 @@ gaining pcs gs =
     -- grant walk cost the square of the board (#9339).
     grants = Projection.controlGrants gs
     controlled = Maybe.mapMaybe (\oid -> fmap ((,) oid) (Projection.controllerOfGiven grants oid gs)) battlefield
+    -- CR 901.12c: a face-up planar card's "you" is the planar team
+    -- (Plane.planarYous): the team's permanents count, and each member gets
+    -- the mark.
     planar =
-      [ (you, Projection.keywordsOf oid gs)
+      [ (Plane.planarYous oid (Plane.commandControllerOf oid obj gs) gs, Projection.keywordsOf oid gs)
       | oid <- Set.toAscList (GameState.command gs),
         Plane.isPlanarCard oid gs,
-        Just obj <- [Game.lookupObject oid gs],
-        you <- Plane.planarYous oid (Plane.commandControllerOf oid obj gs) gs
+        Just obj <- [Game.lookupObject oid gs]
       ]
-    carriers = [(c, PC.keywords pc) | (oid, c) <- controlled, Just pc <- [Map.lookup oid pcs]] <> planar
-    carries kw pid = any (\(c, kws) -> c == pid && Map.member kw kws) carriers
+    carriers = [([c], PC.keywords pc) | (oid, c) <- controlled, Just pc <- [Map.lookup oid pcs]] <> planar
     counted matches pid = length [() | (oid, c) <- controlled, c == pid, maybe False matches (Map.lookup oid pcs)]
     holds pid mark = maybe False (Set.member mark . Player.designations) (Map.lookup pid (GameState.players gs))
     owed :: Keyword.Keyword -> PlayerDesignation.PlayerDesignation -> Int -> (PC.ProjectedCharacteristics -> Bool) -> [(PlayerId, PlayerDesignation.PlayerDesignation)]
     owed kw mark threshold matches =
       [ (pid, mark)
       | pid <- Map.keys (GameState.players gs),
-        carries kw pid,
         not (holds pid mark),
-        counted matches pid >= threshold
+        any (\(yous, kws) -> elem pid yous && Map.member kw kws && sum (fmap (counted matches) yous) >= threshold) carriers
       ]
 
 -- | CR 702.195a's filter: "permanents that are artifacts, Sagas, and\/or

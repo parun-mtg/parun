@@ -73,6 +73,13 @@ holds teams relation you candidate = case relation of
   YourTeam -> candidate == you || Teams.sameTeam teams you candidate
   AnotherPlayer -> candidate /= you
 
+-- | CR 901.12c: the relation a planar ability's "you" reads as in a
+-- Two-Headed Giant game -- YourTeam for You, every other arm as it is.
+asPlanarTeam :: PlayerRelation -> PlayerRelation
+asPlanarTeam relation = case relation of
+  You -> YourTeam
+  _ -> relation
+
 -- | Does this relation hold whoever the perspective is -- so that a reader with
 -- no CR 109.5 "you" to supply can still answer it? Only AnyPlayer, which asks
 -- the perspective nothing. Parun.TargetSpec's "CR 702.18a shroud stops a

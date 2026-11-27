@@ -7,10 +7,6 @@
 -- so having a planar deck is the whole of being in the variant (isPlanechase).
 -- CR 901.15's single planar deck option is the one field, an option within it
 -- (GameSettings.singlePlanarDeck).
---
--- WHAT IS NOT IMPLEMENTED:
---
---   * CR 901.12c's plane "you" reaching both Two-Headed Giant teammates (#9165).
 module Parun.Engine.Planechase where
 
 import qualified Control.Monad as Monad

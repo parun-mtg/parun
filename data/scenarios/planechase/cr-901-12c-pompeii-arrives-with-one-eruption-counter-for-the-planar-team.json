@@ -73,7 +73,7 @@
       }
     }
   ],
-  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the planar controller (CR 901.12b). Pompeii's 'When you planeswalk to Pompeii and at the beginning of your upkeep' refers to you, so CR 901.12c gives dave an instance too, but only alice planeswalks (CR 701.31a): her roll walks her to Pompeii and only her instance triggers, putting one eruption counter on it. Dave's instance triggering on her planeswalk would put a second.",
+  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the planar controller (CR 901.12b). Pompeii's \"When you planeswalk to Pompeii\" is one ability, the planar controller's (CR 901.12c, 901.6), and only alice planeswalks (CR 701.31a): her roll walks her to Pompeii and the ability triggers once, putting one eruption counter on it. A second instance for dave would put a second.",
   "timeline": [
     {
       "do": {

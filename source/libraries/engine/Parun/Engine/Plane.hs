@@ -21,6 +21,8 @@ import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.PlayerId (PlayerId)
+import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Teams as Teams
@@ -185,22 +187,33 @@ exemptFromRange oid gs = not (isGrandMelee gs) && maybe False isPlanarFace (Game
 rangePerspective :: ObjectId -> PlayerId -> GameState -> Maybe PlayerId
 rangePerspective source controller gs = if exemptFromRange source gs then Nothing else Just controller
 
--- | CR 901.12c: the players an ability of this source reads as its "you":
--- its controller alone, but in a Two-Headed Giant game every still-playing
--- member of that controller's team for a planar source ('exemptFromRange'),
--- the controller first (docs/decisions.md, "A plane's you is each member of
--- the planar team"). A triggered ability referring to "you"
--- (Interchangeable.Mentions.refersToYouAsking) triggers once for each, each
--- its instance's controller (Event.Trigger's eventTriggers); a static ability
--- applies as though each controlled it, a player ability only when it refers
--- to "you" (PlayerEffect's printedRows,
--- Projection's affectsFramed, Replacement's applicable, PlayerDesignation's
--- gaining).
--- data/scenarios/planechase/cr-901-12c-tazeem-s-chaos-draws-for-each-member-of-the-planar-team.json
--- and its Academy at Tolaria West, Naya, Grixis and The Caldaia siblings
--- prove it.
+-- | CR 901.12c: does an ability of this source read "you" as the planar team?
+-- In a Two-Headed Giant game, for a planar source ('exemptFromRange'). The
+-- ability still exists once, controlled by the planar controller (CR 311.7,
+-- 901.6, 113.8); a player reference it writes as "you" names both members,
+-- while an instruction's unstated subject (CR 608.2c) is the planar
+-- controller alone (docs/decisions.md, "A plane's you is the planar team").
+-- Read by Parun.Engine.SourceContext.framedWith's Filter.youIsTeam, and through
+-- 'planarYous' by the readers of a "you" no Filter holds.
+readsYouAsTeam :: ObjectId -> GameState -> Bool
+readsYouAsTeam source gs = GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)) && exemptFromRange source gs
+
+-- | The players a "you" of this source's ability names: its controller, and
+-- under 'readsYouAsTeam' every still-playing member of that controller's
+-- team, the controller first. A trigger condition matches the act of any of
+-- them, once (Event.Trigger's eventTriggers); "your hand" is each member's
+-- (Resolve.Slots.objectRefObjects); ascend counts and blesses the team
+-- (PlayerDesignation.gaining).
 planarYous :: ObjectId -> PlayerId -> GameState -> [PlayerId]
 planarYous source controller gs
-  | GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)) && exemptFromRange source gs =
-      controller : filter (Teams.sameTeam (Game.teams gs) controller) (Game.stillPlaying gs)
+  | readsYouAsTeam source gs = controller : filter (Teams.sameTeam (Game.teams gs) controller) (Game.stillPlaying gs)
   | otherwise = [controller]
+
+-- | CR 901.12c: a player scope a planar ability's instruction writes, its
+-- "you" read as the planar team under 'readsYouAsTeam', baked into the stored
+-- effect the instruction installs (Resolve.Arms.Objects' affectPlayers and
+-- forbidAttack) -- Izzet Steam Maze's "spells you cast this turn cost {3} less".
+teamScope :: ObjectId -> GameState -> PlayerScope.PlayerScope -> PlayerScope.PlayerScope
+teamScope source gs scope = case scope of
+  PlayerScope.Related relation | readsYouAsTeam source gs -> PlayerScope.Related (PlayerRelation.asPlanarTeam relation)
+  _ -> scope

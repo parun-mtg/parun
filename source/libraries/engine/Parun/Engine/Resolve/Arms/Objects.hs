@@ -1637,7 +1637,7 @@ affectPlayers resolving source controller legal (AffectPlayers.MkAffectPlayers d
   -- the same way.
   State.modify' $ \gs ->
     let baked = case affected of
-          AffectedPlayers.Scoped scope -> [AffectedPlayers.Scoped scope]
+          AffectedPlayers.Scoped scope -> [AffectedPlayers.Scoped (Plane.teamScope source gs scope)]
           -- Through playerRefPlayers so the slot is read exactly as every
           -- other opcode reads one, CR 608.2b's empty answer included.
           AffectedPlayers.Named slot ->
@@ -1839,6 +1839,7 @@ forbidAttack resolving source controller legal (ForbidAttack.MkForbidAttack dura
           aims = case baked of
             Just aim@(AimedAt.MkAimedAt (AimedPlayers.EachInSlot slot) _ _) ->
               fmap (\pid -> Just aim {AimedAt.defenders = AimedPlayers.BoundPlayer pid}) (playerRefPlayers legal resolving source controller gs (PlayerRef.EachInSlot slot))
+            Just aim@(AimedAt.MkAimedAt (AimedPlayers.Scoped scope) _ _) -> [Just aim {AimedAt.defenders = AimedPlayers.Scoped (Plane.teamScope source gs scope)}]
             _ -> [baked]
           (ts, gs1) = Game.freshTimestamp gs
           stored = do

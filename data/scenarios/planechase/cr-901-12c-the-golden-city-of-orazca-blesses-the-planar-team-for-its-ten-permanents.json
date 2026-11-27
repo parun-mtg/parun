@@ -21,18 +21,6 @@
           },
           {
             "card": "Plains"
-          },
-          {
-            "card": "Plains"
-          },
-          {
-            "card": "Plains"
-          },
-          {
-            "card": "Plains"
-          },
-          {
-            "card": "Plains"
           }
         ],
         "command": [
@@ -60,24 +48,6 @@
       },
       {
         "battlefield": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
           {
             "card": "Island"
           },
@@ -181,8 +151,8 @@
     "step": "PrecombatMain",
     "twoHeadedGiant": true
   },
-  "description": "CR 901.12c The Golden City of Orazca blesses each member of the planar team with ten permanents",
-  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the active team's primary player and so the planar controller (CR 901.12b). The plane's ascend applies to dave too (CR 901.12c): with ten permanents each, alice and dave get the city's blessing, and carol, with ten on the other team, does not.",
+  "description": "CR 901.12c The Golden City of Orazca blesses each member of the planar team for the team's ten permanents",
+  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the active team's primary player and so the planar controller (CR 901.12b). The plane's \"you\" is the planar team (CR 901.12c): alice's six permanents and dave's four are ten the team controls, so each member gets the city's blessing, and carol, with ten on the other team, does not.",
   "timeline": [
     {
       "check": {

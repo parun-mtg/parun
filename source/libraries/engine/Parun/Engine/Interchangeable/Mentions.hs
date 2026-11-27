@@ -1,18 +1,12 @@
--- | The effect DSL's one walk, answering five questions of a tree -- an effect,
+-- | The effect DSL's one walk, answering four questions of a tree -- an effect,
 -- an ability, a replacement, a cost, a duration, a card -- through the leaves
 -- an Asking names: whether it might name one object, which
 -- Parun.Engine.Interchangeable asks of every stored row; which of the turn's
 -- history it reads (CR 733.3), which Parun.Engine.Fragmented asks of every
 -- printing; whether it reads what its source's prevention effect stopped
 -- (CR 615.13), which Parun.Engine.Replacement.choose asks of a waiting ability;
--- which combined back faces it carries (CR 713.1a), which
--- Parun.Interpreter.chosenFace asks of the reference (CR 201.4e); and whether
--- it refers to "you" (CR 901.12c), which Parun.Engine.Event.Trigger and
--- Parun.Engine.PlayerEffect ask of a planar ability. A player relation is
--- visited where a traversal hands one over (Children's relation,
--- triggerRelation and abilityScope, and the arms here); Parun.CardSpec's "CR
--- 901.12c every planar triggered or player ability worded with you refers to
--- you" fences the rest for planar cards.
+-- and which combined back faces it carries (CR 713.1a), which
+-- Parun.Interpreter.chosenFace asks of the reference (CR 201.4e).
 --
 -- One function per type, each matching every constructor POSITIONALLY, so a
 -- new constructor is a missing-pattern error here and a new field an arity
@@ -162,8 +156,6 @@ import qualified Parun.Types.PermanentCandidate as PermanentCandidate
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerRef as PlayerRef
-import qualified Parun.Types.PlayerRelation as PlayerRelation
-import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.PregameExile as PregameExile
@@ -184,7 +176,6 @@ import qualified Parun.Types.SpellTally as SpellTally
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.SpentOn as SpentOn
 import qualified Parun.Types.StaticAbility as StaticAbility
-import qualified Parun.Types.Superlative as Superlative
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Toughness as Toughness
@@ -223,9 +214,7 @@ data Asking r = MkAsking
     sourceLinks :: r,
     -- | What an inline card answers as a meld pair's combined back face (CR
     -- 713.1a), given what it answers as any inline card.
-    melded :: r -> r,
-    -- | A player relation read against the tree's perspective (CR 109.5).
-    relation :: PlayerRelation.PlayerRelation -> r
+    melded :: r -> r
   }
 
 -- | CR 201.4e / 713.1a: the combined back faces a card's meld instructions
@@ -241,8 +230,7 @@ combinedBackFaces = snd . foldMap (faceNames asking (\card -> ([card], []))) . C
           history = const mempty,
           prevention = mempty,
           sourceLinks = mempty,
-          melded = \(inline, backs) -> ([], inline <> backs),
-          relation = const mempty
+          melded = \(inline, backs) -> ([], inline <> backs)
         }
 
 -- | Does this ability read what its source's prevention effect stopped?
@@ -262,36 +250,8 @@ readsPrevention =
           history = const mempty,
           prevention = Monoid.Any True,
           sourceLinks = mempty,
-          melded = id,
-          relation = const mempty
+          melded = id
         }
-
--- | CR 901.12c: does this triggered ability refer to "you" (refersToYouAsking)?
-refersToYou :: TriggeredAbility.TriggeredAbility card ability -> Bool
-refersToYou = Monoid.getAny . triggeredAbilityNames refersToYouAsking (const mempty) (const mempty)
-
--- | CR 901.12c: does this player static ability refer to "you"
--- (refersToYouAsking)?
-playerAbilityRefersToYou :: PlayerStaticAbility.PlayerStaticAbility -> Bool
-playerAbilityRefersToYou = Monoid.getAny . playerStaticAbilityNames refersToYouAsking
-
--- | CR 901.12c's question of an ability: does it read any player against its
--- controller's own seat or team (You, YourTeam, Teammate)? An instruction
--- naming no player, Pompeii's "planeswalk", does not; nor does a "you" inside
--- a card it creates or an ability it grants, which is that object's
--- controller (CR 109.5).
-refersToYouAsking :: Asking Monoid.Any
-refersToYouAsking =
-  MkAsking
-    { names = const mempty,
-      context = mempty,
-      keyed = mempty,
-      history = const mempty,
-      prevention = mempty,
-      sourceLinks = mempty,
-      melded = id,
-      relation = \rel -> Monoid.Any (rel `elem` [PlayerRelation.You, PlayerRelation.YourTeam, PlayerRelation.Teammate])
-    }
 
 -- | The question whose answer is whether a tree reads what its source's own
 -- effects linked to objects (Parun.Engine.LinkReaders.readsOwnLinks).
@@ -304,8 +264,7 @@ readsSourceLinks =
       history = const mempty,
       prevention = mempty,
       sourceLinks = Monoid.Any True,
-      melded = id,
-      relation = const mempty
+      melded = id
     }
 
 -- Whether reading this slot might name the object.
@@ -322,7 +281,7 @@ actorNames asking actor = case actor of
 -- The slot a damage look-back's party reads.
 damagedPartyNames :: (Monoid r) => Asking r -> DamagedParty.DamagedParty -> r
 damagedPartyNames asking party = case party of
-  DamagedParty.Related rel -> relation asking rel
+  DamagedParty.Related _ -> mempty
   DamagedParty.Source -> mempty
   DamagedParty.InSlot slot -> slotNames asking slot
   DamagedParty.Anyone -> mempty
@@ -391,7 +350,7 @@ filterNames asking criterion = case criterion of
   Filter.ActivatedThisTurn -> keyed asking <> history asking HistoryRead.Activations
   Filter.ActedThisTurn action -> keyed asking <> history asking (HistoryRead.PermanentActs action)
   Filter.DealtDamageTo (DealtDamageTo.MkDealtDamageTo party _kind _window dealer) -> keyed asking <> history asking HistoryRead.Damage <> damagedPartyNames asking party <> actorNames asking dealer
-  Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to _from _window under) -> keyed asking <> history asking (if to == Zone.Battlefield then HistoryRead.Entries else HistoryRead.Moves) <> foldMap (relation asking) under
+  Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to _from _window _under) -> keyed asking <> history asking (if to == Zone.Battlefield then HistoryRead.Entries else HistoryRead.Moves)
   Filter.BeforeMove nested -> keyed asking <> history asking HistoryRead.Moves <> filterNames asking nested
   Filter.TappedForManaThisTurn nested -> keyed asking <> history asking HistoryRead.TapsForMana <> filterNames asking nested
   Filter.CountersMovedThisTurn _ _ -> keyed asking <> history asking HistoryRead.CounterMoves
@@ -407,8 +366,7 @@ filterNames asking criterion = case criterion of
       Children.filterChildren
         (Children.descending (Const.Const . filterNames asking))
           { Children.slot = \_arity slot -> Const.Const (slotNames asking slot),
-            Children.object = \oid -> Const.Const (names asking (== oid)),
-            Children.relation = Const.Const . relation asking
+            Children.object = \oid -> Const.Const (names asking (== oid))
           }
         criterion
 
@@ -436,14 +394,14 @@ affectedNames asking =
         }
 
 affectedPlayersNames :: (Monoid r) => Asking r -> (player -> r) -> AffectedPlayers.AffectedPlayers player -> r
-affectedPlayersNames asking onPlayer x = case x of
-  AffectedPlayers.Scoped playerScope -> playerScopeNames asking playerScope
+affectedPlayersNames _asking onPlayer x = case x of
+  AffectedPlayers.Scoped _playerScope -> mempty
   AffectedPlayers.Named player -> onPlayer player
   AffectedPlayers.AllBut player -> onPlayer player
 
 aimedPlayersNames :: (Monoid r) => Asking r -> AimedPlayers.AimedPlayers -> r
 aimedPlayersNames asking x = case x of
-  AimedPlayers.Scoped playerScope -> playerScopeNames asking playerScope
+  AimedPlayers.Scoped _playerScope -> mempty
   AimedPlayers.EachInSlot slotName -> slotNames asking slotName
   AimedPlayers.BoundPlayer _playerId -> mempty
 
@@ -472,9 +430,9 @@ rulePermissionNames asking = Const.getConst . Children.rulePermissionChildren (r
 attackRequirementNames :: (Monoid r) => Asking r -> AttackRequirement.AttackRequirement -> r
 attackRequirementNames asking = Const.getConst . Children.attackRequirementChildren (ruleVisitors asking)
 
-attackingPlayersNames :: (Monoid r) => Asking r -> AttackingPlayers.AttackingPlayers -> r
+attackingPlayersNames :: Asking r -> AttackingPlayers.AttackingPlayers -> r
 attackingPlayersNames asking x = case x of
-  AttackingPlayers.MkAttackingPlayers rel attacked -> relation asking rel <> slotNames asking attacked
+  AttackingPlayers.MkAttackingPlayers _relation attacked -> slotNames asking attacked
 
 bindingNames :: (Monoid r) => Asking r -> Binding.Binding -> r
 bindingNames asking x = case x of
@@ -584,12 +542,11 @@ conditionNames asking =
 
 controllerRelationNames :: (Monoid r) => Asking r -> ControllerRelation.ControllerRelation -> r
 controllerRelationNames asking x = case x of
-  ControllerRelation.Related rel -> relation asking rel
+  ControllerRelation.Related _ -> mempty
   ControllerRelation.NamedBySource _ -> mempty
   ControllerRelation.InSlot slotName -> slotNames asking slotName
   ControllerRelation.Among _playerId -> mempty
-  -- "The player to your left" (CR 800.5) reads "you".
-  ControllerRelation.LeftOf anchor -> maybe (relation asking PlayerRelation.You) (slotNames asking) anchor
+  ControllerRelation.LeftOf anchor -> foldMap (slotNames asking) anchor
 
 copyExceptionNames :: (Monoid r) => Asking r -> (ability -> r) -> CopyException.CopyException ability -> r
 copyExceptionNames asking onAbility = Const.getConst . Children.copyExceptionChildren (copyVisitors asking onAbility (const mempty))
@@ -905,8 +862,7 @@ abilityVisitors asking onCard onAbility onEffect =
       Children.abilityRules = Const.Const . ruleAbilitiesNames asking,
       Children.abilitySpendMana = Const.Const . spendManaAsThoughNames asking,
       Children.abilitySlot = Const.Const . slotNames asking,
-      Children.abilityPlayer = Const.Const . playerRefNames asking,
-      Children.abilityScope = Const.Const . playerScopeNames asking
+      Children.abilityPlayer = Const.Const . playerRefNames asking
     }
 
 handActionNames :: (Monoid r) => Asking r -> (card -> r) -> HandAction.HandAction card -> r
@@ -1101,21 +1057,11 @@ keywordInstanceNames asking x = case x of
   KeywordInstance.Own _ordinal -> mempty
   KeywordInstance.Granted objectId _timestamp _ordinal -> names asking (== objectId)
 
-playerScopeNames :: (Monoid r) => Asking r -> PlayerScope.PlayerScope -> r
-playerScopeNames asking x = case x of
-  PlayerScope.Related rel -> relation asking rel
-  PlayerScope.Superlative superlative -> relation asking (Superlative.among superlative)
-  PlayerScope.InRole _ -> mempty
-  PlayerScope.NamedBySource _ -> mempty
-  PlayerScope.SourceOwner -> mempty
-  -- "Attacked you" (CR 508.1b).
-  PlayerScope.AttackedYou _ _ -> relation asking PlayerRelation.You
-
 playerRefNames :: (Monoid r) => Asking r -> PlayerRef.PlayerRef -> r
 playerRefNames asking x = case x of
   PlayerRef.EachPlayerExcept slotName -> slotNames asking slotName
   PlayerRef.EachOpponentExcept slotName -> slotNames asking slotName
-  PlayerRef.Relative rel -> relation asking rel
+  PlayerRef.Relative _playerRelation -> mempty
   PlayerRef.InSlot slotName -> slotNames asking slotName
   PlayerRef.EachInSlot slotName -> slotNames asking slotName
   PlayerRef.Specific _playerId -> mempty
@@ -1129,7 +1075,7 @@ playerRefNames asking x = case x of
   PlayerRef.AtGrant inner -> playerRefNames asking inner
   PlayerRef.ChosenPlayerOfBound slotName choice -> slotNames asking slotName <> playerChoiceNames asking choice
   PlayerRef.Attacking attackingPlayers -> attackingPlayersNames asking attackingPlayers
-  PlayerRef.Superlative superlative -> relation asking (Superlative.among superlative)
+  PlayerRef.Superlative _ -> mempty
   PlayerRef.InRole _ -> mempty
 
 playerStaticAbilityNames :: (Monoid r) => Asking r -> PlayerStaticAbility.PlayerStaticAbility -> r
@@ -1208,8 +1154,7 @@ quantityNames asking x =
                   Children.keyword = Const.Const . keywordNames asking,
                   Children.slot = \_arity slot -> Const.Const (slotNames asking slot),
                   Children.scope = Const.Const . scopeNames asking,
-                  Children.player = Const.Const . playerRefNames asking,
-                  Children.relation = Const.Const . relation asking
+                  Children.player = Const.Const . playerRefNames asking
                 }
               x
           )
@@ -1334,7 +1279,6 @@ triggerConditionNames asking x = case x of
               -- A colour of mana names no object and reads no history.
               Children.triggerMana = const (Const.Const mempty),
               Children.triggerPlayer = Const.Const . playerRefNames asking,
-              Children.triggerRelation = Const.Const . relation asking,
               Children.triggerDesignator = Const.Const . keywordDesignatorNames asking
             }
           x
@@ -1372,7 +1316,7 @@ withCountersNames asking = Const.getConst . Children.withCountersChildren (copyV
 
 zoneScopeNames :: (Monoid r) => Asking r -> ZoneScope.ZoneScope -> r
 zoneScopeNames asking x = case x of
-  ZoneScope.Scoped playerScope -> playerScopeNames asking playerScope
+  ZoneScope.Scoped _playerScope -> mempty
   ZoneScope.InSlot slotName -> slotNames asking slotName
   ZoneScope.ControllerOfBound slotName -> slotNames asking slotName
   ZoneScope.BoundPlayer _playerId -> mempty

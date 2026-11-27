@@ -82,7 +82,7 @@
       }
     }
   ],
-  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the planar controller (CR 901.12b) under Esper. 'Artifact spells cost {1} less to cast' refers to no 'you', so CR 901.12c leaves it one ability of the planar controller: alice's Millstone costs {1}, paid with her one Island. Applied once more as dave's, it would cost nothing.",
+  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the planar controller (CR 901.12b) under Esper. \"Artifact spells cost {1} less to cast\" is one ability of the planar controller (CR 901.12c, 901.6): alice's Millstone costs {1}, paid with her one Island. Applied once more as dave's, it would cost nothing.",
   "timeline": [
     {
       "do": {

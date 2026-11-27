@@ -3273,63 +3273,57 @@ Entries are ordered by the first rule each cites.
   and `...-simultaneous-infect-damage`, each with a `--bob` pair.
 - **Issue**: #8806.
 
-## A plane's you is each member of the planar team
+## A plane's you is the planar team
 
 - **Question**: CR 901.12c applies a plane's or phenomenon's "you" to both
-  members of the planar controller's team. Does Tazeem's "draw a card for
-  each land you control" have each member draw for their own lands, or both
-  draw for the team's? Does Academy at Tolaria West's "at the beginning of
-  your end step, if you have no cards in hand" trigger once for the team, or
-  once for each member whose hand is empty? Which abilities refer to "you"?
-- **Rules**: CR 113.8, 603.3a, 810.5, 901.12c; no ruling; CR of
-  2026-11-06.
-- **Decision**: Each member in turn. A triggered ability of a planar card
-  that refers to "you" triggers once for each still-playing member of its
-  controller's team, each instance controlled by that member and its "you",
-  so its trigger condition,
-  intervening "if" and effect read that member alone: Tazeem draws each member
-  a card per land they control, and Academy triggers for each member with an
-  empty hand. The member, not CR 113.8's planar controller, controls their
-  instance, so its choices (Naya's "target creature you control") are theirs.
-  A player ability that refers to "you" likewise applies as though each
-  member controlled it, and any other static ability's reach is the same from
-  each member's seat:
-  Naya lets each member play any number of lands, and Grixis and The Caldaia
-  reach each member's own cards, and Edge of Malacol's replacement reaches
-  each member's creatures. An ability refers to "you" when its data reads a
-  player against its controller's own seat or team (You, YourTeam,
-  Teammate), explicitly or as an instruction's unstated subject ("draw a
-  card"); one that does not is its planar controller's alone (CR 311.7,
-  901.6): Pompeii's chaos deals its damage once, Jund's chaos makes two
-  Goblins, and Esper's "artifact spells cost {1} less" reduces once.
-- **Rejected**: The planar controller controlling every instance, each with a
-  member's "you": that player would choose among a teammate's creatures,
-  which CR 810.5 keeps theirs. "You" as the team, one instance reading both members at once:
-  Tazeem would give each member a card per land the team controls, doubling
-  every count, and CR 810.5 keeps a team's resources other than life and
-  poison its members' own. "Refers to you" as the printed word: Panopticon's
-  "draw a card" is its controller's instruction (CR 608.2c), and the
-  engine reads data, not Oracle text. Every relation read against the
-  controller, opponents included: "each opponent discards a card" would
-  take two cards from each opponent, both members naming the same
-  opponents.
-- **Site**: `Parun.Engine.Plane.planarYous`, read by
-  `Parun.Engine.Event.Trigger.eventTriggers`' `teamWide`,
-  `Parun.Engine.PlayerEffect.printedRows`,
-  `Parun.Engine.Projection.affectsFramed` and
-  `Parun.Engine.Replacement.applicable`, proved by the scenarios
-  `cr-901-12c-tazeem-s-chaos-draws-for-each-member-of-the-planar-team`,
-  `cr-901-12c-academy-at-tolaria-west-triggers-for-each-empty-handed-member-of-the-planar-team`,
-  `cr-901-12c-naya-lets-each-member-of-the-planar-team-play-any-number-of-lands`,
-  `cr-901-12c-grixis-gives-unearth-to-a-creature-card-in-each-planar-team-member-s-graveyard`,
-  `cr-901-12c-the-caldaia-gives-blitz-to-a-creature-spell-each-planar-team-member-casts`,
-  `cr-901-12c-edge-of-malacol-spares-a-tapped-creature-of-each-member-of-the-planar-team`
-  and
-  `cr-901-12c-ten-wizards-mountain-triggers-on-the-roll-of-the-planar-controller-s-teammate`;
-  "refers to you" is `Parun.Engine.Interchangeable.Mentions.refersToYouAsking`,
-  proved by `cr-901-12c-pompeii-s-chaos-triggers-once-for-the-planar-team`
-  and `cr-901-12c-esper-s-cost-reduction-applies-once-for-the-planar-team`.
-- **Issue**: #9165, #9178, #10054, #10085.
+  members of the planar controller's team, while the card is controlled by
+  just one player. What does each "you" then read? Does Tazeem's "draw a card
+  for each land you control" count one member's lands or the team's, and who
+  draws? Does Academy at Tolaria West's "if you have no cards in hand" ask one
+  hand or both?
+- **Rules**: CR 113.8, 311.7, 603.3a, 608.2c, 810.5, 901.6, 901.12c; no
+  ruling (Scryfall's for Tazeem, Academy at Tolaria West, Naya, Jund,
+  Selesnya Loft Gardens, Strixhaven and Pompeii checked); CR of 2026-11-06.
+- **Decision**: Forced: every planar ability exists once, controlled by the
+  planar controller (CR 901.12c "controlled by just one player", 311.7,
+  113.8, 901.6), so a trigger triggers once and its choices are that
+  player's. Not forced: a player reference the ability writes as "you"
+  names the planar team. As an object or quantity, the team's: "discard
+  your hand" makes each member discard their own, "target creature you
+  control" (Naya) admits either member's creature, and "each land you
+  control" counts the team's lands. As a condition, the team's: Academy's
+  "if you have no cards in hand" holds only when neither member holds a
+  card, and The Golden City of Orazca's ascend counts the team's
+  permanents and blesses each member. As an actor, either member, once:
+  "whenever you roll the planar die" and Selesnya Loft Gardens' "whenever
+  you tap a land for mana" match either member's roll or tap, and "you may
+  play any number of lands" and Izzet Steam Maze's chaos ("spells you cast
+  this turn cost {3} less") reach each member. An
+  instruction's unstated subject (CR 608.2c) is the planar controller
+  alone: Tazeem has the planar controller draw a card for each land the
+  team controls, Jund makes two Goblins, Strixhaven returns one card, and
+  the mana Selesnya's ability adds is its controller's. "The top card of
+  your library" names the planar controller's library, the team having no
+  one top card, and a card the planar controller moves "from your hand" is
+  one of their own (CR 810.5).
+- **Rejected**: Each member's own instance, each with that member's "you"
+  (this entry's earlier decision, #9165): CR 901.12c and 311.7 have one
+  player control the plane and its chaos ability. "You" as the team for an
+  unstated subject too: Tazeem would draw both members the team's count and
+  Jund would make four Goblins. Reading "you" from the data's defaulted
+  player fields (#10091): a token's creator and an entering card's
+  controller default to "you" where the card prints none.
+- **Site**: `Parun.Engine.Plane.readsYouAsTeam`, read by
+  `Parun.Engine.SourceContext.framedWith` (`Filter.youIsTeam`, which
+  `Parun.Engine.Filter.relationHolds` and `Parun.Engine.Count.zoneHolder`
+  read), `Parun.Engine.PlayerEffect.inScopeWithin` and
+  `Parun.Engine.Plane.teamScope` (the scope a stored effect bakes); and through
+  `Parun.Engine.Plane.planarYous` by `Parun.Engine.Event.Trigger`'s
+  `eventTriggers` and delayed matching,
+  `Parun.Engine.Resolve.Slots.objectRefObjects`' `EachCardInYourHand` and
+  `Parun.Engine.PlayerDesignation.gaining`. Proved by the
+  `data/scenarios/planechase/cr-901-12c-*` scenarios.
+- **Issue**: #9165, #9178, #10054, #10085, #10093.
 
 ## Which planar controller controls a Grand Melee plane
 
