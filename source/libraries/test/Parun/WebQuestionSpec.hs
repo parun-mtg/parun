@@ -952,9 +952,29 @@ spec s registry = Spec.describe s "WebQuestion" $ do
     Spec.assertEqWith s "the stack's stop past a concession" (Question.Web.passesFor Question.Web.MkStacked (requestFor theirs (Prompt.Concede S.alice))) (Nothing, Just Question.Web.MkStacked)
     Spec.assertEqWith s "the stack's stop crosses turns" (passes Question.Web.MkStacked (on S.alice 3 Phase.PrecombatMain gs0)) (Just (R.Number 0), Just Question.Web.MkStacked)
     Spec.assertEqWith s "and ends at the stack" (passes Question.Web.MkStacked (withStack theirs)) (Nothing, Nothing)
-    Spec.assertEqWith s "the turn's end keeps through a response" (passes (Question.Web.MkTurnEnds 2) (withStack theirs)) (Nothing, Just (Question.Web.MkTurnEnds 2))
+    Spec.assertEqWith s "the turn's end keeps through a response" (passes (Question.Web.MkTurns (Question.Web.MkThisTurn 2)) (withStack theirs)) (Nothing, Just (Question.Web.MkTurns (Question.Web.MkThisTurn 2)))
     Spec.assertBool s (not (null (foldMap PlayerView.Type.stack (Request.view (priority (withStack theirs)))))) "the stack shows"
-    Spec.assertEqWith s "and declares no attackers" (Question.Web.passesFor (Question.Web.MkTurnEnds 1) (asking (Text.pack "DeclareAttackers") R.Null)) (Just (R.Array []), Just (Question.Web.MkTurnEnds 1))
+    Spec.assertEqWith s "and declares no attackers" (Question.Web.passesFor (Question.Web.MkTurns (Question.Web.MkThisTurn 1)) (asking (Text.pack "DeclareAttackers") R.Null)) (Just (R.Array []), Just (Question.Web.MkTurns (Question.Web.MkThisTurn 1)))
+
+  Spec.it s "among three seats, pass to my turn passes through every other player's turn and stops at the seat's own; end turn stops at the next" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    let (land, gs0) = S.addObjectIn Zone.Hand mountain S.alice (Setup.emptyGame S.threePlayers)
+        on active turn gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = active, TurnRegisters.turnNumber = turn, TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep}}
+        withStack gs = let (spell, gs') = S.addObjectIn Zone.Stack mountain S.bob gs in gs' {GameState.turn = (GameState.turn gs') {TurnRegisters.stack = [spell]}}
+        priority gs = requestFor gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass, Action.Play land Nothing])
+        tap label gs = let page = Question.Web.view (priority gs) Question.Web.blank in Html.labelled (Text.pack "button") (Text.pack label) page >>= \path -> Html.handler (Text.pack "click") path page
+        passes stop gs = Question.Web.passesFor stop (priority gs)
+        toMine = Question.Web.MkTurns Question.Web.MkOwnTurn
+        toEnd = Question.Web.MkTurns (Question.Web.MkThisTurn 4)
+    Spec.assertEqWith s "pass to my turn" (tap "Pass to my turn" (on S.bob 2 gs0)) (Just (Question.Web.MkSkip toMine))
+    Spec.assertEqWith s "through bob's turn" (passes toMine (on S.bob 2 gs0)) (Just (R.Number 0), Just toMine)
+    Spec.assertEqWith s "through carol's turn" (passes toMine (on S.carol 3 gs0)) (Just (R.Number 0), Just toMine)
+    Spec.assertEqWith s "keeping through a response" (passes toMine (withStack (on S.carol 3 gs0))) (Nothing, Just toMine)
+    Spec.assertEqWith s "a question but priority" (Question.Web.passesFor toMine (requestFor (on S.carol 3 gs0) (Prompt.DeclareBlockers (Decider.MkDecider S.alice) S.alice [] []))) (Nothing, Just toMine)
+    Spec.assertEqWith s "to the seat's own" (passes toMine (on S.alice 4 gs0)) (Nothing, Nothing)
+    Spec.assertEqWith s "end turn" (tap "End turn" (on S.alice 4 gs0)) (Just (Question.Web.MkSkip toEnd))
+    Spec.assertEqWith s "through the seat's own turn" (passes toEnd (on S.alice 4 gs0)) (Just (R.Number 0), Just toEnd)
+    Spec.assertEqWith s "to the next player's" (passes toEnd (on S.bob 5 gs0)) (Nothing, Nothing)
 
   Spec.it s "a payment shows each source with what it makes, and a tap answers with that source" $ do
     mountain <- S.printingOf s registry "Mountain"
