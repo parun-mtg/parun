@@ -1708,7 +1708,7 @@ framedBySlots gs recipients context =
           Filter.slotHostControllers = fmap (foldMap hostController . objectsOf) recipients,
           -- CR 120.1: by id, as withCharacteristicsOf fills the source's, so a
           -- departed target still answers.
-          Filter.slotDealtDamage = fmap (\named -> [(oid, Count.dealtDamageTo oid gs, Count.dealtDamageEarlier oid gs) | oid <- Set.toList named]) objects,
+          Filter.slotDealtDamage = fmap (\named -> [(oid, Count.dealtDamageTo oid gs, Count.dealtDamageEarlier oid gs) | oid <- Set.toList (objectsOf named)]) recipients,
           -- CR 614.12: less a batch still entering (Scratch.enteringBeside),
           -- Resolve.Slots.battlefieldMatching's reading.
           Filter.battlefieldViews = fmap (viewsOf gs) (Seq.fromList (Set.toList (Set.difference (GameState.battlefield gs) (Scratch.enteringBeside (GameState.scratch gs))))),
