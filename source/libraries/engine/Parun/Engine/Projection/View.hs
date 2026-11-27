@@ -3057,7 +3057,7 @@ controlNames ctrl gs source a = case a of
   -- is what lets it run without projecting.
   Affected.Matching f -> Set.filter (\oid -> matchesLeanly ctrl gs source f oid && controlReaches ctrl gs source oid) (GameState.battlefield gs)
   Affected.MatchingAnywhere _ -> Set.empty
-  Affected.MatchingOffBattlefield _ -> Set.empty
+  Affected.MatchingOffBattlefield _ _ -> Set.empty
   -- A rider is stored against the object it names (Event.permissionRiders), and
   -- the template names nothing.
   Affected.PlayedThisWay _ -> Set.empty

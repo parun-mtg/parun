@@ -623,7 +623,7 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   -- seat is CR 109.5's "you", so no slot names it and the Filter's reads are
   -- the whole answer -- EachMatching's, for this arm and the six below it.
   ObjectRef.EachCardInYourLibrary filter_ -> maybeFilterSlots filter_
-  ObjectRef.EachCardYouOwn filter_ -> filterSlotsOf filter_
+  ObjectRef.EachCard filter_ -> filterSlotsOf filter_
   ObjectRef.EachCardInExiledPile pile -> maybeFilterSlots (EachCardInExiledPile.filter pile)
   ObjectRef.EachCardEncodedOnSource filter_ -> maybeFilterSlots filter_
   ObjectRef.EachSpell filter_ -> filterSlotsOf filter_
@@ -722,7 +722,7 @@ objectRefQuantities ref = case ref of
   ObjectRef.EachCardInYourHand -> []
   ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand _ _) -> []
   ObjectRef.EachCardInYourLibrary _ -> []
-  ObjectRef.EachCardYouOwn _ -> []
+  ObjectRef.EachCard _ -> []
   ObjectRef.EachCardInExiledPile _ -> []
   ObjectRef.EachCardEncodedOnSource _ -> []
   ObjectRef.EachSpell _ -> []
@@ -780,7 +780,7 @@ objectRefPlayerRefs ref = case ref of
   ObjectRef.EachCardInYourHand -> []
   ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand _ _) -> []
   ObjectRef.EachCardInYourLibrary _ -> []
-  ObjectRef.EachCardYouOwn _ -> []
+  ObjectRef.EachCard _ -> []
   ObjectRef.EachCardInExiledPile _ -> []
   ObjectRef.EachCardEncodedOnSource _ -> []
   ObjectRef.EachSpell _ -> []
@@ -3388,17 +3388,18 @@ objectRefObjects legal resolving controller source gs ref = case ref of
             let context = effectContext gs resolving controller source legal (slotBindings resolving gs)
                 viewOf = Projection.viewsOf gs
              in filter (\oid -> Filter.matches context (viewOf oid) filter_) inLibrary
-  -- CR 108.3's owner over every zone at once, so no APNAP order to impose:
-  -- ascending id, the objects map's own order. CR 108.2 keeps a token and a
-  -- copy out of "card"; Game.isCardObject is that classification, a regression
-  -- fence rather than a proved line, since no board here holds a token or a
-  -- copy the Filter would match. data/scenarios/static-discharge-intensifies.json
-  -- proves the owner test and the reach into a hand.
-  ObjectRef.EachCardYouOwn filter_ ->
+  -- Every zone at once, so no APNAP order to impose: ascending id, the objects
+  -- map's own order. CR 108.2 keeps a token and a copy out of "card";
+  -- Game.isCardObject is that classification, a regression fence rather than a
+  -- proved line: the only copy a board here offers the Filter is a spell copy
+  -- under Glimmervoid Basin, whose "spell" names it anyway.
+  -- data/scenarios/static-discharge-intensifies.json proves the owner test (the
+  -- Filter's HeldBy Owner) and the reach into a hand.
+  ObjectRef.EachCard filter_ ->
     let context = effectContext gs resolving controller source legal (slotBindings resolving gs)
         viewOf = Projection.viewsOf gs
-        owned oid obj = Object.owner obj == controller && Game.isCardObject oid gs && Filter.matches context (viewOf oid) filter_
-     in Map.keys (Map.filterWithKey owned (GameState.objects gs))
+        admitted oid _ = Game.isCardObject oid gs && Filter.matches context (viewOf oid) filter_
+     in Map.keys (Map.filterWithKey admitted (GameState.objects gs))
   -- CR 607.2a's linked set: the cards Game.linkedPile files against this
   -- effect's SOURCE, which a stated Filter then narrows. `source` and not
   -- `resolving`, since rule 607.2a links two abilities of one OBJECT and for a

@@ -40,33 +40,35 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "Or",
-                  "value": [
-                    {
-                      "type": "HasCardType",
-                      "value": "Instant"
-                    },
-                    {
-                      "type": "HasCardType",
-                      "value": "Sorcery"
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Instant"
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Sorcery"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "IsInZone",
+                    "value": "Hand"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Owner",
+                      "relation": "You"
                     }
-                  ]
-                },
-                {
-                  "type": "IsInZone",
-                  "value": "Hand"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Owner",
-                    "relation": "You"
                   }
-                }
-              ]
+                ]
+              }
             }
           },
           "modifications": [

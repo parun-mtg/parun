@@ -67,42 +67,44 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "Or",
-                  "value": [
-                    {
-                      "type": "HasCardType",
-                      "value": "Artifact"
-                    },
-                    {
-                      "type": "And",
-                      "value": [
-                        {
-                          "type": "HasColor",
-                          "value": "Red"
-                        },
-                        {
-                          "type": "HasCardType",
-                          "value": "Creature"
-                        }
-                      ]
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Artifact"
+                      },
+                      {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "HasColor",
+                            "value": "Red"
+                          },
+                          {
+                            "type": "HasCardType",
+                            "value": "Creature"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "IsInZone",
+                    "value": "Hand"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Owner",
+                      "relation": "You"
                     }
-                  ]
-                },
-                {
-                  "type": "IsInZone",
-                  "value": "Hand"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Owner",
-                    "relation": "You"
                   }
-                }
-              ]
+                ]
+              }
             }
           },
           "modifications": [

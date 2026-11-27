@@ -5,6 +5,7 @@ import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.TurnOrdinal as TurnOrdinal
 
 -- | What a continuous effect applies to. CR 611.2c: a resolution effect's set is
 -- LOCKED when it begins (TheseObjects -- a bounced-and-returned creature is a new
@@ -68,7 +69,11 @@ data Affected
     -- Reaches every zone but the battlefield -- a hand, a library, a graveyard,
     -- exile, the command zone and the stack -- which is what the printed phrase
     -- says. CR 400.1 lists the zones; nothing narrows the phrase further.
-    MatchingOffBattlefield (Filter.Filter Keyword.Keyword)
+    --
+    -- Given an ordinal, only the spell that is the turn's nth cast matching the
+    -- Filter, on a turn the scope admits, as Parun.Types.CostModifier.onlyNth
+    -- reads (TARDIS Bay).
+    MatchingOffBattlefield (Filter.Filter Keyword.Keyword) (Maybe TurnOrdinal.TurnOrdinal)
   | -- | CR 303.4m: the object this ability's SOURCE is attached to -- "enchanted
     -- creature". Neither a fixed id set nor a predicate over candidates:
     -- TheseObjects is fixed at resolution (CR 611.2c) and the three Matching arms

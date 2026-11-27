@@ -3518,7 +3518,7 @@ objectRefChildren c ref = case ref of
   ObjectRef.EachCardInYourHand -> pure ref
   ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand hands filter_) -> fmap ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand <$> refZones c hands <*> traverse (refFilter c) filter_)
   ObjectRef.EachCardInYourLibrary filter_ -> ObjectRef.EachCardInYourLibrary <$> traverse (refFilter c) filter_
-  ObjectRef.EachCardYouOwn filter_ -> ObjectRef.EachCardYouOwn <$> refFilter c filter_
+  ObjectRef.EachCard filter_ -> ObjectRef.EachCard <$> refFilter c filter_
   ObjectRef.EachCardInExiledPile (EachCardInExiledPile.MkEachCardInExiledPile pile filter_) -> fmap ObjectRef.EachCardInExiledPile (EachCardInExiledPile.MkEachCardInExiledPile pile <$> traverse (refFilter c) filter_)
   ObjectRef.EachCardEncodedOnSource filter_ -> ObjectRef.EachCardEncodedOnSource <$> traverse (refFilter c) filter_
   ObjectRef.EachSpell filter_ -> ObjectRef.EachSpell <$> refFilter c filter_
@@ -3728,7 +3728,9 @@ data AffectedChildren f = MkAffectedChildren
     -- | The Filter a matching arm holds.
     affectedFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
     -- | How long a permission's card stays covered (CR 611.3d), whole.
-    affectedDuration :: Duration.Duration -> f Duration.Duration
+    affectedDuration :: Duration.Duration -> f Duration.Duration,
+    -- | A matching arm's cast ordinal, whole; it reads the turn's casts.
+    affectedOrdinal :: TurnOrdinal.TurnOrdinal -> f TurnOrdinal.TurnOrdinal
   }
 
 -- | An Affected's children.
@@ -3737,7 +3739,7 @@ affectedChildren c affected = case affected of
   Affected.TheseObjects objects -> Affected.TheseObjects <$> affectedObjects c objects
   Affected.Matching filter_ -> Affected.Matching <$> affectedFilter c filter_
   Affected.MatchingAnywhere filter_ -> Affected.MatchingAnywhere <$> affectedFilter c filter_
-  Affected.MatchingOffBattlefield filter_ -> Affected.MatchingOffBattlefield <$> affectedFilter c filter_
+  Affected.MatchingOffBattlefield filter_ onlyNth -> Affected.MatchingOffBattlefield <$> affectedFilter c filter_ <*> traverse (affectedOrdinal c) onlyNth
   Affected.Attached -> pure affected
   Affected.AttachedPlayerControls filter_ -> Affected.AttachedPlayerControls <$> affectedFilter c filter_
   Affected.PlayedThisWay duration -> Affected.PlayedThisWay <$> affectedDuration c duration

@@ -73,6 +73,11 @@ framedWith viewOf choices source gs context =
       -- CR 406.1: every card in exile, for a group anchor over that pool,
       -- whose nest reads sourceExiled above.
       Filter.exiledViews = Seq.fromList (Maybe.mapMaybe viewOf (Foldable.toList (GameState.exile gs))),
+      -- CR 401.2: the top card of every library, for a group anchor over that
+      -- pool (Skybreen); a top CR 401.5 holds back is none, per the
+      -- docs/decisions.md entry "Whether a library's held-back top card is its
+      -- top card".
+      Filter.libraryTopViews = Seq.fromList (Maybe.mapMaybe (\pid -> Game.shownTop pid gs >>= viewOf) (Map.keys (GameState.players gs))),
       -- CR 607.2d: the objects the source last chose under the choices'
       -- acquisition, read off the board as sourceExiled is.
       Filter.sourceChosenObjects = Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Objects (SourceChoices.acquisition choices) source gs),

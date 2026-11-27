@@ -988,7 +988,7 @@ askingObjects offered forKind resolving source controller legal chosen ref = cas
   ObjectRef.EachCardInYourHand -> swept
   ObjectRef.EachCardInHand _ -> swept
   ObjectRef.EachCardInYourLibrary _ -> swept
-  ObjectRef.EachCardYouOwn _ -> swept
+  ObjectRef.EachCard _ -> swept
   ObjectRef.EachCardInExiledPile _ -> swept
   ObjectRef.EachCardEncodedOnSource _ -> swept
   ObjectRef.EachSpell _ -> swept
@@ -1367,7 +1367,7 @@ objectRefRecipients legal resolving controller source gs ref = case ref of
   ObjectRef.EachCardInYourHand -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
   ObjectRef.EachCardInHand {} -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
   ObjectRef.EachCardInYourLibrary _ -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
-  ObjectRef.EachCardYouOwn _ -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
+  ObjectRef.EachCard _ -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
   ObjectRef.EachCardInExiledPile _ -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
   ObjectRef.EachCardEncodedOnSource {} -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
   ObjectRef.TopOfLibrary {} -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)

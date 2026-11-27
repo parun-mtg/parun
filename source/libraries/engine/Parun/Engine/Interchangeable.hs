@@ -597,7 +597,7 @@ affectedNames oid source gs affected = case affected of
   Affected.TheseObjects held -> Set.member oid held
   Affected.Matching criterion -> Monoid.getAny (Mentions.filterNames (unread oid) criterion)
   Affected.MatchingAnywhere criterion -> Monoid.getAny (Mentions.filterNames (unread oid) criterion)
-  Affected.MatchingOffBattlefield criterion -> Monoid.getAny (Mentions.filterNames (unread oid) criterion)
+  Affected.MatchingOffBattlefield criterion _ -> Monoid.getAny (Mentions.filterNames (unread oid) criterion)
   Affected.Attached -> Game.hostOf source gs == Just oid
   Affected.AttachedPlayerControls criterion -> Monoid.getAny (Mentions.filterNames (unread oid) criterion)
   -- CR 611.3d: applied by storing a TheseObjects row (Event.permissionRiders),
