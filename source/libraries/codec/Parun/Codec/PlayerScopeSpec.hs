@@ -10,6 +10,7 @@ import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.PlayerMeasure as PlayerMeasure
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.Superlative as Superlative
 import qualified Parun.Types.TurnRole as TurnRole
 
@@ -54,12 +55,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerScope" $ do
       (PlayerScope.InRole TurnRole.Active)
       " {\"type\":\"InRole\",\"value\":\"Active\"} "
   -- Booby Trap's "the chosen player" (CR 607.2d).
-  Spec.it s "ChosenPlayer" $
+  Spec.it s "NamedBySource Chosen" $
     Common.assertCodec
       s
       PlayerScope.codec
-      PlayerScope.ChosenPlayer
-      " {\"type\":\"ChosenPlayer\"} "
+      (PlayerScope.NamedBySource SourcePlayer.Chosen)
+      " {\"type\":\"NamedBySource\",\"value\":\"Chosen\"} "
   -- Elrond of the White Council's "its owner" (CR 108.3).
   Spec.it s "SourceOwner" $
     Common.assertCodec
@@ -68,12 +69,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerScope" $ do
       PlayerScope.SourceOwner
       " {\"type\":\"SourceOwner\"} "
   -- Grievous Wound's "enchanted player" (CR 303.4b).
-  Spec.it s "EnchantedPlayer" $
+  Spec.it s "NamedBySource Enchanted" $
     Common.assertCodec
       s
       PlayerScope.codec
-      PlayerScope.EnchantedPlayer
-      " {\"type\":\"EnchantedPlayer\"} "
+      (PlayerScope.NamedBySource SourcePlayer.Enchanted)
+      " {\"type\":\"NamedBySource\",\"value\":\"Enchanted\"} "
   -- Weathered Sentinels' "players who attacked you during their last turn" (CR 508.1b).
   Spec.it s "AttackedYou TheirLastTurn" $
     Common.assertCodec

@@ -256,8 +256,7 @@ attacks context board atEvent gs bearer you trigger event = case (trigger, event
   -- planeswalker leaves a trigger naming players alone silent (CR 508.3e's last
   -- sentence).
   (AttackTrigger.Attacked t, GameEvent.BecameAttacked payload) ->
-    let enchanted = Recipient.playerOf =<< (Object.attachedTo =<< Game.lookupObject bearer gs)
-        attackerHolds = maybe True (\relation -> PlayerRelation.holds (Game.teams gs) relation you (BecameAttacked.attacker payload)) (AttackedTrigger.attacker t)
+    let attackerHolds = maybe True (\relation -> PlayerRelation.holds (Game.teams gs) relation you (BecameAttacked.attacker payload)) (AttackedTrigger.attacker t)
         attackedHolds = case (AttackedTrigger.attacked t, BecameAttacked.target payload) of
           -- A planeswalker answers through its controller (CR 508.5's
           -- reading), and only where the kinds admit one, each apart from its
@@ -266,8 +265,7 @@ attacks context board atEvent gs bearer you trigger event = case (trigger, event
           (AttackedSubject.Related relation kinds, attacked) ->
             Set.member (Game.attackTargetKind attacked) kinds
               && maybe False (PlayerRelation.holds (Game.teams gs) relation you) (Defender.playerOf Projection.viewWithLastKnownAnywhere attacked gs)
-          (AttackedSubject.Enchanted, AttackTarget.OfPlayer attacked) -> enchanted == Just attacked
-          (AttackedSubject.Chosen, AttackTarget.OfPlayer attacked) -> Game.chosenPlayerOf bearer gs == Just attacked
+          (AttackedSubject.NamedBySource which, AttackTarget.OfPlayer attacked) -> Game.sourcePlayerOf which bearer gs == Just attacked
           (AttackedSubject.Source, AttackTarget.OfPlaneswalker attacked) -> attacked == bearer
           (AttackedSubject.Source, AttackTarget.OfBattle attacked) -> attacked == bearer
           _ -> False
@@ -1974,7 +1972,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
           TriggerFrequency.FirstTimeEachTurn -> maybe True (== t) (firstTargetingOf bearerContext atEvent gs you c (BecameTarget.targeted t))
         && case (Recipient.playerOf (BecameTarget.targeted t), Recipient.objectOf (BecameTarget.targeted t)) of
           (Just player, _) -> case BecomesTargetedTrigger.subject c of
-            TargetedSubject.ChosenPlayer -> Game.chosenPlayerOf bearer gs == Just player
+            TargetedSubject.NamedBySource which -> Game.sourcePlayerOf which bearer gs == Just player
             subject -> maybe False (\relation -> PlayerRelation.holds (Game.teams gs) relation you player) (TargetedSubject.playerOf subject)
           (Nothing, Nothing) -> False
           (Nothing, Just oid) -> case TargetedSubject.permanentOf (BecomesTargetedTrigger.subject c) of
@@ -2486,7 +2484,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     Nothing -> False
   -- CR 603.9: a player lost the game. The scope reads the loser against CR
   -- 109.5's "you", the ability's controller -- PlayerActs' shape -- and a
-  -- ChosenPlayer against the bearer's choice (CR 607.2d). Game.teams is read
+  -- a NamedBySource against the bearer (CR 607.2d). Game.teams is read
   -- off the settings (CR 800.2), so a loser who has already left is still
   -- judged against the team they played on.
   TriggerCondition.PlayerLosesGame scope -> case event of

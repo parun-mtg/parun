@@ -690,7 +690,7 @@ zoneChangeSpec s registry = Spec.describe s "ZoneChange" $ do
     Spec.assertEqWith s "lymph sliver is in carol's graveyard" (namesIn Zone.Graveyard S.carol after) [Just (S.printingName lymph)]
     Spec.assertEqWith s "and carol's library is untouched" (namesIn Zone.Library S.carol after) [Just (S.printingName piker)]
   -- The Wheel's own relation, CR 303.4b's enchanted player
-  -- (ControllerRelation.EnchantedPlayers, judged by Replacement.relationHolds),
+  -- (ControllerRelation.NamedBySource Enchanted, judged by Replacement.relationHolds),
   -- as the whole card: cast at bob, then one card of each seat's headed for its
   -- owner's graveyard. THREE seats, because two cannot part the relation from
   -- its siblings: alice controls the Wheel, so Related You would take her card, and

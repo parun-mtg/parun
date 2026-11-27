@@ -37,7 +37,8 @@
                 {
                   "type": "IsAttackingPlayer",
                   "value": {
-                    "type": "EnchantedPlayers"
+                    "type": "NamedBySource",
+                    "value": "Enchanted"
                   }
                 }
               ]

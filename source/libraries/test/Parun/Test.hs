@@ -847,6 +847,7 @@ import qualified Parun.Codec.SlotCountSpec
 import qualified Parun.Codec.SlotNameSpec
 import qualified Parun.Codec.SourceChoicesSpec
 import qualified Parun.Codec.SourceDealtDamageSpec
+import qualified Parun.Codec.SourcePlayerSpec
 import qualified Parun.Codec.SourceSpec
 import qualified Parun.Codec.SpecialActionSpec
 import qualified Parun.Codec.SpeedDecreaseSpec
@@ -2061,6 +2062,7 @@ spec s reference corpus = do
   Parun.Codec.PlayerSlotSpec.spec s
   Parun.Codec.SourceChoicesSpec.spec s
   Parun.Codec.SourceDealtDamageSpec.spec s
+  Parun.Codec.SourcePlayerSpec.spec s
   Parun.Codec.SourceSpec.spec s
   Parun.Codec.SpecialActionSpec.spec s
   Parun.Codec.SpeedDecreaseSpec.spec s

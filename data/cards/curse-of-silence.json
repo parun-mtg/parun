@@ -43,7 +43,8 @@
             }
           },
           "scope": {
-            "type": "EnchantedPlayer"
+            "type": "NamedBySource",
+            "value": "Enchanted"
           }
         }
       ],
@@ -102,7 +103,10 @@
                       "type": "HeldBy",
                       "value": {
                         "holder": "Controller",
-                        "relation": "EnchantedPlayers"
+                        "relation": {
+                          "type": "NamedBySource",
+                          "value": "Enchanted"
+                        }
                       }
                     }
                   ]

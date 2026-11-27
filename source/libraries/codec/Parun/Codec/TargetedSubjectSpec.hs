@@ -6,6 +6,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.TargetedSubject as TargetedSubject
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -16,6 +17,6 @@ spec s = Spec.describe s "Parun.Codec.TargetedSubject" $ do
     Common.assertCodec s TargetedSubject.codec (TargetedSubject.Player PlayerRelation.You) " {\"type\":\"Player\",\"value\":\"You\"} "
   Spec.it s "PlayerOrPermanent" $
     Common.assertCodec s TargetedSubject.codec (TargetedSubject.PlayerOrPermanent PlayerRelation.AnyPlayer (ActingPermanent.Matching Filter.IsToken)) " {\"type\":\"PlayerOrPermanent\",\"value\":{\"player\":\"AnyPlayer\",\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"IsToken\"}}}} "
-  Spec.it s "ChosenPlayer" $
-    Common.assertCodec s TargetedSubject.codec TargetedSubject.ChosenPlayer " {\"type\":\"ChosenPlayer\"} "
+  Spec.it s "NamedBySource Chosen" $
+    Common.assertCodec s TargetedSubject.codec (TargetedSubject.NamedBySource SourcePlayer.Chosen) " {\"type\":\"NamedBySource\",\"value\":\"Chosen\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s TargetedSubject.codec

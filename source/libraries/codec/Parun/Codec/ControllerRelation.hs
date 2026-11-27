@@ -4,6 +4,7 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.PlayerRelation as PlayerRelation
 import qualified Parun.Codec.SlotName as SlotName
+import qualified Parun.Codec.SourcePlayer as SourcePlayer
 import qualified Parun.Json.Value as Value
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
@@ -17,8 +18,7 @@ codec =
   Arm.tagged
     tagOf
     ( PlayerRelation.arms ControllerRelation.Related
-        <> [ Arm.nullary "EnchantedPlayers" ControllerRelation.EnchantedPlayers,
-             Arm.nullary "ChosenPlayers" ControllerRelation.ChosenPlayers,
+        <> [ Arm.payload "NamedBySource" SourcePlayer.codec ControllerRelation.NamedBySource (\x -> case x of ControllerRelation.NamedBySource y -> Just y; _ -> Nothing),
              Arm.payload "InSlot" SlotName.codec ControllerRelation.InSlot (\x -> case x of ControllerRelation.InSlot y -> Just y; _ -> Nothing),
              Arm.payload "Among" (Common.set PlayerId.codec) ControllerRelation.Among (\x -> case x of ControllerRelation.Among y -> Just y; _ -> Nothing)
            ]
@@ -27,8 +27,7 @@ codec =
 tagOf :: ControllerRelation.ControllerRelation -> String
 tagOf x = case x of
   ControllerRelation.Related relation -> PlayerRelation.tag relation
-  ControllerRelation.EnchantedPlayers {} -> "EnchantedPlayers"
-  ControllerRelation.ChosenPlayers {} -> "ChosenPlayers"
+  ControllerRelation.NamedBySource {} -> "NamedBySource"
   ControllerRelation.InSlot {} -> "InSlot"
   ControllerRelation.Among {} -> "Among"
 
@@ -37,12 +36,11 @@ tagOf x = case x of
 -- Reads the tagged object too.
 bare :: Codec.Codec ControllerRelation.ControllerRelation
 bare =
-  let nullaryTags = fmap PlayerRelation.tag [minBound .. maxBound :: PlayerRelation.Type.PlayerRelation] <> ["EnchantedPlayers", "ChosenPlayers"]
+  let nullaryTags = fmap PlayerRelation.tag [minBound .. maxBound :: PlayerRelation.Type.PlayerRelation]
    in codec
         { Codec.encode = \x -> case x of
             ControllerRelation.Related relation -> Codec.encode PlayerRelation.codec relation
-            ControllerRelation.EnchantedPlayers -> Value.string "EnchantedPlayers"
-            ControllerRelation.ChosenPlayers -> Value.string "ChosenPlayers"
+            ControllerRelation.NamedBySource {} -> Codec.encode codec x
             ControllerRelation.InSlot {} -> Codec.encode codec x
             ControllerRelation.Among {} -> Codec.encode codec x,
           Codec.decode = \value -> case value of

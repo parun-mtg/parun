@@ -53,7 +53,8 @@
                 },
                 "whenDestination": "Graveyard",
                 "whoseObject": {
-                  "type": "EnchantedPlayers"
+                  "type": "NamedBySource",
+                  "value": "Enchanted"
                 }
               },
               "revealing": true

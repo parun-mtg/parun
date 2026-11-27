@@ -10,6 +10,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.AttackTargetKind as AttackTargetKind
 import qualified Parun.Types.AttackedSubject as AttackedSubject
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.AttackedSubject" $ do
@@ -19,10 +20,10 @@ spec s = Spec.describe s "Parun.Codec.AttackedSubject" $ do
     Common.assertCodec s AttackedSubject.codec (AttackedSubject.Related PlayerRelation.AnyPlayer (Set.fromList [AttackTargetKind.OfPlayer, AttackTargetKind.OfPlaneswalker])) " {\"type\":\"Related\",\"value\":{\"kinds\":[\"OfPlayer\",\"OfPlaneswalker\"],\"relation\":\"AnyPlayer\"}} "
   Spec.it s "rejects a battle" $ rejects "{\"type\":\"Related\",\"value\":{\"kinds\":[\"OfPlayer\",\"OfBattle\"],\"relation\":\"AnyPlayer\"}}"
   Spec.it s "rejects no kind" $ rejects "{\"type\":\"Related\",\"value\":{\"kinds\":[],\"relation\":\"AnyPlayer\"}}"
-  Spec.it s "Enchanted" $
-    Common.assertCodec s AttackedSubject.codec AttackedSubject.Enchanted " {\"type\":\"Enchanted\"} "
-  Spec.it s "Chosen" $
-    Common.assertCodec s AttackedSubject.codec AttackedSubject.Chosen " {\"type\":\"Chosen\"} "
+  Spec.it s "NamedBySource Enchanted" $
+    Common.assertCodec s AttackedSubject.codec (AttackedSubject.NamedBySource SourcePlayer.Enchanted) " {\"type\":\"NamedBySource\",\"value\":\"Enchanted\"} "
+  Spec.it s "NamedBySource Chosen" $
+    Common.assertCodec s AttackedSubject.codec (AttackedSubject.NamedBySource SourcePlayer.Chosen) " {\"type\":\"NamedBySource\",\"value\":\"Chosen\"} "
   Spec.it s "Source" $
     Common.assertCodec s AttackedSubject.codec AttackedSubject.Source " {\"type\":\"Source\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s AttackedSubject.codec

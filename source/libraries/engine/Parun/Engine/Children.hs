@@ -1772,7 +1772,7 @@ triggerConditionChildren c condition = case condition of
       ( case subject of
           TargetedSubject.Permanent permanent -> fmap TargetedSubject.Permanent (actingChildren c permanent)
           TargetedSubject.Player _ -> pure subject
-          TargetedSubject.ChosenPlayer -> pure subject
+          TargetedSubject.NamedBySource _ -> pure subject
           TargetedSubject.PlayerOrPermanent who permanent -> fmap (TargetedSubject.PlayerOrPermanent who) (actingChildren c permanent)
       )
       <*> triggerFrequency c HistoryRead.Targetings frequency

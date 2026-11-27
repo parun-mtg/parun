@@ -89,6 +89,7 @@ import qualified Parun.Types.RollTrigger as RollTrigger
 import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.SacrificeTrigger as SacrificeTrigger
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegins as StepBegins
@@ -698,8 +699,8 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PlayerLosesGame PlayerScope.ChosenPlayer)
-      " {\"type\":\"PlayerLosesGame\",\"value\":{\"type\":\"ChosenPlayer\"}} "
+      (TriggerCondition.PlayerLosesGame (PlayerScope.NamedBySource SourcePlayer.Chosen))
+      " {\"type\":\"PlayerLosesGame\",\"value\":{\"type\":\"NamedBySource\",\"value\":\"Chosen\"}} "
   Spec.it s "PlayerManifestsDread" $
     Common.assertCodec
       s

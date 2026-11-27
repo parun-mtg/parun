@@ -60,6 +60,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
@@ -224,12 +225,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.HeldBy Holder.Owner (ControllerRelation.Related PlayerRelation.Opponent))
       " {\"type\":\"HeldBy\",\"value\":{\"holder\":\"Owner\",\"relation\":\"Opponent\"}} "
-  Spec.it s "HeldBy EnchantedPlayers" $
+  Spec.it s "HeldBy NamedBySource Enchanted" $
     Common.assertCodec
       s
       codec
-      (Filter.HeldBy Holder.Controller ControllerRelation.EnchantedPlayers)
-      " {\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"EnchantedPlayers\"}} "
+      (Filter.HeldBy Holder.Controller (ControllerRelation.NamedBySource SourcePlayer.Enchanted))
+      " {\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":{\"type\":\"NamedBySource\",\"value\":\"Enchanted\"}}} "
   Spec.it s "IsPlayer" $
     Common.assertCodec
       s
@@ -444,12 +445,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.You))
       " {\"type\":\"IsAttackingPlayer\",\"value\":{\"type\":\"You\"}} "
-  Spec.it s "IsAttackingPlayer EnchantedPlayers" $
+  Spec.it s "IsAttackingPlayer NamedBySource Enchanted" $
     Common.assertCodec
       s
       codec
-      (Filter.IsAttackingPlayer ControllerRelation.EnchantedPlayers)
-      " {\"type\":\"IsAttackingPlayer\",\"value\":{\"type\":\"EnchantedPlayers\"}} "
+      (Filter.IsAttackingPlayer (ControllerRelation.NamedBySource SourcePlayer.Enchanted))
+      " {\"type\":\"IsAttackingPlayer\",\"value\":{\"type\":\"NamedBySource\",\"value\":\"Enchanted\"}} "
   Spec.it s "IsAttackingPlaneswalker" $
     Common.assertCodec
       s

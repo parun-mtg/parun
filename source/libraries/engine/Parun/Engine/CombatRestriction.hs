@@ -64,7 +64,6 @@ import qualified Parun.Types.AttackTargetKind as AttackTargetKind
 import qualified Parun.Types.CantAttackPlayer as CantAttackPlayer
 import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
 import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
-import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CompanyCount as CompanyCount
 import qualified Parun.Types.Comparison as Comparison
@@ -81,13 +80,13 @@ import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PairwiseFrame as PairwiseFrame
-import qualified Parun.Types.PlayerChoice as PlayerChoice
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.RuleAbilities as RuleAbilities
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TextWord as TextWord
@@ -1212,7 +1211,7 @@ cantBeBlockedBy defending blockers attackers gs =
               context attacker = case frame of
                 PairwiseFrame.Attacker ->
                   (Projection.pairwiseContext gs attacker)
-                    { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players attacker gs >>= Map.lookup PlayerChoice.ChosenPlayer,
+                    { Filter.carrierChosenPlayer = Game.sourcePlayerOf SourcePlayer.Chosen attacker gs,
                       Filter.carrierStickers = Game.stickersOn attacker gs
                     }
                 PairwiseFrame.Source -> stating

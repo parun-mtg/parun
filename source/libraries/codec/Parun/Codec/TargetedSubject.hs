@@ -4,6 +4,7 @@ module Parun.Codec.TargetedSubject where
 
 import qualified Parun.Codec.ActingPermanent as ActingPermanent
 import qualified Parun.Codec.PlayerRelation as PlayerRelation
+import qualified Parun.Codec.SourcePlayer as SourcePlayer
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Fields as Fields
@@ -18,7 +19,7 @@ codec =
     [ Arm.payload "Permanent" ActingPermanent.codec TargetedSubject.Permanent (\x -> case x of TargetedSubject.Permanent y -> Just y; _ -> Nothing),
       Arm.payload "Player" PlayerRelation.codec TargetedSubject.Player (\x -> case x of TargetedSubject.Player y -> Just y; _ -> Nothing),
       Arm.payload "PlayerOrPermanent" playerOrPermanent (uncurry TargetedSubject.PlayerOrPermanent) (\x -> case x of TargetedSubject.PlayerOrPermanent r p -> Just (r, p); _ -> Nothing),
-      Arm.nullary "ChosenPlayer" TargetedSubject.ChosenPlayer
+      Arm.payload "NamedBySource" SourcePlayer.codec TargetedSubject.NamedBySource (\x -> case x of TargetedSubject.NamedBySource y -> Just y; _ -> Nothing)
     ]
 
 -- | PlayerOrPermanent's two fields, keyed.
@@ -33,4 +34,4 @@ tagOf x = case x of
   TargetedSubject.Permanent {} -> "Permanent"
   TargetedSubject.Player {} -> "Player"
   TargetedSubject.PlayerOrPermanent {} -> "PlayerOrPermanent"
-  TargetedSubject.ChosenPlayer -> "ChosenPlayer"
+  TargetedSubject.NamedBySource {} -> "NamedBySource"

@@ -63,14 +63,13 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.Rewrite as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Types.AttachRestriction as AttachRestriction
-import qualified Parun.Types.Chosen as Chosen
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword.Type
 import Parun.Types.ObjectId (ObjectId)
-import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.RuleAbilities as RuleAbilities
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 
 -- CR 303.4's last sentence and CR 301.5 with CR 101.2: does any effect in force
 -- right now say `subject` can't become attached to `host`? Consecrate Land's
@@ -167,7 +166,7 @@ barredBy mint pcs subject host gs =
                 -- rule 702.16 minted is the protected host itself -- the same
                 -- frame this function's haddock states for the minted case.
                 (Projection.sourceContext gs (Projection.controllerOf source gs) source)
-                  { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players source gs >>= Map.lookup PlayerChoice.ChosenPlayer,
+                  { Filter.carrierChosenPlayer = Game.sourcePlayerOf SourcePlayer.Chosen source gs,
                     Filter.carrierStickers = Game.stickersOn source gs
                   }
                 subjectView

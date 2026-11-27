@@ -67,6 +67,7 @@ import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.Protection as Protection
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.Teams as Teams
@@ -1735,11 +1736,11 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     Spec.it s "a player candidate is vacuously false" $ do
       Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.IsAttackingPlayer (ControllerRelation.Related PlayerRelation.AnyPlayer)))) "player"
 
-    -- CR 303.4b: EnchantedPlayers reads the player the context's source
+    -- CR 303.4b: NamedBySource Enchanted reads the player the context's source
     -- enchants, not the perspective; unfilled, it names nobody.
-    Spec.it s "EnchantedPlayers reads the source's enchanted player" $ do
-      let enchanting n = self {Filter.sourceEnchantedPlayer = Just (PlayerId.MkPlayerId n)}
-          atom = Filter.Type.IsAttackingPlayer ControllerRelation.EnchantedPlayers
+    Spec.it s "NamedBySource Enchanted reads the source's enchanted player" $ do
+      let enchanting n = self {Filter.sourcePlayers = Map.singleton SourcePlayer.Enchanted (PlayerId.MkPlayerId n)}
+          atom = Filter.Type.IsAttackingPlayer (ControllerRelation.NamedBySource SourcePlayer.Enchanted)
       Spec.assertBool s (Filter.matches (enchanting 1) (attackingPlayer 1) atom) "attacking the enchanted player"
       Spec.assertBool s (not (Filter.matches (enchanting 2) (attackingPlayer 1) atom)) "attacking another player"
       Spec.assertBool s (not (Filter.matches self (attackingPlayer 1) atom)) "no enchanted player in the context"

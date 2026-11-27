@@ -219,6 +219,7 @@ import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.Settle as Settle
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.SourcePlayer as SourcePlayer
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.SpellWasCopied as SpellWasCopied
@@ -1948,7 +1949,7 @@ representativeEvents cond =
         TriggerCondition.BecomesTargeted c -> case BecomesTargetedTrigger.subject c of
           TargetedSubject.Permanent ActingPermanent.Self -> one (GameEvent.BecameTarget (BecameTarget.MkBecameTarget (Recipient.ToObject departed) arrived StackObjectKind.ActivatedAbility S.alice (BecomesTargetedTrigger.sourceKeyword c)))
           TargetedSubject.PlayerOrPermanent _ ActingPermanent.Self -> one (GameEvent.BecameTarget (BecameTarget.MkBecameTarget (Recipient.ToObject departed) arrived StackObjectKind.ActivatedAbility S.alice (BecomesTargetedTrigger.sourceKeyword c)))
-          TargetedSubject.ChosenPlayer -> one (GameEvent.BecameTarget (BecameTarget.MkBecameTarget (Recipient.ToPlayer S.alice) arrived (Maybe.fromMaybe StackObjectKind.Spell (Set.lookupMin (BecomesTargetedTrigger.kinds c))) S.bob (BecomesTargetedTrigger.sourceKeyword c)))
+          TargetedSubject.NamedBySource _ -> one (GameEvent.BecameTarget (BecameTarget.MkBecameTarget (Recipient.ToPlayer S.alice) arrived (Maybe.fromMaybe StackObjectKind.Spell (Set.lookupMin (BecomesTargetedTrigger.kinds c))) S.bob (BecomesTargetedTrigger.sourceKeyword c)))
           TargetedSubject.Player _ -> one (GameEvent.BecameTarget (BecameTarget.MkBecameTarget (Recipient.ToPlayer S.alice) arrived (Maybe.fromMaybe StackObjectKind.Spell (Set.lookupMin (BecomesTargetedTrigger.kinds c))) S.bob (BecomesTargetedTrigger.sourceKeyword c)))
           TargetedSubject.Permanent (ActingPermanent.Matching _) -> becameTargetEvents c
           TargetedSubject.PlayerOrPermanent _ (ActingPermanent.Matching _) -> becameTargetEvents c
@@ -2257,13 +2258,15 @@ everyTriggerCondition =
     TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue {AttackerTrigger.while = Just (Condition.Type.Compares (Compares.MkCompares (Quantity.Type.Literal 0) Comparison.Exactly (Quantity.Type.Literal 0)))}),
     -- Every subject, with and without an attacking player: the slots are a
     -- function of both.
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing AttackedSubject.Enchanted Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing (AttackedSubject.NamedBySource SourcePlayer.Enchanted) Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing (AttackedSubject.NamedBySource SourcePlayer.Chosen) Nothing)),
     TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing AttackedSubject.Source Nothing)),
     TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing (AttackedSubject.Related PlayerRelation.AnyPlayer (Set.singleton AttackTargetKind.OfPlayer)) Nothing)),
     TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) (AttackedSubject.Related PlayerRelation.AnyPlayer (Set.singleton AttackTargetKind.OfPlayer)) Nothing)),
     TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.Opponent) (AttackedSubject.Related PlayerRelation.You (Set.singleton AttackTargetKind.OfPlayer)) Nothing)),
     TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.AnyPlayer) (AttackedSubject.Related PlayerRelation.Opponent (Set.singleton AttackTargetKind.OfPlayer)) Nothing)),
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) AttackedSubject.Enchanted Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) (AttackedSubject.NamedBySource SourcePlayer.Enchanted) Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) (AttackedSubject.NamedBySource SourcePlayer.Chosen) Nothing)),
     TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) (AttackedSubject.Related PlayerRelation.AnyPlayer (Set.fromList [AttackTargetKind.OfPlayer, AttackTargetKind.OfPlaneswalker])) Nothing)),
     TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) AttackedSubject.Source Nothing)),
     -- A count with and without an attacking player: eventBindings stamps the
@@ -2409,6 +2412,10 @@ everyTriggerCondition =
     TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.PlayerOrPermanent PlayerRelation.AnyPlayer (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.AnyPlayer (Set.fromList [StackObjectKind.ActivatedAbility, StackObjectKind.TriggeredAbility]) Batching.EachOccurrence (BecomesTargetedTrigger.zones BecomesTargetedTrigger.defaultValue) TriggerFrequency.EveryTime Nothing Nothing),
     -- Mirror-Shield Hoplite's: a creature you control, aimed at by a backup ability.
     TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.matching Filter.Type.IsSource) {BecomesTargetedTrigger.sourceKeyword = Just KeywordFamily.Backup},
+    -- Imprison This Insolent Wretch's "the chosen player ... becomes the
+    -- target", and the enchanted player beside it.
+    TriggerCondition.BecomesTargeted BecomesTargetedTrigger.defaultValue {BecomesTargetedTrigger.subject = TargetedSubject.NamedBySource SourcePlayer.Chosen},
+    TriggerCondition.BecomesTargeted BecomesTargetedTrigger.defaultValue {BecomesTargetedTrigger.subject = TargetedSubject.NamedBySource SourcePlayer.Enchanted},
     -- Brine Comber's: the targeting object narrowed by a Filter.
     TriggerCondition.BecomesTargeted BecomesTargetedTrigger.defaultValue {BecomesTargetedTrigger.sourceFilter = Just (Filter.Type.And [])},
     TriggerCondition.SelfHalfUnlocked (CardName.MkCardName (Text.pack "Steaming Sauna")),
@@ -2507,7 +2514,7 @@ everyTriggerCondition =
     -- chosen player.
     TriggerCondition.PlayerLosesGame (PlayerScope.Related PlayerRelation.AnyPlayer),
     TriggerCondition.PlayerLosesGame (PlayerScope.Related PlayerRelation.Opponent),
-    TriggerCondition.PlayerLosesGame PlayerScope.ChosenPlayer,
+    TriggerCondition.PlayerLosesGame (PlayerScope.NamedBySource SourcePlayer.Chosen),
     TriggerCondition.PlayerPlaysLand (PlaysLand.MkPlaysLand PlayerRelation.You (Just Zone.Exile) (Filter.Type.And [])),
     -- Fastbond's play from any zone.
     TriggerCondition.PlayerPlaysLand (PlaysLand.MkPlaysLand PlayerRelation.You Nothing (Filter.Type.And [])),
