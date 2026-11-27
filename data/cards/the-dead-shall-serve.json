@@ -1,0 +1,122 @@
+{
+  "faces": [
+    {
+      "name": "The Dead Shall Serve",
+      "oracleText": "When you set this scheme in motion, for each opponent, put up to one target creature card from that player's graveyard onto the battlefield under your control. Each of those creatures attacks its owner each combat if able.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "MoveToZone",
+                              "value": {
+                                "ref": {
+                                  "type": "InSlot",
+                                  "value": "card"
+                                },
+                                "slot": "returned",
+                                "zone": "Battlefield"
+                              }
+                            },
+                            {
+                              "type": "ForEach",
+                              "value": {
+                                "body": [
+                                  {
+                                    "type": "RequireAttack",
+                                    "value": {
+                                      "attacker": {
+                                        "type": "Named",
+                                        "value": {
+                                          "type": "InSlot",
+                                          "value": "creature"
+                                        }
+                                      },
+                                      "defender": {
+                                        "type": "Players",
+                                        "value": {
+                                          "type": "HolderOfBound",
+                                          "value": {
+                                            "holder": "Owner",
+                                            "hop": "Itself",
+                                            "slot": "creature"
+                                          }
+                                        }
+                                      },
+                                      "duration": {
+                                        "type": "Indefinite"
+                                      }
+                                    }
+                                  }
+                                ],
+                                "ref": {
+                                  "type": "InSlot",
+                                  "value": "returned"
+                                },
+                                "slot": "creature"
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "slot": "card"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0,
+                        "most": 1
+                      }
+                    },
+                    "filter": {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    "perPlayer": {
+                      "players": "Opponent",
+                      "slot": "eachPlayer"
+                    },
+                    "pool": {
+                      "type": "CardsInGraveyard",
+                      "value": {
+                        "type": "InSlot",
+                        "value": "eachPlayer"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Scheme"
+        ]
+      }
+    }
+  ]
+}
