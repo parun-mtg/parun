@@ -1729,7 +1729,8 @@ data Context = MkContext
     -- CR 120.1: each object a slot binds, beside View.dealtDamageTo's and
     -- View.dealtDamageEarlier's answers for it, for DealtDamageTo's InSlot
     -- dealer. Filled by Parun.Engine.Projection.framedBySlots by id, so a
-    -- departed target still answers (CR 400.7); lazy for sourceDealtDamage's
+    -- departed target still answers (CR 400.7), with a key for every slot it
+    -- names, so one naming no object refuses; lazy for sourceDealtDamage's
     -- reason.
     slotDealtDamage :: Map.Map SlotName.SlotName [(ObjectId.ObjectId, Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType, Bool), Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType))],
     -- CR 601.2b / 603.2: the NUMBERS the surrounding announcement's bindings hold,
