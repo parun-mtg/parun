@@ -267,6 +267,7 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Tap as Tap
+import qualified Parun.Types.TapCause as TapCause
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TheseDiscard as TheseDiscard
@@ -3871,12 +3872,14 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.BindAmount {} -> False
   Effect.BindPlayers {} -> False
   Effect.BindLeaders {} -> False
-  -- CR 701.26a: "only untapped permanents can be tapped", which is what
-  -- Parun.Engine.Event.tap enforces, so a sweep whose every permanent is already
-  -- tapped taps nothing.
-  Effect.Tap (Tap.MkTap ref _ _) -> noneNamedIs TapState.Untapped ref
+  -- CR 701.26a: "only untapped permanents can be tapped", and CR 101.2's
+  -- can't-become-tapped (Event.tapPermitted), both of which Parun.Engine.Event.tap
+  -- enforces, so a sweep none of whose permanents may be tapped taps nothing. The
+  -- scenario ood-sphere-s-goaded-creature-is-not-offered-twiddle-s-impossible-tap
+  -- proves the second.
+  Effect.Tap (Tap.MkTap ref _ _) -> noneNamed (\oid -> isIn TapState.Untapped oid && Event.tapPermitted TapCause.OtherTap oid gs) ref
   -- CR 701.26b, tap's mirror and Parun.Engine.Event.untap's own guard.
-  Effect.Untap ref -> noneNamedIs TapState.Tapped ref
+  Effect.Untap ref -> noneNamed (isIn TapState.Tapped) ref
   Effect.Detain {} -> False
   Effect.Goad {} -> False
   Effect.Pair {} -> False
@@ -4110,15 +4113,15 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
       let named = objectRefObjects legal resolving controller source gs ref
           held = frozenAffected gs named
        in not (null named) && (null held || all Expiry.unbegun (Expiry.arm (Just resolving) legal controller source duration gs))
-    -- The tap-state half of Effect.Tap's and Effect.Untap's arms: the sweep
-    -- names at least one permanent and none of them is in the state the
-    -- instruction needs to find.
     nothingTurnsOver ref =
       let named = objectRefObjects legal resolving controller source gs ref
        in not (null named) && not (any (turnsOver (Projection.projectAll gs) resolving gs) named)
-    noneNamedIs state ref =
+    -- Effect.Tap's and Effect.Untap's arms: the sweep names at least one
+    -- permanent and none of them is one the instruction `can` act on.
+    isIn state = (== Just state) . fmap Object.tapped . flip Game.lookupObject gs
+    noneNamed can ref =
       let named = objectRefObjects legal resolving controller source gs ref
-       in not (null named) && not (any ((== Just state) . fmap Object.tapped . flip Game.lookupObject gs) named)
+       in not (null named) && not (any can named)
     -- CR 608.2d for the refs that ASK rather than read: a chosen card or
     -- permanent is an instruction to choose one, and an empty pool leaves
     -- nothing to choose. Each pool is its asking arm's own read

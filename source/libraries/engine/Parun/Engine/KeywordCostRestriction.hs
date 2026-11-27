@@ -13,9 +13,9 @@
 -- ONE place asks, unlike Parun.Engine.ObjectRestriction's two, and the reason
 -- is that both rules name a COST rather than a game action: a creature is only
 -- ever tapped to crew by paying rule 702.122a's cost, or returned to beam up by
--- paying rule 702.196a's, and Parun.Engine.Cost.tapCandidates (aliased as
--- returnCandidates) is the single pool that both CR 118.3's payability gate and
--- the payment prompt read.
+-- paying rule 702.196a's, and Parun.Engine.Cost.criterionPool (narrowed as
+-- tapCandidates, aliased as returnCandidates) is the single pool that both CR
+-- 118.3's payability gate and the payment prompt read.
 module Parun.Engine.KeywordCostRestriction where
 
 import Data.Set (Set)
