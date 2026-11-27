@@ -223,6 +223,13 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
         Spec.assertEq s [TriggerCondition.TurnedUpOffDeck ActingPermanent.Self] (fmap TriggeredAbility.condition (Face.triggeredAbilities face))
     Spec.assertEq s (Left (Text.pack "renders as: When you set Roots of All Evil in motion, create five 1/1 green Saproling creature tokens.")) (Functor.void (acceptFaces (fst rootsOfAllEvil) ["When you set this scheme in motion, create five 1/1 green Plant creature tokens."]))
 
+  -- CR 701.33: "abandon this scheme", of the scheme itself and no other.
+  Spec.it s "reads abandoning this scheme" $ do
+    Spec.assertEq s (Right ()) (accepts theVerySoilShallShake)
+    Spec.assertEq s [Effect.Abandon] [e | t <- Face.triggeredAbilities (translated theVerySoilShallShake), m <- Foldable.toList (Modal.modes (TriggeredAbility.modal t)), c <- Foldable.toList (Mode.clauses m), e <- Foldable.toList (Clause.effects c)]
+    let other = Text.unpack (Text.replace (Text.pack "\"_SingleScheme\":\"ThisScheme\"") (Text.pack "\"_SingleScheme\":\"ThatScheme\"") (Text.pack (fst theVerySoilShallShake)))
+    Spec.assertEq s (Left (Text.pack "_SingleScheme:ThatScheme")) (accepts (other, snd theVerySoilShallShake))
+
   -- CR 614.1d: "This land enters tapped unless [condition]" applies while
   -- the condition fails, so it is held as the complement of what it names.
   Spec.it s "reads entering tapped unless a condition as entering tapped under its complement" $ do
@@ -474,6 +481,13 @@ rootsOfAllEvil :: (String, String)
 rootsOfAllEvil =
   ( "{\"_OracleCard\":\"Scheme\",\"Name\":\"Roots of All Evil\",\"Typeline\":{\"Supertypes\":[],\"Cardtypes\":[\"Scheme\"],\"Subtypes\":[]},\"Rules\":[{\"_Rule\":\"TriggerA\",\"args\":[{\"_Trigger\":\"WhenAPlayerSetsASchemeInMotion\",\"args\":[{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"You\"}},{\"_Schemes\":\"SingleScheme\",\"args\":{\"_SingleScheme\":\"ThisScheme\"}}]},{\"_Actions\":\"ActionList\",\"args\":[{\"_Action\":\"CreateTokens\",\"args\":[[{\"_CreatableToken\":\"NumberTokens\",\"args\":[{\"_GameNumber\":\"Integer\",\"args\":5},{\"_CreatableToken\":\"TokenWithPT\",\"args\":[{\"_PT\":\"PT\",\"args\":[1,1]},{\"_TokenColorList\":\"Colors\",\"args\":[\"Green\"]},[],[\"Creature\"],{\"_TokenSubtypes\":\"SubtypesList\",\"args\":[\"Saproling\"]},[]]}]}],[]]}]}]}]}",
     "When you set this scheme in motion, create five 1/1 green Saproling creature tokens."
+  )
+
+-- | The Very Soil Shall Shake's AST, and its Oracle text less its reminder.
+theVerySoilShallShake :: (String, String)
+theVerySoilShallShake =
+  ( "{\"_OracleCard\":\"Scheme\",\"Name\":\"The Very Soil Shall Shake\",\"Typeline\":{\"Supertypes\":[\"Ongoing\"],\"Cardtypes\":[\"Scheme\"],\"Subtypes\":[]},\"Rules\":[{\"_Rule\":\"EachPermanentLayerEffect\",\"args\":[{\"_Permanents\":\"And\",\"args\":[{\"_Permanents\":\"IsCardtype\",\"args\":\"Creature\"},{\"_Permanents\":\"ControlledByAPlayer\",\"args\":{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"You\"}}}]},[{\"_StaticLayerEffect\":\"AdjustPT\",\"args\":[2,2]},{\"_StaticLayerEffect\":\"AddAbility\",\"args\":[{\"_Rule\":\"Trample\"}]}]]},{\"_Rule\":\"TriggerA\",\"args\":[{\"_Trigger\":\"WhenAPermanentDies\",\"args\":{\"_Permanents\":\"And\",\"args\":[{\"_Permanents\":\"IsCardtype\",\"args\":\"Creature\"},{\"_Permanents\":\"ControlledByAPlayer\",\"args\":{\"_Players\":\"SinglePlayer\",\"args\":{\"_Player\":\"You\"}}}]}},{\"_Actions\":\"ActionList\",\"args\":[{\"_Action\":\"AbandonScheme\",\"args\":{\"_SingleScheme\":\"ThisScheme\"}}]}]}]}",
+    "Creatures you control get +2/+2 and have trample.\nWhen a creature you control dies, abandon this scheme."
   )
 
 -- | Sizzle's AST, and its Oracle text.

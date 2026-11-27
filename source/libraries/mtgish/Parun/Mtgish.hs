@@ -1204,6 +1204,11 @@ effects context n = case Node.tag n of
       ObjectRef.InSlot s | s == Oracle.Target.selfSlot -> damage Nothing amount recipient
       ObjectRef.InSlot s -> damage (Just s) amount recipient
       _ -> Node.untranslated n
+  -- "Abandon this scheme" (CR 701.33).
+  "AbandonScheme" -> do
+    s <- Node.child n
+    Monad.unless (Node.tag s == "ThisScheme") (Node.untranslated s)
+    pure [Effect.Abandon]
   "PlayerAction" -> do
     (who, action) <- pair n
     p <- player context who
