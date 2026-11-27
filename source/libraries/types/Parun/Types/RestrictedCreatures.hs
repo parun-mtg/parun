@@ -3,7 +3,7 @@ module Parun.Types.RestrictedCreatures where
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 
--- | Which permanents a resolution-generated rules-modifying effect covers
+-- | Which objects a resolution-generated rules-modifying effect covers
 -- (Parun.Types.ForbidAttack, Parun.Types.RequireAttack, Parun.Types.RequireBlock
 -- and Parun.Types.Prohibit, and the rows they store). Creatures for every combat
 -- carrier; Exhaustion's prohibition reaches lands too. The two arms are
@@ -19,9 +19,10 @@ data RestrictedCreatures named
     -- "target creature". A fixed object, not a class: CR 400.7 makes the same
     -- card returning a new object, so a frozen id is exactly the printed set.
     Named named
-  | -- | CR 611.2c's third sentence: every permanent matching the Filter, re-read
+  | -- | CR 611.2c's third sentence: every object matching the Filter, re-read
     -- whenever the effect is asked -- Chronomantic Escape's "creatures". A
     -- restriction on a declaration modifies no characteristic and no controller,
     -- so it reaches permanents that were not on the battlefield when it began.
+    -- Bad Wolf Bay's entry prohibition matches cards in exile.
     Matching (Filter.Filter Keyword.Keyword)
   deriving (Eq, Ord, Show)
