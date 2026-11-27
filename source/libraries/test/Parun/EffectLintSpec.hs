@@ -215,6 +215,7 @@ import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
+import qualified Parun.Types.PayerGrouping as PayerGrouping
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
@@ -2535,7 +2536,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
             { Face.spell =
                 Mint.oneModeOf Map.empty (Seq.fromList [Mint.mandatory (Seq.singleton destruction), Clause.MkClause Nothing Nothing Nothing optionality gate Seq.empty])
             }
-        payerFace ref = clauseFace (Just (PayGate.MkPayGate ref (CostChoice.MkCostChoice (Cost.Type.MkCost Nothing [] NonEmpty.:| [])) Nothing PayBranch.IfNotPaid PayObligation.Optional Nothing Nothing Nothing Nothing)) Optionality.Mandatory
+        payerFace ref = clauseFace (Just (PayGate.MkPayGate ref PayerGrouping.Severally (CostChoice.MkCostChoice (Cost.Type.MkCost Nothing [] NonEmpty.:| [])) Nothing PayBranch.IfNotPaid PayObligation.Optional Nothing Nothing Nothing Nothing)) Optionality.Mandatory
         askerFace ref = clauseFace Nothing (Optionality.Optional ref MayPass.AllSeatsFirst)
         -- CR 111.1's token, whose OWN printed text carries that same predicate:
         -- Face.enchant is a Filter position cardFilters walks, so effectFilters

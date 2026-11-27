@@ -109,8 +109,10 @@ import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.Cost as Cost.Type
+import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostBasis as CostBasis
 import qualified Parun.Types.CostChoice as CostChoice
+import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostStep as CostStep
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CountedAct as CountedAct
@@ -179,6 +181,7 @@ import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaAddition as ManaAddition
+import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.MatchScope as MatchScope
@@ -191,6 +194,7 @@ import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.Object as Object
+import qualified Parun.Types.ObjectCount as ObjectCount
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.ObjectRef (ObjectRef)
 import qualified Parun.Types.ObjectRef as ObjectRef
@@ -245,6 +249,7 @@ import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RollReading as RollReading
+import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.Sacrificer as Sacrificer
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SearchDestination as SearchDestination
@@ -5574,6 +5579,21 @@ payGateAgreed resolving source offer earlier payer gate slots owed options = do
             PayObligation.Mandatory -> pure PaymentDecision.Pays
             PayObligation.Optional -> Game.choose (Prompt.ChooseToPay (Decide.deciderFor payer gs) payer resolving offer cost earlier)
           pure (if decision == PaymentDecision.Pays then Just cost else Nothing)
+
+-- CR 805.2 / 701.21a: the one cost a Jointly gate (Parun.Types.PayerGrouping)
+-- splits among the team, as the count of permanents and the criterion each
+-- matches: a fixed number sacrificed, no mana and no "different" axes, which
+-- each sharer then pays from what they control. Nothing for every other cost.
+--
+-- Unprinted: a joint offer of any other cost, which Parun.CardSpec's "no card
+-- writes a joint offer the team cannot split" keeps out of card data. Bow to My
+-- Command's joint TapForTotalPower is card-driven work for #9939, which deletes
+-- that leg of the lint.
+jointSacrifice :: Cost.Type.Cost keyword -> Maybe (Natural, Filter.Type.Filter keyword)
+jointSacrifice cost = case Cost.Type.components cost of
+  [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed n)) criterion axes)]
+    | all (null . ManaCost.unwrap) (Cost.Type.mana cost) && Set.null axes -> Just (n, criterion)
+  _ -> Nothing
 
 -- CR 608.2c / 608.2h: the slots CR 118.12's payments bound, folded onto the
 -- RESOLVING object once every payer of one offer has paid, so a later

@@ -5,6 +5,7 @@ import qualified Parun.Types.CostBasis as CostBasis
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayObligation as PayObligation
+import qualified Parun.Types.PayerGrouping as PayerGrouping
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.Quantity as Quantity
@@ -63,6 +64,11 @@ data PayGate = MkPayGate
     -- Parun.Engine.Binding.gatePlayers, so the clause's own instructions can say
     -- "they" -- see Parun.Engine.Resolve.payGateAdmits.
     payer :: PlayerRef.PlayerRef,
+    -- | Whether the players `payer` names are offered the cost each alone or
+    -- together. Severally is every gate but My Forces Are Innumerable's "your
+    -- opponents ... they may sacrifice two creatures", which its ruling makes
+    -- one payment by the opposing team (Parun.Engine.Resolve.Effect.payGatePaid).
+    grouping :: PayerGrouping.PayerGrouping,
     -- | What that player is offered the chance to pay. Whole Costs and not a
     -- bare ManaCost, so Parun.Engine.Cost.canPay and .pay are the one payment
     -- path, and so a non-mana cost of this family (CR 118.12's own "sacrifice

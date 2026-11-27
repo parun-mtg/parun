@@ -159,6 +159,7 @@ import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
+import qualified Parun.Types.PayerGrouping as PayerGrouping
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
@@ -1740,6 +1741,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
                     ( Just
                         PayGate.MkPayGate
                           { PayGate.payer = PlayerRef.Relative PlayerRelation.You,
+                            PayGate.grouping = PayerGrouping.Severally,
                             PayGate.cost = CostChoice.MkCostChoice (Cost.Type.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])) [] NonEmpty.:| []),
                             PayGate.basis = Nothing,
                             PayGate.branch = PayBranch.IfNotPaid,

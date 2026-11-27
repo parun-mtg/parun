@@ -21,6 +21,7 @@ import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
+import qualified Parun.Types.PayerGrouping as PayerGrouping
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -31,6 +32,7 @@ manaLeak :: PayGate.PayGate
 manaLeak =
   PayGate.MkPayGate
     { PayGate.payer = PlayerRef.HolderOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "spell")),
+      PayGate.grouping = PayerGrouping.Severally,
       PayGate.cost = CostChoice.MkCostChoice (Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 3]), Cost.components = []} NonEmpty.:| []),
       PayGate.basis = Nothing,
       PayGate.branch = PayBranch.IfNotPaid,
@@ -122,6 +124,13 @@ spec s = Spec.describe s "Parun.Codec.PayGate" $ do
       PayGate.codec
       manaLeak {PayGate.marks = Just PermanentAction.PayEcho}
       " {\"payer\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"spell\"}},\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":3}]},\"branch\":\"IfNotPaid\",\"marks\":\"PayEcho\"} "
+  -- CR 805.2: one offer to a team, My Forces Are Innumerable's.
+  Spec.it s "MkPayGate, one payment by the players named together" $
+    Common.assertCodec
+      s
+      PayGate.codec
+      manaLeak {PayGate.grouping = PayerGrouping.Jointly}
+      " {\"payer\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"spell\"}},\"grouping\":\"Jointly\",\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":3}]},\"branch\":\"IfNotPaid\"} "
   -- The first three keys are required: none has a default an absent key could
   -- mean.
   Spec.it s "an omitted payer field is a decode error" $

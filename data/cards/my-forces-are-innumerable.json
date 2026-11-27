@@ -116,9 +116,10 @@
                         ],
                         "mana": []
                       },
+                      "grouping": "Jointly",
                       "payer": {
-                        "type": "InSlot",
-                        "value": "thatPlayer"
+                        "type": "InRole",
+                        "value": "Active"
                       }
                     }
                   }
