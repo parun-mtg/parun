@@ -1,0 +1,53 @@
+{
+  "faces": [
+    {
+      "name": "Time Bends to My Will",
+      "oracleText": "When you set this scheme in motion, take an extra turn after this one. Skip the untap step of that turn.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "TakeExtraTurn",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "skips": [
+                            {
+                              "type": "Step",
+                              "value": {
+                                "type": "Beginning",
+                                "value": "Untap"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Scheme"
+        ]
+      }
+    }
+  ]
+}

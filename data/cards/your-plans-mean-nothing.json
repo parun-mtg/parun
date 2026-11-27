@@ -1,0 +1,153 @@
+{
+  "faces": [
+    {
+      "name": "Your Plans Mean Nothing",
+      "oracleText": "When you set this scheme in motion, any number of target players each discard their hands. Each opponent draws cards equal to the number of cards that player discarded minus one. Then if you discarded a card this way, draw seven cards.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "These",
+                          "value": {
+                            "cards": {
+                              "type": "EachCardInHand",
+                              "value": {
+                                "hands": {
+                                  "type": "InSlot",
+                                  "value": "targets"
+                                }
+                              }
+                            },
+                            "discarded": "discarded"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          },
+                          "quantity": {
+                            "type": "Plus",
+                            "value": {
+                              "left": {
+                                "type": "Count",
+                                "value": {
+                                  "aggregation": {
+                                    "type": "Members"
+                                  },
+                                  "filter": {
+                                    "type": "HeldByRecipient",
+                                    "value": "Owner"
+                                  },
+                                  "scope": {
+                                    "type": "OverBound",
+                                    "value": "discarded"
+                                  }
+                                }
+                              },
+                              "right": {
+                                "type": "Negate",
+                                "value": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "Count",
+                          "value": {
+                            "aggregation": {
+                              "type": "Members"
+                            },
+                            "filter": {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Owner",
+                                "relation": "You"
+                              }
+                            },
+                            "scope": {
+                              "type": "OverBound",
+                              "value": "discarded"
+                            }
+                          }
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    },
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 7
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "targets": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0
+                      }
+                    },
+                    "pool": {
+                      "type": "Players"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Scheme"
+        ]
+      }
+    }
+  ]
+}
