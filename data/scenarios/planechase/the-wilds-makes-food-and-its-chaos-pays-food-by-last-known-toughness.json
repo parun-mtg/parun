@@ -114,7 +114,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "The Wilds makes Food when encountered and at your upkeep and its chaos trades a sacrificed creature for Food by its last toughness",
+  "description": "The Wilds makes Food and its chaos pays Food by last-known toughness",
   "note": "alice planeswalks from Gavony to The Wilds and makes a Food. Chaos at bob: he sacrifices his Bears, 2/2 printed but 5/5 with three counters, so its last-known toughness earns two Food. Chaos at cara, who controls no creature, earns none. Chaos at bob again: his 3/3 Giant earns one. At alice's next upkeep The Wilds makes one more.",
   "timeline": [
     {

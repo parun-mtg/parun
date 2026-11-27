@@ -5,48 +5,44 @@
       {
         "battlefield": [
           {
-            "card": "Llanowar Elves",
-            "label": "elves"
-          },
-          {
             "card": "Grizzly Bears",
             "label": "bear"
           },
           {
-            "card": "Hill Giant",
-            "label": "giant"
+            "card": "Goblin Piker",
+            "label": "goblin"
           }
         ],
         "command": [
           {
-            "card": "Megaflora Jungle",
+            "card": "Littjara",
             "label": "plane"
           }
         ],
         "library": [
           {
-            "card": "Forest"
+            "card": "Island"
           },
           {
-            "card": "Forest"
+            "card": "Island"
           },
           {
-            "card": "Forest"
+            "card": "Island"
           },
           {
-            "card": "Forest"
+            "card": "Island"
           },
           {
-            "card": "Forest"
+            "card": "Island"
           },
           {
-            "card": "Forest"
+            "card": "Island"
           },
           {
-            "card": "Forest"
+            "card": "Island"
           },
           {
-            "card": "Forest"
+            "card": "Island"
           }
         ],
         "name": "alice",
@@ -64,8 +60,8 @@
       {
         "battlefield": [
           {
-            "card": "Memnite",
-            "label": "memnite"
+            "card": "Grizzly Bears",
+            "label": "bobbear"
           }
         ],
         "library": [
@@ -99,55 +95,72 @@
     ],
     "step": "Untap"
   },
-  "description": "Megaflora Jungle pumps each creature of mana value two or less and its chaos makes a flying Butterfly",
-  "note": "Llanowar Elves (1), Grizzly Bears (2) and bob's Memnite (0) get +2/+2; Hill Giant (4) does not. Chaos makes alice a 1/1 green flying Insect named Butterfly, itself pumped since a token's mana value is 0.",
+  "description": "Littjara makes a changeling and its chaos counters a chosen type",
+  "note": "At alice's upkeep Littjara makes a 2/2 blue changeling. Its chaos chooses Bear: her Grizzly Bears and the changeling get a counter, her Goblin Piker and bob's Grizzly Bears do not.",
   "timeline": [
     {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
       "check": {
-        "PowerToughness": {
-          "object": "$elves",
-          "power": 3,
-          "toughness": 3
+        "Count": {
+          "card": "Shapeshifter Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "Upkeep",
       "turn": 1
     },
     {
       "check": {
         "PowerToughness": {
-          "object": "$bear",
-          "power": 4,
-          "toughness": 4
+          "object": "Shapeshifter Token",
+          "power": 2,
+          "toughness": 2
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "Upkeep",
       "turn": 1
     },
     {
       "check": {
-        "PowerToughness": {
-          "object": "$giant",
-          "power": 3,
-          "toughness": 3
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Changeling"
+          },
+          "object": "Shapeshifter Token"
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "Upkeep",
       "turn": 1
     },
     {
       "check": {
-        "PowerToughness": {
-          "object": "$memnite",
-          "power": 3,
-          "toughness": 3
+        "View": {
+          "is": [
+            "Blue"
+          ],
+          "object": "Shapeshifter Token",
+          "of": "Colors"
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
       "turn": 1
     },
     {
@@ -178,51 +191,24 @@
       "turn": 1
     },
     {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCreatureType",
+          "with": "Bear"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "check": {
-        "Count": {
-          "card": "Butterfly",
+        "Counters": {
           "count": 1,
-          "player": "alice",
-          "zone": "Battlefield"
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "check": {
-        "Count": {
-          "card": "Butterfly",
-          "count": 0,
-          "player": "bob",
-          "zone": "Battlefield"
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "check": {
-        "PowerToughness": {
-          "object": "Butterfly",
-          "power": 3,
-          "toughness": 3
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "check": {
-        "Keywords": {
-          "count": 1,
-          "keyword": {
-            "type": "Flying"
+          "kind": {
+            "type": "PlusOnePlusOne"
           },
-          "object": "Butterfly"
+          "object": "$bear"
         }
       },
       "player": "alice",
@@ -231,11 +217,12 @@
     },
     {
       "check": {
-        "Subtypes": {
-          "object": "Butterfly",
-          "subtypes": [
-            "Insect"
-          ]
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Shapeshifter Token"
         }
       },
       "player": "alice",
@@ -244,12 +231,26 @@
     },
     {
       "check": {
-        "View": {
-          "is": [
-            "Green"
-          ],
-          "object": "Butterfly",
-          "of": "Colors"
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$goblin"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$bobbear"
         }
       },
       "player": "alice",

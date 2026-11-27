@@ -77,7 +77,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "The Western Cloud shields your creatures and planeswalkers and its chaos makes three Treasures that each deal 1 to every creature and planeswalker",
+  "description": "The Western Cloud shields yours and its chaos Treasures ping everything",
   "note": "alice's chaos makes three tapped Treasures, which each deal 1 damage to every creature and planeswalker: bob's 6/4 Wurm takes 3, cara's Jace drops from 5 to 2 loyalty, while alice's Turtle and Liliana take nothing. Before that, alice's own Shock at her Turtle is prevented too.",
   "timeline": [
     {

@@ -96,7 +96,7 @@
     ],
     "step": "Untap"
   },
-  "description": "Riptide Island makes two Slivers at your upkeep and its chaos gives your Slivers haste and plus X where X counts them",
+  "description": "Riptide Island makes Slivers and its chaos pumps them by their count",
   "note": "Upkeep makes two Sliver tokens; with Venser's Sliver alice controls three Slivers, so chaos makes each +3/+3 with haste. Bob's Metallic Sliver neither counts nor grows, nor does her Grizzly Bears. The just-made token attacks thanks to haste and deals 4; bob's Sliver is tapped so it cannot block. The pump ends with the turn.",
   "timeline": [
     {

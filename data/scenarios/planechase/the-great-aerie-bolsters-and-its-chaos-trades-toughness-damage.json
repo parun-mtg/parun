@@ -96,7 +96,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "The Great Aerie bolsters when encountered and at your upkeep and its chaos has two creatures deal their toughness to each other",
+  "description": "The Great Aerie bolsters and its chaos trades toughness damage",
   "note": "alice planeswalks from Gavony to The Great Aerie: bolster 3 picks the 2/2 Bears over the 3/3 Giant and the 1/4 Turtle. Her second roll is chaos: the 1/4 Turtle deals 4 (its toughness, not its power) to cara's 0/8 Wall, which deals 8 back and kills it. At her next upkeep bolster 3 picks the Giant, now her least-toughness creature.",
   "timeline": [
     {

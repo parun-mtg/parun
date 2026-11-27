@@ -75,7 +75,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "Paliano makes you the monarch when your creatures hit a player with no monarch and its chaos makes an Assassin",
+  "description": "Paliano crowns you with no monarch and its chaos makes an Assassin",
   "note": "alice rolls chaos for a 1/1 black deathtouch, haste Assassin. With no monarch, Bears and Hill Giant deal bob 5 combat damage and alice, not bob, becomes the monarch.",
   "timeline": [
     {

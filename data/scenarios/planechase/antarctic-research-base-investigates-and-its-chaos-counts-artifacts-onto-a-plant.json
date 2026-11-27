@@ -107,7 +107,7 @@
     ],
     "step": "Untap"
   },
-  "description": "Antarctic Research Base investigates at your upkeep and its chaos puts a counter per artifact you control on your creature and makes it a Plant",
+  "description": "Antarctic Research Base investigates and its chaos counts artifacts onto a Plant",
   "note": "Upkeep makes a Clue, so alice controls three artifacts (Clue, Ornithopter, Memnite) among four creatures; bob's Ornithopter is not hers. Chaos cannot target bob's Grizzly Bears; on her Grizzly Bears it puts three counters and adds Plant.",
   "timeline": [
     {
