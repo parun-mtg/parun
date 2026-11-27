@@ -33,11 +33,10 @@ data OrElse = MkOrElse
     -- The players who announced THIS branch are the only ones its clause's own
     -- CR 603.5 "may" is offered to, and the only ones its CR 118.12 gate is
     -- offered to -- see Parun.Engine.Resolve.chosenBranch, which hands that set
-    -- to `exercises` and `payGateAdmits` rather than binding it to a slot: a
-    -- slot bound here would be invisible to those two, which read the bindings
-    -- captured before the branch was announced. A VILLAINOUS pair is the
-    -- exception, and CR 701.55d is why it can be: its per-seat pass re-reads the
-    -- bindings after each seat is bound, so `villainous` below does bind a slot.
+    -- to `exercises` and `payGateAdmits`, which read the bindings captured
+    -- before the branch was announced. It also binds that set under
+    -- Binding.facingPlayers for the branch's instructions, which re-read them:
+    -- The Pit's "each player creates their choice of" one of two tokens.
     --
     -- Where every branch carries a decline of its own put to this same
     -- reference, the announcement offers "neither" too and commits the seats

@@ -248,26 +248,24 @@ gatePlayers = SlotName.MkSlotName (Text.pack "thosePlayers")
 mayPlayers :: SlotName
 mayPlayers = SlotName.MkSlotName (Text.pack "thoseWhoMay")
 
--- CR 701.55d: the reserved slot under which the player FACING a villainous
--- choice is bound while their announced option is performed -- the word "that
--- player" in a limb whose actions are aimed at the chooser rather than at the
--- resolving controller. The Dalek Emperor's "that player sacrifices a creature
--- of their choice" is the producer.
+-- CR 608.2d / 701.55d: the reserved slot under which the players who ANNOUNCED
+-- a branch of an either-or are bound while that branch is performed -- the
+-- words "that player" and "their choice" in a limb aimed at its chooser rather
+-- than at the resolving controller. The Dalek Emperor's villainous "that player
+-- sacrifices a creature of their choice" and The Pit's "each player creates
+-- their choice of" a token are the producers.
 --
--- Stamped by Parun.Engine.Resolve.villainousPass, which is `mayPlayers` one
--- question over, and a separate name for that reason: a limb may carry a printed
--- "may" of its own, and sharing the name would have the second answer overwrite
--- the first.
---
--- Rule 701.55d performs the process for one player at a time, so exactly ONE
--- seat is in it whenever a limb reads it, and PlayerRef.InSlot and
--- PlayerRef.EachInSlot therefore both answer it. That is a fact about the writer
--- rather than about the type: the slot holds a player set like its two siblings.
+-- Stamped by Parun.Engine.Resolve.chosenBranch, every seat that announced the
+-- branch at once (CR 608.2e), and by villainousPass, one seat at a time (CR
+-- 701.55d), so PlayerRef.EachInSlot reads it. It is `mayPlayers` one question
+-- over, and a separate name for that reason: a limb may carry a printed "may" of
+-- its own, and sharing the name would have the second answer overwrite the
+-- first.
 --
 -- Not a target, so CR 608.2b re-validates nothing -- `gatePlayers`' posture, and
 -- the same "no card's targetSlots may name it" sweep applies. Parun.CardSpec's
 -- dataflow lint answers a read of it only for a mode one of whose clauses is
--- half of a villainous pair.
+-- half of an either-or.
 facingPlayers :: SlotName
 facingPlayers = SlotName.MkSlotName (Text.pack "thoseFacing")
 

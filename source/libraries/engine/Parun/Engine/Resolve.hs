@@ -167,13 +167,13 @@ mayDefinedSlots mode
       Optionality.Mandatory -> False
       Optionality.Optional _ _ -> True
 
--- The same for CR 701.55d's villainous pass: the seat whose option is being
--- performed (Binding.facingPlayers, stamped by villainousPass). A mode printing
--- no villainous either-or binds nothing, so a card reading that name outside one
--- is still caught by the dataflow lint.
+-- The same for CR 608.2d's either-or: the seats whose announced branch is being
+-- performed (Binding.facingPlayers, stamped by chosenBranch and, per CR 701.55d,
+-- villainousPass). A mode printing no either-or binds nothing, so a card reading
+-- that name outside one is still caught by the dataflow lint.
 orElseDefinedSlots :: Mode.Mode card ability -> Set SlotName
 orElseDefinedSlots mode
-  | any (maybe False OrElse.villainous . Clause.orElse) (Mode.clauses mode) = Set.singleton Binding.facingPlayers
+  | any (Maybe.isJust . Clause.orElse) (Mode.clauses mode) = Set.singleton Binding.facingPlayers
   | otherwise = Set.empty
 
 -- CR 700.2d: run ONE chosen instance's clauses with its own namespace for the
@@ -1254,12 +1254,24 @@ chosenBranch resolving source controller idx cIdx legal eligible limbOf picked c
         key = NonEmpty.head branches
         won answers = Map.keysSet (Map.filter (Set.member cIdx) answers)
         settled (committing, answers) = (Just (won answers), if committing then won answers else Set.empty)
+        -- The seats that announced THIS branch, bound under
+        -- Binding.facingPlayers before its clause runs, which is how its
+        -- instructions say "the players who chose it" (The Pit's "each player
+        -- creates their choice of"). Mid-resolution, so `exercises` and
+        -- `payGateAdmits` see the plain set instead.
+        --
+        -- Not implemented: performing the branches different seats announced
+        -- as one event (#10045).
+        answer memo picked' = do
+          let (announced, committed) = settled memo
+          State.modify' (bindPlayersSlot resolving Binding.facingPlayers (won (snd memo)))
+          pure (announced, committed, picked')
         neither = all (maybe False (declinesAlone (OrElse.chooser orElse)) . limbOf) branches
         seatCanTake seat branch gsNow = case limbOf branch >>= Clause.payGate of
           Just gate | gatesOnPayment (OrElse.chooser orElse) gate -> Common.gateAffordable resolving source controller legal seat gate gsNow
           _ -> True
      in case Map.lookup key picked of
-          Just memo -> let (announced, committed) = settled memo in pure (announced, committed, picked)
+          Just memo -> answer memo picked
           Nothing -> do
             gs <- State.get
             offered <- Monad.filterM eligible (NonEmpty.toList branches)
@@ -1294,8 +1306,7 @@ chosenBranch resolving source controller idx cIdx legal eligible limbOf picked c
                     )
                     Seq.empty
                     (Common.apnapDecidersOf (OrElse.chooser orElse) legal resolving source controller gs)
-            let (announced, committed) = settled memo
-            pure (announced, committed, Map.insert key memo picked)
+            answer memo (Map.insert key memo picked)
 
 -- CR 603.5 / 118.12: does this branch of a CR 608.2d pair carry a decline of its
 -- own, put to the pair's chooser? A "may" asked of that reference, or a cost
@@ -1375,10 +1386,9 @@ facedVillainously picked cIdx clause = case Clause.orElse clause of
 -- hanging off an earlier clause is not a shape any either-or prints.
 --
 -- The seat is bound under Binding.facingPlayers before its limb runs, which is
--- how a limb says "that player". A slot and not chosenBranch's plain set,
--- because rule 701.55d's per-seat pass is the one shape where the binding IS
--- readable: the limb's reads are re-taken after the bind, where chosenBranch's
--- callers had captured theirs before the question was put.
+-- how a limb says "that player", and the limb's gate and "may" re-read the
+-- bindings after the bind, where chosenBranch's callers captured theirs before
+-- the question was put.
 --
 -- CR 701.55c: each seat's facing is first proposed as WouldPerform,
 -- so a row like The Valeyard's can make it several -- the whole of rule 701.55a

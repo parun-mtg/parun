@@ -1648,9 +1648,9 @@ modalSlotsOffend armed abilityBound modal =
             -- Plus what this mode's own CR 603.5 "may" binds: the players who
             -- took it, which is how "each player may search THEIR library" says
             -- "they" (Binding.mayPlayers).
-            -- Plus what this mode's own CR 701.55d pass binds: the seat whose
-            -- villainous option is being performed, which is how "that player
-            -- sacrifices a creature of their choice" says "that player"
+            -- Plus what this mode's own CR 608.2d either-or binds: the seats
+            -- whose announced branch is being performed, which is how "that
+            -- player sacrifices a creature of their choice" says "that player"
             -- (Binding.facingPlayers).
             defined = Set.unions [Resolve.definedSlots effects, Resolve.gateDefinedSlots mode, Resolve.mayDefinedSlots mode, Resolve.orElseDefinedSlots mode]
             -- The whole MODE's reads, not just its effect list's: CR 118.12a's
