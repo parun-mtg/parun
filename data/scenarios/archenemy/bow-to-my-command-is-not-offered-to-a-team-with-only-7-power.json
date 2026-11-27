@@ -1,0 +1,158 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice",
+        "sideDecks": [
+          {
+            "key": "Scheme",
+            "value": [
+              {
+                "card": "Bow to My Command"
+              },
+              {
+                "card": "Mortal Flesh Is Weak"
+              }
+            ]
+          }
+        ],
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Llanowar Elves",
+            "label": "le"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob",
+        "team": 2
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Craw Wurm",
+            "label": "cw1"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "Upkeep"
+  },
+  "description": "CR 118.3 Bow to My Command's opposing team controlling 7 total power between them is not offered the tap, and the scheme stays up",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOpponent",
+          "with": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseActivePlayer",
+          "with": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Bow to My Command"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Command"
+        }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$le",
+          "tapped": false
+        }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$cw1",
+          "tapped": false
+        }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 2
+    }
+  ]
+}
