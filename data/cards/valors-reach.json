@@ -1,0 +1,178 @@
+{
+  "faces": [
+    {
+      "name": "Valor's Reach",
+      "oracleText": "Whenever your team attacks with exactly two creatures, those creatures gain double strike until end of turn.\nWhenever chaos ensues, untap up to two target creatures your team controls. If it's a main phase, there is an additional combat phase after this phase, followed by an additional main phase.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Declaration",
+              "value": {
+                "attackers": {
+                  "filter": {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  "floor": 2
+                },
+                "player": "YourTeam"
+              }
+            }
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "Exactly",
+              "measured": {
+                "type": "AttackersDeclaredThisCombat"
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 2
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "DoubleStrike"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "thoseAttackingCreatures"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Untap",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "target"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": {
+                      "type": "Any",
+                      "value": [
+                        {
+                          "type": "During",
+                          "value": {
+                            "scope": {
+                              "type": "PlayersTurn",
+                              "value": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              }
+                            },
+                            "window": {
+                              "type": "Step",
+                              "value": {
+                                "type": "PrecombatMain"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "During",
+                          "value": {
+                            "scope": {
+                              "type": "PlayersTurn",
+                              "value": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              }
+                            },
+                            "window": {
+                              "type": "Step",
+                              "value": {
+                                "type": "PostcombatMain"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "effects": [
+                      {
+                        "type": "AddPhases",
+                        "value": {
+                          "phases": [
+                            "ExtraCombat",
+                            "ExtraMain"
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0,
+                        "most": 2
+                      }
+                    },
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "YourTeam"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Kylem"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}
