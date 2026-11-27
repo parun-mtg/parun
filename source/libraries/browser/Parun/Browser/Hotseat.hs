@@ -151,7 +151,6 @@ game page registry cards table levelRef bots start clock host goldfish remotes h
         -- What each guest's seat was sent.
         guestsRef <- IORef.newIORef (Ending.unseen <$ remotes)
         breathRef <- IORef.newIORef Nothing
-        botReading <- IORef.newIORef Nothing
         -- The seat that conceded where that decided the game.
         concededRef <- IORef.newIORef Nothing
         -- The seats that left the game at a priority (leaveNow), or leave
@@ -262,9 +261,9 @@ game page registry cards table levelRef bots start clock host goldfish remotes h
             -- Each seat this page plays sees the game move on while
             -- another browser's seat decides (awaiting).
             movedOn seat gs depth = do
-              moving seatRef breathRef botReading (host : Map.keys locals) (\s -> Map.member (PlayerId.unwrap s + 1) (PlayOptions.bots options)) seat gs depth
+              moving seatRef breathRef (host : Map.keys locals) (\s -> Map.member (PlayerId.unwrap s + 1) (PlayOptions.bots options)) seat gs depth
               banks >>= decides seat gs depth
-        (outcome, scenario) <- hearingGuests (played (Protocol.resumed next replayed keep (departing (Protocol.bySeat elsewhere here))) next keep [Link.deciding movedOn, watchPending] (breathing lookUp page seatRef leave concedeHeard botReading breathRef) pooled)
+        (outcome, scenario) <- hearingGuests (played (Protocol.resumed next replayed keep (departing (Protocol.bySeat elsewhere here))) next keep [Link.deciding movedOn, watchPending] (breathing lookUp page seatRef leave concedeHeard breathRef) pooled)
         finished <- IORef.readIORef seatRef
         sent <- IORef.readIORef guestsRef
         conceded <- IORef.readIORef concededRef
@@ -286,14 +285,12 @@ game page registry cards table levelRef bots start clock host goldfish remotes h
 
 -- | The game come to `seat`'s decision, as it then is at this depth
 -- (Link.deciding): each of `mine`, the seats this page plays, sees it stand
--- so, a seat `bot` names is timed for breathing, and a card read while bots
--- decided stays open until another seat is asked.
-moving :: IORef.IORef Seat -> IORef.IORef (Maybe Breath) -> IORef.IORef (Maybe Web.Card.Reading) -> [PlayerId.PlayerId] -> (PlayerId.PlayerId -> Bool) -> PlayerId.PlayerId -> GameState.GameState -> Natural -> IO ()
-moving seatRef breathRef botReading mine bot seat gs depth = do
+-- so, and a seat `bot` names is timed for breathing.
+moving :: IORef.IORef Seat -> IORef.IORef (Maybe Breath) -> [PlayerId.PlayerId] -> (PlayerId.PlayerId -> Bool) -> PlayerId.PlayerId -> GameState.GameState -> Natural -> IO ()
+moving seatRef breathRef mine bot seat gs depth = do
   IORef.modifyIORef' seatRef (\s -> foldr (\one -> stand one (PlayerView.Engine.viewFor one gs) depth) s mine)
   asked <- Clock.getMonotonicTime
   IORef.writeIORef breathRef (if bot seat then Just (MkBreath seat asked False) else Nothing)
-  Monad.unless (bot seat) (IORef.writeIORef botReading Nothing)
 
 -- | Runs a game, then keeps the auto-pass level its seat ended on.
 keepingLevel :: IORef.IORef Web.Question.Level -> IORef.IORef Seat -> IO a -> IO a
@@ -336,7 +333,7 @@ exchange lookUp page seatRef leave concede request = do
             let seen = shown {PlayerView.priority = Nothing}
                 facingNow = if Web.Question.handsOver (yours now) (facing now) seat then facing now else Just seat
             shownClocks <- facesOf now
-            Monad.when (watched now /= Just seen) . Monad.forM_ (Web.Question.watching facingNow [] False request (watchedScreen lookUp seat now shownClocks shown)) $ \board -> do
+            Monad.when (watched now /= Just seen) . Monad.forM_ (Web.Question.watching facingNow [] False request (watchedScreen lookUp seat now shownClocks shown) {Web.Question.reading = readOn lookUp request now}) $ \board -> do
               IORef.writeIORef seatRef now {watched = Just seen}
               Browser.display page (fmap Screen.MkQuestion board)
           pure (Just reply)
@@ -349,13 +346,16 @@ exchange lookUp page seatRef leave concede request = do
         Monad.when (Web.Question.handsOver (yours state) (facing state) seat) $ do
           Browser.display page . fmap Screen.MkQuestion $ Web.Question.handOff request
           untilReady
+          -- What the last person read or picked is theirs.
+          IORef.modifyIORef' seatRef $ \s -> s {onScreen = Nothing}
         IORef.modifyIORef' seatRef $ \s -> s {facing = Just seat}
         -- A tap made while the board was only being watched is dropped,
         -- but for the auto-pass level.
         keepLevel
         -- The question replaces the watched board, which is drawn afresh after.
         IORef.modifyIORef' seatRef $ \st -> st {watched = Nothing}
-        reply <- answer request (Web.Question.initial request)
+        reply <- answer request
+        IORef.modifyIORef' seatRef $ \s -> s {onScreen = fmap (\(_, screen) -> (Nothing, screen)) (onScreen s)}
         -- Only what the seat decided itself, so the log's new entries and
         -- a turn begun since (Web.Question.turnBegun) outlast a pass made
         -- for it.
@@ -369,12 +369,17 @@ exchange lookUp page seatRef leave concede request = do
       Monad.forM_ (Maybe.listToMaybe (reverse [l | Screen.MkQuestion (Web.Question.MkLevel l) <- dropped])) $ \l ->
         IORef.modifyIORef' seatRef $ \st -> st {level = l, watched = Nothing}
     untilReady = Browser.next page >>= \(event, _) -> Monad.unless (event == Screen.MkQuestion Web.Question.MkReady) untilReady
-    answer pending picked = asking pending picked Nothing Nothing Text.empty
+    -- The screen last drawn carried onto the request (Web.Question.replaced).
+    answer pending = do
+      state <- IORef.readIORef seatRef
+      let start = maybe Web.Question.blank {Web.Question.selected = Web.Question.initial pending} (\(old, screen) -> Web.Question.replaced old pending screen) (onScreen state)
+      asking pending (Web.Question.selected start) (readOn lookUp pending state) (Web.Question.focus start) (Web.Question.query start)
     asking pending picked reading focus typed = do
       state <- IORef.readIORef seatRef
       shownClocks <- facesOf state
       let asked = Question.seat (Request.question pending)
           screen = Web.Question.MkScreen picked reading (loggedFor asked state) (freshOf asked state) focus (level state) (foldMap (Web.Card.written lookUp) (Request.view pending)) (naming asked state) shownClocks typed
+      IORef.writeIORef seatRef state {onScreen = Just (Just pending, screen)}
       Browser.display page . fmap Screen.MkQuestion $ Web.Question.view pending screen
       (event, value) <- Browser.next page
       case event of
@@ -443,6 +448,19 @@ readingOf lookUp request object pinned = do
   o <- Wording.recalled shown object
   pure (Web.Card.MkReading object (either (pure . Text.pack . Exception.displayException) id (Web.Card.oracle lookUp o)) pinned)
 
+-- | The card the screen last drawn read, as `request`'s board shows it,
+-- while that board still shows it (Web.Question.replaced).
+readOn :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Request.Request -> Seat -> Maybe Web.Card.Reading
+readOn lookUp request state = do
+  (old, screen) <- onScreen state
+  r <- Web.Question.reading (Web.Question.replaced old request screen)
+  readingOf lookUp request (Web.Card.object r) (Web.Card.pinned r)
+
+-- | The page's state with the screen last drawn reading `r` instead, or
+-- with only that drawn where none was.
+reread :: Maybe Web.Card.Reading -> Seat -> Seat
+reread r state = state {onScreen = Just (fmap (\screen -> screen {Web.Question.reading = r}) (Maybe.fromMaybe (Nothing, Web.Question.blank) (onScreen state)))}
+
 -- | The screen a seat watches the board `shown` with: its log, the level
 -- it plays at, and these clocks.
 watchedScreen :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> PlayerId.PlayerId -> Seat -> [Web.Clock.Face] -> PlayerView.PlayerView -> Web.Question.Screen
@@ -464,24 +482,23 @@ naming seat state = handed state || (Set.size (yours state) > 1 && Set.member se
 -- live (watcher), a concession given to `concede`.
 awaiting :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page Screen.Event -> IORef.IORef Seat -> (Maybe PlayerView.PlayerView -> IO Leave) -> (PlayerId.PlayerId -> IO ()) -> (Seat -> [PlayerId.PlayerId]) -> IO a -> IO a
 awaiting lookUp page seatRef leave concede deciders decide = do
-  readingRef <- IORef.newIORef Nothing
-  let (draw, tap) = watcher lookUp page seatRef leave concede readingRef deciders
+  let (draw, tap) = watcher lookUp page seatRef leave concede deciders
   draw
   Browser.meanwhile page tap decide
 
 -- | The page while the game waits on others, drawn and taking a tap: the
 -- board the seat the screen faces sees (current), the seats `deciders`
 -- names as those the game waits on; a card tapped there shows its text
--- through `lookUp`, kept in `readingRef`, an auto-pass level tapped is kept,
--- the menu leaves for the home screen through `leave`, and a concession is
+-- through `lookUp`, kept as the screen last drawn's (reread), an auto-pass
+-- level tapped is kept, the menu leaves for the home screen through
+-- `leave`, and a concession is
 -- kept for that seat's next concession question (exchange) and given to
 -- `concede` at once.
-watcher :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page Screen.Event -> IORef.IORef Seat -> (Maybe PlayerView.PlayerView -> IO Leave) -> (PlayerId.PlayerId -> IO ()) -> IORef.IORef (Maybe Web.Card.Reading) -> (Seat -> [PlayerId.PlayerId]) -> (IO (), (Screen.Event, Text.Text) -> IO ())
-watcher lookUp page seatRef leave concede readingRef deciders = (draw, tap)
+watcher :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page Screen.Event -> IORef.IORef Seat -> (Maybe PlayerView.PlayerView -> IO Leave) -> (PlayerId.PlayerId -> IO ()) -> (Seat -> [PlayerId.PlayerId]) -> (IO (), (Screen.Event, Text.Text) -> IO ())
+watcher lookUp page seatRef leave concede deciders = (draw, tap)
   where
     draw = do
       state <- IORef.readIORef seatRef
-      reading <- IORef.readIORef readingRef
       shownClocks <- facesOf state
       -- The board watched next is drawn afresh, over this one; its log
       -- is read.
@@ -489,14 +506,14 @@ watcher lookUp page seatRef leave concede readingRef deciders = (draw, tap)
       let board = do
             request <- current state
             shown <- Request.view request
-            Web.Question.watching (facing state) (deciders state) (any (`Set.member` conceding state) (facing state)) request (watchedScreen lookUp (Question.seat (Request.question request)) state shownClocks shown) {Web.Question.reading = reading}
+            Web.Question.watching (facing state) (deciders state) (any (`Set.member` conceding state) (facing state)) request (watchedScreen lookUp (Question.seat (Request.question request)) state shownClocks shown) {Web.Question.reading = readOn lookUp request state}
       Browser.display page (maybe (message [Text.pack (Web.Question.waitingOn (deciders state))]) (fmap Screen.MkQuestion) board)
     -- Every tap redraws the page, which a tap shows busy until then.
     tap (event, _) = do
       state <- IORef.readIORef seatRef
       case event of
-        Screen.MkQuestion (Web.Question.MkRead object) -> IORef.writeIORef readingRef (current state >>= \request -> readingOf lookUp request object True)
-        Screen.MkQuestion Web.Question.MkClose -> IORef.writeIORef readingRef Nothing
+        Screen.MkQuestion (Web.Question.MkRead object) -> IORef.writeIORef seatRef (reread (current state >>= \request -> readingOf lookUp request object True) state)
+        Screen.MkQuestion Web.Question.MkClose -> IORef.writeIORef seatRef (reread Nothing state)
         Screen.MkQuestion (Web.Question.MkLevel l) -> IORef.writeIORef seatRef state {level = l}
         Screen.MkQuestion Web.Question.MkConcede -> Monad.forM_ (facing state) (concedeAtOnce seatRef concede)
         -- The home screen runs here, the game's channels held for it;
@@ -520,15 +537,15 @@ data Breath = MkBreath
 -- turn once 'breath' has passed since it last had one, or since the bot
 -- was asked (`breathRef`): the first turn draws the board waiting on the
 -- bot, and each tap taken is handled as while another browser's seat
--- decides (watcher), its card read kept in `readingRef`, a concession
--- given to `concede`, and each guest heard (Browser.hearNow).
-breathing :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page Screen.Event -> IORef.IORef Seat -> (Maybe PlayerView.PlayerView -> IO Leave) -> (PlayerId.PlayerId -> IO ()) -> IORef.IORef (Maybe Web.Card.Reading) -> IORef.IORef (Maybe Breath) -> IO ()
-breathing lookUp page seatRef leave concede readingRef breathRef = do
+-- decides (watcher), a concession given to `concede`, and each guest heard
+-- (Browser.hearNow).
+breathing :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Browser.Page Screen.Event -> IORef.IORef Seat -> (Maybe PlayerView.PlayerView -> IO Leave) -> (PlayerId.PlayerId -> IO ()) -> IORef.IORef (Maybe Breath) -> IO ()
+breathing lookUp page seatRef leave concede breathRef = do
   now <- Clock.getMonotonicTime
   thinking <- IORef.readIORef breathRef
   Monad.forM_ thinking $ \b -> Monad.when (now - since b >= breath) $ do
     IORef.writeIORef breathRef (Just b {since = now, drawn = True})
-    let (draw, tap) = watcher lookUp page seatRef leave concede readingRef (const [thinker b])
+    let (draw, tap) = watcher lookUp page seatRef leave concede (const [thinker b])
     Browser.pause
     Browser.hearNow page
     Monad.unless (drawn b) draw
@@ -596,7 +613,11 @@ data Seat = MkSeat
     standing :: Map.Map PlayerId.PlayerId (PlayerView.PlayerView, Natural),
     -- | Every timed seat's clock (Web.Clock): a guest's page keeps what the
     -- host last sent it (Web.Clock.heard).
-    clocks :: Web.Clock.Clocks
+    clocks :: Web.Clock.Clocks,
+    -- | The screen last drawn, asking or watching, with the request it
+    -- asked while unanswered, which the next carries
+    -- (Web.Question.replaced); none since a hand-off.
+    onScreen :: Maybe (Maybe Request.Request, Web.Question.Screen)
   }
 
 -- | The page's state before its first request line, facing the seat it
@@ -604,7 +625,7 @@ data Seat = MkSeat
 -- timed, at that auto-pass level, the seat having read what was `seen` already: a
 -- rejoining guest's game before its page reloaded (Link.MkStart).
 newSeat :: PlayerId.PlayerId -> Ending.Seen -> Web.Question.Level -> Seat
-newSeat seat seen initial = MkSeat (Just seat) (Set.singleton seat) False Map.empty initial Map.empty Set.empty Nothing seen (Map.singleton seat (Seq.length (Ending.loggedFor seat seen))) Map.empty Map.empty Web.Clock.none
+newSeat seat seen initial = MkSeat (Just seat) (Set.singleton seat) False Map.empty initial Map.empty Set.empty Nothing seen (Map.singleton seat (Seq.length (Ending.loggedFor seat seen))) Map.empty Map.empty Web.Clock.none Nothing
 
 -- | The entries a seat has read so far, oldest first.
 loggedFor :: PlayerId.PlayerId -> Seat -> Seq.Seq Log.Entry
