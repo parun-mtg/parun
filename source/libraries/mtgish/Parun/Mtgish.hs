@@ -58,6 +58,7 @@ import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.Clause as Clause
+import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.CombatRestriction as CombatRestriction
@@ -66,6 +67,8 @@ import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ControllerRelation as ControllerRelation
+import qualified Parun.Types.CopyStackObject as CopyStackObject
+import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAmount as CostAmount
@@ -109,6 +112,7 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.HiddenZone as HiddenZone
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
+import qualified Parun.Types.IfTaken as IfTaken
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Layout as Layout
@@ -1122,10 +1126,25 @@ clauses :: Context -> [Value.Value] -> Translated [Clause]
 clauses context actions = do
   nodes <- traverse Node.node actions
   cs <- steps nodes
-  pure (List.foldr gather [] cs)
+  pure (zipWith taken [0 ..] (List.foldr gather [] cs))
   where
     steps ns = case ns of
       [] -> Right []
+      -- "You may abandon this scheme. If you do, [instructions]" (CR 701.33,
+      -- CR 118.12): an optional instruction, not a cost, and what follows
+      -- runs if it ran.
+      may : gate : rest
+        | Node.tag may == "MayCost",
+          Node.tag gate == "If",
+          Right price <- Node.argument may >>= Node.node,
+          Node.tag price == "AbandonScheme" -> do
+            abandon <- effects context price
+            (condition', body) <- pair gate
+            done <- Node.node condition'
+            Monad.unless (Node.tag done == "CostWasPaid") (Node.untranslated done)
+            es <- Common.asArray body >>= traverse (Node.node Monad.>=> effects context)
+            let asked = (clause (Optionality.Optional (PlayerRef.Relative PlayerRelation.You) MayPass.AllSeatsFirst) abandon, False)
+            fmap ([asked, (clause Optionality.Mandatory (concat es), True)] <>) (steps rest)
       -- "You may pay [cost]. If you do, [instructions]" (CR 118.12), and
       -- "[instructions] unless that player pays [cost]" (CR 118.12a).
       may : gate : rest
@@ -1143,19 +1162,25 @@ clauses context actions = do
             Monad.unless (Node.tag paid == "CostWasPaid") (Node.untranslated paid)
             es <- Common.asArray body >>= traverse (Node.node Monad.>=> effects context)
             let gated = (clause Optionality.Mandatory (concat es)) {Clause.payGate = Just (payGate payer branch options)}
-            fmap (gated :) (steps rest)
+            fmap ((gated, False) :) (steps rest)
       n : rest -> do
         c <- step n
-        fmap (c :) (steps rest)
+        fmap ((c, False) :) (steps rest)
     step n = case Node.tag n of
       "MayAction" -> do
         inner <- Node.child n
         fmap (clause (Optionality.Optional (PlayerRef.Relative PlayerRelation.You) MayPass.AllSeatsFirst)) (effects context inner)
       _ -> fmap (clause Optionality.Mandatory) (effects context n)
-    plain c = Clause.optionality c == Optionality.Mandatory && Maybe.isNothing (Clause.payGate c)
+    -- A clause flagged as gated on the one before it is never merged, so
+    -- that one's index is its own less one.
+    plain (c, gated) = not gated && Clause.optionality c == Optionality.Mandatory && Maybe.isNothing (Clause.payGate c)
     gather c rest = case rest of
-      d : ds | plain c && plain d -> c {Clause.effects = Clause.effects c <> Clause.effects d} : ds
+      d : ds | plain c && plain d -> ((fst c) {Clause.effects = Clause.effects (fst c) <> Clause.effects (fst d)}, False) : ds
       _ -> c : rest
+    taken :: Natural.Natural -> (Clause, Bool) -> Clause
+    taken i (c, gated)
+      | gated = c {Clause.ifTaken = Just (IfTaken.AnyTaken (pure (ClauseIndex.MkClauseIndex (i - 1))))}
+      | otherwise = c
 
 -- | A cost a player may pay, whose payment or refusal decides whether what
 -- follows happens (CR 118.12, CR 118.12a).
@@ -1230,6 +1255,10 @@ effects context n = case Node.tag n of
   "CounterSpell" -> do
     ref <- Node.argument n >>= spellRef context
     pure [Effect.Counter Counter.MkCounter {Counter.ref = ref, Counter.slot = Nothing, Counter.sources = Nothing, Counter.instead = Nothing}]
+  -- "Copy [spell], and you may choose new targets for the copy" (CR 707.10c).
+  "CopySpellAndMayChooseNewTargets" -> do
+    ref <- Node.argument n >>= spellRef context
+    pure [Effect.CopyStackObject CopyStackObject.MkCopyStackObject {CopyStackObject.ref = ref, CopyStackObject.targets = CopyTargets.ChosenByController, CopyStackObject.quantity = CopyStackObject.defaultQuantity, CopyStackObject.copier = CopyStackObject.defaultCopier, CopyStackObject.exceptions = [], CopyStackObject.slot = Nothing}]
   "AddMana" -> do
     produced <- Node.child n >>= productions context
     pure [Effect.AddMana (addition p) | p <- produced]
