@@ -6,12 +6,14 @@
 -- Abandon and SetInMotion.
 module Parun.ArchenemySpec where
 
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import Numeric.Natural (Natural)
 import qualified Parun.Engine.Archenemy as Archenemy
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
@@ -24,11 +26,14 @@ import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.MatchScope as MatchScope
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.Phase as Phase
@@ -38,6 +43,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.WhichTurn as WhichTurn
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -121,6 +127,40 @@ spec s registry = Spec.describe s "Parun.Engine.Archenemy" $ do
     Spec.assertEqWith s "and Look Skyward and Despair is still on top" (names (Archenemy.deckOf S.alice afterExtra) afterExtra) ["Look Skyward and Despair", "All in Good Time"]
     Spec.assertEqWith s "on alice's next turn it is set in motion and makes its 5/5 Dragon" (fmap (`S.powerToughnessOf` afterNext) (creaturesOf S.alice afterNext)) [Just (5, 5)]
     Spec.assertEqWith s "the extra turn is turn 2 and alice's, and the last read follows alice's turn 4" (fmap (\g -> (TurnRegisters.turnNumber (GameState.turn g), TurnRegisters.activePlayer (GameState.turn g))) [atExtra, afterNext]) [(2, S.alice), (5, S.bob)]
+
+  -- CR 103.5 / 121.1 / 500.7 through Setup.newGame: the opening hands' draws
+  -- sit in turn 1's log, but Mine Is the Only Truth's "you drew a card last
+  -- turn" does not count them (Game.drawsDuring). Alice, the archenemy, takes
+  -- turn 1 (CR 904.6) and skips its draw (CR 103.8a); Timesifter, her
+  -- Grizzly Bears over bob's Forest, hands her turns 2 and 3. Turn 2's draw
+  -- step is the draw turn 3's upkeep reads.
+  Spec.it s "CR 103.5 Mine Is the Only Truth's last turn leaves out the opening hands" $ do
+    forest <- S.printingOf s registry "Forest"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    mine <- S.printingOf s registry "Mine Is the Only Truth"
+    timesifter <- S.printingOf s registry "Timesifter"
+    let alices = (Deck.fromCards (Map.singleton bears 20)) {Deck.sideDecks = Map.singleton SideDeck.Scheme (Map.singleton mine 1)}
+        bobs = Deck.fromCards (Map.singleton forest 20)
+        dealt = S.runPure S.identityAnswer (Setup.emptyGame S.bothPlayers) (Setup.newGame (Resolve.performHandAction Resolve.noSubgame) ((S.alice, alices) NonEmpty.:| [(S.bob, bobs)]))
+        started = S.landsFor timesifter S.alice 1 dealt
+        drawsLogged = length [() | GameEvent.Drew _ <- fmap LoggedEvent.event (Foldable.toList (Game.turnLog WhichTurn.ThisTurn Nothing started))]
+        atDraw n = upTo n (Phase.Beginning BeginningStep.DrawStep) started
+        schemes gs = names (Archenemy.faceUp gs) gs
+        whose gs = TurnRegisters.activePlayer (GameState.turn gs)
+    Spec.assertEqWith s "CR 103.5 turn 1's log holds both opening hands' draws" drawsLogged 14
+    Spec.assertEqWith s "Timesifter hands alice turns 2 and 3" (fmap (whose . atDraw) [2, 3]) [S.alice, S.alice]
+    Spec.assertEqWith s "at turn 2 the scheme stays, alice having drawn nothing on turn 1" (schemes (atDraw 2)) ["Mine Is the Only Truth"]
+    Spec.assertEqWith s "at turn 3 it is abandoned, for her turn 2 draw" (schemes (atDraw 3)) []
+
+-- Step the game until turn n's `step` is current, WITHOUT running it. Bounded,
+-- so a schedule that never reaches it stops rather than looping.
+upTo :: Natural -> Phase.Phase -> GameState.GameState -> GameState.GameState
+upTo n step =
+  let go budget g =
+        if budget <= (0 :: Int) || Maybe.isJust (GameState.result g) || (TurnRegisters.turnNumber (GameState.turn g), TurnRegisters.phase (GameState.turn g)) == (n, step)
+          then g
+          else go (budget - 1) (S.runPure S.identityAnswer g Engine.runStep)
+   in go 256
 
 -- A two-player board with alice's scheme deck stacked in the order named, top
 -- first, and twenty Forests in each library. No opening hands are drawn.

@@ -13,7 +13,8 @@ data WhichTurn
     -- (Game.ownLastTurn), the live one included -- Marchesa, Resolute Monarch's
     -- "since your last turn".
     --
-    -- Unprinted: a Parun.Types.LifeTally reading this window; no lint keeps it
-    -- out of card data.
+    -- Unprinted: a Parun.Types.LifeTally or a draw tally reading this window;
+    -- Parun.EffectLintSpec's "no card writes a draw or life tally since your
+    -- last turn" keeps it out of card data.
     SinceOwnLastTurn
   deriving (Bounded, Enum, Eq, Ord, Show)
