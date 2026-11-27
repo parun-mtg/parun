@@ -357,6 +357,22 @@ data Screen = MkScreen
 blank :: Screen
 blank = MkScreen Set.empty Nothing Seq.empty 0 Nothing MkStandard Map.empty False [] Text.empty
 
+-- | A screen carried onto request `new`, which replaces it: the card read
+-- kept while `new`'s board still shows that object (Wording.recalled), and
+-- what was picked, focused and typed kept where `new` asks again the
+-- question of `old`, the request it was drawn for and left unanswered, in
+-- the same game, else `new`'s first picks (initial).
+replaced :: Maybe Request.Request -> Request.Request -> Screen -> Screen
+replaced old new screen =
+  screen
+    { selected = if again then selected screen else initial new,
+      focus = Monad.guard again >> focus screen,
+      query = if again then query screen else Text.empty,
+      reading = Monad.mfilter (\r -> Maybe.isJust (Request.view new >>= \v -> Wording.recalled v (Card.object r))) (reading screen)
+    }
+  where
+    again = any (\o -> Request.question o == Request.question new && Request.depth o == Request.depth new) old
+
 -- | The page for a request: the turn bar, the table with each tile marked
 -- for what tapping it does, and beside it the question with its answers,
 -- the card being read and the log.

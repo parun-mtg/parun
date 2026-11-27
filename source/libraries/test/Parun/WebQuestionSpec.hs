@@ -212,6 +212,23 @@ spec s registry = Spec.describe s "WebQuestion" $ do
         cancel = let view = Question.Web.view withdrawing Question.Web.blank in Html.labelled (Text.pack "button") (Text.pack "Cancel") view >>= \path -> Html.handler (Text.pack "click") path view
     Spec.assertEqWith s "Cancel withdraws" cancel (Just (Question.Web.MkAnswer withdrawal))
     Spec.assertBool s (not (Text.pack ">Cancel</button>" `Text.isInfixOf` Html.toText (Question.Web.view request Question.Web.blank))) "no Cancel without a withdrawal"
+    -- The board updating mid-choice, the question asked again, keeps the
+    -- split made so far and the card read; a new question, or the same one
+    -- once answered, starts afresh, and a card the board no longer shows
+    -- closes.
+    let (_, updated) = S.addPermanent bears S.bob gs
+        again = requestFor updated prompt
+        split :: Set.Set (Natural, Natural)
+        split = Set.fromList [(0, 2), (1, 1)]
+        mid = Question.Web.blank {Question.Web.selected = split, Question.Web.reading = Just (Card.MkReading a [] True)}
+        kept = Question.Web.replaced (Just request) again mid
+        cleared = requestFor (Setup.emptyGame S.bothPlayers) (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
+    Spec.assertEqWith s "the split kept" (Question.Web.selected kept) split
+    Spec.assertEqWith s "the card read kept" (Question.Web.reading kept) (Question.Web.reading mid)
+    Spec.assertBool s (Text.pack "<section class=\"sheet c-g\"><header><h2>Grizzly Bears</h2>" `Text.isInfixOf` Html.toText (Question.Web.view again kept)) "its sheet still open"
+    Spec.assertEqWith s "answered, the split starts afresh" (Question.Web.selected (Question.Web.replaced Nothing again mid)) (Question.Web.initial again)
+    Spec.assertEqWith s "a new question starts afresh" (Question.Web.selected (Question.Web.replaced (Just request) cleared mid)) Set.empty
+    Spec.assertEqWith s "a card gone closes" (Question.Web.reading (Question.Web.replaced (Just request) cleared mid)) Nothing
 
   Spec.it s "CR 734.1 a choice of cost at CR 601.2b offers a Cancel answering one past the costs" $ do
     mastery <- S.printingOf s registry "Baleful Mastery"
