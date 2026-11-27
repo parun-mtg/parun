@@ -1348,9 +1348,9 @@ orElseLimbs cIdx orElse = NonEmpty.sort (cIdx NonEmpty.:| Set.toList (Set.delete
 --
 -- Plain means mandatory and unconditional, with no cost paid on resolution and
 -- no "If you do" (CR 118.12): such a limb has no decline or payment to take
--- mid-action. A
--- limb of several instructions is several actions of its own, and a villainous
--- pair is performed seat by seat (CR 701.55d), so neither is bracketed.
+-- mid-action. A limb of several instructions is several actions of its own,
+-- and a villainous pair is performed seat by seat (CR 701.55d), so neither is
+-- bracketed.
 foldActions :: (acc -> (ClauseIndex, Clause.Clause card ability) -> Game acc) -> acc -> [(ClauseIndex, Clause.Clause card ability)] -> Game acc
 foldActions step = go
   where
