@@ -1,0 +1,131 @@
+{
+  "faces": [
+    {
+      "combatRestrictions": [
+        {
+          "type": "CantAttack",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  {
+                    "type": "Measures",
+                    "value": {
+                      "comparison": "AtLeast",
+                      "measure": "Power",
+                      "operand": {
+                        "type": "Literal",
+                        "value": 7
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "type": "CantBlock",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  {
+                    "type": "Measures",
+                    "value": {
+                      "comparison": "AtLeast",
+                      "measure": "Power",
+                      "operand": {
+                        "type": "Literal",
+                        "value": 7
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "name": "Hedron Fields of Agadeem",
+      "oracleText": "Creatures with power 7 or greater can't attack or block.\nWhenever chaos ensues, create a 7/7 colorless Eldrazi creature token with annihilator 1. (Whenever it attacks, defending player sacrifices a permanent of their choice.)",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "keywords": [
+                                  {
+                                    "type": "Annihilator",
+                                    "value": 1
+                                  }
+                                ],
+                                "name": "Eldrazi Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 7
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 7
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Eldrazi"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Zendikar"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}

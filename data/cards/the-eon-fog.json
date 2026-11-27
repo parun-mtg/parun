@@ -1,0 +1,73 @@
+{
+  "faces": [
+    {
+      "name": "The Eon Fog",
+      "oracleText": "Players skip their untap steps.\nWhenever chaos ensues, untap all permanents you control.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "PhaseR",
+            "value": {
+              "whichPhase": {
+                "type": "Step",
+                "value": {
+                  "type": "Beginning",
+                  "value": "Untap"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Untap",
+                        "value": {
+                          "type": "EachMatching",
+                          "value": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "IsInZone",
+                                "value": "Battlefield"
+                              },
+                              {
+                                "type": "HeldBy",
+                                "value": {
+                                  "holder": "Controller",
+                                  "relation": "You"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Equilor"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}
