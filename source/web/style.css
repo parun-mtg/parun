@@ -2444,9 +2444,44 @@ main.game {
 .count.speed,
 .count.blessing,
 .count.dungeons,
-.count.player-counter,
-.count.commander-damage {
+.count.player-counter {
   box-shadow: inset 0 0 0 1px var(--control);
+}
+
+/* Commander damage: quieter than the life it qualifies, the most one
+   commander has dealt, opening to each commander's total. */
+details.commander-damage {
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+details.commander-damage > summary {
+  list-style: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: inherit;
+  padding: 0 6px;
+  border-radius: 999px;
+}
+
+details.commander-damage > summary::-webkit-details-marker {
+  display: none;
+}
+
+.dealt-by {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding-right: 8px;
+}
+
+.dealt-by .dealt {
+  display: inline-flex;
+  gap: 4px;
 }
 
 /* The seat a shared screen shows, on the turn bar, in its colour. */

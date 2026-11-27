@@ -1616,7 +1616,8 @@ replaySpec s registry = Spec.describe s "WebQuestion" . Spec.describe s "replay"
         marks = Board.MkMarks (\o -> Card.MkCue [] (ObjectView.object o) Nothing) (const Nothing)
         page = Html.toText (Board.view marks Map.empty (boardOf stop))
     Spec.assertEqWith s "bob's seat, as each seat sees it" (dealt S.alice, dealt S.bob) (Just tally, Just tally)
-    Spec.assertBool s (Text.isInfixOf (Text.pack "<span class=\"k\">Kalakscion:</span>14 commander damage</span>") page) ("drawn: " <> Text.unpack page)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "aria-label=\"14 commander damage\"") page) ("drawn: " <> Text.unpack page)
+    Spec.assertBool s (Text.isInfixOf (Text.pack "<span class=\"k\">Kalakscion</span>14</span>") page) ("drawn: " <> Text.unpack page)
 
   Spec.it s "CR 903.8 every seat sees a commander's tax on it in the command zone" $ do
     -- Entry 5 follows the first cast's return to the command zone, entry 12
