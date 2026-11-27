@@ -790,6 +790,12 @@ chosenPermanents purpose legal resolving controller source choice = do
       amount = maybe 0 Integer.toNaturalSaturating . Quantity.evaluateFor viewOf context gs resolving source
       weighs = Quantity.evaluateFor viewOf context gs resolving
       earlier = Maybe.fromMaybe Seq.empty (Scratch.loopPicks (GameState.scratch gs))
+      differentIn = ChosenPermanents.differentIn choice
+      -- CR 608.2d: each pick within the total and sharing no differentIn
+      -- value with those before it, chooseCardFromAmong's bounds.
+      apart taken oid = length (differing differentIn gs (oid : taken)) == length taken + 1
+      bounds = Foldable.toList (fmap (withinTotal weighs amount) (ChosenPermanents.total choice)) <> [apart | not (Set.null differentIn)]
+      admits = if null bounds then Nothing else Just (\taken oid -> all (\bound -> bound taken oid) bounds)
   case ChosenPermanents.selection choice of
     -- Randomness asks no seat: chooseCardFromAmong's AtRandom, the count's
     -- picks distinct and a ceiling drawn in full.
@@ -810,7 +816,7 @@ chosenPermanents purpose legal resolving controller source choice = do
         (\decider who pool ceiling_ -> Prompt.ChooseAnyNumber decider who source purpose pool ceiling_ earlier)
         amount
         count
-        (fmap (withinTotal weighs amount) (ChosenPermanents.total choice))
+        admits
         candidates
 
 -- CR 608.2d: may a candidate join the picks so far under a TotalCap? Each is

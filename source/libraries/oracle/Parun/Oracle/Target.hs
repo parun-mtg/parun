@@ -434,7 +434,7 @@ object context determiner ref = case ref of
             jointly = [Text.replace orWord (Text.pack " and ") text | Text.isInfixOf orWord text]
         [MkReference (Text.pack "all " <> t) [] Filter.Plural [] | t <- text : jointly]
   ObjectRef.ChosenPermanents c
-    | ChosenPermanents.chooser c == PlayerRef.Relative PlayerRelation.You && ChosenPermanents.zone c == Zone.Battlefield && Set.null (ChosenPermanents.ownZones c) && Maybe.isNothing (ChosenPermanents.total c) && ChosenPermanents.selection c == CardSelection.ByChoice -> do
+    | ChosenPermanents.chooser c == PlayerRef.Relative PlayerRelation.You && ChosenPermanents.zone c == Zone.Battlefield && Set.null (ChosenPermanents.ownZones c) && Maybe.isNothing (ChosenPermanents.total c) && ChosenPermanents.selection c == CardSelection.ByChoice && Set.null (ChosenPermanents.differentIn c) -> do
         p <- Filter.phrase (ChosenPermanents.filter c) (keyword context)
         one <- Filter.describe Filter.Singular permanent p
         many <- Filter.describe Filter.Plural permanent p

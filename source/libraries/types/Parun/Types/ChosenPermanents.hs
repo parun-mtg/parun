@@ -2,6 +2,7 @@ module Parun.Types.ChosenPermanents where
 
 import qualified Data.Set as Set
 import qualified Parun.Types.CardSelection as CardSelection
+import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.Keyword as Keyword
@@ -51,6 +52,9 @@ data ChosenPermanents = MkChosenPermanents
     -- | Whether the chooser picks or randomness does, AtRandom leaving the
     -- chooser unasked: Karona, False God Avatar's "a permanent you control
     -- chosen at random". Proved by its scenarios.
-    selection :: CardSelection.CardSelection
+    selection :: CardSelection.CardSelection,
+    -- | CR 608.2d: the characteristics no two picks may share -- Running Is
+    -- Useless's "with different mana values". Proved by its scenario.
+    differentIn :: Set.Set DifferentIn.DifferentIn
   }
   deriving (Eq, Ord, Show)

@@ -3,7 +3,8 @@ module Parun.Types.DifferentIn where
 -- | A characteristic no two cards a search finds may share (CR 701.23a's
 -- "matches the given description", said of the found group as a whole), no
 -- two cards a wish reveals (Parun.Types.FromOutsideTheGame), no two picks from
--- among a group (Parun.Types.ChosenCardFromAmong), no two targets of a slot
+-- among a group (Parun.Types.ChosenCardFromAmong) or a shared zone
+-- (Parun.Types.ChosenPermanents), no two targets of a slot
 -- (Parun.Types.Together), or no two permanents a cost sacrifices
 -- (Parun.Types.Sacrifice).
 data DifferentIn

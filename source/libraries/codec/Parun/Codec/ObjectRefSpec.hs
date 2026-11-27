@@ -20,6 +20,7 @@ import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamageSources as DamageSources
+import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
 import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
@@ -394,45 +395,51 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.Relative PlayerRelation.You) HowMany.one Nothing Zone.Battlefield Set.empty CardSelection.ByChoice))
+      (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.Relative PlayerRelation.You) HowMany.one Nothing Zone.Battlefield Set.empty CardSelection.ByChoice Set.empty))
       " {\"type\":\"ChosenPermanents\",\"value\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   Spec.it s "ChosenPermanents carries a chooser other than the resolving controller" $
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "opponent"))) HowMany.one Nothing Zone.Battlefield Set.empty CardSelection.ByChoice))
+      (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "opponent"))) HowMany.one Nothing Zone.Battlefield Set.empty CardSelection.ByChoice Set.empty))
       " {\"type\":\"ChosenPermanents\",\"value\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"chooser\":{\"type\":\"InSlot\",\"value\":\"opponent\"}}} "
   Spec.it s "ChosenPermanents takes any number" $
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty CardSelection.ByChoice))
+      (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty CardSelection.ByChoice Set.empty))
       " {\"type\":\"ChosenPermanents\",\"value\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"count\":{\"type\":\"UpTo\"}}} "
   Spec.it s "ChosenPermanents caps a total" $
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo Nothing) (Just (TotalCap.MkTotalCap (Quantity.Measure Measure.Power) (Quantity.Literal 4))) Zone.Battlefield Set.empty CardSelection.ByChoice))
+      (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo Nothing) (Just (TotalCap.MkTotalCap (Quantity.Measure Measure.Power) (Quantity.Literal 4))) Zone.Battlefield Set.empty CardSelection.ByChoice Set.empty))
       " {\"type\":\"ChosenPermanents\",\"value\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"count\":{\"type\":\"UpTo\"},\"total\":{\"weight\":{\"type\":\"Measure\",\"value\":\"Power\"},\"most\":{\"type\":\"Literal\",\"value\":4}}}} "
+  Spec.it s "ChosenPermanents keeps its picks apart" $
+    Common.assertCodec
+      s
+      ObjectRef.codec
+      (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty CardSelection.ByChoice (Set.singleton DifferentIn.ManaValues)))
+      " {\"type\":\"ChosenPermanents\",\"value\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"count\":{\"type\":\"UpTo\"},\"differentIn\":[\"ManaValues\"]}} "
   -- An exact count other than one, the arm the singular default leaves off.
   Spec.it s "ChosenPermanents takes an exact count" $
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Land) (PlayerRef.Relative PlayerRelation.You) (HowMany.Exactly (Quantity.Literal 2)) Nothing Zone.Battlefield Set.empty CardSelection.ByChoice))
+      (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Land) (PlayerRef.Relative PlayerRelation.You) (HowMany.Exactly (Quantity.Literal 2)) Nothing Zone.Battlefield Set.empty CardSelection.ByChoice Set.empty))
       " {\"type\":\"ChosenPermanents\",\"value\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"count\":{\"type\":\"Exactly\",\"value\":{\"type\":\"Literal\",\"value\":2}}}} "
   Spec.it s "ChosenPermanents takes up to a ceiling" $
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Land) (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo (Just (Quantity.Literal 2))) Nothing Zone.Battlefield Set.empty CardSelection.ByChoice))
+      (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Land) (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo (Just (Quantity.Literal 2))) Nothing Zone.Battlefield Set.empty CardSelection.ByChoice Set.empty))
       " {\"type\":\"ChosenPermanents\",\"value\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"count\":{\"type\":\"UpTo\",\"value\":{\"type\":\"Literal\",\"value\":2}}}} "
   -- CR 400.1: the chooser's own zones beside the battlefield, Lich's Mastery's.
   Spec.it s "ChosenPermanents reaches the chooser's own zones" $
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Land) (PlayerRef.Relative PlayerRelation.You) HowMany.one Nothing Zone.Battlefield (Set.fromList [Zone.Hand, Zone.Graveyard]) CardSelection.ByChoice))
+      (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Land) (PlayerRef.Relative PlayerRelation.You) HowMany.one Nothing Zone.Battlefield (Set.fromList [Zone.Hand, Zone.Graveyard]) CardSelection.ByChoice Set.empty))
       " {\"type\":\"ChosenPermanents\",\"value\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"ownZones\":[\"Hand\",\"Graveyard\"]}} "
   Spec.it s "ChosenPermanents rejects a shared zone among its own zones" $
     Spec.assertBool
@@ -526,7 +533,7 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
                 Codec.encode ObjectRef.codec (ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Hand (PlayerRef.Relative PlayerRelation.You) (Filter.And []) (Quantity.Literal 1))),
                 Codec.encode ObjectRef.codec (ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)) (Filter.And []) (Quantity.Literal 1))),
                 Codec.encode ObjectRef.codec (ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Library (PlayerRef.Relative PlayerRelation.You) (Filter.And []) (Quantity.Literal 1))),
-                Codec.encode ObjectRef.codec (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.Relative PlayerRelation.You) HowMany.one Nothing Zone.Battlefield Set.empty CardSelection.ByChoice)),
+                Codec.encode ObjectRef.codec (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.Relative PlayerRelation.You) HowMany.one Nothing Zone.Battlefield Set.empty CardSelection.ByChoice Set.empty)),
                 Codec.encode ObjectRef.codec (ObjectRef.AllOf (ObjectRef.EachCardInYourHand NonEmpty.:| [])),
                 Codec.encode ObjectRef.codec (ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound (SlotName.MkSlotName (Text.pack "target")) (Filter.HasCardType CardType.Creature) Zone.Battlefield))
               ]
