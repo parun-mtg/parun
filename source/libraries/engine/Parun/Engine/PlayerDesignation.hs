@@ -27,7 +27,9 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
+import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword.Engine
+import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Types.CardType as CardType
@@ -63,9 +65,18 @@ settle = do
 -- permanent whose rules text CR 305.7 stripped carries neither word any more.
 --
 -- Membership of the carrier, not a count: both rules ask whether "you control"
--- such a permanent, so a second copy grants nothing extra -- and neither rule can
+-- such a carrier, so a second copy grants nothing extra -- and neither rule can
 -- grant a mark twice, the "you don't have" clause being a standing guard rather
 -- than a one-shot.
+--
+-- The carriers are the permanents each player controls and the face-up plane
+-- or phenomenon cards in the command zone, each carried by every player its
+-- "you" names (CR 901.6, CR 901.12c: Plane.planarYous). The Golden City of
+-- Orazca's rulings read its ascend as a permanent's.
+-- data/scenarios/planechase/the-golden-city-of-orazca-blesses-its-planar-controller-with-ten-permanents.json
+-- and
+-- data/scenarios/planechase/cr-901-12c-the-golden-city-of-orazca-blesses-each-member-of-the-planar-team.json
+-- prove it.
 --
 -- Ascending, and the two rules in a fixed order, so the pass's writes are
 -- deterministic.
@@ -79,7 +90,15 @@ gaining pcs gs =
     -- grant walk cost the square of the board (#9339).
     grants = Projection.controlGrants gs
     controlled = Maybe.mapMaybe (\oid -> fmap ((,) oid) (Projection.controllerOfGiven grants oid gs)) battlefield
-    carries kw pid = any (\(oid, c) -> c == pid && maybe False (Map.member kw . PC.keywords) (Map.lookup oid pcs)) controlled
+    planar =
+      [ (you, Projection.keywordsOf oid gs)
+      | oid <- Set.toAscList (GameState.command gs),
+        Plane.isPlanarCard oid gs,
+        Just obj <- [Game.lookupObject oid gs],
+        you <- Plane.planarYous oid (Plane.commandControllerOf oid obj gs) gs
+      ]
+    carriers = [(c, PC.keywords pc) | (oid, c) <- controlled, Just pc <- [Map.lookup oid pcs]] <> planar
+    carries kw pid = any (\(c, kws) -> c == pid && Map.member kw kws) carriers
     counted matches pid = length [() | (oid, c) <- controlled, c == pid, maybe False matches (Map.lookup oid pcs)]
     holds pid mark = maybe False (Set.member mark . Player.designations) (Map.lookup pid (GameState.players gs))
     owed :: Keyword.Keyword -> PlayerDesignation.PlayerDesignation -> Int -> (PC.ProjectedCharacteristics -> Bool) -> [(PlayerId, PlayerDesignation.PlayerDesignation)]
