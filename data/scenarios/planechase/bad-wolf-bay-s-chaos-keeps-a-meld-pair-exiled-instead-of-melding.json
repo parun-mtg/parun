@@ -1,0 +1,36 @@
+{
+  "description": "CR 701.42a, 701.42c, 101.2: Bad Wolf Bay's chaos keeps Graf Rats and Midnight Scavengers in exile instead of melding",
+  "note": "alice rolls chaos in her precombat main: cards can't enter from exile this turn, and she planeswalks to Gavony. At beginning of combat Graf Rats exiles itself and Midnight Scavengers, then melds them from exile. Neither card can enter, so both stay in exile and no Chittering Host enters.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Graf Rats" },
+          { "card": "Midnight Scavengers" },
+          { "card": "Grizzly Bears", "ready": true }
+        ],
+        "command": [{ "card": "Bad Wolf Bay" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }],
+        "sideDecks": [{ "key": "Planar", "value": [{ "card": "Gavony" }] }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Plains" }, { "card": "Plains" }, { "card": "Plains" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "RollPlanarDie" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "RollDie", "with": 5 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Command", "card": "Gavony", "count": 1 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Chittering Host", "count": 0 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Graf Rats", "count": 1 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Midnight Scavengers", "count": 1 } } }
+  ]
+}

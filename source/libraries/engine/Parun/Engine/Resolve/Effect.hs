@@ -784,7 +784,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.Assemble payload -> Counters.assemble (settleWith runSubgame) resolving source controller legal payload
   Effect.Reassemble payload -> Counters.reassemble applyEffectWith runSubgame resolving source controller legal chosen payload
   Effect.Crank -> Counters.crank controller
-  Effect.Planeswalk ref -> Counters.planeswalk resolving source controller legal ref
+  Effect.Planeswalk p -> Counters.planeswalk resolving source controller legal p
   Effect.ChaosEnsues ref -> Counters.chaosEnsues resolving source controller legal ref
   Effect.Abandon -> Counters.abandon source
   Effect.SetInMotion ref -> Counters.setInMotion resolving source controller legal ref

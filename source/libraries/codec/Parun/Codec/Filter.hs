@@ -26,6 +26,7 @@ import qualified Parun.Codec.DealtDamageTo as DealtDamageTo
 import qualified Parun.Codec.DeclaredRole as DeclaredRole
 import qualified Parun.Codec.Designation as Designation
 import qualified Parun.Codec.EnteredZone as EnteredZone
+import qualified Parun.Codec.ExileMark as ExileMark
 import qualified Parun.Codec.ExiledPile as ExiledPile
 import qualified Parun.Codec.Expansion as Expansion
 import qualified Parun.Codec.Holder as Holder
@@ -220,7 +221,7 @@ codec keywordCodec =
       -- representing the candidate rather than the candidate.
       Arm.payload "RepresentedByCard" (codec keywordCodec) Filter.RepresentedByCard (\x -> case x of Filter.RepresentedByCard y -> Just y; _ -> Nothing),
       Arm.nullary "IsExiledFaceDown" Filter.IsExiledFaceDown,
-      Arm.nullary "IsWarped" Filter.IsWarped,
+      Arm.payload "HasExileMark" ExileMark.codec Filter.HasExileMark (\x -> case x of Filter.HasExileMark y -> Just y; _ -> Nothing),
       Arm.nullary "Transformed" Filter.Transformed,
       Arm.nullary "IsDoubleFaced" Filter.IsDoubleFaced,
       Arm.nullary "IsRingBearer" Filter.IsRingBearer,
@@ -463,7 +464,7 @@ tagOf x = case x of
   Filter.IsFaceDown {} -> "IsFaceDown"
   Filter.RepresentedByCard {} -> "RepresentedByCard"
   Filter.IsExiledFaceDown {} -> "IsExiledFaceDown"
-  Filter.IsWarped {} -> "IsWarped"
+  Filter.HasExileMark {} -> "HasExileMark"
   Filter.Transformed {} -> "Transformed"
   Filter.IsDoubleFaced {} -> "IsDoubleFaced"
   Filter.IsRingBearer {} -> "IsRingBearer"

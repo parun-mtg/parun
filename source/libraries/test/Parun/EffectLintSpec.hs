@@ -234,6 +234,7 @@ import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
 import qualified Parun.Types.PhaseSelector as PhaseSelector
+import qualified Parun.Types.Planeswalk as Planeswalk
 import qualified Parun.Types.PlayAllowance as PlayAllowance
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerEffect as PlayerEffect
@@ -769,9 +770,10 @@ engineOnlyArmOffends replacement = case replacement of
   ReplacementEffect.DestructionR (DestructionR.MkDestructionR _ rewrite) -> engineMintedDestruction rewrite
   -- CR 122.1d's row is engine-minted for CR 122.1c's reason; Bewitching
   -- Leechcraft's printed rewrite shares the arm, so the test is per rewrite.
-  ReplacementEffect.UntapR (UntapR.MkUntapR _ rewrite) -> case rewrite of
+  ReplacementEffect.UntapR (UntapR.MkUntapR _ _ rewrite) -> case rewrite of
     UntapRewrite.RemoveStunCounter -> True
     UntapRewrite.RemoveCounterToUntap _ -> False
+    UntapRewrite.RunEffects _ -> False
   ReplacementEffect.PhaseR _ -> False
   ReplacementEffect.CounterR {} -> False
   ReplacementEffect.CounterLossR {} -> False
@@ -1702,7 +1704,7 @@ effectObjectRefs effect =
         Effect.TemptWithTheRing -> []
         Effect.OpenAttraction -> []
         Effect.RollToVisit -> []
-        Effect.Planeswalk ref -> read_ (Maybe.maybeToList ref)
+        Effect.Planeswalk p -> read_ (Maybe.maybeToList (Planeswalk.to p))
         Effect.ChaosEnsues ref -> read_ (Maybe.maybeToList ref)
         Effect.Abandon -> []
         Effect.SetInMotion ref -> read_ [ref]
@@ -3770,8 +3772,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (engineOnlyOffends (ReplacementEffect.DestructionR (DestructionR.MkDestructionR Nothing DestructionRewrite.RemoveShieldCounter))) "and so is CR 122.1c's destruction half"
     Spec.assertBool s (not (engineOnlyOffends (ReplacementEffect.DestructionR (DestructionR.MkDestructionR Nothing DestructionRewrite.Regenerate)))) "while CR 701.19a's printed regeneration is accepted"
     -- CR 122.1d's row, which only Projection.stunOf may mint.
-    Spec.assertBool s (engineOnlyOffends (ReplacementEffect.UntapR (UntapR.MkUntapR Nothing UntapRewrite.RemoveStunCounter))) "and so is CR 122.1d's untap replacement"
-    Spec.assertBool s (not (engineOnlyOffends (ReplacementEffect.UntapR (UntapR.MkUntapR Nothing (UntapRewrite.RemoveCounterToUntap CounterKind.PlusOnePlusOne))))) "while Bewitching Leechcraft's printed one is accepted"
+    Spec.assertBool s (engineOnlyOffends (ReplacementEffect.UntapR (UntapR.MkUntapR Nothing Nothing UntapRewrite.RemoveStunCounter))) "and so is CR 122.1d's untap replacement"
+    Spec.assertBool s (not (engineOnlyOffends (ReplacementEffect.UntapR (UntapR.MkUntapR Nothing Nothing (UntapRewrite.RemoveCounterToUntap CounterKind.PlusOnePlusOne))))) "while Bewitching Leechcraft's printed one is accepted"
     -- ControllerRelation.Among, which only the Effect.Replace install bakes.
     plagiarize <- S.printingOf s registry "Plagiarize"
     let slotted = cardReplacementEffects (S.combinedFace plagiarize)

@@ -22,7 +22,8 @@
                       "value": "Battlefield"
                     },
                     {
-                      "type": "IsWarped"
+                      "type": "HasExileMark",
+                      "value": "Warped"
                     }
                   ]
                 }

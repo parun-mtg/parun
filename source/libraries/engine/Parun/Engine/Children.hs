@@ -389,6 +389,7 @@ import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
 import qualified Parun.Types.PlacesSticker as PlacesSticker
+import qualified Parun.Types.Planeswalk as Planeswalk
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
 import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
 import qualified Parun.Types.PlayAsCopy as PlayAsCopy
@@ -713,7 +714,7 @@ filterChildren children predicate = case predicate of
   Filter.IsFaceDown -> pure predicate
   Filter.RepresentedByCard f -> fmap Filter.RepresentedByCard (nest children f)
   Filter.IsExiledFaceDown -> pure predicate
-  Filter.IsWarped -> pure predicate
+  Filter.HasExileMark _ -> pure predicate
   Filter.Transformed -> pure predicate
   Filter.IsDoubleFaced -> pure predicate
   Filter.IsRingBearer -> pure predicate
@@ -1377,7 +1378,7 @@ effectChildren c effect = case effect of
   Effect.Assemble ref -> fmap Effect.Assemble (traverse (onObjectRef c) ref)
   Effect.Reassemble ref -> fmap Effect.Reassemble (onObjectRef c ref)
   Effect.Crank -> pure effect
-  Effect.Planeswalk ref -> fmap Effect.Planeswalk (traverse (onObjectRef c) ref)
+  Effect.Planeswalk p -> fmap (\to -> Effect.Planeswalk p {Planeswalk.to = to}) (traverse (onObjectRef c) (Planeswalk.to p))
   Effect.ChaosEnsues ref -> fmap Effect.ChaosEnsues (traverse (onObjectRef c) ref)
   Effect.Abandon -> pure effect
   Effect.SetInMotion ref -> fmap Effect.SetInMotion (onObjectRef c ref)
@@ -2554,7 +2555,7 @@ replacementEffectChildren c replacement = case replacement of
   ReplacementEffect.AttachR (AttachR.MkAttachR matching rewrite) -> fmap ReplacementEffect.AttachR (AttachR.MkAttachR <$> replacementFilter c matching <*> attachRewriteChildren c rewrite)
   ReplacementEffect.TransformR (TransformR.MkTransformR matching rewrite) -> fmap ReplacementEffect.TransformR (TransformR.MkTransformR <$> replacementFilter c matching <*> transformRewriteChildren c rewrite)
   ReplacementEffect.SetInMotionR relation -> pure (ReplacementEffect.SetInMotionR relation)
-  ReplacementEffect.UntapR (UntapR.MkUntapR during rewrite) -> fmap ReplacementEffect.UntapR (UntapR.MkUntapR during <$> untapRewriteChildren c rewrite)
+  ReplacementEffect.UntapR (UntapR.MkUntapR matching during rewrite) -> fmap ReplacementEffect.UntapR (UntapR.MkUntapR <$> traverse (replacementFilter c) matching <*> pure during <*> untapRewriteChildren c rewrite)
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR (LifeLossPattern.MkLifeLossPattern whose cause) rewrite) ->
     fmap ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR <$> (LifeLossPattern.MkLifeLossPattern <$> replacementWhose c whose <*> pure cause) <*> lifeLossRewriteChildren c rewrite)
   ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR whose whichCause rewrite) -> fmap ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR <$> replacementWhose c whose <*> pure whichCause <*> lifeGainRewriteChildren c rewrite)
@@ -2704,10 +2705,11 @@ destructionRewriteChildren c rewrite = case rewrite of
   DestructionRewrite.RunEffects effects -> DestructionRewrite.RunEffects <$> traverse (replacementEffect c) effects
 
 -- | What an untap replacement does (CR 614.1a).
-untapRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> UntapRewrite.UntapRewrite -> f UntapRewrite.UntapRewrite
+untapRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> UntapRewrite.UntapRewrite effect -> f (UntapRewrite.UntapRewrite effect)
 untapRewriteChildren c rewrite = case rewrite of
   UntapRewrite.RemoveStunCounter -> pure rewrite
   UntapRewrite.RemoveCounterToUntap kind -> UntapRewrite.RemoveCounterToUntap <$> replacementCounterKind c kind
+  UntapRewrite.RunEffects effects -> UntapRewrite.RunEffects <$> traverse (replacementEffect c) effects
 
 -- | What a life loss replacement does (CR 614.1a).
 lifeLossRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> LifeLossRewrite.LifeLossRewrite -> f LifeLossRewrite.LifeLossRewrite

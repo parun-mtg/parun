@@ -35,8 +35,8 @@ import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 -- An (effect, event) pair whose arms disagree simply does not apply, so the type
 -- rules out "redirect a damage event" without a validity pass.
 --
--- UntapR carries NO subject, and DestructionR's is optional: absent, each
--- rewrite names its subject in its own rule's words, which
+-- UntapR's and DestructionR's subjects are optional: absent, each rewrite
+-- names its subject in its own rule's words, which
 -- Parun.Engine.Replacement.scopes reads off the board. CR 700.7 makes a card's
 -- "this [something]" mean just that object, so "regenerate this
 -- creature" (CR 701.19a) names no other; CR 122.1c's replacement is minted onto
@@ -133,8 +133,8 @@ data ReplacementEffect card ability effect
     -- (Bow to My Command): the relation of the player the scheme's controller
     -- chooses, written to Object.chosenPlayers. Its own arm because setting a
     -- scheme in motion is its own event class: the scheme neither enters nor
-    -- transforms. No subject, UntapR's posture: "this scheme" is the row's own
-    -- source. Raised by Parun.Engine.Archenemy.setOne.
+    -- transforms. No subject, an unpatterned UntapR's posture: "this scheme" is
+    -- the row's own source. Raised by Parun.Engine.Archenemy.setOne.
     SetInMotionR PlayerRelation.PlayerRelation
   | -- | CR 614.1a / 122.1d: "If a permanent with a stun counter on it would
     -- become untapped, instead remove a stun counter from it." A separate arm
@@ -142,12 +142,12 @@ data ReplacementEffect card ability effect
     -- 701.26b's action, which CR 502.3's turn-based action, an Effect.Untap and
     -- CR 107.6's untap symbol in a cost all perform.
     --
-    -- Carries NO subject, for an unpatterned DestructionR's reason: rule
+    -- Its subject is optional, an unpatterned DestructionR's reason: rule
     -- 122.1d's effect is minted onto the permanent whose counters create it, and
     -- Bewitching Leechcraft's "this creature" is the permanent granted the
-    -- ability, so each is its own row's source. The field appears when a card
-    -- needs it.
-    UntapR UntapR.UntapR
+    -- ability, so each is its own row's source; Edge of Malacol's "a creature
+    -- you control" is a printed one.
+    UntapR (UntapR.UntapR effect)
   | -- | CR 614.1a / 120.4c: "damage that would reduce your life total to less
     -- than 1 reduces it to 1 instead" (Worship). A separate arm from DamageR
     -- because the two intercept different event classes: CR 120.4b's damage is

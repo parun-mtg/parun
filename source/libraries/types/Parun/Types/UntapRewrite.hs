@@ -1,5 +1,6 @@
 module Parun.Types.UntapRewrite where
 
+import qualified Data.Sequence as Seq
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Keyword as Keyword
 
@@ -10,7 +11,9 @@ import qualified Parun.Types.Keyword as Keyword
 -- for the reason that type's own comment gives: a replacement effect is
 -- classified by the event class it intercepts AND the rewrite shape it applies,
 -- and this rewrite is not nothing.
-data UntapRewrite
+--
+-- Parametric in the EFFECT for RunEffects, Parun.Types.DamageRewrite's reason.
+data UntapRewrite effect
   = -- | CR 122.1d: "instead remove a stun counter from it". Engine-minted from
     -- the counters (Parun.Engine.Projection.stunOf), never authored -- the card
     -- that puts the counter on says nothing about the effect it creates, rule
@@ -19,4 +22,6 @@ data UntapRewrite
   | -- | CR 614.1a: "remove a +1/+1 counter from it instead. If you do, untap it"
     -- (Bewitching Leechcraft). With none of the kind to remove it stays tapped.
     RemoveCounterToUntap (CounterKind.CounterKind Keyword.Keyword)
+  | -- | CR 614.1a: "[do something] instead" (Edge of Malacol).
+    RunEffects (Seq.Seq effect)
   deriving (Eq, Ord, Show)

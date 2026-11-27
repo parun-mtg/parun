@@ -323,6 +323,8 @@ import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
+import qualified Parun.Types.UntapR as UntapR
+import qualified Parun.Types.UntapRewrite as UntapRewrite
 import qualified Parun.Types.UntilPaid as UntilPaid
 import qualified Parun.Types.UpToCasts as UpToCasts
 import qualified Parun.Types.Vote as Vote
@@ -1780,7 +1782,9 @@ replacementRowReads re = case re of
   -- The effects are replacementRowEffects' answer.
   ReplacementEffect.TransformR (TransformR.MkTransformR pat _) -> ([pat], [])
   ReplacementEffect.SetInMotionR _ -> ([], [])
-  ReplacementEffect.UntapR _ -> ([], [])
+  -- CR 614.1a's printed subject; the instead-effects are replacementRowEffects'
+  -- answer.
+  ReplacementEffect.UntapR (UntapR.MkUntapR matching _ _) -> (Maybe.maybeToList matching, [])
   -- A LifeLossPattern is one ControllerRelation and one LifeLossCause, and no arm
   -- of LifeLossRewrite carries a Filter or a Quantity: no read at all.
   ReplacementEffect.LifeLossR {} -> ([], [])
@@ -2081,7 +2085,11 @@ replacementRowEffects re = case re of
   ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.RunEffects effects)) -> Foldable.toList effects
   ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.ChoosePlayer _)) -> []
   ReplacementEffect.SetInMotionR _ -> []
-  ReplacementEffect.UntapR _ -> []
+  -- CR 614.1a's instead-effects (Edge of Malacol).
+  ReplacementEffect.UntapR (UntapR.MkUntapR _ _ rewrite) -> case rewrite of
+    UntapRewrite.RunEffects effects -> Foldable.toList effects
+    UntapRewrite.RemoveStunCounter -> []
+    UntapRewrite.RemoveCounterToUntap _ -> []
   ReplacementEffect.LifeLossR _ -> []
   ReplacementEffect.LifeGainR _ -> []
   ReplacementEffect.CounterLossR _ -> []

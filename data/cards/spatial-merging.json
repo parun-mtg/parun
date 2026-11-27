@@ -48,13 +48,15 @@
                       {
                         "type": "Planeswalk",
                         "value": {
-                          "type": "EachCardFromAmong",
-                          "value": {
-                            "filter": {
-                              "type": "HasCardType",
-                              "value": "Plane"
-                            },
-                            "slot": "revealed"
+                          "to": {
+                            "type": "EachCardFromAmong",
+                            "value": {
+                              "filter": {
+                                "type": "HasCardType",
+                                "value": "Plane"
+                              },
+                              "slot": "revealed"
+                            }
                           }
                         }
                       }

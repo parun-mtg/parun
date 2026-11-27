@@ -415,6 +415,8 @@ import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlacesSticker as PlacesSticker
+import qualified Parun.Types.Planeswalk as Planeswalk
+import qualified Parun.Types.PlaneswalkAway as PlaneswalkAway
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
 import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
 import qualified Parun.Types.PlayAsCopy as PlayAsCopy
@@ -546,7 +548,9 @@ import qualified Parun.Types.TurnedFaceUpTrigger as TurnedFaceUpTrigger
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Unblocking as Unblocking
 import qualified Parun.Types.Undesignate as Undesignate
+import qualified Parun.Types.UntapR as UntapR
 import qualified Parun.Types.UntapRestriction as UntapRestriction
+import qualified Parun.Types.UntapRewrite as UntapRewrite
 import qualified Parun.Types.UntilPaid as UntilPaid
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.Vote as Vote
@@ -846,7 +850,7 @@ objectRefPositions =
         ("explore", Effect.Explore (plantedRef "ex"), [plantedRef "ex"]),
         ("assemble", Effect.Assemble (Just (plantedRef "as")), [plantedRef "as"]),
         ("reassemble", Effect.Reassemble (plantedRef "ra"), [plantedRef "ra"]),
-        ("planeswalk", Effect.Planeswalk (Just (plantedRef "pw")), [plantedRef "pw"]),
+        ("planeswalk", Effect.Planeswalk (Planeswalk.MkPlaneswalk (Just (plantedRef "pw")) PlaneswalkAway.FromEveryCard), [plantedRef "pw"]),
         ("arrange-in-library", Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (plantedRef "al") (PlayerRef.Relative PlayerRelation.You) Nothing Nothing CardSelection.ByChoice), [plantedRef "al"]),
         ("connive", Effect.Connive (Connive.MkConnive (Quantity.Type.Literal 1) (plantedRef "cn")), [plantedRef "cn"]),
         ("set-x", Effect.SetX (SetX.MkSetX (NewX.Becomes (Quantity.Type.Literal 5)) (plantedRef "sx")), [plantedRef "sx"]),
@@ -1657,9 +1661,9 @@ modalSlotsOffend armed abilityBound modal =
             -- Plus what this mode's own CR 603.5 "may" binds: the players who
             -- took it, which is how "each player may search THEIR library" says
             -- "they" (Binding.mayPlayers).
-            -- Plus what this mode's own CR 701.55d pass binds: the seat whose
-            -- villainous option is being performed, which is how "that player
-            -- sacrifices a creature of their choice" says "that player"
+            -- Plus what this mode's own CR 608.2d either-or binds: the seats
+            -- whose announced branch is being performed, which is how "that
+            -- player sacrifices a creature of their choice" says "that player"
             -- (Binding.facingPlayers).
             defined = Set.unions [Resolve.definedSlots effects, Resolve.gateDefinedSlots mode, Resolve.mayDefinedSlots mode, Resolve.orElseDefinedSlots mode]
             -- The whole MODE's reads, not just its effect list's: CR 118.12a's
@@ -1873,6 +1877,8 @@ replacementRewriteEffects replacement = case replacement of
   ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.RunEffects effects)) -> Foldable.toList effects
   ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.ChoosePlayer _)) -> []
   ReplacementEffect.SetInMotionR _ -> []
+  -- CR 614.1a's instead-effects (Edge of Malacol).
+  ReplacementEffect.UntapR (UntapR.MkUntapR _ _ (UntapRewrite.RunEffects effects)) -> Foldable.toList effects
   ReplacementEffect.UntapR _ -> []
   ReplacementEffect.LifeLossR {} -> []
   ReplacementEffect.LifeGainR {} -> []
@@ -4790,7 +4796,8 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   ReplacementEffect.AttachR (AttachR.MkAttachR attachPattern (AttachRewrite.ChooseQuality quality)) -> unframed [attachPattern] <> chosenQualityFilters quality
   ReplacementEffect.TransformR (TransformR.MkTransformR transformPattern _) -> unframed [transformPattern]
   ReplacementEffect.SetInMotionR _ -> []
-  ReplacementEffect.UntapR _ -> []
+  -- CR 614.1a's printed subject (Edge of Malacol's "a creature you control").
+  ReplacementEffect.UntapR (UntapR.MkUntapR matching _ _) -> unframed (Maybe.maybeToList matching)
   -- A computed scaling's Quantity is the one Filter a life row can hold.
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.Scaled scaling)) -> scalingFilters scaling
   ReplacementEffect.LifeLossR {} -> []
@@ -5642,7 +5649,7 @@ effectFilters effect = case effect of
   Effect.TemptWithTheRing -> []
   Effect.OpenAttraction -> []
   Effect.RollToVisit -> []
-  Effect.Planeswalk ref -> foldMap (frame SourceHostFramed . objectRefFilters) ref
+  Effect.Planeswalk p -> foldMap (frame SourceHostFramed . objectRefFilters) (Planeswalk.to p)
   Effect.ChaosEnsues ref -> foldMap (frame SourceHostFramed . objectRefFilters) ref
   Effect.Abandon -> []
   Effect.SetInMotion ref -> frame SourceHostFramed (objectRefFilters ref)

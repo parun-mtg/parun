@@ -4876,7 +4876,7 @@ filterReads f = case f of
   -- CR 406.3a leaves a face-down exiled card no characteristics at all, so
   -- being one is not a characteristic either and no layer writes it.
   Filter.Type.IsExiledFaceDown -> Set.empty
-  Filter.Type.IsWarped -> Set.empty
+  Filter.Type.HasExileMark _ -> Set.empty
   -- Reads nothing: CR 712.6c/e make which face is up the thing characteristics
   -- are read OFF rather than one of them, so no Modification writes Object.face.
   Filter.Type.Transformed -> Set.empty
@@ -5148,7 +5148,7 @@ filterReadsPeers f = case f of
   Filter.Type.IsTapped -> False
   Filter.Type.IsFaceDown -> False
   Filter.Type.IsExiledFaceDown -> False
-  Filter.Type.IsWarped -> False
+  Filter.Type.HasExileMark _ -> False
   Filter.Type.Transformed -> False
   Filter.Type.IsDoubleFaced -> False
   Filter.Type.IsInZone _ -> False
@@ -6832,7 +6832,7 @@ stunOf :: ObjectId -> GameState -> [ReplacementEffect Card.Type.Card (GrantedAbi
 stunOf oid gs =
   if stunCounters oid gs == 0
     then []
-    else [ReplacementEffect.UntapR UntapR.MkUntapR {UntapR.during = Nothing, UntapR.rewrite = UntapRewrite.RemoveStunCounter}]
+    else [ReplacementEffect.UntapR UntapR.MkUntapR {UntapR.matching = Nothing, UntapR.during = Nothing, UntapR.rewrite = UntapRewrite.RemoveStunCounter}]
 
 -- CR 614.1a / Illusionary Mask: "if the creature that spell becomes ... has not
 -- been turned face up and would ... deal damage, be dealt damage ..., instead

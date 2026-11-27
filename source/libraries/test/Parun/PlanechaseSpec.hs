@@ -78,6 +78,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhasedOut as PhasedOut
+import qualified Parun.Types.PlaneswalkAway as PlaneswalkAway
 import qualified Parun.Types.PlaneswalkCause as PlaneswalkCause
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
@@ -777,7 +778,7 @@ grandMeleeSpec s registry = Spec.describe s "CR 901.14" $ do
   Spec.it s "CR 901.11c a Grand Melee planeswalk walks away from every face-up plane" $ do
     board <- meleePlanarBoard s registry 8 [(seat 0, ["Tazeem", "Naya"]), (seat 4, ["Academy at Tolaria West", "Panopticon"])]
     let walked = S.runPure (rolling 6) (inMain (seat 0) board) (Planechase.roll S.manaPerformer (seat 0) >> Engine.priorityLoop)
-        walking pid = S.runPure S.identityAnswer board (Planechase.planeswalk PlaneswalkCause.Instruction Nothing pid)
+        walking pid = S.runPure S.identityAnswer board (Planechase.planeswalk PlaneswalkCause.Instruction PlaneswalkAway.FromEveryCard Nothing pid)
     Spec.assertEqWith s "the premise" (List.sort (faceUpNames board)) [cardName "Academy at Tolaria West", cardName "Tazeem"]
     Spec.assertEqWith s "CR 901.11c only seat 0's Naya is face up" (faceUpNames walked) [cardName "Naya"]
     Spec.assertEqWith s "and seat 4's Academy is on the bottom" (deckNames (seat 4) walked) (fmap cardName ["Panopticon", "Academy at Tolaria West"])
@@ -793,7 +794,7 @@ grandMeleeSpec s registry = Spec.describe s "CR 901.14" $ do
   -- card.").
   Spec.it s "CR 704.6f a Grand Melee phenomenon's own planar controller planeswalks away" $ do
     board <- meleePlanarBoard s registry 8 [(seat 0, ["Tazeem", "Naya"]), (seat 4, ["Academy at Tolaria West", "Mutual Epiphany", "Panopticon"])]
-    let walked = S.runPure S.identityAnswer board (Planechase.planeswalk PlaneswalkCause.Instruction Nothing (seat 4) >> Engine.priorityLoop)
+    let walked = S.runPure S.identityAnswer board (Planechase.planeswalk PlaneswalkCause.Instruction PlaneswalkAway.FromEveryCard Nothing (seat 4) >> Engine.priorityLoop)
     Spec.assertEqWith s "CR 704.6f seat 4 walked on to Panopticon" (faceUpNames walked, faceUpControllers "Panopticon" walked) ([cardName "Panopticon"], [Just (seat 4)])
     Spec.assertEqWith s "CR 312.5 seat 4 drew four for Mutual Epiphany and one for Panopticon" (S.handSize (seat 4) walked) 5
 
@@ -876,6 +877,18 @@ grandMeleeSpec s registry = Spec.describe s "CR 901.14" $ do
     Spec.assertBool s (notElem (fmap TurnRegisters.phase (registersOf 2 hit)) (fmap (Just . Phase.Combat) [minBound .. maxBound])) "the premise: seat 4's combat had not begun"
     Spec.assertEqWith s "the premise: seat 4's combat began after it" (fmap TurnRegisters.phase (registersOf 2 fourBegan)) (Just (Phase.Combat CombatStep.DeclareAttackers))
     Spec.assertEqWith s "CR 506.1 Glen Elendra's first target is the Bears" (fmap (Map.lookup yours) offers) [Just (Set.singleton (Recipient.ToCreature zeros))]
+
+  -- CR 807.4b / 901.14a: seat 4's starting Two Streams Facility triggers at
+  -- the first upkeep of marker 2's opening turn (docs/decisions.md, "Which
+  -- upkeep is the first of a Grand Melee game"), and only seats 3 to 5, in
+  -- seat 4's range, choose (CR 801.10, 901.13).
+  Spec.it s "CR 807.4b a later Grand Melee starting plane has the first upkeep of the game" $ do
+    board <- meleePlanarBoard s registry 8 [(seat 0, ["Tazeem"]), (seat 4, ["Two Streams Facility"])]
+    let zeros = Melee.untilPhase Phase.PrecombatMain board
+        fours = Melee.untilPhase Phase.PrecombatMain (Engine.workOn 2 zeros)
+        choosers gs = [Map.keys (Map.unions (Map.elems (Object.chosenNumberBy obj))) | oid <- Planechase.faceUp gs, fmap Face.name (Game.faceOf oid gs) == cardName "Two Streams Facility", obj <- Maybe.maybeToList (Game.lookupObject oid gs)]
+    Spec.assertEqWith s "seat 4's turn is worked" (TurnRegisters.activePlayer (GameState.turn fours)) (seat 4)
+    Spec.assertEqWith s "CR 807.4b / 801.10 seats 3 to 5 chose" (choosers fours) [[seat 3, seat 4, seat 5]]
   where
     seat = PlayerId.MkPlayerId
     passed gs = maybe gs (`GrandMelee.passLeft` gs) (GrandMelee.markerNumbered 2 gs)
@@ -1433,7 +1446,7 @@ planeswalkSpec s registry = Spec.describe s "CR 901.11" $ do
         step = Phase.Ending EndingStep.EndStep
         begun = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan step S.alice)) walked {GameState.turn = (GameState.turn walked) {TurnRegisters.phase = step, TurnRegisters.priority = Just S.alice}}
         stacked = S.runPure S.identityAnswer begun Engine.settleForPriority
-        resolved = S.runPure S.identityAnswer stacked (Planechase.planeswalk PlaneswalkCause.Instruction Nothing S.alice >> Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
+        resolved = S.runPure S.identityAnswer stacked (Planechase.planeswalk PlaneswalkCause.Instruction PlaneswalkAway.FromEveryCard Nothing S.alice >> Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
         unwalked = S.runPure S.identityAnswer stacked (Stack.resolveTop >> Engine.settleForPriority)
     Spec.assertEqWith s "the trigger is on the stack" (length (Game.allStacks stacked)) 1
     Spec.assertBool s (not (Set.member bear (GameState.battlefield unwalked))) "with no planeswalk, the Bears phase out"
@@ -1502,7 +1515,7 @@ planeswalkSpec s registry = Spec.describe s "CR 901.11" $ do
   -- order is alice's answer and not the engine's.
   Spec.it s "CR 401.4 the owner orders the planes a planeswalk leaves together" $ do
     merged <- spatialMerging s registry
-    let leaving bottommost = S.runPure (bottomFirst merged bottommost) merged (Planechase.planeswalk PlaneswalkCause.Instruction Nothing S.alice >> Engine.priorityLoop)
+    let leaving bottommost = S.runPure (bottomFirst merged bottommost) merged (Planechase.planeswalk PlaneswalkCause.Instruction PlaneswalkAway.FromEveryCard Nothing S.alice >> Engine.priorityLoop)
     Spec.assertEqWith s "the walk reaches Orzhova" (faceUpNames (leaving "Panopticon")) [cardName "Orzhova"]
     Spec.assertEqWith s "Panopticon bottommost when alice says so" (deckNames S.alice (leaving "Panopticon")) (fmap cardName ["Tazeem", "Spatial Merging", "Fixed Point in Time", "Mutual Epiphany", "The Dining Car", "Panopticon"])
     Spec.assertEqWith s "The Dining Car bottommost when alice says so" (deckNames S.alice (leaving "The Dining Car")) (fmap cardName ["Tazeem", "Spatial Merging", "Fixed Point in Time", "Mutual Epiphany", "Panopticon", "The Dining Car"])

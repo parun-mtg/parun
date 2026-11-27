@@ -965,6 +965,8 @@ library codec
     Parun.Codec.ExileLinkSpec
     Parun.Codec.ExileLooker
     Parun.Codec.ExileLookerSpec
+    Parun.Codec.ExileMark
+    Parun.Codec.ExileMarkSpec
     Parun.Codec.ExileMaterials
     Parun.Codec.ExileMaterialsSpec
     Parun.Codec.ExilePermanents
@@ -1503,12 +1505,16 @@ library codec
     Parun.Codec.PlanarDieFaceSpec
     Parun.Codec.PlanarDieRolled
     Parun.Codec.PlanarDieRolledSpec
+    Parun.Codec.Planeswalk
+    Parun.Codec.PlaneswalkAway
+    Parun.Codec.PlaneswalkAwaySpec
     Parun.Codec.PlaneswalkCause
     Parun.Codec.PlaneswalkCauseSpec
     Parun.Codec.PlaneswalkR
     Parun.Codec.PlaneswalkRewrite
     Parun.Codec.PlaneswalkRewriteSpec
     Parun.Codec.PlaneswalkRSpec
+    Parun.Codec.PlaneswalkSpec
     Parun.Codec.PlayAllowance
     Parun.Codec.PlayAllowanceSpec
     Parun.Codec.PlayAsCopy
@@ -3490,6 +3496,7 @@ library types
     Parun.Types.ExileHaunting
     Parun.Types.ExileLink
     Parun.Types.ExileLooker
+    Parun.Types.ExileMark
     Parun.Types.ExileMaterials
     Parun.Types.ExilePermanents
     Parun.Types.ExilePlayPermission
@@ -3819,6 +3826,8 @@ library types
     Parun.Types.PlacesSticker
     Parun.Types.PlanarDieFace
     Parun.Types.PlanarDieRolled
+    Parun.Types.Planeswalk
+    Parun.Types.PlaneswalkAway
     Parun.Types.PlaneswalkCause
     Parun.Types.PlaneswalkR
     Parun.Types.PlaneswalkRewrite
@@ -4061,6 +4070,7 @@ library types
     Parun.Types.Taking
     Parun.Types.Tally
     Parun.Types.Tap
+    Parun.Types.TapCause
     Parun.Types.TapCount
     Parun.Types.TapForMana
     Parun.Types.TapForTotalPower

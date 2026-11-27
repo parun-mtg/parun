@@ -59,6 +59,8 @@ import qualified Parun.Types.PaymentSubject as PaymentSubject
 import qualified Parun.Types.PendingTrigger as PendingTrigger
 import qualified Parun.Types.PlanarDieFace as PlanarDieFace
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
+import qualified Parun.Types.Planeswalk as Planeswalk
+import qualified Parun.Types.PlaneswalkAway as PlaneswalkAway
 import qualified Parun.Types.PlaneswalkCause as PlaneswalkCause
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -142,18 +144,23 @@ controllerOfFaceUp oid gs = Game.lookupObject oid gs >>= (`Plane.planarControlle
 -- | CR 701.31b: put each face-up plane and phenomenon card on the bottom of its
 -- owner's planar deck, then turn the top card of this player's planar deck
 -- face up -- or, given `to`, each of those cards still in that deck at once,
--- Spatial Merging's "Simultaneously planeswalk to both of them". Nothing for a
--- player CR 701.31a does not let planeswalk. Proposed first as WouldPlaneswalk
+-- Spatial Merging's "Simultaneously planeswalk to both of them". Given
+-- FromPhenomenaOnly, the face-up planes stay (Norn's Seedcore):
+-- data/scenarios/planechase/norn-s-seedcore-planeswalks-to-a-revealed-plane-without-leaving-any.json
+-- proves it. Nothing for a player CR 701.31a does not let planeswalk. Proposed first as WouldPlaneswalk
 -- for this cause (CR 701.31c), so CR 614's replacements see it once.
 --
 -- In Grand Melee too every face-up card goes, whoever controls it (CR 701.31b,
 -- 901.11c), and the plane turned up comes under this player's marker
 -- (markerOf). Parun.PlanechaseSpec's "CR 901.11c a Grand Melee planeswalk
 -- walks away from every face-up plane" proves it.
-planeswalk :: PlaneswalkCause.PlaneswalkCause -> Maybe [ObjectId] -> PlayerId -> Game ()
-planeswalk cause to pid = proposed cause pid $ do
+planeswalk :: PlaneswalkCause.PlaneswalkCause -> PlaneswalkAway.PlaneswalkAway -> Maybe [ObjectId] -> PlayerId -> Game ()
+planeswalk cause from to pid = proposed cause pid $ do
   now <- State.get
-  let away = faceUp now
+  let leaves oid = case from of
+        PlaneswalkAway.FromEveryCard -> True
+        PlaneswalkAway.FromPhenomenaOnly -> maybe False Plane.isPhenomenonFace (Game.faceOf oid now)
+      away = filter leaves (faceUp now)
       marker = markerOf pid now
   bottomAll away
   case to of
@@ -450,4 +457,4 @@ abilities gs = if isPlanechase gs then fmap (\pid -> (pid, planeswalkingAbility)
 -- die, planeswalk."
 planeswalkingAbility :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 planeswalkingAbility =
-  Mint.trigger (TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.You) (Seq.singleton (Effect.Planeswalk Nothing))
+  Mint.trigger (TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.You) (Seq.singleton (Effect.Planeswalk (Planeswalk.MkPlaneswalk Nothing PlaneswalkAway.FromEveryCard)))
