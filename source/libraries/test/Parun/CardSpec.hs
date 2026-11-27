@@ -546,7 +546,9 @@ import qualified Parun.Types.TurnedFaceUpTrigger as TurnedFaceUpTrigger
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Unblocking as Unblocking
 import qualified Parun.Types.Undesignate as Undesignate
+import qualified Parun.Types.UntapR as UntapR
 import qualified Parun.Types.UntapRestriction as UntapRestriction
+import qualified Parun.Types.UntapRewrite as UntapRewrite
 import qualified Parun.Types.UntilPaid as UntilPaid
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.Vote as Vote
@@ -1864,6 +1866,8 @@ replacementRewriteEffects replacement = case replacement of
   ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.RunEffects effects)) -> Foldable.toList effects
   ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.ChoosePlayer _)) -> []
   ReplacementEffect.SetInMotionR _ -> []
+  -- CR 614.1a's instead-effects (Edge of Malacol).
+  ReplacementEffect.UntapR (UntapR.MkUntapR _ _ (UntapRewrite.RunEffects effects)) -> Foldable.toList effects
   ReplacementEffect.UntapR _ -> []
   ReplacementEffect.LifeLossR {} -> []
   ReplacementEffect.LifeGainR {} -> []
@@ -4771,7 +4775,8 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   ReplacementEffect.AttachR (AttachR.MkAttachR attachPattern (AttachRewrite.ChooseQuality quality)) -> unframed [attachPattern] <> chosenQualityFilters quality
   ReplacementEffect.TransformR (TransformR.MkTransformR transformPattern _) -> unframed [transformPattern]
   ReplacementEffect.SetInMotionR _ -> []
-  ReplacementEffect.UntapR _ -> []
+  -- CR 614.1a's printed subject (Edge of Malacol's "a creature you control").
+  ReplacementEffect.UntapR (UntapR.MkUntapR matching _ _) -> unframed (Maybe.maybeToList matching)
   -- A computed scaling's Quantity is the one Filter a life row can hold.
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.Scaled scaling)) -> scalingFilters scaling
   ReplacementEffect.LifeLossR {} -> []

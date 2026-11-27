@@ -1118,8 +1118,9 @@ departedPermanent :: SlotName
 departedPermanent = SlotName.MkSlotName (Text.pack "thatDepartedPermanent")
 
 -- CR 614.1a / 614.6: the reserved slot under which the permanent whose
--- destruction a DestructionRewrite.RunEffects replaced is bound -- Crackling
--- Emergence's "that land". Not a target (nothing was chosen), so the same CR
+-- destruction a DestructionRewrite.RunEffects, or whose untap an
+-- UntapRewrite.RunEffects, replaced is bound -- Crackling Emergence's "that
+-- land", Edge of Malacol's "it". Not a target (nothing was chosen), so the same CR
 -- 608.2b posture and the same "no card's targetSlots may name it" sweep as
 -- `departedPermanent`.
 sparedPermanent :: SlotName

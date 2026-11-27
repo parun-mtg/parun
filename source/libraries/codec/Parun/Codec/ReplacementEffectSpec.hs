@@ -210,7 +210,7 @@ spec s =
           Common.assertCodec
             s
             codec
-            (ReplacementEffect.UntapR (UntapR.MkUntapR Nothing UntapRewrite.RemoveStunCounter))
+            (ReplacementEffect.UntapR (UntapR.MkUntapR Nothing Nothing UntapRewrite.RemoveStunCounter))
             " {\"type\":\"UntapR\",\"value\":{\"rewrite\":{\"type\":\"RemoveStunCounter\"}}} "
         -- CR 614.1a / 120.4c: Worship, the damage-scoped LifeLossR producer. The other
         -- shape -- an open cause and a scaled rewrite -- is Bloodletter of Aclazotz,

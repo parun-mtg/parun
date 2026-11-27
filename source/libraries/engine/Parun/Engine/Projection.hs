@@ -6829,7 +6829,7 @@ stunOf :: ObjectId -> GameState -> [ReplacementEffect Card.Type.Card (GrantedAbi
 stunOf oid gs =
   if stunCounters oid gs == 0
     then []
-    else [ReplacementEffect.UntapR UntapR.MkUntapR {UntapR.during = Nothing, UntapR.rewrite = UntapRewrite.RemoveStunCounter}]
+    else [ReplacementEffect.UntapR UntapR.MkUntapR {UntapR.matching = Nothing, UntapR.during = Nothing, UntapR.rewrite = UntapRewrite.RemoveStunCounter}]
 
 -- CR 614.1a / Illusionary Mask: "if the creature that spell becomes ... has not
 -- been turned face up and would ... deal damage, be dealt damage ..., instead

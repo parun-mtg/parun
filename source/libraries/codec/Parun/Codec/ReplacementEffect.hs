@@ -54,7 +54,7 @@ codec cardCodec abilityCodec effectCodec =
       Arm.payload "AttachR" (AttachR.codec abilityCodec effectCodec) ReplacementEffect.AttachR (\x -> case x of ReplacementEffect.AttachR y -> Just y; _ -> Nothing),
       Arm.payload "TransformR" (TransformR.codec effectCodec) ReplacementEffect.TransformR (\x -> case x of ReplacementEffect.TransformR y -> Just y; _ -> Nothing),
       Arm.payload "SetInMotionR" PlayerRelation.codec ReplacementEffect.SetInMotionR (\x -> case x of ReplacementEffect.SetInMotionR y -> Just y; _ -> Nothing),
-      Arm.payload "UntapR" UntapR.codec ReplacementEffect.UntapR (\x -> case x of ReplacementEffect.UntapR y -> Just y; _ -> Nothing),
+      Arm.payload "UntapR" (UntapR.codec effectCodec) ReplacementEffect.UntapR (\x -> case x of ReplacementEffect.UntapR y -> Just y; _ -> Nothing),
       Arm.payload "LifeLossR" LifeLossR.codec ReplacementEffect.LifeLossR (\x -> case x of ReplacementEffect.LifeLossR y -> Just y; _ -> Nothing),
       Arm.payload "LifeGainR" LifeGainR.codec ReplacementEffect.LifeGainR (\x -> case x of ReplacementEffect.LifeGainR y -> Just y; _ -> Nothing),
       Arm.payload "CounterLossR" CounterLossR.codec ReplacementEffect.CounterLossR (\x -> case x of ReplacementEffect.CounterLossR y -> Just y; _ -> Nothing),
