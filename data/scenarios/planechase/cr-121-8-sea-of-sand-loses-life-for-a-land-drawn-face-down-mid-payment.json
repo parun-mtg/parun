@@ -1,0 +1,36 @@
+{
+  "description": "CR 121.8 Sea of Sand loses life for a land drawn face down mid-payment",
+  "note": "Synthetic Wellspring Growth draws alice a Forest as the enchanted Mountain pays for Grizzly Bears. CR 121.8 keeps it face down with no characteristics as it is drawn, so it is a nonland card then: the nonland trigger fires once Bears is cast and the Forest is revealed, and the land trigger does not.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Mountain", "label": "mountain" },
+          { "card": "Synthetic Wellspring Growth", "attached": "mountain" }
+        ],
+        "command": [{ "card": "Sea of Sand", "label": "sea" }],
+        "sideDecks": [{ "key": "Planar", "value": [{ "card": "Academy at Tolaria West" }] }],
+        "hand": [{ "card": "Grizzly Bears", "label": "bears" }],
+        "library": [{ "card": "Forest" }, { "card": "Plains" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bears", "mana": ["$mountain"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Witnessed", "player": "bob", "is": ["Forest"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $sea", "Grizzly Bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 17 } } }
+  ],
+  "final": [
+    { "Life": { "player": "alice", "life": 17 } },
+    { "Count": { "player": "alice", "zone": "Hand", "card": "Forest", "count": 1 } }
+  ]
+}

@@ -426,9 +426,10 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   (TriggerCondition.PlayerDrawsNthCard _, GameEvent.Drew (Drew.MkDrew drawer _)) ->
     Binding.setTriggerPlayer drawer Map.empty
   -- CR 607.2h's "that card": the card the linked static revealed (God-Eternal
-  -- Kefnet's "copy that card").
+  -- Kefnet's "copy that card"), beside the drawing player who revealed it (Sea
+  -- of Sand's "that player").
   (TriggerCondition.RevealedThisWay _, GameEvent.Revealed revealed) ->
-    Map.singleton Binding.revealedCard (Binding.toObject (Revealed.card revealed))
+    Binding.setTriggerPlayer (Revealed.player revealed) (Map.singleton Binding.revealedCard (Binding.toObject (Revealed.card revealed)))
   -- CR 701.62a's "a card you put into your graveyard this way" (Paranormal
   -- Analyst): the graveyard incarnations the event carries, under CR 400.7e's
   -- `became` -- one as the single binding, several (a CR 701.40f refusal sends
@@ -1760,8 +1761,8 @@ eventBindingSlots cond = case cond of
   -- the ability's controller, whom Binding.setYou already names.
   TriggerCondition.SelfRevealedForMiracle -> Set.empty
   -- CR 607.2h's "that card": the card the linked static revealed, which is not
-  -- the bearer (God-Eternal Kefnet).
-  TriggerCondition.RevealedThisWay _ -> Set.singleton Binding.revealedCard
+  -- the bearer (God-Eternal Kefnet), and the drawing player who revealed it.
+  TriggerCondition.RevealedThisWay _ -> Set.fromList [Binding.revealedCard, Binding.triggerPlayer]
   -- eventBindings' Discards arm, slot for slot: a Self discard's card is the
   -- bearer, already bound as CR 113.7's source; a Discarder's is CR 400.7e's
   -- `became` (Bag of Holding's "that card") beside the discarding player, whom
