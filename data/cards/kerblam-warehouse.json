@@ -1,0 +1,248 @@
+{
+  "faces": [
+    {
+      "name": "Kerblam! Warehouse",
+      "oracleText": "Whenever one or more creatures you control deal combat damage to a player, create a Treasure token.\nWhenever chaos ensues, until your next turn, noncreature artifacts you control gain \"{T}, Sacrifice this artifact: Flip a coin. If you win the flip, this artifact deals 3 damage to any target.\"",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "PermanentsDealDamageToPlayer",
+            "value": {
+              "filter": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  }
+                ]
+              },
+              "kind": "Combat",
+              "recipient": "AnyPlayer"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "activatedAbilities": [
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "TapThis"
+                                        },
+                                        {
+                                          "type": "SacrificeThis"
+                                        }
+                                      ],
+                                      "mana": []
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "AddMana",
+                                                  "value": {
+                                                    "production": {
+                                                      "type": "AnyColor"
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "name": "Treasure Token",
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Treasure"
+                                  ],
+                                  "types": [
+                                    "Artifact"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilNextTurnOf",
+                            "value": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
+                          },
+                          "modification": {
+                            "type": "GainAbility",
+                            "value": {
+                              "type": "Activated",
+                              "value": {
+                                "cost": {
+                                  "components": [
+                                    {
+                                      "type": "TapThis"
+                                    },
+                                    {
+                                      "type": "SacrificeThis"
+                                    }
+                                  ],
+                                  "mana": []
+                                },
+                                "modal": {
+                                  "modes": [
+                                    {
+                                      "clauses": [
+                                        {
+                                          "effects": [
+                                            {
+                                              "type": "FlipCoin",
+                                              "value": {
+                                                "slot": "flip"
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "condition": {
+                                            "type": "Compares",
+                                            "value": {
+                                              "comparison": "Exactly",
+                                              "measured": {
+                                                "type": "InSlot",
+                                                "value": "flip"
+                                              },
+                                              "threshold": {
+                                                "type": "Literal",
+                                                "value": 1
+                                              }
+                                            }
+                                          },
+                                          "effects": [
+                                            {
+                                              "type": "DealDamage",
+                                              "value": {
+                                                "parts": [
+                                                  {
+                                                    "quantity": {
+                                                      "type": "Literal",
+                                                      "value": 3
+                                                    },
+                                                    "ref": {
+                                                      "type": "InSlot",
+                                                      "value": "target"
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ],
+                                      "targetSlots": {
+                                        "target": {
+                                          "pool": {
+                                            "type": "AnyTarget"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Artifact"
+                                },
+                                {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  }
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Kandoka"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}

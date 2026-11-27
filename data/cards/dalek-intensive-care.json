@@ -1,0 +1,249 @@
+{
+  "faces": [
+    {
+      "name": "Dalek Intensive Care",
+      "oracleText": "When you planeswalk to Dalek Intensive Care and at the beginning of your upkeep, exile a non-Dalek creature you control. If you do, create a 3/3 black Dalek artifact creature token with menace. It gains haste until end of turn.\nWhenever chaos ensues, target Dalek you control deals damage equal to its power to target creature you don't control.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "TurnedUpOffDeck",
+                "value": {
+                  "type": "Self"
+                }
+              },
+              {
+                "type": "StepBegins",
+                "value": {
+                  "phase": {
+                    "type": "Beginning",
+                    "value": "Upkeep"
+                  },
+                  "scope": {
+                    "type": "PlayersTurn",
+                    "value": {
+                      "type": "Relative",
+                      "value": "You"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ChoosePermanents",
+                        "value": {
+                          "permanents": {
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "HasSubtype",
+                                    "value": "Dalek"
+                                  }
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "chosen"
+                        }
+                      },
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "chosen"
+                          },
+                          "zone": "Exile"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Black"
+                                ],
+                                "keywords": [
+                                  {
+                                    "type": "Menace"
+                                  }
+                                ],
+                                "name": "Dalek Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 3
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 3
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Dalek"
+                                  ],
+                                  "types": [
+                                    "Artifact",
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "slot": "token"
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Haste"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "token"
+                          }
+                        }
+                      }
+                    ],
+                    "ifTaken": {
+                      "type": "AnyTaken",
+                      "value": [
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "DealDamage",
+                        "value": {
+                          "dealer": "dealer",
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "AgainstSlot",
+                                "value": {
+                                  "quantity": {
+                                    "type": "Measure",
+                                    "value": "Power"
+                                  },
+                                  "slot": "dealer"
+                                }
+                              },
+                              "ref": {
+                                "type": "InSlot",
+                                "value": "victim"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "dealer": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HasSubtype",
+                          "value": "Dalek"
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  },
+                  "victim": {
+                    "filter": {
+                      "type": "Not",
+                      "value": {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "You"
+                        }
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "TheDalekAsylum"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}

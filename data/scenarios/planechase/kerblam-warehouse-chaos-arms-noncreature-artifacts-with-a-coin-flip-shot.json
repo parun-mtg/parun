@@ -1,0 +1,292 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mind Stone",
+            "label": "stone"
+          },
+          {
+            "card": "Sol Ring",
+            "label": "sol"
+          },
+          {
+            "card": "Darksteel Relic",
+            "label": "relic"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "orni",
+            "ready": true
+          }
+        ],
+        "command": [
+          {
+            "card": "Kerblam! Warehouse",
+            "label": "kerblam"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice",
+        "sideDecks": [
+          {
+            "key": "Planar",
+            "value": [
+              {
+                "card": "Academy at Tolaria West"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Colossal Dreadmaw",
+            "label": "maw"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Kerblam! Warehouse chaos arms noncreature artifacts with a coin-flip shot",
+  "note": "After chaos alice sacrifices Mind Stone, wins the flip and deals 3 to bob's Dreadmaw; Ornithopter, an artifact creature, gains nothing. On bob's turn Sol Ring still has the ability, and a lost flip deals nothing. On alice's next turn Darksteel Relic has lost it.",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "RollPlanarDie"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "RollDie",
+          "with": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 0,
+          "object": "$orni",
+          "targets": [
+            "$maw"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 2,
+          "object": "$stone",
+          "targets": [
+            "$maw"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "CallCoin",
+          "with": "Heads"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "FlipCoin",
+          "with": "Heads"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 3,
+          "object": "$maw"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mind Stone",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "object": "$sol",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "CallCoin",
+          "with": "Heads"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "FlipCoin",
+          "with": "Tails"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Sol Ring",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 0,
+          "object": "$relic",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "faces": [
+    {
+      "name": "Gardens of Tranquil Repose",
+      "oracleText": "Suspended Animation — Whenever a creature dies, exile it. Its controller scries 1.\nWhenever chaos ensues, create X 3/3 black Dalek artifact creature tokens with menace, where X is one plus the number of cards exiled with Gardens of Tranquil Repose.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ],
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "origin": "Graveyard",
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "became"
+                          },
+                          "zone": "Exile"
+                        }
+                      },
+                      {
+                        "type": "Scry",
+                        "value": {
+                          "player": {
+                            "type": "HolderOfBound",
+                            "value": {
+                              "holder": "Controller",
+                              "hop": "Itself",
+                              "slot": "thatDepartedPermanent"
+                            }
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Black"
+                                ],
+                                "keywords": [
+                                  {
+                                    "type": "Menace"
+                                  }
+                                ],
+                                "name": "Dalek Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 3
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 3
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Dalek"
+                                  ],
+                                  "types": [
+                                    "Artifact",
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Plus",
+                            "value": {
+                              "left": {
+                                "type": "Literal",
+                                "value": 1
+                              },
+                              "right": {
+                                "type": "Count",
+                                "value": {
+                                  "aggregation": {
+                                    "type": "Members"
+                                  },
+                                  "filter": {
+                                    "type": "IsExiledWithSource",
+                                    "value": {
+                                      "type": "OwnAbilities"
+                                    }
+                                  },
+                                  "scope": {
+                                    "type": "InZone",
+                                    "value": {
+                                      "player": {
+                                        "type": "Relative",
+                                        "value": "AnyPlayer"
+                                      },
+                                      "zone": "Exile"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Necros"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}
