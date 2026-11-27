@@ -157,6 +157,7 @@ chosen view o =
       <> each ObjectView.chosenNames named
       <> each ObjectView.chosenPlayers (fmap (uncurry picked) . Map.toList)
       <> each ObjectView.chosenNumber (\n -> [(show n, "Chosen number: " <> show n)])
+      <> each ObjectView.chosenNumberBy (fmap (\(p, n) -> (seat p <> ": " <> show n, seat p <> " chose number " <> show n)) . Map.toList)
       <> each ObjectView.chosenObjects (\ids -> [("Chose " <> objects ids, "Chosen: " <> objects ids) | not (Set.null ids)])
   where
     -- Every acquisition's choice of one kind.

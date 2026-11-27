@@ -1199,6 +1199,7 @@ specialActionNames asking x = case x of
 turnScopeNames :: (Monoid r) => Asking r -> TurnScope.TurnScope -> r
 turnScopeNames asking x = case x of
   TurnScope.PlayersTurn playerRef -> playerRefNames asking playerRef
+  TurnScope.FirstTurnOfGame -> mempty
 
 duringPhaseNames :: (Monoid r) => Asking r -> DuringPhase.DuringPhase -> r
 duringPhaseNames asking x = case x of

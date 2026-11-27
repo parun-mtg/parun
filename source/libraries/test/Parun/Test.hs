@@ -753,6 +753,7 @@ import qualified Parun.Codec.PutCounterOfEachKindSpec
 import qualified Parun.Codec.PutCountersFromSpec
 import qualified Parun.Codec.PutCountersSpec
 import qualified Parun.Codec.PutIntoZoneTriggerSpec
+import qualified Parun.Codec.QualityChooserSpec
 import qualified Parun.Codec.QuantitySpec
 import qualified Parun.Codec.QuestionSpec
 import qualified Parun.Codec.QuotientSpec
@@ -2063,6 +2064,7 @@ spec s reference corpus = do
   Parun.Codec.SourceChoicesSpec.spec s
   Parun.Codec.SourceDealtDamageSpec.spec s
   Parun.Codec.SourcePlayerSpec.spec s
+  Parun.Codec.QualityChooserSpec.spec s
   Parun.Codec.SourceSpec.spec s
   Parun.Codec.SpecialActionSpec.spec s
   Parun.Codec.SpeedDecreaseSpec.spec s

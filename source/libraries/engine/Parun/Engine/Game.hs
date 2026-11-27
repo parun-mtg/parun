@@ -1133,7 +1133,7 @@ handChoices :: Acquisition.Acquisition -> ObjectId -> ObjectId -> GameState -> G
 handChoices acquisition from to gs =
   let hand :: Chosen.Chosen a -> GameState -> GameState
       hand field = recordChoice field (acquisitionOf to gs) (const (choiceWithLastKnown field acquisition from gs)) to
-   in (hand Chosen.Colors . hand Chosen.Colorless . hand Chosen.Subtype . hand Chosen.CardType . hand Chosen.Names . hand Chosen.Players . hand Chosen.Number . hand Chosen.Objects) gs
+   in (hand Chosen.Colors . hand Chosen.Colorless . hand Chosen.Subtype . hand Chosen.CardType . hand Chosen.Names . hand Chosen.Players . hand Chosen.Number . hand Chosen.NumberBy . hand Chosen.Objects) gs
 
 -- | The Object field `field` names.
 objectChoices :: Chosen.Chosen a -> Object -> Map.Map Acquisition.Acquisition a
@@ -1145,6 +1145,7 @@ objectChoices field = case field of
   Chosen.Names -> Object.chosenNames
   Chosen.Players -> Object.chosenPlayers
   Chosen.Number -> Object.chosenNumber
+  Chosen.NumberBy -> Object.chosenNumberBy
   Chosen.Objects -> Object.chosenObjects
 
 -- | objectChoices' field, rewritten.
@@ -1157,6 +1158,7 @@ overObjectChoices field f o = case field of
   Chosen.Names -> o {Object.chosenNames = f (Object.chosenNames o)}
   Chosen.Players -> o {Object.chosenPlayers = f (Object.chosenPlayers o)}
   Chosen.Number -> o {Object.chosenNumber = f (Object.chosenNumber o)}
+  Chosen.NumberBy -> o {Object.chosenNumberBy = f (Object.chosenNumberBy o)}
   Chosen.Objects -> o {Object.chosenObjects = f (Object.chosenObjects o)}
 
 -- | The LastKnown field `field` names: objectChoices' as the object left.
@@ -1169,6 +1171,7 @@ lastKnownChoices field = case field of
   Chosen.Names -> LastKnown.chosenNames
   Chosen.Players -> LastKnown.chosenPlayers
   Chosen.Number -> LastKnown.chosenNumber
+  Chosen.NumberBy -> LastKnown.chosenNumberBy
   Chosen.Objects -> LastKnown.chosenObjects
 
 -- | lastKnownChoices' field, rewritten.
@@ -1181,6 +1184,7 @@ overLastKnownChoices field f lk = case field of
   Chosen.Names -> lk {LastKnown.chosenNames = f (LastKnown.chosenNames lk)}
   Chosen.Players -> lk {LastKnown.chosenPlayers = f (LastKnown.chosenPlayers lk)}
   Chosen.Number -> lk {LastKnown.chosenNumber = f (LastKnown.chosenNumber lk)}
+  Chosen.NumberBy -> lk {LastKnown.chosenNumberBy = f (LastKnown.chosenNumberBy lk)}
   Chosen.Objects -> lk {LastKnown.chosenObjects = f (LastKnown.chosenObjects lk)}
 
 -- CR 509.1g: is this creature blocking? Combat.blockers is keyed by ATTACKER, so
@@ -1216,22 +1220,29 @@ hostOf oid gs = lookupObject oid gs >>= Object.attachedTo >>= Recipient.objectOf
 enchantedPlayerOf :: ObjectId -> GameState -> Maybe PlayerId
 enchantedPlayerOf oid gs = lookupObject oid gs >>= Object.attachedTo >>= Recipient.playerOf
 
--- | CR 303.4b / 607.2d: the player this object names as `which`, live off the
--- board -- the ONE reading every SourcePlayer carrier goes through. Nothing
--- where it enchants or chose nobody.
-sourcePlayerOf :: SourcePlayer.SourcePlayer -> ObjectId -> GameState -> Maybe PlayerId
-sourcePlayerOf which = case which of
-  SourcePlayer.Enchanted -> enchantedPlayerOf
-  SourcePlayer.Chosen -> chosenPlayerOf
+-- | CR 303.4b / 607.2d / 607.2f: the players this object names as `which`,
+-- live off the board -- the ONE reading every SourcePlayer carrier goes
+-- through. Empty where it enchants or chose nobody.
+sourcePlayersOf :: SourcePlayer.SourcePlayer -> ObjectId -> GameState -> Set.Set PlayerId
+sourcePlayersOf which oid gs = case which of
+  SourcePlayer.Enchanted -> foldMap Set.singleton (enchantedPlayerOf oid gs)
+  SourcePlayer.Chosen -> foldMap Set.singleton (chosenPlayerOf oid gs)
+  SourcePlayer.LastChoseWord n -> lastChoseWord n (currentChoice Chosen.NumberBy oid gs)
 
--- sourcePlayerOf through CR 608.2h / 603.10a: an Aura that has left still names
--- the player it enchanted as it left. A chosen player is read live, so a scheme
--- abandoned and set in motion again, a new object (CR 400.9), has chosen nobody
--- until it chooses.
-sourcePlayerWithLastKnown :: SourcePlayer.SourcePlayer -> ObjectId -> GameState -> Maybe PlayerId
-sourcePlayerWithLastKnown which = case which of
-  SourcePlayer.Enchanted -> enchantedPlayerWithLastKnown
-  SourcePlayer.Chosen -> chosenPlayerOf
+-- sourcePlayersOf through CR 608.2h / 603.10a: an Aura that has left still names
+-- the player it enchanted as it left, and a source still names the words its
+-- choosers last chose under `acquisition` (CR 607.5). A chosen player is read
+-- live, so a scheme abandoned and set in motion again, a new object (CR 400.9),
+-- has chosen nobody until it chooses.
+sourcePlayersWithLastKnown :: Acquisition.Acquisition -> SourcePlayer.SourcePlayer -> ObjectId -> GameState -> Set.Set PlayerId
+sourcePlayersWithLastKnown acquisition which oid gs = case which of
+  SourcePlayer.Enchanted -> foldMap Set.singleton (enchantedPlayerWithLastKnown oid gs)
+  SourcePlayer.Chosen -> foldMap Set.singleton (chosenPlayerOf oid gs)
+  SourcePlayer.LastChoseWord n -> lastChoseWord n (choiceWithLastKnown Chosen.NumberBy acquisition oid gs)
+
+-- CR 607.2f: the choosers whose last word (Object.chosenNumberBy) is the one at position `n`.
+lastChoseWord :: Natural -> Maybe (Map.Map PlayerId Natural) -> Set.Set PlayerId
+lastChoseWord n = foldMap (Map.keysSet . Map.filter (== n))
 
 -- hostOf through CR 608.2h: for an object that has left, what it was attached
 -- to as it left (Parun.Types.LastKnown.host).

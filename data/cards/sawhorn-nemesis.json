@@ -46,13 +46,17 @@
                     "holder": "Controller",
                     "relation": {
                       "type": "NamedBySource",
-                      "value": "Chosen"
+                      "value": {
+                        "type": "Chosen"
+                      }
                     }
                   }
                 },
                 "whoRecipient": {
                   "type": "NamedBySource",
-                  "value": "Chosen"
+                  "value": {
+                    "type": "Chosen"
+                  }
                 }
               },
               "rewrite": {

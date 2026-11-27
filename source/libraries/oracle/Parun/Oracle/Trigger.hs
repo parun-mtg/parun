@@ -417,16 +417,21 @@ step s = case (StepBegins.phase s, StepBegins.ordinal s, StepBegins.scope s) of
       TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer) -> ["each player's " <> name] <> ["each " <> name | b == BeginningStep.Upkeep]
       TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.Opponent) -> ["each opponent's " <> name]
       TurnScope.PlayersTurn ref -> namedPlayers name ref
+      TurnScope.FirstTurnOfGame -> []
+  -- Two Streams Facility.
+  (Phase.Beginning BeginningStep.Upkeep, Just 1, TurnScope.FirstTurnOfGame) -> ["the first upkeep of the game"]
   (Phase.Combat CombatStep.BeginningOfCombat, Nothing, scope) -> case scope of
     TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You) -> ["combat on your turn"]
     TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer) -> ["each combat"]
     TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.Opponent) -> ["combat on each opponent's turn"]
     TurnScope.PlayersTurn _ -> []
+    TurnScope.FirstTurnOfGame -> []
   (Phase.Ending EndingStep.EndStep, Nothing, scope) -> case scope of
     TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You) -> ["your end step"]
     TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer) -> ["each end step", "the end step", "each player's end step"]
     TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.Opponent) -> ["each opponent's end step"]
     TurnScope.PlayersTurn ref -> namedPlayers "end step" ref
+    TurnScope.FirstTurnOfGame -> []
   (Phase.PostcombatMain, Just 2, TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)) -> ["your second main phase"]
   (Phase.PostcombatMain, Nothing, TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)) -> ["each of your postcombat main phases"]
   _ -> []

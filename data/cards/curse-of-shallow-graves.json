@@ -32,7 +32,9 @@
               "value": {
                 "attacked": {
                   "type": "NamedBySource",
-                  "value": "Enchanted"
+                  "value": {
+                    "type": "Enchanted"
+                  }
                 },
                 "attacker": "AnyPlayer"
               }

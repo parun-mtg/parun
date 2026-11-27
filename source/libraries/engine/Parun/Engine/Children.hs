@@ -1355,7 +1355,7 @@ effectChildren c effect = case effect of
         AnotherCounter.ChosenKind named -> AnotherCounter.ChosenKind <$> onSlot c named
   Effect.ChooseCardName (ChooseCardName.MkChooseCardName who restriction among selection) ->
     fmap Effect.ChooseCardName (ChooseCardName.MkChooseCardName <$> onPlayer c who <*> onFilter c restriction <*> traverse (onSlot c) among <*> pure selection)
-  Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality linked secret) -> fmap Effect.ChooseQuality (ChooseQuality.MkChooseQuality <$> chosenQualityChildren (onSubtype c) (onFilter c) quality <*> pure linked <*> pure secret)
+  Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality linked secret chooser) -> fmap Effect.ChooseQuality (ChooseQuality.MkChooseQuality <$> chosenQualityChildren (onSubtype c) (onFilter c) quality <*> pure linked <*> pure secret <*> pure chooser)
   Effect.Bolster quantity -> fmap Effect.Bolster (onQuantity c quantity)
   Effect.Amass (Amass.MkAmass who quantity kind named) -> fmap Effect.Amass (Amass.MkAmass <$> onPlayer c who <*> onQuantity c quantity <*> pure kind <*> traverse (onSlot c) named)
   Effect.Blight (Blight.MkBlight who quantity named) -> fmap Effect.Blight (Blight.MkBlight <$> onPlayer c who <*> onQuantity c quantity <*> traverse (onSlot c) named)

@@ -87,11 +87,18 @@ sharesTurnUnder settings one other =
 -- members' turn. "Your turn" is sharesTurn with `own`; "an opponent's turn" is
 -- CR 102.3's relation, which in a two-player game (CR 102.2) and a Free-for-All
 -- (CR 806.1) is any other seat, and in a game between teams is a seat on another
--- team. A reference no reader can answer admits no turn.
+-- team. A reference no reader can answer admits no turn. The game's first
+-- turn is turn number 1 (Parun.Engine.Setup), whoever is active.
 turnScopeAdmits :: (PlayerRef.PlayerRef -> Maybe [PlayerId]) -> GameState -> TurnScope.TurnScope -> PlayerId -> PlayerId -> Bool
-turnScopeAdmits named gs scope@(TurnScope.PlayersTurn ref) active own = case ref of
-  PlayerRef.Relative _ -> any (\player -> sharesTurn gs active player && scopeNames named gs scope own player) (GameState.seating gs)
-  _ -> maybe False (any (sharesTurn gs active)) (named ref)
+turnScopeAdmits named gs scope active own = case scope of
+  TurnScope.FirstTurnOfGame -> isFirstTurn gs
+  TurnScope.PlayersTurn ref -> case ref of
+    PlayerRef.Relative _ -> any (\player -> sharesTurn gs active player && scopeNames named gs scope own player) (GameState.seating gs)
+    _ -> maybe False (any (sharesTurn gs active)) (named ref)
+
+-- CR 103.8: is this the game's first turn?
+isFirstTurn :: GameState -> Bool
+isFirstTurn gs = TurnRegisters.turnNumber (GameState.turn gs) == 1
 
 -- CR 102.1: does the scope name this seat, read against `own`? A relation (CR
 -- 102.2 / 102.3) is judged between the two seats directly, over no roster:
@@ -100,23 +107,29 @@ turnScopeAdmits named gs scope@(TurnScope.PlayersTurn ref) active own = case ref
 -- upkeep. Any other reference names the seats `named` answers for it
 -- (Parun.Engine.Count.scopePlayers, from the reader's source).
 scopeNames :: (PlayerRef.PlayerRef -> Maybe [PlayerId]) -> GameState -> TurnScope.TurnScope -> PlayerId -> PlayerId -> Bool
-scopeNames named gs (TurnScope.PlayersTurn ref) own player = case ref of
-  PlayerRef.Relative relation -> PlayerRelation.holds (GameSettings.teams (MatchScope.settings (GameState.match gs))) relation own player
-  _ -> maybe False (elem player) (named ref)
+scopeNames named gs scope own player = case scope of
+  -- Whoever takes it.
+  TurnScope.FirstTurnOfGame -> isFirstTurn gs
+  TurnScope.PlayersTurn ref -> case ref of
+    PlayerRef.Relative relation -> PlayerRelation.holds (GameSettings.teams (MatchScope.settings (GameState.match gs))) relation own player
+    _ -> maybe False (elem player) (named ref)
 
 -- | CR 109.5 / 603.3a: is the scope "your turn" as such -- the controller's own,
 -- and no other seat's? The turn-scope classification
 -- (Parun.Engine.Event.controllerTurnScoped) asks only this.
 isControllersTurn :: TurnScope.TurnScope -> Bool
-isControllersTurn (TurnScope.PlayersTurn ref) = ref == PlayerRef.Relative PlayerRelation.You
+isControllersTurn scope = scope == TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)
 
 -- | Can a reader with no CR 109.5 "you" answer the scope? Only a
 -- perspective-free relation, "each turn" (PlayerRelation.perspectiveFree),
--- which then admits every turn.
+-- which then admits every turn, or the game's first turn, which names no
+-- player.
 perspectiveFree :: TurnScope.TurnScope -> Bool
-perspectiveFree (TurnScope.PlayersTurn ref) = case ref of
-  PlayerRef.Relative relation -> PlayerRelation.perspectiveFree relation
-  _ -> False
+perspectiveFree scope = case scope of
+  TurnScope.FirstTurnOfGame -> True
+  TurnScope.PlayersTurn ref -> case ref of
+    PlayerRef.Relative relation -> PlayerRelation.perspectiveFree relation
+    _ -> False
 
 -- | CR 805.4a / 805.9: is this player an active player -- the active player, or
 -- under the shared team turns option a member of the active team? In Grand

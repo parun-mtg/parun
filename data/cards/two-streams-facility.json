@@ -1,0 +1,175 @@
+{
+  "faces": [
+    {
+      "name": "Two Streams Facility",
+      "oracleText": "Whenever you planeswalk to Two Streams Facility and at the beginning of the first upkeep of the game, each player chooses green anchor or red waterfall.\nEach player who last chose green anchor may play an additional land during each of their turns.\nCreatures controlled by players who last chose red waterfall get +2/+0 and have haste.\nWhenever chaos ensues, each player who last chose green anchor chooses red waterfall, and vice versa.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "PlayAdditionalLands",
+            "value": {
+              "type": "Additional",
+              "value": 1
+            }
+          },
+          "scope": {
+            "type": "NamedBySource",
+            "value": {
+              "type": "LastChoseWord",
+              "value": 1
+            }
+          }
+        }
+      ],
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": {
+                      "type": "NamedBySource",
+                      "value": {
+                        "type": "LastChoseWord",
+                        "value": 2
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 2
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 0
+                }
+              }
+            },
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Haste"
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "TurnedUpOffDeck",
+                "value": {
+                  "type": "Self"
+                }
+              },
+              {
+                "type": "StepBegins",
+                "value": {
+                  "ordinal": 1,
+                  "phase": {
+                    "type": "Beginning",
+                    "value": "Upkeep"
+                  },
+                  "scope": {
+                    "type": "FirstTurnOfGame"
+                  }
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ChooseQuality",
+                        "value": {
+                          "chooser": {
+                            "type": "EachPlayer",
+                            "value": "MayRepeat"
+                          },
+                          "linked": true,
+                          "quality": {
+                            "type": "Word",
+                            "value": [
+                              "green anchor",
+                              "red waterfall"
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ChooseQuality",
+                        "value": {
+                          "chooser": {
+                            "type": "EachPlayer",
+                            "value": "Distinct"
+                          },
+                          "linked": true,
+                          "quality": {
+                            "type": "Word",
+                            "value": [
+                              "green anchor",
+                              "red waterfall"
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Apalapucia"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}
