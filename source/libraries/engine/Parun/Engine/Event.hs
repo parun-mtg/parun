@@ -345,6 +345,7 @@ import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.StickerPlacement as StickerPlacement
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.TapCause as TapCause
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Throw as Throw
 import qualified Parun.Types.ThrowKind as ThrowKind
@@ -1417,18 +1418,32 @@ withRiders keywords de =
 -- reaches it (Scryfall `o:"become tapped" o:instead`, 2026-10-22, the Mask
 -- alone), so CR 616.1 has one candidate and applying it here is that loop. A
 -- printing that replaced tapping in some other way would want the event.
-tap :: PlayerId -> ObjectId -> Game ()
-tap tapper oid = do
+--
+-- CR 101.2 is the other guard: a permanent an effect says can't become tapped
+-- (Prohibition.TapExceptAttacking) is left alone unless `cause` is its
+-- declaration as an attacker -- Ood Sphere's exception, and its ruling's "can't
+-- be tapped by effects or tapped to pay any costs". A cost never reaches here
+-- with one: Parun.Engine.Cost's candidates and TapThis gate drop it first (CR
+-- 118.3).
+tap :: TapCause.TapCause -> PlayerId -> ObjectId -> Game ()
+tap cause tapper oid = do
   before <- State.get
   case Game.lookupObject oid before of
     Just obj
-      | Object.tapped obj == TapState.Untapped -> do
+      | Object.tapped obj == TapState.Untapped && tapPermitted cause oid before -> do
           Monad.when (turnsUpBefore TurnUpEvent.BecomesTapped oid before) (turnFaceUpByStatus oid)
           gs <- State.get
           State.put
             . recordEvent (GameEvent.BecameTapped (BecameTapped.MkBecameTapped oid tapper))
             $ gs {GameState.objects = Map.adjust (\o -> o {Object.tapped = TapState.Tapped}) oid (GameState.objects gs)}
     _ -> pure ()
+
+-- CR 101.2 / 508.1f: may `cause` tap `oid` past the TapExceptAttacking
+-- prohibitions in force?
+tapPermitted :: TapCause.TapCause -> ObjectId -> GameState -> Bool
+tapPermitted cause oid gs = case cause of
+  TapCause.DeclaredAsAttacker -> True
+  TapCause.OtherTap -> Set.null (RestrictedCreatures.prohibited Prohibition.TapExceptAttacking [oid] gs)
 
 -- CR 614.1a / Illusionary Mask: does this permanent's face-down status turn it
 -- face up before this event (FaceDownState.turnsUpBefore)? The read the two
@@ -5213,7 +5228,7 @@ apply settle batch applied batchPrevented candidate event =
         -- Rule 701.19a's "its controller taps it" names the tapper.
         State.modify' (\gs -> gs {GameState.objects = Map.adjust (\obj -> obj {Object.damage = 0}) oid (GameState.objects gs)})
         tapper <- State.gets (Projection.controllerOf oid)
-        Monad.forM_ tapper (`tap` oid)
+        Monad.forM_ tapper (\who -> tap TapCause.OtherTap who oid)
         State.modify' (Game.removeFromCombat oid)
         pure Nothing
       -- CR 122.1c: "instead remove a shield counter from it". The destruction does

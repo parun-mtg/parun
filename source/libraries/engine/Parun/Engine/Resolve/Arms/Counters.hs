@@ -163,6 +163,7 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TakeExtraTurn as TakeExtraTurn
 import qualified Parun.Types.Tap as Tap
+import qualified Parun.Types.TapCause as TapCause
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.WhichCounters as WhichCounters
@@ -1884,7 +1885,7 @@ tap resolving source controller legal (Tap.MkTap ref mTapped mTapper) = do
         [one] -> one
         _ -> controller
   -- One event group, CR 608.2f.
-  Event.simultaneously (Monad.forM_ victims (Event.tap tapper))
+  Event.simultaneously (Monad.forM_ victims (Event.tap TapCause.OtherTap tapper))
   after <- State.get
   Monad.forM_ mTapped $ \slot -> do
     let turned = filter (\oid -> not (tappedIn gs oid) && tappedIn after oid) victims

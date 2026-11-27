@@ -35,6 +35,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PhasedOut as PhasedOut
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.TapCause as TapCause
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 
@@ -73,7 +74,7 @@ spec s registry = Spec.describe s "Ledger" $ do
   Spec.it s "CR 701.26a: a tap through its funnel is accounted for" $ do
     plains <- S.printingOf s registry "Plains"
     let (land, before) = S.addPermanent plains S.alice (S.landsInPlay plains 0)
-        after = S.runPure S.identityAnswer before (Event.tap S.alice land)
+        after = S.runPure S.identityAnswer before (Event.tap TapCause.OtherTap S.alice land)
     Spec.assertEqWith s "no discrepancy" (Ledger.discrepancies before after) []
   Spec.it s "CR 701.26a: a tap with no event is named" $ do
     plains <- S.printingOf s registry "Plains"
@@ -90,7 +91,7 @@ spec s registry = Spec.describe s "Ledger" $ do
     plains <- S.printingOf s registry "Plains"
     let (land, untapped) = S.addPermanent plains S.alice (S.landsInPlay plains 0)
         before = setTapped land TapState.Tapped untapped
-        after = S.runPure S.identityAnswer before (Event.untap land >> Event.tap S.alice land)
+        after = S.runPure S.identityAnswer before (Event.untap land >> Event.tap TapCause.OtherTap S.alice land)
     Spec.assertEqWith s "no discrepancy" (Ledger.discrepancies before after) []
   Spec.it s "CR 119.3: a life change through its funnel is accounted for" $ do
     plains <- S.printingOf s registry "Plains"
@@ -182,7 +183,7 @@ spec s registry = Spec.describe s "Ledger" $ do
   Spec.it s "CR 608.2i: the log carried across a turn handoff is read from both halves" $ do
     plains <- S.printingOf s registry "Plains"
     let (land, before) = S.addPermanent plains S.alice (S.landsInPlay plains 0)
-        tapped = S.runPure S.identityAnswer before (Event.tap S.alice land)
+        tapped = S.runPure S.identityAnswer before (Event.tap TapCause.OtherTap S.alice land)
         handedOff =
           S.withLastTurn
             (TurnRegisters.events (GameState.turn tapped))

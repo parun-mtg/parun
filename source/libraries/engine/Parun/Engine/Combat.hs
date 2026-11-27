@@ -83,6 +83,7 @@ import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RuleWaiver as RuleWaiver
 import qualified Parun.Types.StoredEffects as StoredEffects
+import qualified Parun.Types.TapCause as TapCause
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnWindow as TurnWindow
@@ -2792,7 +2793,7 @@ attemptAttackDeclaration perform pid asked forced rejected = do
             -- Tapped by its own attacking player (CR 805.10a), not the turn's.
             tapIt oid = do
               g <- State.get
-              Monad.unless (Projection.hasKeyword Keyword.Vigilance oid g) (Event.tap (attackerOf oid) oid)
+              Monad.unless (Projection.hasKeyword Keyword.Vigilance oid g) (Event.tap TapCause.DeclaredAsAttacker (attackerOf oid) oid)
         -- UNIONED into the record, not written over it: "the record is mine alone"
         -- is exactly the assumption CR 508.8's second clause breaks, and replacing
         -- the map would silently remove such a creature from combat.
@@ -2940,7 +2941,8 @@ attemptAttackDeclaration perform pid asked forced rejected = do
         -- CR 702.20b can tell that conjunct from the untapped one: rule 508.1f
         -- has already tapped every other attacker. It is also what rule
         -- 702.154c's "it isn't possible for a creature to enlist itself" needs:
-        -- the bearer is in that list.
+        -- the bearer is in that list. CR 101.2: never one an effect says can't
+        -- become tapped (Event.tapPermitted), which no cost may tap.
         --
         -- Summoning.settledOrHastyGiven is CR 508.1a's own haste-or-settled test,
         -- asked here of a creature that is NOT attacking -- rule 702.154a states
@@ -2972,6 +2974,7 @@ attemptAttackDeclaration perform pid asked forced rejected = do
                   notElem cid attacking
                     && Set.member cid (GameState.battlefield g)
                     && fmap Object.tapped (Game.lookupObject cid g) == Just TapState.Untapped
+                    && Event.tapPermitted TapCause.OtherTap cid g
                     && Summoning.settledOrHastyGiven pcs you cid g
                     && isCreatureObjectGiven pcs cid g
                 enlistCandidates = filter enlistable (Projection.controlsGiven grants you g)
@@ -2979,7 +2982,7 @@ attemptAttackDeclaration perform pid asked forced rejected = do
             -- the offer taps nobody and arms nothing.
             answer <- Game.mayChooseAmong (\enlistDecider who -> Prompt.ChooseEnlist enlistDecider who oid) you enlistCandidates
             Monad.forM_ answer $ \tapped -> do
-              Event.tap you tapped
+              Event.tap TapCause.OtherTap you tapped
               State.modify' (Event.recordEvent (GameEvent.Enlisted Enlisted.MkEnlisted {Enlisted.enlister = oid, Enlisted.enlisted = tapped}))
               State.modify' (\armed -> Event.armDelayed DelayedKind.Ordinary Keyword.Engine.enlistReflexive (Projection.delayedSnapshotOf oid armed) oid (Game.acquisitionOf oid armed) Nothing you (Map.singleton Binding.tappedPermanent (Binding.toObject tapped)) (Just TurnWindow.AnyTurn) Nothing armed)
             pure (fmap ((,) you) answer)

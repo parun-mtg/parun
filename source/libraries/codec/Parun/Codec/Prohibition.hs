@@ -14,6 +14,7 @@ codec =
       Arm.nullary "Counters" Prohibition.Counters,
       Arm.nullary "PhaseIn" Prohibition.PhaseIn,
       Arm.nullary "Regenerate" Prohibition.Regenerate,
+      Arm.nullary "TapExceptAttacking" Prohibition.TapExceptAttacking,
       Arm.payload "Untap" UntapScope.codec Prohibition.Untap (\x -> case x of Prohibition.Untap y -> Just y; _ -> Nothing)
     ]
 
@@ -24,4 +25,5 @@ tagOf x = case x of
   Prohibition.Counters -> "Counters"
   Prohibition.PhaseIn -> "PhaseIn"
   Prohibition.Regenerate -> "Regenerate"
+  Prohibition.TapExceptAttacking -> "TapExceptAttacking"
   Prohibition.Untap {} -> "Untap"

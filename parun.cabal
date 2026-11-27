@@ -4058,6 +4058,7 @@ library types
     Parun.Types.Taking
     Parun.Types.Tally
     Parun.Types.Tap
+    Parun.Types.TapCause
     Parun.Types.TapCount
     Parun.Types.TapForMana
     Parun.Types.TapForTotalPower

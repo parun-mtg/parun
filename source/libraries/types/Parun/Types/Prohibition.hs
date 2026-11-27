@@ -16,6 +16,9 @@ data Prohibition
     PhaseIn
   | -- | It can't be regenerated (CR 701.19c).
     Regenerate
+  | -- | It can't become tapped except by being declared as an attacker (CR
+    -- 101.2, 508.1f, 701.26a).
+    TapExceptAttacking
   | -- | It doesn't untap in the scope given (CR 502.3, 701.26b).
     Untap UntapScope.UntapScope
   deriving (Eq, Ord, Show)

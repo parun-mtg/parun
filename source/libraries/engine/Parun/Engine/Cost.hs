@@ -222,6 +222,7 @@ import qualified Parun.Types.SpendTrigger as SpendTrigger
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
+import qualified Parun.Types.TapCause as TapCause
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
 import qualified Parun.Types.TapKeyword as TapKeyword
 import qualified Parun.Types.TapPermanents as TapPermanents
@@ -2759,7 +2760,7 @@ revealFromHandCandidates = discardCandidates
 -- battlefield permanents this player CONTROLS that the criterion admits. The
 -- hand is Behold.cardZone's default; Close Encounter's names exile instead.
 --
--- NARROWED to what the payer controls, unlike `tapCandidates` and
+-- NARROWED to what the payer controls, unlike `criterionPool` and
 -- `returnCandidates`: rule 701.4a says "a [quality] permanent you control", so
 -- the restriction is the RULE's and not the card's -- Caustic Exhale's criterion
 -- states "a Dragon" and nothing else, and narrowing anywhere but here would put
@@ -3184,12 +3185,26 @@ faceCast oid gs = do
 -- colours (CR 702.78a). Both read the PAYER as "you" and the permanent
 -- whose ability is being paid for as the source -- without it a Vehicle that has
 -- already become a creature could crew itself.
+--
+-- CR 101.2 / 118.3: less every permanent an effect says can't become tapped
+-- (Event.tapPermitted), so the gate and the payment both pass it over.
 tapCandidates :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
 tapCandidates slots pid oid criterion gs = tapCandidatesGiven (Snapshot.onDemand gs) slots pid oid criterion gs
 
 -- The same pool read off a snapshot of `gs` the caller already took.
 tapCandidatesGiven :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
 tapCandidatesGiven board slots pid oid criterion gs =
+  filter (\candidate -> Event.tapPermitted TapCause.OtherTap candidate gs) (criterionPoolGiven board slots pid oid criterion gs)
+
+-- Every battlefield object a cost's criterion admits, ascending: the pool
+-- `tapCandidatesGiven` narrows, and the one a return or a counter removal reads
+-- whole.
+criterionPool :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
+criterionPool slots pid oid criterion gs = criterionPoolGiven (Snapshot.onDemand gs) slots pid oid criterion gs
+
+-- The same pool read off a snapshot of `gs` the caller already took.
+criterionPoolGiven :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
+criterionPoolGiven board slots pid oid criterion gs =
   let -- CR 702.122d's and 702.196b's prohibitions ride the CONTEXT rather
       -- than narrowing the pool here, and that is what confines each rule to its
       -- keyword's cost: the atom that reads them is written into rule
@@ -3219,13 +3234,13 @@ tapCandidatesGiven board slots pid oid criterion gs =
 -- another permanent.
 turnCandidatesGiven :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> TapPermanents.TapPermanents Keyword.Type.Keyword -> GameState -> [ObjectId]
 turnCandidatesGiven board slots pid oid tap gs =
-  let pool = tapCandidatesGiven board slots pid oid (TapPermanents.whichPermanents tap) gs
+  let criterion = TapPermanents.whichPermanents tap
       untappable candidate =
         fmap Object.tapped (Game.lookupObject candidate gs) == Just TapState.Tapped
           && not (UntapRestriction.cantBecomeUntapped candidate gs)
    in case TapPermanents.becoming tap of
-        TapState.Tapped -> pool
-        TapState.Untapped -> filter untappable pool
+        TapState.Tapped -> tapCandidatesGiven board slots pid oid criterion gs
+        TapState.Untapped -> filter untappable (criterionPoolGiven board slots pid oid criterion gs)
 
 -- The axis a TapPermanents component's turning spends.
 turnAxis :: TapState.TapState -> ClaimAxis.ClaimAxis
@@ -3234,13 +3249,13 @@ turnAxis becoming = case becoming of
   TapState.Untapped -> ClaimAxis.Untapping
 
 -- The permanents this player may return to hand to pay a ReturnPermanents
--- component on `oid`: `tapCandidates`' pool exactly, which is what an alias
+-- component on `oid`: `criterionPool` exactly, which is what an alias
 -- rather than a second walk says -- both ask which battlefield objects the
 -- criterion admits, from the payer's perspective and against `oid` as the
 -- source. The NAMES are what differ, so each cost's arm reads the pool under
 -- the action it takes.
 --
--- NOT narrowed to what the payer controls, `tapCandidates`' reading, and
+-- NOT narrowed to what the payer controls, `criterionPool`'s reading, and
 -- deliberately unlike Replacement.sacrificeCandidates' pool even though
 -- `claimOf` puts both on ClaimAxis.Removal Zone.Battlefield: that one narrows
 -- because CR 701.21a forbids sacrificing a permanent you don't control, and no
@@ -3253,15 +3268,15 @@ turnAxis becoming = case becoming of
 -- additional cost" none either: every printed return cost states it today, so
 -- the two pools coincide for every printing, `data/cards/` included.
 returnCandidates :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
-returnCandidates = tapCandidates
+returnCandidates = criterionPool
 
 -- The same pool read off a snapshot of `gs` the caller already took.
 returnCandidatesGiven :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
-returnCandidatesGiven = tapCandidatesGiven
+returnCandidatesGiven = criterionPoolGiven
 
 -- The permanents this player may take `n` counters of the kinds `which` reaches
 -- off to pay a RemoveCounters component spread FromOne on `oid`:
--- `tapCandidates`' pool narrowed to the ones CR 118.3 leaves payable, since a
+-- `criterionPool` narrowed to the ones CR 118.3 leaves payable, since a
 -- permanent carrying fewer than `n` counters cannot have `n` removed. The narrowing is HERE rather than at the
 -- prompt so that the gate and the payment ask one question, canPayComponent's
 -- posture for every other choosing component.
@@ -3272,7 +3287,7 @@ returnCandidatesGiven = tapCandidatesGiven
 -- `HeldBy Controller You`).
 counterRemovalCandidates :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Natural -> WhichCounters.WhichCounters Keyword.Type.Keyword -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
 counterRemovalCandidates slots pid oid n which criterion gs =
-  filter (\candidate -> sum (removableCounters which candidate gs) >= n) (tapCandidates slots pid oid criterion gs)
+  filter (\candidate -> sum (removableCounters which candidate gs) >= n) (criterionPool slots pid oid criterion gs)
 
 -- `counterRemovalCandidates` for a removal spread FROM AMONG the permanents
 -- (CounterSpread.FromAmong): every admitted permanent carrying at least one
@@ -3287,7 +3302,7 @@ spreadRemovalCandidates slots pid oid which criterion gs =
 -- is the payer's choice as well as which permanent).
 mixedRemovalCandidates :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> WhichCounters.WhichCounters Keyword.Type.Keyword -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> Map.Map ObjectId (Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural)
 mixedRemovalCandidates slots pid oid which criterion gs =
-  Map.filter (not . Map.null) (Map.fromList [(candidate, removableCounters which candidate gs) | candidate <- tapCandidates slots pid oid criterion gs])
+  Map.filter (not . Map.null) (Map.fromList [(candidate, removableCounters which candidate gs) | candidate <- criterionPool slots pid oid criterion gs])
 
 -- The counters of the kinds `which` reaches on one object, by kind.
 removableCounters :: WhichCounters.WhichCounters Keyword.Type.Keyword -> ObjectId -> GameState -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural
@@ -3433,7 +3448,7 @@ largestSharingGroup candidates gs =
 -- every component that taps -- see payComponent's TapThis arm -- which is what
 -- gave all of them the event for one call. The payer is the tapper.
 tapObject :: PlayerId -> ObjectId -> Game ()
-tapObject = Event.tap
+tapObject = Event.tap TapCause.OtherTap
 
 -- What this component SPENDS out of a pool of objects: which resource it draws
 -- on (Parun.Types.ClaimAxis), which objects are in that pool, and how many it
@@ -4885,10 +4900,13 @@ canPayComponent slots pid oid component gs = canPayComponentGiven (Snapshot.onDe
 canPayComponentGiven :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> CostComponent.CostComponent Keyword.Type.Keyword -> GameState -> Bool
 canPayComponentGiven board slots pid oid component gs = case component of
   -- CR 107.5: a permanent that's already tapped can't be tapped again to pay the
-  -- cost.
+  -- cost; CR 101.2: nor one an effect says can't become tapped.
   CostComponent.TapThis -> case Game.lookupObject oid gs of
     Nothing -> False
-    Just obj -> Set.member oid (GameState.battlefield gs) && Object.tapped obj == TapState.Untapped
+    Just obj ->
+      Set.member oid (GameState.battlefield gs)
+        && Object.tapped obj == TapState.Untapped
+        && Event.tapPermitted TapCause.OtherTap oid gs
   -- CR 107.6: the mirror of TapThis above, and CR 614.17b: not while an effect
   -- says it can't become untapped (Blossombind's ruling).
   CostComponent.UntapThis -> case Game.lookupObject oid gs of
