@@ -163,18 +163,31 @@ levelNamed name = List.find ((== name) . fst . levelName) [minBound .. maxBound]
 -- and binding no other player, so no shortcut is proposed (CR 733.2b's
 -- second example, as one seat's setting).
 data Until
-  = -- | The end of this turn: passes while the stack is empty, and declares
-    -- no attackers.
-    MkTurnEnds Natural
+  = -- | Turns, up to the end the bound picks: passes while the stack is
+    -- empty, and declares no attackers.
+    MkTurns Through
   | -- | The seat's priority in this step of this turn.
     MkStep Natural Phase.Phase
   | -- | Something on the stack.
     MkStacked
   deriving (Eq, Show)
 
+-- | Where a stop passing turns ends.
+data Through
+  = -- | The end of this turn.
+    MkThisTurn Natural
+  | -- | The seat's own next turn, through every other player's.
+    MkOwnTurn
+  deriving (Eq, Show)
+
+-- | Whether the turn shown is the seat's own: CR 724.1, a turn the seat
+-- controls is played as its own.
+ownTurn :: Request.Request -> PlayerView.PlayerView -> Bool
+ownTurn request shown = PlayerView.active shown == PlayerView.viewer shown || Question.for (Request.question request) == Just (PlayerView.active shown)
+
 -- | The reply a seat's stop makes for it, and the stop it keeps. Short of a
--- stop the seat passes a priority with an empty stack; MkTurnEnds keeps
--- through a response and ends with its turn; any other ends where it is
+-- stop the seat passes a priority with an empty stack; MkTurns keeps
+-- through a response and ends where its bound does; any other ends where it is
 -- reached, at something on the stack, or at any question but priority (an
 -- attack's blockers, say), so the seat is never answered for a real decision.
 -- The concession asked before each priority (CR 104.3a), which `automatic`
@@ -182,8 +195,8 @@ data Until
 passesFor :: Until -> Request.Request -> (Maybe R.Reply, Maybe Until)
 passesFor stop request = case (stop, Request.view request) of
   (_, Nothing) -> (Nothing, Nothing)
-  (MkTurnEnds turn, Just shown)
-    | PlayerView.turn shown /= turn -> (Nothing, Nothing)
+  (MkTurns through, Just shown)
+    | ended through shown -> (Nothing, Nothing)
     | not (null (PlayerView.stack shown)) -> (Nothing, Just stop)
     | kind == "ChooseAction" -> (pass, Just stop)
     | kind == "DeclareAttackers" -> (Just (R.Array []), Just stop)
@@ -198,6 +211,9 @@ passesFor stop request = case (stop, Request.view request) of
     reached shown = case stop of
       MkStep turn phase -> PlayerView.turn shown /= turn || PlayerView.phase shown >= phase
       _ -> False
+    ended through shown = case through of
+      MkThisTurn turn -> PlayerView.turn shown /= turn
+      MkOwnTurn -> ownTurn request shown
 
 -- | The reply that finishes a payment auto is making, given the source
 -- question auto last answered for the seat: auto's next source, the mana
@@ -1034,8 +1050,7 @@ form request texts picked focused typed = case Text.unpack (Question.kind questi
             -- A mana ability is in its permanent's sheet, not the list.
             rest = filter (not . isManaAbility . snd) others
             controlled = Question.for question
-            -- CR 724.1: a turn the seat controls is played as its own.
-            yours = PlayerView.active shown == PlayerView.viewer shown || controlled == Just (PlayerView.active shown)
+            yours = ownTurn request shown
             settled = null (PlayerView.stack shown)
             turn = PlayerView.turn shown
             -- Where in this turn the seat may ask to pass to; its own combat
@@ -1071,7 +1086,7 @@ form request texts picked focused typed = case Text.unpack (Question.kind questi
                 <> actionGroup "Still yours after you pass" kept
                 <> [ Element.el "div" ["passes"] [] $
                        [primary (MkAnswer $ R.Number i) (Text.pack (if settled then "Pass" else "Pass and resolve")) | (i, _) <- passes]
-                         <> [shortcut ["turn"] "E" (MkSkip (MkTurnEnds turn)) (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
+                         <> [shortcut ["turn"] "E" (MkSkip (MkTurns (if yours then MkThisTurn turn else MkOwnTurn))) (Text.pack (if yours then "End turn" else "Pass to my turn")) | settled, not (null passes)]
                    ]
                 <> [ Element.el "div" ["until"] [] $
                        [Element.button ["quiet"] (MkSkip (MkStep turn target)) [Element.string label] | (target, label) <- steps, PlayerView.phase shown < target]
