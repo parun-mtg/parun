@@ -3,6 +3,7 @@ module Parun.Types.ChosenCardInHand where
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.OnePer as OnePer
 import qualified Parun.Types.PlayerRef as PlayerRef
 
 -- | CR 402.3 with a choice: whose hand is looked in -- which is also who picks --
@@ -18,9 +19,13 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 -- choices that may name
 -- the same card, and The Great Aurora's "any number of land cards" is UpTo
 -- Nothing. CR 609.3 covers the shortfall.
+--
+-- The ONEPER is Parun.Types.ChosenCardFromAmong's: Only I Know What Awaits'
+-- "for each card type among permanents your opponents control".
 data ChosenCardInHand = MkChosenCardInHand
   { player :: PlayerRef.PlayerRef,
     filter :: Filter.Filter Keyword.Keyword,
-    count :: HowMany.HowMany
+    count :: HowMany.HowMany,
+    onePer :: Maybe OnePer.OnePer
   }
   deriving (Eq, Ord, Show)

@@ -3528,7 +3528,7 @@ objectRefChildren c ref = case ref of
   ObjectRef.TopOfGraveyard seat -> ObjectRef.TopOfGraveyard <$> refPlayer c seat
   ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser players filter_ count total) ->
     fmap ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard <$> refChooser c chooser <*> refZones c players <*> refFilter c filter_ <*> howManyChildren (refQuantity c) count <*> traverse (\(TotalCap.MkTotalCap weight most) -> TotalCap.MkTotalCap <$> refQuantity c weight <*> refQuantity c most) total)
-  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand seat filter_ count) -> fmap ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand <$> refPlayer c seat <*> refFilter c filter_ <*> howManyChildren (refQuantity c) count)
+  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand seat filter_ count onePer) -> fmap ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand <$> refPlayer c seat <*> refFilter c filter_ <*> howManyChildren (refQuantity c) count <*> traverse (onePerChildren c) onePer)
   ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong bound filter_ count total onePer differentIn chooser pileChooser faceUpPile selection) ->
     fmap
       ObjectRef.ChosenCardFromAmong

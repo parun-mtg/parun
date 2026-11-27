@@ -2852,7 +2852,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let anyCard = Filter.Type.HasCardType CardType.Creature
         group = SlotName.MkSlotName (Text.pack "revealed")
         inGraveyard = ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard Chooser.TheController (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)) anyCard HowMany.one Nothing)
-        inHand = ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand (PlayerRef.Relative PlayerRelation.You) anyCard HowMany.one)
+        inHand = ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand (PlayerRef.Relative PlayerRelation.You) anyCard HowMany.one Nothing)
         fromAmong = ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong group anyCard HowMany.one Nothing Nothing Set.empty (PlayerRef.Relative PlayerRelation.You) Nothing False CardSelection.ByChoice)
         atRandom = ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Hand (PlayerRef.Relative PlayerRelation.You) anyCard (Quantity.Type.Literal 1))
         atRandomInGraveyard = ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)) anyCard (Quantity.Type.Literal 1))
@@ -3063,7 +3063,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- Calamity keep that half honest;
   -- so is its differentIn, and Rip, Spawn Hunter keeps that half honest.
   -- Parun.Types.ChosenCardInGraveyard's total is read the same way, and Lively
-  -- Dirge keeps that half honest.
+  -- Dirge keeps that half honest. Parun.Types.ChosenCardInHand's onePer is
+  -- too, and Only I Know What Awaits keeps that half honest.
   Spec.it s "no chosen card states a total its pick cannot read" $ do
     ps <- S.allPrintings s corpus
     let capped ref = case ref of
@@ -3074,6 +3075,9 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           _ -> False
         bounded per ref = case ref of
           ObjectRef.ChosenCardFromAmong chosen -> fmap per (ChosenCardFromAmong.onePer chosen) == Just True
+          _ -> False
+        boundedInHand ref = case ref of
+          ObjectRef.ChosenCardInHand chosen -> Maybe.isJust (ChosenCardInHand.onePer chosen)
           _ -> False
         byColor per = case per of
           OnePer.ColorAmong _ -> True
@@ -3089,6 +3093,10 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
                   HowMany.Exactly _ -> True
           ObjectRef.ChosenCardInGraveyard chosen
             | Maybe.isJust (ChosenCardInGraveyard.total chosen) -> case ChosenCardInGraveyard.count chosen of
+                HowMany.UpTo _ -> False
+                HowMany.Exactly _ -> True
+          ObjectRef.ChosenCardInHand chosen
+            | Maybe.isJust (ChosenCardInHand.onePer chosen) -> case ChosenCardInHand.count chosen of
                 HowMany.UpTo _ -> False
                 HowMany.Exactly _ -> True
           ObjectRef.ChosenPermanents chosen -> misreads chosen
@@ -3111,6 +3119,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (any (anyFace (any cappedInGraveyard . refs) . Printing.card) ps) "the pool has a card capping a graveyard choice's total"
     Spec.assertBool s (any (anyFace (any (bounded byColor) . refs) . Printing.card) ps) "the pool has a card bounding a choice by color"
     Spec.assertBool s (any (anyFace (any (bounded (not . byColor)) . refs) . Printing.card) ps) "the pool has a card bounding a choice by card type"
+    Spec.assertBool s (any (anyFace (any boundedInHand . refs) . Printing.card) ps) "the pool has a card bounding a choice from hand"
     Spec.assertBool s (any (anyFace (any keptApart . refs) . Printing.card) ps) "the pool has a card keeping a choice's picks apart"
     Spec.assertEqWith s "a total beside a count that cannot read it" (fmap (S.nameOf . Printing.card) offenders) []
   -- Unprinted: Parun.Engine.Resolve.Common.chosenPermanents' random pick asks
@@ -4711,7 +4720,7 @@ movesAtMostOne ref = case ref of
   -- Aquatic Subtlety's printed two makes the same seat plural, as does
   -- The Great Aurora's "any number", and a COMPUTED count is plural
   -- whatever the board would make it.
-  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand player _ count) -> atMostOne count && namesOneSeat player
+  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand player _ count _) -> atMostOne count && namesOneSeat player
   -- One card per ONE seat, so the ref's own count is the whole of it: a
   -- chooser names a single seat or nobody, where ChosenCardInHand's
   -- PlayerRef above may name several hands. A COMPUTED count is plural

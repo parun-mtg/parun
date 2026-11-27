@@ -828,7 +828,7 @@ refCounts = concatMap quantityCounts . Resolve.objectRefQuantities
 objectRefPositions :: [(String, Effect.Effect () (), [ObjectRef.ObjectRef])]
 objectRefPositions =
   let plainRiders = EntryRiders.defaultValue
-      handChoice = ChosenCardInHand.MkChosenCardInHand (plantedPlayer "xh") (Filter.Type.And []) HowMany.one
+      handChoice = ChosenCardInHand.MkChosenCardInHand (plantedPlayer "xh") (Filter.Type.And []) HowMany.one Nothing
    in [ ("deal-damage", Effect.DealDamage (DealDamage.MkDealDamage (Seq.fromList [DamagePart.MkDamagePart (plantedRef "dd1") (Quantity.Type.Literal 1), DamagePart.MkDamagePart (plantedRef "dd2") (Quantity.Type.Literal 1)]) (Just (SlotName.MkSlotName (Text.pack "dd"))) (Just (plantedRef "dd3")) Nothing Nothing Nothing Nothing), [plantedRef "dd1", plantedRef "dd2", plantedRef "dd3"]),
         ("modify-target", Effect.ModifyTarget (ModifyTarget.MkModifyTarget Duration.UntilEndOfTurn (Modification.GainKeyword Keyword.Flying) (plantedRef "mt") Nothing), [plantedRef "mt"]),
         ("restart-game", Effect.RestartGame (Just (plantedRef "rg")), [plantedRef "rg"]),
@@ -1016,7 +1016,7 @@ objectRefPlayerRefPositions =
   [ ("top-of-library", ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (plantedPlayer "tl") (Quantity.Type.Literal 1) Nothing LibraryPosition.Top), [plantedPlayer "tl"]),
     ("top-of-library-until", ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (plantedPlayer "tu") (Filter.Type.And []) (Quantity.Type.Literal 1) (Quantity.Type.Literal 1) Nothing), [plantedPlayer "tu"]),
     ("top-of-graveyard", ObjectRef.TopOfGraveyard (plantedPlayer "tg"), [plantedPlayer "tg"]),
-    ("chosen-card-in-hand", ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand (plantedPlayer "ch") (Filter.Type.And []) HowMany.one), [plantedPlayer "ch"]),
+    ("chosen-card-in-hand", ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand (plantedPlayer "ch") (Filter.Type.And []) HowMany.one Nothing), [plantedPlayer "ch"]),
     ("random-card-in-hand", ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Hand (plantedPlayer "rh") (Filter.Type.And []) (Quantity.Type.Literal 1)), [plantedPlayer "rh"]),
     ("random-card-in-library", ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Library (plantedPlayer "rl") (Filter.Type.And []) (Quantity.Type.Literal 1)), [plantedPlayer "rl"]),
     -- And the two CHOOSERS, which name a seat without counting per seat --
@@ -3704,7 +3704,7 @@ objectRefFilters ref = case ref of
   -- choosers, who are also the hands' owners (CR 402.3), so the Filter and
   -- Aquatic Subtlety's count are what there is to lint -- the chosen graveyard
   -- card's arm's answer, for its reason.
-  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand _ f _) -> unframed [f] <> refFilters ref
+  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand _ f _ onePer) -> unframed (f : foldMap onePerFilters onePer) <> refFilters ref
   -- Commune with the Gods' "a creature or enchantment card from among them"; its
   -- slot names the group and holds no characteristic, so the Filter is what there
   -- is to lint -- the two chosen arms above's answer -- beside the count's and

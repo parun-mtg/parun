@@ -1,0 +1,104 @@
+{
+  "faces": [
+    {
+      "name": "Only I Know What Awaits",
+      "oracleText": "When you set this scheme in motion, for each card type among permanents your opponents control, you may put a permanent card of that type from your hand onto the battlefield.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "ChosenCardInHand",
+                            "value": {
+                              "count": {
+                                "type": "UpTo"
+                              },
+                              "filter": {
+                                "type": "Or",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Artifact"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Battle"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Enchantment"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Land"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Planeswalker"
+                                  }
+                                ]
+                              },
+                              "onePer": {
+                                "type": "CardType",
+                                "value": {
+                                  "filter": {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "Opponent"
+                                    }
+                                  },
+                                  "scope": {
+                                    "type": "InZone",
+                                    "value": {
+                                      "player": {
+                                        "type": "Relative",
+                                        "value": "AnyPlayer"
+                                      },
+                                      "zone": "Battlefield"
+                                    }
+                                  }
+                                }
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Scheme"
+        ]
+      }
+    }
+  ]
+}
