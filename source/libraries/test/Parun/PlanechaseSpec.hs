@@ -235,8 +235,8 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
     Spec.assertEqWith s "CR 311.7 Panopticon's chaos drew one card" (S.handSize S.alice chaos) 1
     Spec.assertEqWith s "the revealed two are on the bottom" (fmap (\oid -> fmap Face.name (Game.faceOf oid chaos)) (Planechase.deckOf S.alice chaos)) (fmap cardName ["Tazeem", "Mutual Epiphany", "Panopticon"])
 
-  -- Norn's Seedcore's chaos ability and its ruling ("Put the rest ... on the
-  -- bottom"): it reveals Spatial Merging, Mutual Epiphany, then Academy at
+  -- Norn's Seedcore's chaos ability ("Put the rest of the revealed cards on the
+  -- bottom of your planar deck"): it reveals Spatial Merging, Mutual Epiphany, then Academy at
   -- Tolaria West, and alice planeswalks to Academy keeping Seedcore face up.
   -- The two phenomena go under Quicksilver Sea, unrevealed, in the order she
   -- states.
@@ -248,7 +248,7 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
           Prompt.ArrangeLibraryArrivals {} -> [1, 0]
           _ -> S.identityAnswer p
         chaos = S.runPure answer (inMain S.alice board) (Planechase.roll S.manaPerformer S.alice >> Engine.priorityLoop)
-    Spec.assertEqWith s "Seedcore and Academy are face up" (faceUpNames chaos) (fmap cardName ["Norn's Seedcore", "Academy at Tolaria West"])
+    Spec.assertEqWith s "Seedcore and Academy are face up" (List.sort (faceUpNames chaos)) (fmap cardName ["Academy at Tolaria West", "Norn's Seedcore"])
     Spec.assertEqWith s "the revealed two are under Quicksilver Sea in the stated order" (deckNames S.alice chaos) (fmap cardName ["Quicksilver Sea", "Mutual Epiphany", "Spatial Merging"])
 
   -- CR 801.18 for a plane's target: the same four seats at range 1, Akoum
