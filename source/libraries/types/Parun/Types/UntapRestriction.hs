@@ -12,8 +12,10 @@ import qualified Parun.Types.UntapHold as UntapHold
 -- (UntapHold.Elective), and Static Orb's "players can't untap more than two
 -- permanents" the same restriction with a cap on how many (UntapHold.AtMost).
 -- Seedborn Muse's "untap all permanents you control during each other player's
--- untap step" is the same record run the other way, naming what untaps in a
--- step that is not its controller's (UntapHold.DuringOthersSteps), and Storage
+-- untap step" is the same record run the other way, naming what untaps in the
+-- step of a player in a relation to its controller
+-- (UntapHold.DuringOthersSteps; Horizon Boughs' "each player's" is
+-- PlayerRelation.AnyPlayer), and Storage
 -- Matrix's "can untap only permanents of the chosen type" the same restriction
 -- with the card type the active player chooses (UntapHold.OfChosenType).
 -- Blossombind's "can't become untapped" is the one hold reaching past CR 502.3

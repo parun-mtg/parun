@@ -1708,7 +1708,7 @@ framedBySlots gs recipients context =
           Filter.slotHostControllers = fmap (foldMap hostController . objectsOf) recipients,
           -- CR 120.1: by id, as withCharacteristicsOf fills the source's, so a
           -- departed target still answers.
-          Filter.slotDealtDamage = fmap (\named -> [(oid, Count.dealtDamageTo oid gs, Count.dealtDamageEarlier oid gs) | oid <- Set.toList named]) objects,
+          Filter.slotDealtDamage = fmap (\named -> [(oid, Count.dealtDamageTo oid gs, Count.dealtDamageEarlier oid gs) | oid <- Set.toList (objectsOf named)]) recipients,
           -- CR 614.12: less a batch still entering (Scratch.enteringBeside),
           -- Resolve.Slots.battlefieldMatching's reading.
           Filter.battlefieldViews = fmap (viewsOf gs) (Seq.fromList (Set.toList (Set.difference (GameState.battlefield gs) (Scratch.enteringBeside (GameState.scratch gs))))),
@@ -4876,7 +4876,7 @@ filterReads f = case f of
   -- CR 406.3a leaves a face-down exiled card no characteristics at all, so
   -- being one is not a characteristic either and no layer writes it.
   Filter.Type.IsExiledFaceDown -> Set.empty
-  Filter.Type.IsWarped -> Set.empty
+  Filter.Type.HasExileMark _ -> Set.empty
   -- Reads nothing: CR 712.6c/e make which face is up the thing characteristics
   -- are read OFF rather than one of them, so no Modification writes Object.face.
   Filter.Type.Transformed -> Set.empty
@@ -5148,7 +5148,7 @@ filterReadsPeers f = case f of
   Filter.Type.IsTapped -> False
   Filter.Type.IsFaceDown -> False
   Filter.Type.IsExiledFaceDown -> False
-  Filter.Type.IsWarped -> False
+  Filter.Type.HasExileMark _ -> False
   Filter.Type.Transformed -> False
   Filter.Type.IsDoubleFaced -> False
   Filter.Type.IsInZone _ -> False

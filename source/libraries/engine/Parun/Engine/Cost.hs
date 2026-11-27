@@ -1331,6 +1331,12 @@ candidateCostsGiven permitted pid name oid gs =
                 -- card foretold with NEITHER is offered nothing and is not
                 -- castable, which is that clause read at zero.
                 --
+                -- CR 601.3: where a player's grant opens it too, its owner casts
+                -- under either, the plotted arm's reading; the card's own
+                -- permission is closed face down, as above. The scenario
+                -- singing-towers-of-darillium-grants-foretell-and-its-chaos-casts-one-foretold-card-free
+                -- proves it.
+                --
                 -- The granted cost is settled against THIS face, which is the whole
                 -- reason the object carries the reduction rather than a cost: CR
                 -- 712.8b lets a modal double-faced card be cast as either face, and
@@ -1342,6 +1348,7 @@ candidateCostsGiven permitted pid name oid gs =
                       fmap
                         (untagged . withAdditional)
                         (Maybe.maybeToList (grantedForetellCost face obj) <> Maybe.mapMaybe (foretellCostFor face) (Keyword.foretellCosts (Face.keywordSet face)))
+                        <> (if PlayerEffect.mayCastFrom pid Zone.Exile oid gs then ordinary else [])
                 -- CR 118.9b: a CR 601.3 permission that states an alternative
                 -- cost -- "without paying its mana cost" (Extract Power), rule
                 -- 701.65a's {2}, or a waterbend (Hama, the Bloodbender) --

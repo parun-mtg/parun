@@ -46,7 +46,9 @@ import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.ManifestDread as ManifestDread
 import qualified Parun.Engine.MoveDuration as MoveDuration
 import qualified Parun.Engine.Phasing as Phasing
+import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.Planechase as Planechase
+import qualified Parun.Engine.Players as Players
 import qualified Parun.Engine.Populate as Populate
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
@@ -542,7 +544,7 @@ chooseQuality resolving source controller choice = do
   gs <- State.get
   let acquisition = Game.readingAcquisition resolving source gs source
   case (ChooseQuality.chooser choice, ChooseQuality.quality choice) of
-    (QualityChooser.EachPlayer distinct, ChosenQuality.Word offered) -> Event.chooseWordEach distinct offered acquisition source
+    (QualityChooser.EachPlayer distinct, ChosenQuality.Word offered) -> Event.chooseWordEach (Players.table (Plane.rangePerspective source controller gs) gs) distinct offered acquisition source
     -- Unprinted (ChooseQuality.chooser): each player choosing another quality.
     (QualityChooser.EachPlayer _, _) -> pure ()
     (QualityChooser.Controller, quality) -> Event.chooseQuality quality controller (resolvingAbilityName resolving gs) acquisition source
@@ -2013,8 +2015,8 @@ meld settle resolving source controller legal (Meld.MkMeld ref resultCard riders
   -- is made an instruction earlier.
   --
   -- Event.meld is the whole of CR 701.42a, gate included: it refuses (CR
-  -- 701.42b) by writing nothing, which is CR 701.42c's "they stay in their
-  -- current zone" -- the cards are wherever the exile left them, and this
+  -- 701.42b, or a CR 101.2 "can't enter") by writing nothing, which is CR
+  -- 701.42c's "they stay in their current zone" -- the cards are wherever the exile left them, and this
   -- resolution simply had no effect. Nothing is bound and no slot is filled: no
   -- printing names the melded permanent later in its own instruction list.
   --

@@ -714,7 +714,7 @@ filterChildren children predicate = case predicate of
   Filter.IsFaceDown -> pure predicate
   Filter.RepresentedByCard f -> fmap Filter.RepresentedByCard (nest children f)
   Filter.IsExiledFaceDown -> pure predicate
-  Filter.IsWarped -> pure predicate
+  Filter.HasExileMark _ -> pure predicate
   Filter.Transformed -> pure predicate
   Filter.IsDoubleFaced -> pure predicate
   Filter.IsRingBearer -> pure predicate

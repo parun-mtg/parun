@@ -396,7 +396,10 @@ phaseInDue gs =
 -- Oubliette's "tap that creature as it phases in this way": the status an Until
 -- row names, written before the phase-in and as no tap or untap event, so
 -- nothing triggers on its becoming tapped (Oubliette's 2020-08-07 ruling). An
--- indirect rider (CR 702.26g) names none.
+-- indirect rider (CR 702.26g) names none. So a permanent an effect says can't
+-- become tapped (Event.tapPermitted) phases in tapped all the same:
+-- docs/decisions.md, "Whether a permanent that can't become tapped phases in
+-- tapped from Oubliette".
 phasesInAs :: ObjectId -> GameState -> GameState
 phasesInAs oid gs = case phasedOutStatus oid gs of
   Just (PhasedOut.Until _ _ (Just status)) -> gs {GameState.objects = Map.adjust (\o -> o {Object.tapped = status}) oid (GameState.objects gs)}

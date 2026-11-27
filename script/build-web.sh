@@ -13,7 +13,7 @@
 set -euo pipefail
 out=${1:-dist-web}
 cabal=(wasm32-wasi-cabal --project-file=cabal.wasm.project --builddir=dist-wasm --flags=pedantic)
-"${cabal[@]}" build -v1 --enable-optimization exe:parun-web
+"$(dirname "$0")/retry-package-db-race.sh" "${cabal[@]}" build -v1 --enable-optimization exe:parun-web
 wasm=$("${cabal[@]}" list-bin -v0 --enable-optimization exe:parun-web)
 node --check source/web/page.js
 node --check source/web/engine.js

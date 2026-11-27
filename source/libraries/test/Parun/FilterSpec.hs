@@ -1,11 +1,14 @@
 -- Covers Parun.Types.Filter, Parun.Types.PlayerRelation, Parun.Engine.Filter.
 module Parun.FilterSpec where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Engine.Filter as Filter
+import qualified Parun.Engine.Projection as Projection
+import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
@@ -170,7 +173,7 @@ blackCreature =
       Filter.faceDown = False,
       Filter.representedCard = Nothing,
       Filter.exiledFaceDown = False,
-      Filter.warped = False,
+      Filter.exileMarks = Set.empty,
       Filter.transformed = False,
       Filter.doubleFaced = False,
       Filter.counters = Map.empty,
@@ -188,7 +191,6 @@ blackCreature =
       Filter.tributePaid = False,
       Filter.castUsing = Nothing,
       Filter.enteredUsing = Nothing,
-      Filter.foretold = False,
       Filter.prototyped = False,
       Filter.preparedSpell = False,
       Filter.modesChosen = Nothing,
@@ -288,7 +290,7 @@ devoidBigCreature =
       Filter.faceDown = False,
       Filter.representedCard = Nothing,
       Filter.exiledFaceDown = False,
-      Filter.warped = False,
+      Filter.exileMarks = Set.empty,
       Filter.transformed = False,
       Filter.doubleFaced = False,
       Filter.counters = Map.empty,
@@ -306,7 +308,6 @@ devoidBigCreature =
       Filter.tributePaid = False,
       Filter.castUsing = Nothing,
       Filter.enteredUsing = Nothing,
-      Filter.foretold = False,
       Filter.prototyped = False,
       Filter.preparedSpell = False,
       Filter.modesChosen = Nothing,
@@ -2184,7 +2185,10 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
       Spec.assertBool s (not (Filter.matches (slotHit (player 1)) blackCreature bySlot)) "another player"
       Spec.assertBool s (not (Filter.matches quiet (blackCreature {Filter.dealtDamageTo = Set.singleton (player 0, DamageKind.Combat, Set.empty, True)}) bySlot)) "the candidate's own damage is not asked"
       Spec.assertBool s (not (Filter.matches (quiet {Filter.sourceDealtDamage = Set.singleton (player 0, DamageKind.Combat, Set.empty, True)}) blackCreature bySlot)) "nor the source's"
-      Spec.assertBool s (not (Filter.matches (self {Filter.slotDealtDamage = Map.singleton yours []}) blackCreature bySlot)) "a slot bound to nothing"
+      -- The filler's own context: an answered slot naming no object refuses.
+      let framed slot = Projection.framedBySlots (Setup.emptyGame (PlayerId.MkPlayerId 0 NonEmpty.:| [PlayerId.MkPlayerId 1])) (Map.singleton yours slot) self
+      Spec.assertBool s (not (Filter.matches (framed Set.empty) blackCreature bySlot)) "a slot answered with no target"
+      Spec.assertBool s (not (Filter.matches (framed (Set.singleton (player 0))) blackCreature bySlot)) "a slot holding only a player"
       Spec.assertBool s (Filter.matches self blackCreature bySlot) "CR 601.2c: a slot not yet chosen constrains nothing"
 
     -- CR 120.1: Steel Hellkite's "whose controller was dealt combat damage by this

@@ -1622,16 +1622,19 @@ countersMovedThisTurn oid gs =
 -- redirection counts against where it landed. Each recipient rides beside the
 -- event's kind (CR 510 / 608), for a card that asks about combat damage alone,
 -- and whether the event came during the combat phase in progress: after the
--- latest beginning of combat step began (CR 506.1), and never outside a combat
--- phase, whose end CR 511.3 marks.
+-- latest beginning of combat step of GameState.turn's own began (CR 506.1,
+-- 807.4b: another running Grand Melee turn's combat is not this one), and
+-- never outside a combat phase, whose end CR 511.3 marks.
 dealtDamageTo :: ObjectId -> GameState -> Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType, Bool)
 dealtDamageTo oid gs =
-  let events = fmap LoggedEvent.event (Foldable.toList (Turn.eventsThisTurn gs))
-      combatBegan event = case event of
+  let logged = Foldable.toList (Turn.eventsThisTurn gs)
+      events = fmap LoggedEvent.event logged
+      combatBegan entry = case LoggedEvent.event entry of
         GameEvent.StepBegan began -> StepBegan.phase began == Phase.Combat CombatStep.BeginningOfCombat
         _ -> False
+      ownBegan = List.find combatBegan (List.reverse (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
       sinceCombatBegan = case TurnRegisters.phase (GameState.turn gs) of
-        Phase.Combat _ -> length (takeWhile (not . combatBegan) (List.reverse events))
+        Phase.Combat _ -> length (takeWhile (\entry -> Just entry /= ownBegan) (List.reverse logged))
         _ -> 0
       (beforeCombat, thisCombat) = List.splitAt (length events - sinceCombatBegan) events
       byIt during event = case event of
@@ -1946,7 +1949,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- into exile, and a snapshot holds no object -- `faceDown` above's reason,
       -- one rule over.
       Filter.exiledFaceDown = False,
-      Filter.warped = False,
+      Filter.exileMarks = Set.empty,
       -- CR 701.27h asks about a permanent ON THE BATTLEFIELD, and a snapshot is
       -- a record of a past event rather than an object standing on one -- there
       -- is no id here to ask which face is up. No card in the pool counts
@@ -2000,8 +2003,6 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.tributePaid = False,
       Filter.castUsing = Nothing,
       Filter.enteredUsing = Nothing,
-      -- CR 702.143c's record is a field of an OBJECT -- `tributePaid` above.
-      Filter.foretold = False,
       -- CR 719.3c / 719.3d off the snapshot, which carries a copy's answer. The
       -- object's own flag is a field of an OBJECT, which lastKnownView adds. A
       -- regression fence: no card asks it of a snapshot.

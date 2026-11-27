@@ -437,6 +437,7 @@ import qualified Parun.Codec.ExileFromGraveyardSpec
 import qualified Parun.Codec.ExileHauntingSpec
 import qualified Parun.Codec.ExileLinkSpec
 import qualified Parun.Codec.ExileLookerSpec
+import qualified Parun.Codec.ExileMarkSpec
 import qualified Parun.Codec.ExileMaterialsSpec
 import qualified Parun.Codec.ExilePermanentsSpec
 import qualified Parun.Codec.ExilePlayPermissionSpec
@@ -1669,6 +1670,7 @@ spec s reference corpus = do
   Parun.Codec.EntryLinkSpec.spec s
   Parun.Codec.ExileLinkSpec.spec s
   Parun.Codec.ExileLookerSpec.spec s
+  Parun.Codec.ExileMarkSpec.spec s
   Parun.Codec.ExileMaterialsSpec.spec s
   Parun.Codec.ExilePermanentsSpec.spec s
   Parun.Codec.ExilePlayPermissionSpec.spec s

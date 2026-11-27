@@ -3260,7 +3260,8 @@ Entries are ordered by the first rule each cites.
   instance, so its choices (Naya's "target creature you control") are theirs.
   A static ability likewise applies as though each member controlled it:
   Naya lets each member play any number of lands, and Grixis and The Caldaia
-  reach each member's own cards.
+  reach each member's own cards, and Edge of Malacol's replacement reaches
+  each member's creatures.
 - **Rejected**: The planar controller controlling every instance, each with a
   member's "you": that player would choose among a teammate's creatures,
   which CR 810.5 keeps theirs. "You" as the team, one instance reading both members at once:
@@ -3269,15 +3270,17 @@ Entries are ordered by the first rule each cites.
   poison its members' own.
 - **Site**: `Parun.Engine.Plane.planarYous`, read by
   `Parun.Engine.Event.Trigger.eventTriggers`' `teamWide`,
-  `Parun.Engine.PlayerEffect.printedRows` and
-  `Parun.Engine.Projection.affectsFramed`, proved by the scenarios
+  `Parun.Engine.PlayerEffect.printedRows`,
+  `Parun.Engine.Projection.affectsFramed` and
+  `Parun.Engine.Replacement.applicable`, proved by the scenarios
   `cr-901-12c-tazeem-s-chaos-draws-for-each-member-of-the-planar-team`,
   `cr-901-12c-academy-at-tolaria-west-triggers-for-each-empty-handed-member-of-the-planar-team`,
   `cr-901-12c-naya-lets-each-member-of-the-planar-team-play-any-number-of-lands`,
   `cr-901-12c-grixis-gives-unearth-to-a-creature-card-in-each-planar-team-member-s-graveyard`
+  `cr-901-12c-the-caldaia-gives-blitz-to-a-creature-spell-each-planar-team-member-casts`
   and
-  `cr-901-12c-the-caldaia-gives-blitz-to-a-creature-spell-each-planar-team-member-casts`.
-- **Issue**: #9165, #9178.
+  `cr-901-12c-edge-of-malacol-spares-a-tapped-creature-of-each-member-of-the-planar-team`.
+- **Issue**: #9165, #9178, #10054.
 
 ## Which planar controller controls a Grand Melee plane
 
@@ -3322,6 +3325,27 @@ Entries are ordered by the first rule each cites.
   `Parun.PlanechaseSpec`'s "CR 807.4g a removed turn marker's plane goes to
   the bottom".
 - **Issue**: #9166.
+
+## Which upkeep is the first of a Grand Melee game
+
+- **Question**: Two Streams Facility triggers "at the beginning of the first
+  upkeep of the game". In Grand Melee every opening turn marker's holder sets
+  a starting plane (CR 901.14a) and those turns start at the same time (CR
+  807.4b). Is the first upkeep only the starting player's, or each opening
+  turn's?
+- **Rules**: CR 103.8, 801.7, 807.4b, 901.13, 901.14a; glossary "Starting
+  Player"; the card has no ruling; CR of 2026-11-06.
+- **Decision**: Each opening turn's first upkeep. The glossary fixes the first
+  turn of a game as the starting player's, so Necropotence Avatar's "the first
+  turn of the game" keeps that one; "the first upkeep of the game" is not
+  defined, and no opening turn's upkeep comes after another's.
+- **Rejected**: The starting player's alone. CR 801.7 then keeps every later
+  starting plane's trigger from seeing it, so its statics do nothing until
+  chaos or a planeswalk.
+- **Site**: `Parun.Engine.Turn.isFirstTurn`, proved by `Parun.PlanechaseSpec`'s
+  "CR 807.4b a later Grand Melee starting plane has the first upkeep of the
+  game".
+- **Issue**: #10040.
 
 ## Which result a reroll's trigger reads
 
@@ -3523,6 +3547,27 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Resolve.Arms.Zones.offerNamedCopy`'s
   `NamedCopySource.SameManaCostAs`.
 - **Issue**: none.
+
+## Whether a permanent that can't become tapped phases in tapped from Oubliette
+
+- **Question**: Ood Sphere's Red-Eye says the goaded creatures "can't become
+  tapped unless they're being declared as attackers" until its controller's
+  next turn. Phasing keeps the object (CR 702.26d), so the prohibition still
+  applies to one Oubliette phased out. When Oubliette leaves, does "tap that
+  creature as it phases in this way" tap it?
+- **Rules**: CR 101.2, 603.2e, 702.26c, 702.26d; Oubliette's rulings of
+  2020-08-07 (no becomes-tapped trigger) and Ood Sphere's of 2023-10-13 ("can't
+  be tapped by effects"); CR of 2026-11-06.
+- **Decision**: Yes, it phases in tapped. Oubliette's ruling treats it as
+  phasing in in that status rather than becoming tapped, as a permanent
+  entering tapped does (CR 603.2e), and the prohibition forbids only becoming
+  tapped.
+- **Rejected**: The tap is an instruction the "can't" beats (CR 101.2), so it
+  phases in untapped. Not chosen because no rule or ruling makes phasing in
+  tapped a becoming-tapped, and the one ruling on the point says it is not one
+  for triggers.
+- **Site**: `Parun.Engine.Phasing.phasesInAs`; the scenario
+  `ood-sphere-s-goaded-creature-phases-in-tapped-from-oubliette`.
 
 ## Whether damage dealt before it was a creature spends Stensia's first time
 

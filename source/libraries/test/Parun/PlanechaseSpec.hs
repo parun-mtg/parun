@@ -8,6 +8,7 @@
 module Parun.PlanechaseSpec where
 
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -36,6 +37,7 @@ import qualified Parun.Engine.Resolve.Common as Resolve
 import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.GrandMeleeSpec as Melee
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
@@ -234,6 +236,22 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
         chaos = rollAndResolve 5 (inMain S.alice forested)
     Spec.assertEqWith s "CR 311.7 Panopticon's chaos drew one card" (S.handSize S.alice chaos) 1
     Spec.assertEqWith s "the revealed two are on the bottom" (fmap (\oid -> fmap Face.name (Game.faceOf oid chaos)) (Planechase.deckOf S.alice chaos)) (fmap cardName ["Tazeem", "Mutual Epiphany", "Panopticon"])
+
+  -- Norn's Seedcore's chaos ability ("Put the rest of the revealed cards on the
+  -- bottom of your planar deck"): it reveals Spatial Merging, Mutual Epiphany, then Academy at
+  -- Tolaria West, and alice planeswalks to Academy keeping Seedcore face up.
+  -- The two phenomena go under Quicksilver Sea, unrevealed, in the order she
+  -- states.
+  Spec.it s "CR 401.4 Norn's Seedcore puts the revealed phenomena on the bottom in the stated order" $ do
+    board <- planarBoard s registry ["Norn's Seedcore", "Spatial Merging", "Mutual Epiphany", "Academy at Tolaria West", "Quicksilver Sea"]
+    let answer :: Prompt.Prompt r -> r
+        answer p = case p of
+          Prompt.RollDie _ -> 5
+          Prompt.ArrangeLibraryArrivals {} -> [1, 0]
+          _ -> S.identityAnswer p
+        chaos = S.runPure answer (inMain S.alice board) (Planechase.roll S.manaPerformer S.alice >> Engine.priorityLoop)
+    Spec.assertEqWith s "Seedcore and Academy are face up" (List.sort (faceUpNames chaos)) (fmap cardName ["Academy at Tolaria West", "Norn's Seedcore"])
+    Spec.assertEqWith s "the revealed two are under Quicksilver Sea in the stated order" (deckNames S.alice chaos) (fmap cardName ["Quicksilver Sea", "Mutual Epiphany", "Spatial Merging"])
 
   -- CR 801.18 for a plane's target: the same four seats at range 1, Akoum
   -- ("Whenever chaos ensues, destroy target creature that isn't enchanted.")
@@ -847,9 +865,73 @@ grandMeleeSpec s registry = Spec.describe s "CR 901.14" $ do
     Spec.assertEqWith s "the premise: Tazeem is face up, seat 0's marker designated" (faceUpNames conceded, fmap TurnMarker.removals (GameState.turnMarkers conceded)) ([cardName "Tazeem"], [1, 0])
     Spec.assertEqWith s "seat 5's turn begins next" (fmap (TurnRegisters.activePlayer . GameState.turn) next) [seat 5]
     Spec.assertEqWith s "CR 807.4g Tazeem is on the bottom" (fmap (\gs -> (faceUpNames gs, deckNames (seat 0) gs)) next) [([], fmap cardName ["Naya", "Tazeem"])]
+
+  -- CR 506.1 / 807.4b on Glen Elendra, "At end of combat, you may exchange
+  -- control of target creature you control that dealt combat damage to a
+  -- player this combat and target creature that player controls." Seat 0's
+  -- Grizzly Bears hits seat 1, then seat 4's beginning of combat begins, then
+  -- seat 0's end of combat: "this combat" is still seat 0's own, so the
+  -- trigger is offered the Bears.
+  Spec.it s "CR 807.4b Glen Elendra's this combat is its own turn's, not another running turn's" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    board <- meleePlanarBoard s registry 8 [(seat 0, ["Glen Elendra"]), (seat 4, ["Academy at Tolaria West"])]
+    let (zeros, withZeros) = S.addPermanent bears (seat 0) (Melee.untilPhase Phase.PrecombatMain board)
+        (ones, staged) = S.addPermanent bears (seat 1) withZeros
+        attack :: Prompt.Prompt r -> r
+        attack p = case p of
+          Prompt.DeclareAttackers _ _ ids -> filter (== zeros) ids
+          Prompt.DeclareBlockers {} -> Map.empty
+          Prompt.ChooseAttackTarget {} -> S.attackTo (seat 1) p
+          Prompt.ChooseTargets {} -> Map.fromList [(yours, Set.singleton (Recipient.ToCreature zeros)), (theirs, Set.singleton (Recipient.ToCreature ones))]
+          _ -> S.identityAnswer p
+        (hit, _) = unitsOf attack 1 (Phase.Combat CombatStep.EndOfCombat) (staged, [])
+        (fourBegan, _) = unitsOf attack 2 (Phase.Combat CombatStep.DeclareAttackers) (hit, [])
+        (_, offers) = unitsOf attack 1 Phase.PostcombatMain (fourBegan, [])
+        yours = SlotName.MkSlotName (Text.pack "yours")
+        theirs = SlotName.MkSlotName (Text.pack "theirs")
+    Spec.assertEqWith s "the premise: the Bears hit seat 1" (S.lifeOf (seat 1) hit) (Just 18)
+    Spec.assertBool s (notElem (fmap TurnRegisters.phase (registersOf 2 hit)) (fmap (Just . Phase.Combat) [minBound .. maxBound])) "the premise: seat 4's combat had not begun"
+    Spec.assertEqWith s "the premise: seat 4's combat began after it" (fmap TurnRegisters.phase (registersOf 2 fourBegan)) (Just (Phase.Combat CombatStep.DeclareAttackers))
+    Spec.assertEqWith s "CR 506.1 Glen Elendra's first target is the Bears" (fmap (Map.lookup yours) offers) [Just (Set.singleton (Recipient.ToCreature zeros))]
+
+  -- CR 807.4b / 901.14a: seat 4's starting Two Streams Facility triggers at
+  -- the first upkeep of marker 2's opening turn (docs/decisions.md, "Which
+  -- upkeep is the first of a Grand Melee game"), and only seats 3 to 5, in
+  -- seat 4's range, choose (CR 801.10, 901.13).
+  Spec.it s "CR 807.4b a later Grand Melee starting plane has the first upkeep of the game" $ do
+    board <- meleePlanarBoard s registry 8 [(seat 0, ["Tazeem"]), (seat 4, ["Two Streams Facility"])]
+    let zeros = Melee.untilPhase Phase.PrecombatMain board
+        fours = Melee.untilPhase Phase.PrecombatMain (Engine.workOn 2 zeros)
+        choosers gs = [Map.keys (Map.unions (Map.elems (Object.chosenNumberBy obj))) | oid <- Planechase.faceUp gs, fmap Face.name (Game.faceOf oid gs) == cardName "Two Streams Facility", obj <- Maybe.maybeToList (Game.lookupObject oid gs)]
+    Spec.assertEqWith s "seat 4's turn is worked" (TurnRegisters.activePlayer (GameState.turn fours)) (seat 4)
+    Spec.assertEqWith s "CR 807.4b / 801.10 seats 3 to 5 chose" (choosers fours) [[seat 3, seat 4, seat 5]]
   where
     seat = PlayerId.MkPlayerId
     passed gs = maybe gs (`GrandMelee.passLeft` gs) (GrandMelee.markerNumbered 2 gs)
+
+-- Run marker `n`'s Grand Melee units alone, each answered by `answer`, until
+-- `phase` is the one its turn runs next; each target menu offered meanwhile,
+-- by slot, appended to the list. Bounded at 400 units.
+unitsOf :: (forall r. Prompt.Prompt r -> r) -> Natural -> Phase.Phase -> (GameState.GameState, [Map.Map SlotName.SlotName (Set.Set Recipient.Recipient)]) -> (GameState.GameState, [Map.Map SlotName.SlotName (Set.Set Recipient.Recipient)])
+unitsOf answer n phase = go (400 :: Int)
+  where
+    go budget (gs, offers)
+      | budget <= 0 || fmap TurnRegisters.phase (registersOf n gs) == Just phase = (gs, offers)
+      | otherwise =
+          let -- runMarkedUnit works the marker after the one worked last.
+              other = if n == 1 then 2 else 1
+              ((_, next), offered) = State.runState (Engine.runGame recording (Engine.workOn other gs) Engine.runStep) offers
+           in go (budget - 1) (next, offered)
+    recording :: Prompt.Prompt r -> State.State [Map.Map SlotName.SlotName (Set.Set Recipient.Recipient)] r
+    recording p = case p of
+      Prompt.ChooseTargets _ _ _ slots -> answer p <$ State.modify' (<> [fmap snd slots])
+      _ -> pure (answer p)
+
+-- Marker `n`'s turn's registers, worked or parked.
+registersOf :: Natural -> GameState.GameState -> Maybe TurnRegisters.TurnRegisters
+registersOf n gs
+  | Turn.workedMarker gs == Just n = Just (GameState.turn gs)
+  | otherwise = Map.lookup n (GameState.parkedTurns gs)
 
 -- A Grand Melee board of `n` seats, seat 0 starting (CR 807.2, 807.4b), each
 -- seat named bringing a planar deck stacked in the order named, top first,

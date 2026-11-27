@@ -56,9 +56,9 @@ import qualified Parun.Types.UntapScope as UntapScope
 -- Meekstone's whole text), UntapHold.AtMost what no more than so many of may
 -- untap (Static Orb), UntapHold.Elective what its controller MAY leave tapped
 -- (Amber Prison's first sentence), UntapHold.DuringOthersSteps what untaps
--- in a step that is not its source's controller's (Seedborn Muse), and only
--- in such a step, UntapHold.OfChosenType what untaps only if it has the
--- card type the active player chooses (Storage Matrix), and UntapHold.Never
+-- in the untap step of a player in its relation to the source's controller
+-- (Seedborn Muse, Horizon Boughs), and only in such a step,
+-- UntapHold.OfChosenType what untaps only if it has the card type the active player chooses (Storage Matrix), and UntapHold.Never
 -- what can't become untapped at all (Blossombind). `untapRestrictions` in
 -- data/cards is the
 -- carrier, and this answers for every card that fills it. One entry per
@@ -110,18 +110,16 @@ gathered candidates gs =
             gs
             source
             (if null changes then condition else Projection.rewriteCondition changes condition)
-      -- CR 502.3: "during each other player's untap step" is not the untap step
-      -- of a player whose turn it is, CR 805.4 making every member of a team
-      -- sharing its turn one. That half is a regression fence, not a proof:
-      -- every printing names only its controller's own permanents, which
-      -- Engine.untapAll's candidates already leave out when that controller is
-      -- active. The relation is the other half: "each opponent's untap step"
-      -- is not a teammate's (CR 102.3).
+      -- CR 502.3: the step is every active player's (CR 805.4), so it is in
+      -- the relation only when each of them is. "Each other player's" is then
+      -- never a step its controller shares, "each opponent's" never a
+      -- teammate's (CR 102.3), and "each player's" (Horizon Boughs, whose
+      -- planar controller is active, CR 901.6) every step.
       othersStep source restriction = case UntapRestriction.hold restriction of
         UntapHold.DuringOthersSteps relation ->
           maybe
             True
-            (\controller -> not (Turn.isActive gs controller) && any (PlayerRelation.holds (Game.teams gs) relation controller) (Turn.activePlayers gs))
+            (\controller -> all (PlayerRelation.holds (Game.teams gs) relation controller) (Turn.activePlayers gs))
             (Projection.controllerOf source gs)
         _ -> True
       fromRestriction source changes restriction

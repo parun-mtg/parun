@@ -6591,22 +6591,26 @@ chooseQuality quality chooser reader acquisition oid = case quality of
     picked <- Game.chooseAmong (\decider who -> Prompt.ChooseCardFromAmong decider who oid) chooser candidates
     Foldable.for_ picked $ \card -> State.modify' (Game.markChosenExile (Set.fromList whole) (Just card))
 
--- CR 101.4 / 607.2f: each player in APNAP order chooses one of `offered` for
--- `oid`, its position written under its chooser and `acquisition` to
--- Object.chosenNumberBy, replacing that player's last. Distinct asks only the
+-- CR 101.4 / 607.2f: each player on `table` in APNAP order chooses one of
+-- `offered` for `oid`, its position written under its chooser and
+-- `acquisition` to Object.chosenNumberBy, replacing that player's last.
+-- `table` is the caller's Players.table, so a departed seat (CR 102.1) and
+-- one outside a Grand Melee plane's range (CR 801.10, 901.13) neither choose
+-- nor get a choice recorded. Distinct asks only the
 -- players who chose before, each offered every word but their last: Two Streams
 -- Facility's "each player who last chose green anchor chooses red waterfall,
 -- and vice versa", where the one word left is forced and so not asked
 -- (Game.chooseAmong). Each player's exclusion is read before anyone answers,
 -- the choices happening simultaneously (CR 101.4).
-chooseWordEach :: ChoiceDistinct.ChoiceDistinct -> NonEmpty.NonEmpty Text.Text -> Acquisition.Acquisition -> ObjectId -> Game ()
-chooseWordEach distinct offered acquisition oid = do
+chooseWordEach :: [PlayerId] -> ChoiceDistinct.ChoiceDistinct -> NonEmpty.NonEmpty Text.Text -> Acquisition.Acquisition -> ObjectId -> Game ()
+chooseWordEach table distinct offered acquisition oid = do
   gs <- State.get
   let earlier = Maybe.fromMaybe Map.empty (Game.choiceWithLastKnown Chosen.NumberBy acquisition oid gs)
       numbered = zip [1 :: Natural ..] (NonEmpty.toList offered)
+      seated = filter (`elem` table) (Game.apnapOrder gs)
       choosers = case distinct of
-        ChoiceDistinct.MayRepeat -> Game.apnapOrder gs
-        ChoiceDistinct.Distinct -> filter (`Map.member` earlier) (Game.apnapOrder gs)
+        ChoiceDistinct.MayRepeat -> seated
+        ChoiceDistinct.Distinct -> filter (`Map.member` earlier) seated
       open chooser = case distinct of
         ChoiceDistinct.MayRepeat -> numbered
         ChoiceDistinct.Distinct -> filter (\(n, _) -> Just n /= Map.lookup chooser earlier) numbered
@@ -7031,7 +7035,7 @@ runEntry settle diverting origin given oid = do
       -- Asked BEFORE the loop too, since CR 614.17c lets no other replacement
       -- modify an entry that can't happen, and again AFTER it, since what the
       -- loop applied (Clone's copy, CR 707.5) counts. Each road's `diverting` is
-      -- the zone the move is from; a meld passes none and is asked nothing.
+      -- the zone the move is from; a meld passes none, Event.meld having asked.
       -- data/scenarios/entry-restriction's Worms of the Earth scenarios prove
       -- it: the Ashaya one the first ask, the Dryad Arbor ones the second.
       barred :: Game Bool
@@ -12168,32 +12172,43 @@ meld settle controller victims resultCard tapState = do
       -- an entry replacement against the continuous effects that already apply to
       -- the permanent.
       Foldable.traverse_ (\component -> perpetuate (fst component) (Seq.singleton newId)) melding
-      -- CR 713.6 / CR 616.1: ONE permanent enters, so ONE entry loop, with no
-      -- simultaneously-entering sibling to exclude. createTokens' order exactly:
-      -- the object is materialized first, because CR 614.12 asks for the
-      -- characteristics it would have on the battlefield. The answer is dropped:
-      -- only EntryRewrite.SacrificeToEnter and an ExileFromGraveyard carrying
-      -- `orGraveyard` refuse an entry, and a melded permanent's rows are its meld
-      -- result's, none of which prints either.
-      Monad.void (runEntry settle Nothing Nothing Set.empty newId)
-      -- CR 603.6a's enters-the-battlefield triggers scan this, and it is recorded
-      -- after the entry loop so the snapshot describes a settled permanent --
-      -- recordMintedArrival's reasons, one zone over. `from` is where the cards were,
-      -- so an "enters from exile" read sees the truth of rule 701.42a.
-      --
-      -- EVERY card that left is named, the first in the ZoneChange and the rest
-      -- in Moved.otherDepartures, since CR 400.7 gives each its own departure
-      -- while CR 713.6 makes the entry one. Parun.MeldSpec's "CR 701.42a a
-      -- one-or-more-cards-leave-exile trigger counts both melded cards" proves
-      -- the count.
-      placed <- State.get
-      let snapshot = Projection.project newId placed
-          -- Moved.revealed is read by no look-back here: none reaches a
-          -- battlefield destination (Event.Trigger.looksBack), so the origin's
-          -- zone answers.
-          entry = (Moved.moved (ZoneChange.MkZoneChange (fst (NonEmpty.head melding)) newId origin Zone.Battlefield) snapshot) {Moved.otherDepartures = Seq.fromList (fmap fst (NonEmpty.tail melding)), Moved.revealed = not (Game.isHiddenZone origin), Moved.seenArriving = Visibility.seenByEveryone newId placed, Moved.causedBy = Scratch.causing (GameState.scratch placed), Moved.arrived = Projection.objectSnapshot newId placed, Moved.whileActivating = Scratch.activating (GameState.scratch placed)}
-      State.modify' (recordEvent (GameEvent.Moved entry))
-      pure (Just newId)
+      -- CR 101.2 / 614.17d: a "can't enter" effect (Bad Wolf Bay's chaos) is
+      -- read off the permanent as it would exist on the battlefield, entering
+      -- from `origin`, so it is asked here, after everything that applies to it
+      -- has been written. On a refusal nothing has happened: the state rolls
+      -- back to before the meld and both cards stay where they are (CR
+      -- 701.42c). data/scenarios/planechase's Bad Wolf Bay meld scenario
+      -- proves it.
+      refused <- State.gets (EntryRestriction.prohibited newId origin)
+      if refused
+        then Nothing <$ State.put gs
+        else do
+          -- CR 713.6 / CR 616.1: ONE permanent enters, so ONE entry loop, with no
+          -- simultaneously-entering sibling to exclude. createTokens' order exactly:
+          -- the object is materialized first, because CR 614.12 asks for the
+          -- characteristics it would have on the battlefield. The answer is dropped:
+          -- only EntryRewrite.SacrificeToEnter and an ExileFromGraveyard carrying
+          -- `orGraveyard` refuse an entry, and a melded permanent's rows are its meld
+          -- result's, none of which prints either.
+          Monad.void (runEntry settle Nothing Nothing Set.empty newId)
+          -- CR 603.6a's enters-the-battlefield triggers scan this, and it is recorded
+          -- after the entry loop so the snapshot describes a settled permanent --
+          -- recordMintedArrival's reasons, one zone over. `from` is where the cards were,
+          -- so an "enters from exile" read sees the truth of rule 701.42a.
+          --
+          -- EVERY card that left is named, the first in the ZoneChange and the rest
+          -- in Moved.otherDepartures, since CR 400.7 gives each its own departure
+          -- while CR 713.6 makes the entry one. Parun.MeldSpec's "CR 701.42a a
+          -- one-or-more-cards-leave-exile trigger counts both melded cards" proves
+          -- the count.
+          placed <- State.get
+          let snapshot = Projection.project newId placed
+              -- Moved.revealed is read by no look-back here: none reaches a
+              -- battlefield destination (Event.Trigger.looksBack), so the origin's
+              -- zone answers.
+              entry = (Moved.moved (ZoneChange.MkZoneChange (fst (NonEmpty.head melding)) newId origin Zone.Battlefield) snapshot) {Moved.otherDepartures = Seq.fromList (fmap fst (NonEmpty.tail melding)), Moved.revealed = not (Game.isHiddenZone origin), Moved.seenArriving = Visibility.seenByEveryone newId placed, Moved.causedBy = Scratch.causing (GameState.scratch placed), Moved.arrived = Projection.objectSnapshot newId placed, Moved.whileActivating = Scratch.activating (GameState.scratch placed)}
+          State.modify' (recordEvent (GameEvent.Moved entry))
+          pure (Just newId)
 
 -- CR 701.42b: "only two cards belonging to the same meld pair can be melded.
 -- Tokens, cards that aren't meld cards, or meld cards that don't form a meld pair

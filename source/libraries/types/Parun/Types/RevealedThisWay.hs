@@ -14,6 +14,11 @@ import qualified Parun.Types.RevealTiming as RevealTiming
 -- reveal covers every draw of that one player, so its own reveal shows each such
 -- card as it is drawn, and a card kept face down by CR 121.8 has no
 -- characteristics as it is drawn, so no name for its later reveal to answer with.
+-- For the same reason Sea of Sand's "draws a nonland card" is AsDrawn's nonland
+-- card or any OnceCast one (data/scenarios/planechase/cr-121-8-sea-of-sand-*).
+--
+-- Not implemented: a card kept face down and paid away from the hand before the
+-- cast is never revealed, so that nonland trigger misses it (#10070).
 data RevealedThisWay = MkRevealedThisWay
   { card :: Filter.Filter Keyword.Keyword,
     timing :: Maybe RevealTiming.RevealTiming
