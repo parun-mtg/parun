@@ -37,7 +37,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerScope" $ do
     Common.assertCodec
       s
       PlayerScope.codec
-      (PlayerScope.Superlative (Superlative.MkSuperlative PlayerMeasure.PermanentsControlled Comparison.GreaterThan))
+      (PlayerScope.Superlative (Superlative.MkSuperlative PlayerMeasure.PermanentsControlled Comparison.GreaterThan PlayerRelation.AnyPlayer))
       " {\"type\":\"Superlative\",\"value\":{\"measure\":{\"type\":\"PermanentsControlled\"},\"comparison\":\"GreaterThan\"}} "
   -- Exhaustive over the relation, whose arms the codec derives: this is what
   -- would catch a relation the derivation missed, or one spelled unlike the

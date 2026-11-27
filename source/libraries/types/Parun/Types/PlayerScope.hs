@@ -48,11 +48,11 @@ data PlayerScope
     Related PlayerRelation.PlayerRelation
   | -- | CR 110.1 / 119.1 / 122.1: the players leading or trailing the table on a measure.
     --
-    -- PERSPECTIVE-FREE, like AnyPlayer: the sentence names no "you" for a
-    -- carrier to supply, so Parun.Engine.PlayerEffect.playersInScope answers it
-    -- with an absent perspective. Its membership is a fact about the BOARD
-    -- rather than about the two players being compared, which is why inScope
-    -- takes a GameState at all.
+    -- Over the whole table it is PERSPECTIVE-FREE, like AnyPlayer, so
+    -- Parun.Engine.PlayerEffect.playersInScope answers it with an absent
+    -- perspective; "among your opponents" asks the perspective who is compared.
+    -- Its membership is a fact about the BOARD rather than about the two players
+    -- being compared, which is why inScope takes a GameState at all.
     Superlative Superlative.Superlative
   | -- | CR 102.1 / 805.9: the players holding this role, read from the turn --
     -- the active players a "the active player" ability chooses one of (Siren's

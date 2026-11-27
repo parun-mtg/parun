@@ -140,7 +140,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerRef" $ do
     Common.assertCodec
       s
       PlayerRef.codec
-      (PlayerRef.Superlative (Superlative.MkSuperlative (PlayerMeasure.CountersOf PlayerCounterKind.Point) Comparison.AtLeast))
+      (PlayerRef.Superlative (Superlative.MkSuperlative (PlayerMeasure.CountersOf PlayerCounterKind.Point) Comparison.AtLeast PlayerRelation.AnyPlayer))
       " {\"type\":\"Superlative\",\"value\":{\"measure\":{\"type\":\"CountersOf\",\"value\":\"Point\"},\"comparison\":\"AtLeast\"}} "
   Spec.it s "InRole" $
     Common.assertCodec

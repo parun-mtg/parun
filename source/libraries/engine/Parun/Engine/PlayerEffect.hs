@@ -202,7 +202,7 @@ inScopeWithin source reach pid controller gs scope = case scope of
   -- 102.3's opponents are every player not on the controller's team, and
   -- AnyPlayer includes the controller (Thalia's ruling: "including your own").
   PlayerScope.Related relation -> PlayerRelation.holds (Game.teams gs) relation controller pid
-  PlayerScope.Superlative leading -> List.elem pid (leaders reach gs leading)
+  PlayerScope.Superlative leading -> maybe False (List.elem pid) (leaders reach (Just controller) gs leading)
   PlayerScope.InRole role -> List.elem pid (Turn.roleHolders role gs)
   PlayerScope.ChosenPlayer -> (source >>= \oid -> Game.currentChoice Chosen.Players oid gs >>= Map.lookup PlayerChoice.AsEntersOrTransforms) == Just pid
   PlayerScope.SourceOwner -> (source >>= \oid -> fmap Object.owner (Game.lookupObject oid gs)) == Just pid
@@ -229,15 +229,17 @@ applies pid controller gs affected =
 
 -- PlayerScope.Superlative's players: Players.superlative over the players
 -- @reach@'s range holds (CR 801.11: an ability gets no information from outside
--- its controller's range), reading the PROJECTED controller (CR 613.1b layer
--- 2). A player controlling nothing still has a row, so on an empty board Damping
+-- its controller's range) in the superlative's relation to @perspective@ --
+-- undeterminable without one but for the whole table -- reading the PROJECTED
+-- controller (CR 613.1b layer 2). A player controlling nothing still has a row, so on an empty board Damping
 -- Engine's strict lead names nobody rather than an arbitrary seat.
 -- Parun.SpecialActionSpec's "CR 801.11 at range 1 Damping Engine ranks only the
 -- players in its controller's range" proves the range.
-leaders :: Maybe PlayerId -> GameState -> Superlative.Superlative -> [PlayerId]
-leaders reach gs =
+leaders :: Maybe PlayerId -> Maybe PlayerId -> GameState -> Superlative.Superlative -> Maybe [PlayerId]
+leaders reach perspective gs leading =
   let grants = Projection.controlGrants gs
-   in Players.superlative (\oid -> Projection.controllerOfGiven grants oid gs) (Players.table reach gs) gs
+      compare' compared = Players.superlative (\oid -> Projection.controllerOfGiven grants oid gs) compared gs leading
+   in fmap compare' (Players.relatedAmong (Players.table reach gs) perspective gs (Superlative.among leading))
 
 -- The same scope as a SET rather than as a membership test -- CR 400.1's
 -- per-player zones asked in the direction a zone fold needs it
@@ -252,12 +254,12 @@ leaders reach gs =
 -- -- the vacuous posture every player-referencing Filter atom takes. AnyPlayer
 -- is answerable anyway, because it never asks the perspective a question: "target
 -- card in a graveyard" names the whole table whoever is reading it.
--- Superlative is answerable for that same reason, one arm further on: its
--- membership is a fact about the board.
+-- Superlative over the whole table is answerable for that same reason, one arm
+-- further on: its membership is a fact about the board.
 playersInScope :: Maybe PlayerId -> Maybe PlayerId -> GameState -> PlayerScope -> Maybe [PlayerId]
 playersInScope reach perspective gs scope = case scope of
   PlayerScope.Related relation -> Players.relatedAmong (Players.table reach gs) perspective gs relation
-  PlayerScope.Superlative leading -> Just (leaders reach gs leading)
+  PlayerScope.Superlative leading -> leaders reach perspective gs leading
   PlayerScope.InRole role -> Just (filter (`List.elem` Turn.roleHolders role gs) (Players.table reach gs))
   -- No source to have chosen or to own anybody: undeterminable,
   -- PlayerRef.Candidate's posture.
