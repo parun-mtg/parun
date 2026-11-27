@@ -171,6 +171,7 @@ import qualified Parun.Types.Transformed as Transformed
 import Parun.Types.TriggerCondition (TriggerCondition)
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerEntry as TriggerEntry
+import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
@@ -1248,8 +1249,9 @@ batchScoped condition = case condition of
   -- batchBindings, and batchPartition splits it per damager (Noble Purpose's two
   -- creatures connecting are two). A named recipient is one occurrence per
   -- recipient: CR 510.1b sends an unblocked attacker's damage to the one player
-  -- or battle it attacks.
-  TriggerCondition.DealsDamage watched -> Set.null (DamageTrigger.recipients watched)
+  -- or battle it attacks. "For the first time each turn" is one occurrence per
+  -- damager however many players it reached (Stensia's "one or more players").
+  TriggerCondition.DealsDamage watched -> Set.null (DamageTrigger.recipients watched) || DamageTrigger.frequency watched == TriggerFrequency.FirstTimeEachTurn
   -- "Is dealt damage" is one occurrence per damaged permanent however many
   -- sources dealt it at once (Ripjaw Raptor's and Fungusaur's rulings), split
   -- by batchPartition, or one for the whole batch where wholeBatch says so

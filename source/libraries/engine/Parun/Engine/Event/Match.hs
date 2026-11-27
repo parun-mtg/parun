@@ -1238,8 +1238,21 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
   TriggerCondition.DealsDamage watched -> case event of
     GameEvent.DamageDealt ev ->
       damageBy (Filter.withDealtTargets (ProjectionView.viewOfRecipient (postEventView board gs) gs) ev) (DamageTrigger.actor watched) (DamageEvent.source ev)
-        && all (== DamageEvent.kind ev) (DamageTrigger.kind watched)
-        && (Set.null (DamageTrigger.recipients watched) || any (damagedIs ev) (DamageTrigger.recipients watched))
+        && dealtTo watched ev
+        -- "For the first time each turn" (Stensia): this source's every
+        -- damage the trigger admits so far this turn is in this event's group,
+        -- the last in the log of the game it left; batchScoped makes the group
+        -- one occurrence. An id names one object (CR 400.7), and an earlier
+        -- event is not re-judged by the actor's filter (docs/decisions.md,
+        -- "Whether damage dealt before it was a creature spends Stensia's
+        -- first time").
+        && case DamageTrigger.frequency watched of
+          TriggerFrequency.EveryTime -> True
+          TriggerFrequency.FirstTimeEachTurn ->
+            let earlier logged = case LoggedEvent.event logged of
+                  GameEvent.DamageDealt e -> DamageEvent.source e == DamageEvent.source ev && dealtTo watched e
+                  _ -> False
+             in Set.size (Set.fromList [LoggedEvent.group logged | logged <- Foldable.toList (Turn.eventsThisTurn atEvent), earlier logged]) <= 1
     _ -> False
   -- CR 120.3: the watched permanent was DEALT damage -- enrage's event, and
   -- Death Pits of Rath's. DealsDamage's arm with the check moved from the
@@ -1475,7 +1488,8 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
                     ( DamageRecipient.Player (PlayerRef.Relative (PermanentsDealDamageToPlayer.recipient p))
                         : [DamageRecipient.Permanent CardType.Battle (Filter.Type.And []) | PermanentsDealDamageToPlayer.orBattle p]
                     ),
-                DamageTrigger.atLeast = 0
+                DamageTrigger.atLeast = 0,
+                DamageTrigger.frequency = TriggerFrequency.EveryTime
               }
         )
         event
@@ -2748,6 +2762,10 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
     damageBy seen watched oid = case watched of
       ActingPermanent.Self -> oid == bearer
       ActingPermanent.Matching f -> maybe False (\view -> Filter.matches bearerContext (seen (Count.lastZoned gs oid view)) f) (postEventView board gs oid)
+    -- The kind and recipients a DealsDamage trigger admits.
+    dealtTo watched ev =
+      all (== DamageEvent.kind ev) (DamageTrigger.kind watched)
+        && (Set.null (DamageTrigger.recipients watched) || any (damagedIs ev) (DamageTrigger.recipients watched))
     -- CR 120.1: is the damage's recipient one this DamageRecipient admits? A
     -- permanent's qualifier reads it as damageBy reads the source, off CR
     -- 603.10's sample, so a recipient the damage killed still answers. Scenario
