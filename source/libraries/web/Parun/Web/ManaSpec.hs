@@ -50,9 +50,9 @@ spec s = Spec.describe s "Parun.Web.Mana" $ do
       let drawn = page "{W/U}"
       Spec.assertBool s (all ((`Text.isInfixOf` drawn) . Text.pack) ["class=\"bg-w\"", "class=\"bg-u\"", "href=\"#ms-w\"", "href=\"#ms-u\"", "aria-label=\"white or blue\""]) (Text.unpack drawn)
     Spec.it s "CR 107.7 draws a loyalty cost by its direction" $ do
-      Spec.assertBool s (Text.pack "<span class=\"loyalty up\" title=\"[+2]\" role=\"img\" aria-label=\"loyalty plus 2\">+2</span>: Draw a card." `Text.isPrefixOf` page "[+2]: Draw a card.") "gain"
-      Spec.assertBool s (Text.pack "<span class=\"loyalty down\" title=\"[\x2212X]\" role=\"img\" aria-label=\"loyalty minus X\">\x2212X</span>" `Text.isPrefixOf` page "[\x2212X]: Destroy it.") "loss"
-      Spec.assertBool s (Text.pack "<span class=\"loyalty level\"" `Text.isPrefixOf` page "[0]: Scry 1.") "zero"
+      Spec.assertBool s (Text.pack "<span class=\"loyalty-cost up\" title=\"[+2]\" role=\"img\" aria-label=\"loyalty plus 2\">+2</span>: Draw a card." `Text.isPrefixOf` page "[+2]: Draw a card.") "gain"
+      Spec.assertBool s (Text.pack "<span class=\"loyalty-cost down\" title=\"[\x2212X]\" role=\"img\" aria-label=\"loyalty minus X\">\x2212X</span>" `Text.isPrefixOf` page "[\x2212X]: Destroy it.") "loss"
+      Spec.assertBool s (Text.pack "<span class=\"loyalty-cost level\"" `Text.isPrefixOf` page "[0]: Scry 1.") "zero"
     Spec.it s "leaves other brackets and braces as text" $
       Spec.assertEq s (page "[X] and [+] and {} and { G}") (Text.pack "[X] and [+] and {} and { G}")
 
