@@ -228,10 +228,11 @@ event context creature c = case c of
     opening' <- recurring
     [other (opening' <> " " <> who <> " " <> Text.unpack (Prose.article one) <> " " <> Text.unpack one) [(thatPlayer, "that player"), (castSpell, "it")]]
   -- A scheme's (CR 904.9), a phenomenon's (CR 312.5) or a plane's (CR
-  -- 701.31d), which its Oracle text picks.
+  -- 701.31d), which its Oracle text picks; the event names the source, which
+  -- the rest calls "it" (There Is No Refuge).
   TriggerCondition.TurnedUpOffDeck ActingPermanent.Self -> do
     happens <- ["set " <> self <> " in motion", "encounter " <> self, "planeswalk to " <> self]
-    [other ("When you " <> happens) []]
+    [MkEvent (Text.pack ("When you " <> happens)) True Map.empty []]
   TriggerCondition.PlayerFacesDilemma PlayerRelation.You -> [other "Whenever you face a dilemma" []]
   TriggerCondition.PlayerExpends (PlayerExpends.MkPlayerExpends PlayerRelation.You n) -> [other ("Whenever you expend " <> show n) []]
   _ -> []
