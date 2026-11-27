@@ -11,5 +11,5 @@ import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
 codec :: Codec.Codec PlanarDieRolled.PlanarDieRolled
 codec = Fields.object $ do
   roller <- Fields.required "roller" PlayerId.codec PlanarDieRolled.roller
-  face <- Fields.required "face" PlanarDieFace.codec PlanarDieRolled.face
+  face <- Fields.optional "face" PlanarDieFace.codec PlanarDieRolled.face
   pure PlanarDieRolled.MkPlanarDieRolled {PlanarDieRolled.roller = roller, PlanarDieRolled.face = face}

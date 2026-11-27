@@ -737,7 +737,9 @@ event reader view logged = case LoggedEvent.event logged of
     RollReading.FinalResult -> said [acts reader (DieResult.roller r) "rolls", Text.pack (show (DieResult.result r))]
     RollReading.NaturalResult -> Nothing
   GameEvent.RolledToVisit r -> said [acts reader (DieResult.roller r) "rolls", Text.pack (show (DieResult.result r)), Text.pack "to visit", their reader (DieResult.roller r), Text.pack "Attractions"]
-  GameEvent.PlanarDieRolled r -> said [acts reader (PlanarDieRolled.roller r) "rolls", planarFace (PlanarDieRolled.face r), Text.pack "on the planar die"]
+  GameEvent.PlanarDieRolled r -> case PlanarDieRolled.face r of
+    Just f -> said [acts reader (PlanarDieRolled.roller r) "rolls", planarFace f, Text.pack "on the planar die"]
+    Nothing -> said [acts reader (PlanarDieRolled.roller r) "rerolls", Text.pack "the planar die"]
   GameEvent.TurnedUpOffDeck t -> said [acts reader (TurnedUpOffDeck.player t) "turns up", name (TurnedUpOffDeck.card t), Text.pack "from", their reader (TurnedUpOffDeck.player t), sideDeck (TurnedUpOffDeck.deck t)]
   GameEvent.ChaosEnsued _ -> said [Text.pack "Chaos ensues"]
   GameEvent.DaytimeChanged Daytime.Day -> said [Text.pack "Night becomes day"]
