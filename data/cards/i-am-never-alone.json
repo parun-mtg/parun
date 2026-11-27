@@ -1,0 +1,60 @@
+{
+  "faces": [
+    {
+      "name": "I Am Never Alone",
+      "oracleText": "When you set this scheme in motion, create a token that's a copy of your commander, except it's not legendary.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "CreateCopy",
+                        "value": {
+                          "exceptions": [
+                            {
+                              "type": "RemoveSupertypes",
+                              "value": [
+                                "Legendary"
+                              ]
+                            }
+                          ],
+                          "original": {
+                            "type": "OfObject",
+                            "value": {
+                              "type": "OneChosenAmong",
+                              "value": {
+                                "type": "EachCardYouOwn",
+                                "value": {
+                                  "type": "IsCommander"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Scheme"
+        ]
+      }
+    }
+  ]
+}

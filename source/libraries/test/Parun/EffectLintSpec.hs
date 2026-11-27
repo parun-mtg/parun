@@ -1741,9 +1741,9 @@ effectObjectRefs effect =
           ConjureCards.Duplicate ref -> read_ [ref]
           -- A reference pick names no object at all.
           ConjureCards.Reference {} -> []
-        -- Twilight Diviner's "a copy of one of them", asked by
-        -- Resolve.Common.askingObjects.
-        Effect.CreateCopy (CreateCopy.MkCreateCopy _ original _ _ _ _ _ _) -> [([CardFromAmong], ref) | CopyOriginal.OfObject ref <- [original]]
+        -- Twilight Diviner's "a copy of one of them" and I Am Never Alone's
+        -- "your commander" (CR 702.124e), asked by Resolve.Common.askingObjects.
+        Effect.CreateCopy (CreateCopy.MkCreateCopy _ original _ _ _ _ _ _) -> [([CardFromAmong, ChosenAmong], ref) | CopyOriginal.OfObject ref <- [original]]
         -- Volatile Chimera's "choose a card at random" and Olag, Ludevic's
         -- Hubris's "a creature card exiled with it", the original alone.
         Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject _ _ _) -> [([RandomAmong, ChosenAmong], ref) | CopyOriginal.OfObject ref <- [original]] <> read_ [subject]
@@ -2908,9 +2908,11 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- "Any number from among them" is tested under a reveal and a move.
     let anyFromAmong = ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong group anyCard (HowMany.UpTo Nothing) Nothing Nothing Set.empty (PlayerRef.Relative PlayerRelation.You) Nothing False CardSelection.ByChoice)
     Spec.assertEqWith s "any number from among them is allowed by a reveal and a move alone" (inert [reveals anyFromAmong, moves anyFromAmong, discardsThese anyFromAmong]) [False, False, True]
-    -- Twilight Diviner's "a copy of one of them" is the one question a copy asks.
+    -- Twilight Diviner's "a copy of one of them" and I Am Never Alone's one of
+    -- two commanders are the questions a copy asks.
     let tokenCopies ref = Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) (CopyOriginal.OfObject ref) EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False Nothing)
-    Spec.assertEqWith s "a copy allows one card from among them and no other chosen arm" (inert (fmap tokenCopies [inGraveyard, inHand, fromAmong, atRandom, anyFromAmong])) [True, True, False, True, True]
+        oneOfYours = ObjectRef.OneAmong CardSelection.ByChoice (ObjectRef.EachCardYouOwn anyCard)
+    Spec.assertEqWith s "a copy allows one card from among them, one chosen among, and no other chosen arm" (inert (fmap tokenCopies [inGraveyard, inHand, fromAmong, atRandom, anyFromAmong, oneOfYours])) [True, True, False, True, True, False]
     -- An exact count other than one: only a move's test (Split the Party) reaches it.
     let exactlyTwo = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.Exactly (Quantity.Type.Literal 2)) Nothing Zone.Battlefield Set.empty CardSelection.ByChoice)
     Spec.assertEqWith s "two exactly chosen permanents are allowed by a move alone" (inert [moves exactlyTwo, Effect.Transform exactlyTwo, Effect.Untap exactlyTwo]) [False, True, True]
