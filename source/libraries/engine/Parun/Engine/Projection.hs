@@ -1516,8 +1516,11 @@ affectsFramed frame grants peers source oid a partial gs = case a of
     -- turn the scope admits, as Parun.Engine.PlayerEffect.nthCast reads
     -- CostModifier.onlyNth: each earlier cast as it was cast (CR 608.2i), and
     -- POSITIONALLY (Game.castsBefore), so a spell never cast matches nothing.
-    -- Only casts the Filter admits count (docs/decisions.md, "Which spell TARDIS
-    -- Bay's ..."). data/scenarios/planechase/tardis-bay-* prove it.
+    -- Only casts the Filter admits count, as Wild-Magic Sorcerer's ruling
+    -- (2021-07-23) reads the construction: its first spell from exile each
+    -- turn has cascade "even if it's not the first spell you've cast that
+    -- turn". data/scenarios/planechase/tardis-bay-* prove it, the heir
+    -- planar controller's case the scope check.
     nthCastFor f (TurnOrdinal.MkTurnOrdinal scope n) = case Game.castsBefore oid gs of
       Nothing -> False
       Just earlier ->
