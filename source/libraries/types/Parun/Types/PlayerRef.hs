@@ -1,5 +1,6 @@
 module Parun.Types.PlayerRef where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Parun.Types.AttackingPlayers as AttackingPlayers
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Holder as Holder
@@ -157,8 +158,8 @@ data PlayerRef
     -- slot naming no object, naming several, or naming one the projection cannot
     -- describe leaves the count unanswered rather than aimed at some other seat.
     HolderOfBound Holder.Holder Hop.Hop SlotName.SlotName
-  | -- | CR 608.2h: HolderOfBound's plural, the holders of every object a slot names, groups included.
-    HoldersOfBound Holder.Holder Hop.Hop SlotName.SlotName
+  | -- | CR 608.2h: HolderOfBound's plural, the holders of every object the slots name, groups included.
+    HoldersOfBound Holder.Holder Hop.Hop (NonEmpty.NonEmpty SlotName.SlotName)
   | -- | CR 607.2a / 108.3: the owners of the cards in exile the object a slot
     -- names links to in this pile, GO TO JAIL's "the exiled card's owner".
     OwnersOfExiledBy ExiledPile.ExiledPile SlotName.SlotName

@@ -173,7 +173,7 @@ overPlayerRefSlots f ref = case ref of
   -- same way.
   PlayerRef.EachOpponentExcept slot -> fmap PlayerRef.EachOpponentExcept (f slot)
   PlayerRef.HolderOfBound holder hop slot -> fmap (PlayerRef.HolderOfBound holder hop) (f slot)
-  PlayerRef.HoldersOfBound holder hop slot -> fmap (PlayerRef.HoldersOfBound holder hop) (f slot)
+  PlayerRef.HoldersOfBound holder hop names -> fmap (PlayerRef.HoldersOfBound holder hop) (traverse f names)
   PlayerRef.OwnersOfExiledBy pile slot -> fmap (PlayerRef.OwnersOfExiledBy pile) (f slot)
   PlayerRef.PlayerHostOfBound slot -> fmap PlayerRef.PlayerHostOfBound (f slot)
   PlayerRef.AttackedByBound slot -> fmap PlayerRef.AttackedByBound (f slot)

@@ -47,7 +47,9 @@
                             "value": {
                               "holder": "Controller",
                               "hop": "Itself",
-                              "slot": "sacrificed"
+                              "slots": [
+                                "sacrificed"
+                              ]
                             }
                           },
                           "slot": "sacrificers"

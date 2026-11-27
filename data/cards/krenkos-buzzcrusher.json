@@ -159,7 +159,9 @@
                         "value": {
                           "holder": "Controller",
                           "hop": "Itself",
-                          "slot": "destroyed"
+                          "slots": [
+                            "destroyed"
+                          ]
                         }
                       }
                     }

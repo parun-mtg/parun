@@ -1,5 +1,6 @@
 module Parun.Codec.PlayerRef where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Parun.Codec.AttackingPlayers as AttackingPlayers
 import qualified Parun.Codec.ExiledPile as ExiledPile
 import qualified Parun.Codec.Holder as Holder
@@ -52,7 +53,7 @@ codec =
       Arm.payload "HolderOfBound" holderOfBound (\(h, o, y) -> PlayerRef.HolderOfBound h o y) (\x -> case x of PlayerRef.HolderOfBound h o y -> Just (h, o, y); _ -> Nothing),
       -- Its plural, which a card writes: Krenko's Buzzcrusher asks the
       -- controller of each land it destroyed.
-      Arm.payload "HoldersOfBound" holderOfBound (\(h, o, y) -> PlayerRef.HoldersOfBound h o y) (\x -> case x of PlayerRef.HoldersOfBound h o y -> Just (h, o, y); _ -> Nothing),
+      Arm.payload "HoldersOfBound" holdersOfBound (\(h, o, y) -> PlayerRef.HoldersOfBound h o y) (\x -> case x of PlayerRef.HoldersOfBound h o y -> Just (h, o, y); _ -> Nothing),
       -- The arm above, baked: decodable for Specific's reason, and swept out of
       -- card data beside it.
       Arm.payload "HolderOfObject" holderOfObject (uncurry PlayerRef.HolderOfObject) (\x -> case x of PlayerRef.HolderOfObject h y -> Just (h, y); _ -> Nothing),
@@ -106,6 +107,15 @@ holderOfBound =
       <$> Fields.required "holder" Holder.codec (\(h, _, _) -> h)
       <*> Fields.required "hop" Hop.codec (\(_, o, _) -> o)
       <*> Fields.required "slot" SlotName.codec (\(_, _, y) -> y)
+
+-- | holderOfBound's plural: the slots, non-empty.
+holdersOfBound :: Codec.Codec (Holder.Holder, Hop.Hop, NonEmpty.NonEmpty SlotName.SlotName)
+holdersOfBound =
+  Fields.object $
+    (,,)
+      <$> Fields.required "holder" Holder.codec (\(h, _, _) -> h)
+      <*> Fields.required "hop" Hop.codec (\(_, o, _) -> o)
+      <*> Fields.required "slots" (Common.nonEmpty SlotName.codec) (\(_, _, y) -> y)
 
 -- | The object-player read baked: which of its players, and the object.
 holderOfObject :: Codec.Codec (Holder.Holder, ObjectId.ObjectId)

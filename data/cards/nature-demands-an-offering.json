@@ -1,0 +1,242 @@
+{
+  "faces": [
+    {
+      "name": "Nature Demands an Offering",
+      "oracleText": "When you set this scheme in motion, target opponent chooses a creature you don't control and puts it on top of its owner's library, then repeats this process for an artifact, an enchantment, and a land. Then the owner of each permanent chosen this way shuffles.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ChoosePermanents",
+                        "value": {
+                          "permanents": {
+                            "chooser": {
+                              "type": "InSlot",
+                              "value": "target"
+                            },
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "creature"
+                        }
+                      },
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "placement": {
+                            "type": "Stated",
+                            "value": "Top"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "creature"
+                          },
+                          "zone": "Library"
+                        }
+                      },
+                      {
+                        "type": "ChoosePermanents",
+                        "value": {
+                          "permanents": {
+                            "chooser": {
+                              "type": "InSlot",
+                              "value": "target"
+                            },
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Artifact"
+                                },
+                                {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "artifact"
+                        }
+                      },
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "placement": {
+                            "type": "Stated",
+                            "value": "Top"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "artifact"
+                          },
+                          "zone": "Library"
+                        }
+                      },
+                      {
+                        "type": "ChoosePermanents",
+                        "value": {
+                          "permanents": {
+                            "chooser": {
+                              "type": "InSlot",
+                              "value": "target"
+                            },
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Enchantment"
+                                },
+                                {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "enchantment"
+                        }
+                      },
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "placement": {
+                            "type": "Stated",
+                            "value": "Top"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "enchantment"
+                          },
+                          "zone": "Library"
+                        }
+                      },
+                      {
+                        "type": "ChoosePermanents",
+                        "value": {
+                          "permanents": {
+                            "chooser": {
+                              "type": "InSlot",
+                              "value": "target"
+                            },
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Land"
+                                },
+                                {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "land"
+                        }
+                      },
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "placement": {
+                            "type": "Stated",
+                            "value": "Top"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "land"
+                          },
+                          "zone": "Library"
+                        }
+                      },
+                      {
+                        "type": "Shuffle",
+                        "value": {
+                          "type": "HoldersOfBound",
+                          "value": {
+                            "holder": "Owner",
+                            "hop": "Itself",
+                            "slots": [
+                              "creature",
+                              "artifact",
+                              "enchantment",
+                              "land"
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "IsPlayer",
+                      "value": "Opponent"
+                    },
+                    "pool": {
+                      "type": "Players"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Scheme"
+        ]
+      }
+    }
+  ]
+}

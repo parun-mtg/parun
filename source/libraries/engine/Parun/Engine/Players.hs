@@ -2,6 +2,7 @@ module Parun.Engine.Players where
 
 import qualified Control.Monad as Monad
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import Data.Set (Set)
@@ -253,10 +254,15 @@ namedUncut given gs ref =
         -- owner, which reanimating an opponent's creature parts from the
         -- controller.
         PlayerRef.HolderOfBound holder hop slot -> fmap pure (slotObject given slot >>= hopped hop >>= holderOf holder)
-        -- The arm above over every object the slot names, each read the same
-        -- way and the seats deduplicated; an object no view answers for adds
-        -- nobody. Krenko's Buzzcrusher's scenarios prove it.
-        PlayerRef.HoldersOfBound holder hop slot -> fmap (Set.toList . Set.fromList . Maybe.mapMaybe (hopped hop Monad.>=> holderOf holder)) (slotObjects given slot)
+        -- The arm above over every object the slots name, each read the same
+        -- way and the seats deduplicated, so a player holding objects in two
+        -- slots is named once; an object no view answers for adds nobody, and
+        -- an unbound slot adds nothing to a bound one. Krenko's Buzzcrusher's
+        -- scenarios prove it, and Nature Demands an Offering's the union over
+        -- an unbound slot.
+        PlayerRef.HoldersOfBound holder hop slots -> case Maybe.mapMaybe (slotObjects given) (NonEmpty.toList slots) of
+          [] -> Nothing
+          found -> Just (Set.toList (Set.fromList (concatMap (Maybe.mapMaybe (hopped hop Monad.>=> holderOf holder)) found)))
         -- CR 607.2a / 108.3: the owners of the cards in exile linked to the
         -- object a slot names, through Game.linkedPile, the one sweep every
         -- "exiled with" reader shares. The reader is named as printed (Nothing):

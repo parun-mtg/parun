@@ -1,6 +1,7 @@
 module Parun.Codec.PlayerRefSpec where
 
 import qualified Data.Either as Either
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Text as Text
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.JsonCodec.Codec as Codec
@@ -85,8 +86,8 @@ spec s = Spec.describe s "Parun.Codec.PlayerRef" $ do
     Common.assertCodec
       s
       PlayerRef.codec
-      (PlayerRef.HoldersOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "destroyed")))
-      " {\"type\":\"HoldersOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"destroyed\"}} "
+      (PlayerRef.HoldersOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "destroyed") NonEmpty.:| [SlotName.MkSlotName (Text.pack "exiled")]))
+      " {\"type\":\"HoldersOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slots\":[\"destroyed\",\"exiled\"]}} "
   Spec.it s "HolderOfObject controller" $
     Common.assertCodec
       s
