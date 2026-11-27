@@ -8,19 +8,21 @@
           "affected": {
             "type": "MatchingOffBattlefield",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "WasCastFrom"
-                },
-                {
-                  "type": "Not",
-                  "value": {
-                    "type": "HasCardType",
-                    "value": "Creature"
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "WasCastFrom"
+                  },
+                  {
+                    "type": "Not",
+                    "value": {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    }
                   }
-                }
-              ]
+                ]
+              }
             }
           },
           "modifications": [
