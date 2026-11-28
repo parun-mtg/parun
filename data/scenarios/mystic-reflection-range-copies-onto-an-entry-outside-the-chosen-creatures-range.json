@@ -1,0 +1,47 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {"card": "Island", "label": "i1", "ready": true},
+          {"card": "Island", "label": "i2", "ready": true}
+        ],
+        "hand": [
+          {"card": "Mystic Reflection", "label": "reflection"}
+        ],
+        "name": "alice",
+        "range": 1
+      },
+      {
+        "battlefield": [
+          {"card": "Grizzly Bears", "label": "bears", "ready": true}
+        ],
+        "name": "bob",
+        "range": 1
+      },
+      {"name": "carol", "range": 1},
+      {
+        "battlefield": [
+          {"card": "Island", "label": "di", "ready": true}
+        ],
+        "hand": [
+          {"card": "Spectral Sailor", "label": "sailor"}
+        ],
+        "name": "dan",
+        "range": 1
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 801.10: Mystic Reflection's copy is limited by its controller's range, not the entering creature's controller's",
+  "note": "Every seat has range 1. Alice targets Bob's Bears, in her range; Dan, beside Alice but two seats from Bob, flashes in Spectral Sailor, which enters as a 2/2 Grizzly Bears (a 1/1 Sailor if Dan's range cut the copy).",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$reflection", "mana": ["$i1", "$i2"], "targets": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "dan", "do": {"Cast": {"object": "$sailor", "mana": ["$di"]}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "dan", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Names": {"object": "Spectral Sailor", "names": ["Grizzly Bears"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Spectral Sailor", "power": 2, "toughness": 2}}}
+  ]
+}
