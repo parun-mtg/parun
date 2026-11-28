@@ -1,0 +1,140 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Priest of the Haunted Edge",
+            "label": "priest",
+            "ready": true
+          },
+          {
+            "card": "Snow-Covered Swamp"
+          },
+          {
+            "card": "Snow-Covered Swamp"
+          },
+          {
+            "card": "Snow-Covered Forest"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Icehide Golem"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Colossal Dreadmaw",
+            "label": "dm"
+          },
+          {
+            "card": "Snow-Covered Island"
+          },
+          {
+            "card": "Snow-Covered Island"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep",
+    "turn": 2
+  },
+  "note": "Alice controls three snow lands, a non-snow land and a snow non-land (Icehide Golem); bob's two snow lands are not hers. Refused in her upkeep, taken in her main phase: Dreadmaw 6/6 becomes 3/3.",
+  "timeline": [
+    {
+      "refuse": {
+        "Activate": {
+          "ability": 0,
+          "object": "$priest",
+          "targets": [
+            "$dm"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$priest",
+          "targets": [
+            "$dm"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$dm",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Priest of the Haunted Edge",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ],
+  "description": "CR 602.5d, 608.2h: Priest of the Haunted Edge's sacrifice ability, activated only as a sorcery, gives target creature -X/-X, X the number of snow lands its controller controls"
+}

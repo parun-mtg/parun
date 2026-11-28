@@ -1,0 +1,47 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Island", "label": "i1" }, { "card": "Island", "label": "i2" }, { "card": "Island", "label": "i3" }, { "card": "Island", "label": "i4" }, { "card": "Island", "label": "i5" }, { "card": "Forest", "label": "f1" }, { "card": "Forest", "label": "f2" }, { "card": "Forest", "label": "f3" }, { "card": "Swamp", "label": "s1" }, { "card": "Swamp", "label": "s2" }],
+        "hand": [{ "card": "Reflections of Littjara", "label": "reflections" }, { "card": "Llanowar Elves", "label": "elves" }, { "card": "Grizzly Bears", "label": "bears" }, { "card": "Nameless Inversion", "label": "inversion" }],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }, { "card": "Plains" }, { "card": "Plains" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Craw Wurm", "label": "wurm" }, { "card": "Craw Wurm", "label": "wurm2" }, { "card": "Swamp", "label": "b1" }, { "card": "Swamp", "label": "b2" }],
+        "hand": [{ "card": "Nameless Inversion", "label": "theirs" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.1c, 707.10, 111.13: Reflections of Littjara copies each spell of the chosen type its controller casts, a permanent spell's copy becoming a token and a targeted spell's copy keeping its target",
+  "note": "Alice names Elf. Llanowar Elves is copied (two on the stack, two on the battlefield); Grizzly Bears is not (the stack empties on one pass). Changeling Nameless Inversion at bob's Craw Wurm is copied with the same target: two resolutions take the 6/4 to 12/-2, where one leaves 9/1. Bob's own Nameless Inversion at his second Wurm, an Elf spell he cast, is not copied: that Wurm is 9/1 at the end step.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$reflections", "mana": ["$i1", "$i2", "$i3", "$i4", "$i5", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCreatureType", "with": "Elf" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$elves", "mana": ["$f1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Llanowar Elves", "count": 2, "player": "alice", "zone": "Stack" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Llanowar Elves", "count": 2, "player": "alice", "zone": "Battlefield" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bears", "mana": ["$f2", "$f3", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Grizzly Bears", "count": 1, "player": "alice", "zone": "Battlefield" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$inversion", "targets": ["$wurm"], "mana": ["$s1", "$s2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Nameless Inversion", "count": 2, "player": "alice", "zone": "Stack" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$wurm", "power": 9, "toughness": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Craw Wurm", "count": 1, "player": "bob", "zone": "Graveyard" } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "bob", "do": { "Cast": { "object": "$theirs", "targets": ["$wurm2"], "mana": ["$b1", "$b2"] } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "PowerToughness": { "object": "$wurm2", "power": 9, "toughness": 1 } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Count": { "card": "Nameless Inversion", "count": 1, "player": "bob", "zone": "Graveyard" } } }
+  ]
+}

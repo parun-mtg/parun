@@ -2767,6 +2767,9 @@ namedTokens =
       -- Dragonbroods' Relic's "a 4/4 Dragon creature token named Reliquary
       -- Dragon".
       CardName.MkCardName (Text.pack "Reliquary Dragon"),
+      -- Replicating Ring's "eight colorless snow artifact tokens named
+      -- Replicated Ring".
+      CardName.MkCardName (Text.pack "Replicated Ring"),
       -- CR 111.10m's Royal Role (Besotted Knight).
       CardName.MkCardName (Text.pack "Royal"),
       -- Preston Garvey, Minuteman's "create a green Aura enchantment token named

@@ -1,0 +1,32 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Raven Wings", "label": "wings" }, { "card": "Grizzly Bears", "label": "bears" }, { "card": "Hill Giant", "label": "giant" }, { "card": "Wastes", "label": "w1" }, { "card": "Wastes", "label": "w2" }],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }, { "card": "Plains" }, { "card": "Plains" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.6a, 301.5c, 613.1d, 613.4c: Raven Wings gives the equipped creature +1/+0 and flying and makes it a Bird in addition to its other types; equip costs {2}",
+  "note": "Equip on Grizzly Bears, paid with two Wastes and leaving no mana floating: the Bears becomes a 3/2 flying Bear Bird; the unequipped Hill Giant keeps its printed 3/3, no flying, Giant alone.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$wings", "targets": ["$bears"], "mana": ["$w1", "$w2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "AttachedTo", "object": "$wings", "is": "$bears" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$bears", "power": 3, "toughness": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 1, "keyword": { "type": "Flying" }, "object": "$bears" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "$bears", "subtypes": ["Bear", "Bird"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$giant", "power": 3, "toughness": 3 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "count": 0, "keyword": { "type": "Flying" }, "object": "$giant" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "$giant", "subtypes": ["Giant"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$w2", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [] } } }
+  ]
+}
