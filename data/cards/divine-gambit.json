@@ -1,0 +1,151 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Divine Gambit",
+      "oracleText": "Exile target artifact, creature, or enchantment an opponent controls. That player may put a permanent card from their hand onto the battlefield.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "zone": "Exile"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardInHand",
+                        "value": {
+                          "count": {
+                            "type": "UpTo",
+                            "value": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          },
+                          "filter": {
+                            "type": "Or",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Artifact"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Battle"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Enchantment"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Land"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Planeswalker"
+                              }
+                            ]
+                          },
+                          "player": {
+                            "type": "HolderOfBound",
+                            "value": {
+                              "holder": "Controller",
+                              "hop": "Itself",
+                              "slot": "target"
+                            }
+                          }
+                        }
+                      },
+                      "riders": {
+                        "under": {
+                          "type": "Owner"
+                        }
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Artifact"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Enchantment"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "Opponent"
+                      }
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
