@@ -146,6 +146,12 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
       codec
       (CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents 1 (Filter.HasCardType CardType.Creature)))
       " {\"type\":\"ExilePermanents\",\"value\":{\"count\":1,\"whichPermanents\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
+  Spec.it s "Unattach" $
+    Common.assertCodec
+      s
+      codec
+      (CostComponent.Unattach (Filter.HasSubtype Subtype.Equipment))
+      " {\"type\":\"Unattach\",\"value\":{\"type\":\"HasSubtype\",\"value\":\"Equipment\"}} "
   Spec.it s "DiscardCards" $
     Common.assertCodec
       s

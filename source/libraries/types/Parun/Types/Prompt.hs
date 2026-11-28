@@ -907,7 +907,8 @@ data Prompt r where
   -- which Opposition Agent's exile applies to a search's finds. Also CR
   -- 608.2d: which creature of a paired fight's other group the ObjectId fights
   -- (Ezuri's Predation). Also which permanent that is a die a "reroll any die"
-  -- rerolls outside a roll (Parun.Types.Effect's Rethrow). The Seq is
+  -- rerolls outside a roll (Parun.Types.Effect's Rethrow). Also CR 701.3d:
+  -- which permanent a CostComponent.Unattach cost unattaches. The Seq is
   -- ChooseAnyNumber's. The counter kind, where there is one, is the one the
   -- pick puts a counter of (CR 122.6, Exotic Pets' "either of those tokens"
   -- asked once per kind).

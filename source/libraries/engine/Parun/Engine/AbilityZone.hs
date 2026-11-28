@@ -183,6 +183,7 @@ zoneOfComponent component = case component of
   -- moves THE OBJECT IT'S ON, and this moves OTHER permanents.
   CostComponent.ReturnPermanents {} -> Nothing
   CostComponent.ExilePermanents {} -> Nothing
+  CostComponent.Unattach _ -> Nothing
   -- Nothing, and NOT Just Zone.Graveyard: rule 113.6m again, and these move
   -- OTHER cards.
   CostComponent.MoveCardsFromGraveyard {} -> Nothing

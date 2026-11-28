@@ -2258,6 +2258,7 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.TapPermanents tap -> TapPermanents.count tap == announced
   CostComponent.ReturnPermanents {} -> False
   CostComponent.ExilePermanents {} -> False
+  CostComponent.Unattach _ -> False
   -- One card per discard out of a finite hand, Sacrifice's reason.
   CostComponent.DiscardCards discard -> DiscardCards.count discard == ObjectCount.Exactly announced
   CostComponent.DiscardThis _ -> False
@@ -2636,6 +2637,7 @@ componentStatesHiddenQuality component = case component of
   CostComponent.TapPermanents {} -> False
   CostComponent.ReturnPermanents {} -> False
   CostComponent.ExilePermanents {} -> False
+  CostComponent.Unattach _ -> False
   CostComponent.MoveThisFrom _ -> False
   CostComponent.MoveCardsFromGraveyard {} -> False
   CostComponent.ExileMaterials {} -> False
@@ -3274,6 +3276,19 @@ returnCandidates = criterionPool
 returnCandidatesGiven :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
 returnCandidatesGiven = criterionPoolGiven
 
+-- The permanents this player may unattach to pay an Unattach component on
+-- `oid`: `criterionPool` narrowed to the ones attached to something, since CR
+-- 701.3d's unattach of an Equipment equipping nothing does nothing and so cannot
+-- pay the cost (CR 118.3). Not narrowed to what the payer controls,
+-- `returnCandidates`' reading and for its reason.
+unattachCandidates :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
+unattachCandidates slots pid oid criterion gs = unattachCandidatesGiven (Snapshot.onDemand gs) slots pid oid criterion gs
+
+-- The same pool read off a snapshot of `gs` the caller already took.
+unattachCandidatesGiven :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
+unattachCandidatesGiven board slots pid oid criterion gs =
+  filter (\candidate -> Maybe.isJust (Game.lookupObject candidate gs >>= Object.attachedTo)) (criterionPoolGiven board slots pid oid criterion gs)
+
 -- The permanents this player may take `n` counters of the kinds `which` reaches
 -- off to pay a RemoveCounters component spread FromOne on `oid`:
 -- `criterionPool` narrowed to the ones CR 118.3 leaves payable, since a
@@ -3679,6 +3694,11 @@ claimOfGiven board slots pid oid component gs =
         -- CR 406.2's exile out of the same pool, ReturnPermanents' reading.
         CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents n criterion) ->
           claim (ClaimAxis.Removal Zone.Battlefield) (Set.fromList (returnCandidatesGiven board slots pid oid criterion gs)) n
+        -- Its own axis: CR 701.3d leaves the permanent on the battlefield, so a
+        -- removal paid after it still finds it, but a second unattach does not.
+        -- A FENCE: Toralf's Hammer's cost states one object-claiming component.
+        CostComponent.Unattach criterion ->
+          claim ClaimAxis.Unattaching (Set.fromList (unattachCandidatesGiven board slots pid oid criterion gs)) 1
         CostComponent.PayLife _ -> Nothing
         CostComponent.PayComputedLife _ -> Nothing
         CostComponent.PayEnergy _ -> Nothing
@@ -4161,6 +4181,7 @@ uncountedCeiling pid oid claims gs component = case component of
   CostComponent.ReturnThis -> Nothing
   CostComponent.ReturnPermanents {} -> Nothing
   CostComponent.ExilePermanents {} -> Nothing
+  CostComponent.Unattach _ -> Nothing
   CostComponent.DiscardCards {} -> Nothing
   CostComponent.DiscardThis _ -> Nothing
   CostComponent.PutCardFromHandOntoBattlefield _ -> Nothing
@@ -4596,6 +4617,7 @@ targetComputed component = case component of
   CostComponent.TapPermanents _ -> False
   CostComponent.ReturnPermanents _ -> False
   CostComponent.ExilePermanents _ -> False
+  CostComponent.Unattach _ -> False
   CostComponent.DiscardCards _ -> False
   CostComponent.DiscardThis _ -> False
   CostComponent.PutCardFromHandOntoBattlefield _ -> False
@@ -4657,6 +4679,7 @@ announcedRecord component = case component of
   CostComponent.TapPermanents _ -> Nothing
   CostComponent.ReturnPermanents _ -> Nothing
   CostComponent.ExilePermanents _ -> Nothing
+  CostComponent.Unattach _ -> Nothing
   CostComponent.DiscardCards _ -> Nothing
   CostComponent.DiscardThis _ -> Nothing
   CostComponent.PutCardFromHandOntoBattlefield _ -> Nothing
@@ -4723,6 +4746,7 @@ lifeOwedByComponent pid gs component = case component of
   CostComponent.TapPermanents {} -> 0
   CostComponent.ReturnPermanents {} -> 0
   CostComponent.ExilePermanents {} -> 0
+  CostComponent.Unattach _ -> 0
   CostComponent.DiscardCards {} -> 0
   CostComponent.DiscardThis _ -> 0
   CostComponent.PutCardFromHandOntoBattlefield _ -> 0
@@ -4784,6 +4808,7 @@ energyOwedByComponent component = case component of
   CostComponent.TapPermanents {} -> 0
   CostComponent.ReturnPermanents {} -> 0
   CostComponent.ExilePermanents {} -> 0
+  CostComponent.Unattach _ -> 0
   CostComponent.DiscardCards {} -> 0
   CostComponent.DiscardThis _ -> 0
   CostComponent.PutCardFromHandOntoBattlefield _ -> 0
@@ -4857,6 +4882,7 @@ countersOwedByComponent component = case component of
   CostComponent.TapPermanents {} -> []
   CostComponent.ReturnPermanents {} -> []
   CostComponent.ExilePermanents {} -> []
+  CostComponent.Unattach _ -> []
   CostComponent.DiscardCards {} -> []
   CostComponent.DiscardThis _ -> []
   CostComponent.PutCardFromHandOntoBattlefield _ -> []
@@ -5002,6 +5028,9 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- CR 118.3 for the exile, the arm above's reading over the same pool.
   CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents n criterion) ->
     Natural.length (returnCandidatesGiven board slots pid oid criterion gs) >= n
+  -- CR 118.3: payable only if a permanent the criterion admits is attached to
+  -- something.
+  CostComponent.Unattach criterion -> not (null (unattachCandidatesGiven board slots pid oid criterion gs))
   -- CR 118.3: payable only if the hand holds at least that many cards the
   -- criterion admits -- Magmatic Insight is uncastable out of a landless hand
   -- however many cards it holds.
@@ -5438,6 +5467,7 @@ criteriaOf component = case component of
   CostComponent.TapPermanents tap -> [TapPermanents.whichPermanents tap]
   CostComponent.ReturnPermanents ret -> [ReturnPermanents.whichPermanents ret]
   CostComponent.ExilePermanents exiled -> [ExilePermanents.whichPermanents exiled]
+  CostComponent.Unattach criterion -> [criterion]
   CostComponent.DiscardCards discard -> [DiscardCards.whichCards discard]
   CostComponent.PutCardFromHandOntoBattlefield criterion -> [criterion]
   CostComponent.ExileCardsFromHand exile -> [CardsFromHand.whichCards exile]
@@ -6602,6 +6632,7 @@ paidInSecondPass slots pid oid gs component = case component of
   CostComponent.ReturnThis -> False
   CostComponent.ReturnPermanents {} -> False
   CostComponent.ExilePermanents {} -> False
+  CostComponent.Unattach _ -> False
   CostComponent.MoveThisFrom _ -> False
   CostComponent.ExileThis -> False
   CostComponent.MoveCardsFromGraveyard {} -> False
@@ -6754,6 +6785,7 @@ sourceOnly component = case component of
   CostComponent.Sacrifice {} -> Nothing
   CostComponent.ReturnPermanents {} -> Nothing
   CostComponent.ExilePermanents {} -> Nothing
+  CostComponent.Unattach _ -> Nothing
   CostComponent.DiscardCards {} -> Nothing
   CostComponent.PutCardFromHandOntoBattlefield _ -> Nothing
   CostComponent.MoveCardsFromGraveyard {} -> Nothing
@@ -6810,6 +6842,7 @@ orderSensitive component = case component of
   -- which each append exactly this component to a mana cost and nothing else.
   CostComponent.ReturnPermanents {} -> True
   CostComponent.ExilePermanents {} -> True
+  CostComponent.Unattach _ -> True
   CostComponent.DiscardCards {} -> True
   CostComponent.DiscardThis _ -> True
   CostComponent.PutCardFromHandOntoBattlefield _ -> True
@@ -8153,6 +8186,17 @@ payPayable perform moment paidFor slots pid oid component = case component of
         linkPaidExiles pid paidFor oid component (foldMap Foldable.toList arrived)
         pure (Payment.Paid (Binding.paidObjects Binding.exiledPermanent (Set.map Recipient.ToObject chosen)))
       else pure Payment.Unpaid
+  -- CR 701.3d as a cost: the payer chooses which permanent, asked only between
+  -- two or more (Game.chooseAmong), and Event.detach records the
+  -- becomes-unattached event. Binds nothing.
+  CostComponent.Unattach criterion -> do
+    gs <- State.get
+    chosen <- Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who oid pool Seq.empty Nothing) pid (unattachCandidates slots pid oid criterion gs)
+    case chosen of
+      Nothing -> pure Payment.Unpaid
+      Just subject -> do
+        Event.detach subject
+        pure (Payment.Paid Map.empty)
   -- CR 701.9b: the discarding player chooses which cards, so this is a prompt.
   -- Elided only when forced -- as many MATCHING cards in hand as the count, which
   -- the criterion decides and not the hand's size: Magmatic Insight beside one

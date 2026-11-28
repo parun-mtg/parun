@@ -53,6 +53,7 @@ codec keywordCodec =
       Arm.payload "TapPermanents" (TapPermanents.codec keywordCodec) CostComponent.TapPermanents (\x -> case x of CostComponent.TapPermanents y -> Just y; _ -> Nothing),
       Arm.payload "ReturnPermanents" (ReturnPermanents.codec keywordCodec) CostComponent.ReturnPermanents (\x -> case x of CostComponent.ReturnPermanents y -> Just y; _ -> Nothing),
       Arm.payload "ExilePermanents" (ExilePermanents.codec keywordCodec) CostComponent.ExilePermanents (\x -> case x of CostComponent.ExilePermanents y -> Just y; _ -> Nothing),
+      Arm.payload "Unattach" (Filter.codec keywordCodec) CostComponent.Unattach (\x -> case x of CostComponent.Unattach y -> Just y; _ -> Nothing),
       Arm.payload "DiscardCards" (DiscardCards.codec keywordCodec) CostComponent.DiscardCards (\x -> case x of CostComponent.DiscardCards y -> Just y; _ -> Nothing),
       -- The component carries a DiscardCause, but the WIRE does not: a card
       -- prints "Discard this card" and never says the discard is a cycle, which
@@ -114,6 +115,7 @@ tagOf x = case x of
   CostComponent.TapPermanents {} -> "TapPermanents"
   CostComponent.ReturnPermanents {} -> "ReturnPermanents"
   CostComponent.ExilePermanents {} -> "ExilePermanents"
+  CostComponent.Unattach {} -> "Unattach"
   CostComponent.DiscardCards {} -> "DiscardCards"
   CostComponent.DiscardThis {} -> "DiscardThis"
   CostComponent.PutCardFromHandOntoBattlefield {} -> "PutCardFromHandOntoBattlefield"

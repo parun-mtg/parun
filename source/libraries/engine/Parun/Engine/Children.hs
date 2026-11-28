@@ -2206,6 +2206,7 @@ costComponentChildren c component = case component of
   CostComponent.TapPermanents (TapPermanents.MkTapPermanents n criterion sharing becoming) -> fmap CostComponent.TapPermanents (TapPermanents.MkTapPermanents <$> costAmountChildren c n <*> costFilter c criterion <*> pure sharing <*> pure becoming)
   CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents n criterion) -> fmap CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents n <$> costFilter c criterion)
   CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents n criterion) -> fmap CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents n <$> costFilter c criterion)
+  CostComponent.Unattach criterion -> CostComponent.Unattach <$> costFilter c criterion
   CostComponent.DiscardCards (DiscardCards.MkDiscardCards n criterion selection) -> fmap CostComponent.DiscardCards (DiscardCards.MkDiscardCards <$> objectCountChildren c n <*> costFilter c criterion <*> pure selection)
   CostComponent.DiscardThis _ -> pure component
   CostComponent.PutCardFromHandOntoBattlefield criterion -> CostComponent.PutCardFromHandOntoBattlefield <$> costFilter c criterion

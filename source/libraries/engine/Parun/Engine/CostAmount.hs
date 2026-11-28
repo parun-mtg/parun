@@ -89,6 +89,7 @@ traverseAmount f component = case component of
   CostComponent.TapPermanents tap -> (\amount -> CostComponent.TapPermanents tap {TapPermanents.count = amount}) <$> f (TapPermanents.count tap)
   CostComponent.ReturnPermanents {} -> pure component
   CostComponent.ExilePermanents {} -> pure component
+  CostComponent.Unattach _ -> pure component
   CostComponent.DiscardCards discard -> (\count -> CostComponent.DiscardCards discard {DiscardCards.count = count}) <$> traverseCount f (DiscardCards.count discard)
   CostComponent.DiscardThis _ -> pure component
   CostComponent.PutCardFromHandOntoBattlefield _ -> pure component

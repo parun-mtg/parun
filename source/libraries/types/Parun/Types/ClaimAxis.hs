@@ -23,4 +23,7 @@ data ClaimAxis
     -- spends without moving anything (CR 701.26b): Benthic Explorers' land
     -- untapped by one payment is not there to be untapped by the next.
     Untapping
+  | -- | The ATTACHED permanents on the battlefield, which an unattach as a cost
+    -- spends without moving anything (CR 701.3d).
+    Unattaching
   deriving (Eq, Ord, Show)

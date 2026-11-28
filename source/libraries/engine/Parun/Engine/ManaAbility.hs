@@ -257,6 +257,7 @@ costMovesLibraryCard component = case component of
   CostComponent.ReturnThis -> False
   CostComponent.ReturnPermanents {} -> False
   CostComponent.ExilePermanents {} -> False
+  CostComponent.Unattach _ -> False
   CostComponent.ExileThis -> False
   -- Gurzigost's and Daniels, Temporal Agent's costs put the cards INTO a
   -- library. A fence: no mana ability prints either cost, so no test observes
