@@ -3363,6 +3363,8 @@ objectRefObjects legal resolving controller source gs ref = case ref of
   -- CR 901.12c: each member's, for a planar source in Two-Headed Giant
   -- (Plane.planarYous), Academy at Tolaria West's "discard your hand" --
   -- data/scenarios/planechase/cr-901-12c-academy-at-tolaria-west-s-chaos-discards-each-member-s-hand.json.
+  -- A move reads the controller's own hand instead (CR 810.5,
+  -- Resolve.Arms.Zones.moveToZone).
   ObjectRef.EachCardInYourHand -> concatMap (\you -> Game.cardsIn Zone.Hand you gs) (Plane.planarYous source controller gs)
   -- The arm above's zone under EachCardInGraveyard's scope and filter: CR
   -- 109.2a's reading again, over the hands Target.zoneScopePlayers names rather

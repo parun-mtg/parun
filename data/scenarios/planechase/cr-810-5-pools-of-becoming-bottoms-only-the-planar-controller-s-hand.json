@@ -1,0 +1,224 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "command": [
+          {
+            "card": "Pools of Becoming",
+            "label": "pools"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice",
+        "sideDecks": [
+          {
+            "key": "Planar",
+            "value": [
+              {
+                "card": "Tazeem"
+              }
+            ]
+          }
+        ],
+        "team": 1
+      },
+      {
+        "hand": [
+          {
+            "card": "Island"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "dave",
+        "team": 1
+      },
+      {
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "bob",
+        "team": 2
+      },
+      {
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "PostcombatMain",
+    "twoHeadedGiant": true
+  },
+  "description": "CR 810.5 Pools of Becoming bottoms only the planar controller's hand in Two-Headed Giant",
+  "final": [
+    {
+      "Count": {
+        "card": "Island",
+        "count": 2,
+        "player": "alice",
+        "zone": "Library"
+      }
+    },
+    {
+      "Count": {
+        "card": "Forest",
+        "count": 2,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Island",
+        "count": 1,
+        "player": "dave",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Mountain",
+        "count": 0,
+        "player": "dave",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "A Two-Headed Giant Planechase game, alice and dave against bob and carol, alice the planar controller (CR 901.12b). At her team's end step Pools of Becoming's trigger, hers alone (CR 311.7, 901.6), has her put her own two Islands on the bottom of her library and draw two: she performs the move and cannot move dave's cards (CR 608.2c, 810.5; docs/decisions.md, \"A plane's you is the planar team\"), so dave keeps his Island and draws nothing.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ArrangeLibraryArrivals",
+          "with": [
+            0,
+            1
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "dave",
+          "zone": "Hand"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}
