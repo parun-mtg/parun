@@ -1,0 +1,90 @@
+{
+  "description": "Invasion of the Giants: I scries 2; II draws, then alice reveals a Giant card and the reflexive trigger deals 2 to target opponent; III makes only the next Giant spell she casts that turn cost {2} less",
+  "note": "CR 715.2b, 703.4f, 701.22a, 701.20a, 603.12, 601.2f, 611.2a. Chapter I scries the Forest to the bottom and keeps the Swamp on top. Chapter II (turn 4) draws, then the reveal offers the Hill Giant and the Stone Giant but not the Grizzly Bears; revealing the Hill Giant raises the 'when you do' trigger, which refuses alice herself and carol's bears (neither an opponent nor a planeswalker) and deals 2 to bob, carol untouched. Chapter III (turn 7): the Grizzly Bears cast first still costs {1}{G}, the Hill Giant after it costs {1}{R} instead of {3}{R}, and the Stone Giant after that pays its full {2}{R}{R}, four Mountains leaving no mana floating.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Island", "label": "i1" },
+          { "card": "Mountain", "label": "m1" },
+          { "card": "Mountain", "label": "m2" },
+          { "card": "Mountain", "label": "m3" },
+          { "card": "Mountain", "label": "m4" },
+          { "card": "Mountain", "label": "m5" },
+          { "card": "Mountain", "label": "m6" },
+          { "card": "Forest", "label": "f1" },
+          { "card": "Forest", "label": "f2" }
+        ],
+        "hand": [
+          { "card": "Invasion of the Giants", "label": "saga" },
+          { "card": "Hill Giant", "label": "hill" },
+          { "card": "Stone Giant", "label": "stone" },
+          { "card": "Grizzly Bears", "label": "bears" }
+        ],
+        "library": [
+          { "card": "Forest", "label": "lf" },
+          { "card": "Swamp", "label": "ls" },
+          { "card": "Island", "label": "li1" },
+          { "card": "Island", "label": "li2" },
+          { "card": "Island", "label": "li3" },
+          { "card": "Island", "label": "li4" }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      },
+      {
+        "name": "carol",
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "cbears" }
+        ],
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$saga", "mana": ["$i1", "$m1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseScry", "with": [["$lf"], ["$ls"]] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Library", "is": ["Swamp", "$li1", "$li2", "$li3", "$li4", "Forest#3"] } } },
+    { "turn": 3, "step": "DeclareAttackers", "player": "carol", "do": { "Attack": [] } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": {"kind":"ChooseCardInHand","offer":{"source":"Invasion of the Giants","options":["$hill","$stone"]}} } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardInHand", "with": "$hill" } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "refuse": { "ChooseTargets": { "target": ["$alice"] } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "refuse": { "ChooseTargets": { "target": ["$cbears"] } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$bob"] } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 18 } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "carol", "life": 20 } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 20 } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "card": "Island", "zone": "Hand", "count": 1 } } },
+    { "turn": 6, "step": "DeclareAttackers", "player": "carol", "do": { "Attack": [] } },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bears", "mana": ["$f1", "$f2", null] } } },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$hill", "mana": ["$m1", "$m2", null] } } },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "card": "Hill Giant", "zone": "Battlefield", "count": 1 } } },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$m3", "tapped": false } } },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$stone", "mana": ["$m3", "$m4", "$m5", "$m6", null] } } },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "card": "Stone Giant", "zone": "Battlefield", "count": 1 } } },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$m6", "tapped": true } } },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [] } } }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "description": "Sword of the Realms, equipped for {1}{W}, gives the bears +2/+0 and vigilance; when the equipped bears die they return to alice's hand, while the unequipped lions stay in the graveyard",
-  "note": "CR 702.6a, 301.5c, 702.20b, 603.6c, 603.10a. Halvar's back face is placed showing Sword of the Realms and equipped to the bears with alice's Mountain and Plains; the lions beside them stay 2/1 without vigilance. Both attack: only the lions tap, and bob takes 4 + 2. Bob's two Shocks kill both creatures; the Sword's leaves-the-battlefield trigger returns only the creature it equipped, so the lions stay in the graveyard and the Sword stays on the battlefield unattached.",
+  "note": "CR 702.6a, 301.5a, 702.20b, 603.6c, 603.10a. Halvar's back face is placed showing Sword of the Realms and equipped to the bears with alice's Mountain and Plains; the lions beside them stay 2/1 without vigilance. Both attack: only the lions tap, and bob takes 4 + 2. Bob's two Shocks kill both creatures; the Sword's leaves-the-battlefield trigger returns only the creature it equipped, so the lions stay in the graveyard and the Sword stays on the battlefield unattached.",
   "board": {
     "active": "alice",
     "seats": [

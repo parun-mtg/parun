@@ -60,9 +60,10 @@
                         "value": "Creature"
                       },
                       {
-                        "type": "Not",
+                        "type": "HeldBy",
                         "value": {
-                          "type": "IsSource"
+                          "holder": "Controller",
+                          "relation": "You"
                         }
                       }
                     ]
