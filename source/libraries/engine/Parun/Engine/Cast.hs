@@ -1788,11 +1788,26 @@ heldAdmits oid face board permission =
 
 -- CR 601.3 / 716.3: may `face` be cast under this permission's verb? Mosswood
 -- Dreadknight's "you may cast it ... as an Adventure" admits the Adventure face
--- alone; every other verb admits any face. The scenario
+-- alone, and The Omenkeel's "you may play lands" admits none; every other verb
+-- admits any face. The scenarios
 -- cr-716-3-mosswood-dreadknight-casts-dread-whispers-from-its-graveyard-but-not-the-creature
--- proves it.
+-- and the-omenkeel-plays-an-exiled-mdfc-by-its-land-face-and-casts-none-of-the-cards
+-- prove it.
 verbAdmits :: Face.Face Card.Type.Card -> ExilePlayPermission.ExilePlayPermission -> Bool
-verbAdmits face permission = ExilePlayPermission.verb permission /= PermissionVerb.CastAsAdventure || Card.isAdventure face
+verbAdmits face permission = case ExilePlayPermission.verb permission of
+  PermissionVerb.CastAsAdventure -> Card.isAdventure face
+  PermissionVerb.PlayLand -> False
+  PermissionVerb.Cast -> True
+  PermissionVerb.Play -> True
+
+-- CR 305.1 / 601.3: does a permission with this verb let a land be played? Cast
+-- and CastAsAdventure never do (CR 305.9).
+verbPlaysLand :: PermissionVerb.PermissionVerb -> Bool
+verbPlaysLand verb = case verb of
+  PermissionVerb.Play -> True
+  PermissionVerb.PlayLand -> True
+  PermissionVerb.Cast -> False
+  PermissionVerb.CastAsAdventure -> False
 
 -- CR 601.3: does some open permission in Object.playPermissions name this
 -- player and admit this face under its verb (verbAdmits)? Asked of a cast from
@@ -1841,11 +1856,14 @@ permitsPlayUnderPermission pid oid gs = not (null (Expiry.openPermissions pid oi
 
 -- The land side of permitsPlayUnderPermission: CR 305.9 / 601.3, a permission whose
 -- verb is Cast lets a spell be cast and never lets a land be played (Ragavan,
--- Nimble Pilferer's "you may cast that card"). Parun.ConjureSpec's Kari Zev case
--- proves it.
+-- Nimble Pilferer's "you may cast that card"), while one whose verb is PlayLand
+-- lets a land be played by any land face (CR 712.9) and nothing be cast.
+-- Parun.ConjureSpec's Kari Zev case proves the first, and
+-- the-omenkeel-plays-an-exiled-mdfc-by-its-land-face-and-casts-none-of-the-cards
+-- the second.
 permitsLandPlayUnderPermission :: PlayerId -> ObjectId -> GameState -> Bool
 permitsLandPlayUnderPermission pid oid gs =
-  any ((== PermissionVerb.Play) . ExilePlayPermission.verb) (Expiry.openPermissions pid oid gs)
+  any (verbPlaysLand . ExilePlayPermission.verb) (Expiry.openPermissions pid oid gs)
 
 -- CR 118.14: how may this player spend mana toward casting THIS object, as the
 -- object lies right now? Dire Fleet Daredevil's "and mana of any type can be
@@ -3338,12 +3356,12 @@ playLandAs settle offered asCopy pid oid mName = do
       then pure Nothing
       else choosePlayPermission pid oid (PlayerEffect.landPermissionOptions (\src -> not (null (Event.permissionRiders src before oid))) pid oid (asPlayed oid mName before))
   -- CR 601.3: and, made under the card's own permissions, which of them, where
-  -- it holds several Play-verb ones that differ, or a graveyard land's own
+  -- it holds several land-playing ones (verbPlaysLand) that differ, or a graveyard land's own
   -- "you may play this card from your graveyard" (CR 305.1) instead; `held` is
   -- the board narrowed to it, which every read of the permission below takes.
   -- dark-depths-under-kaldring-and-kethis-is-played-untapped proves the choice.
   let bare board = PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Play pid oid board || PlayerEffect.mayPlayByMayhem pid oid board
-  chosen <- if offered || Maybe.isJust permission then pure Nothing else chooseHeldPermission pid oid (const True) bare landUnderDiffers ((== PermissionVerb.Play) . ExilePlayPermission.verb) before
+  chosen <- if offered || Maybe.isJust permission then pure Nothing else chooseHeldPermission pid oid (const True) bare landUnderDiffers (verbPlaysLand . ExilePlayPermission.verb) before
   let held = maybe before (\p -> underHeld oid p before) chosen
       riders played = foldMap (\(src, _) -> Event.permissionRiders src before played) permission
   entryRow <- if Maybe.isNothing permission && not offered then installLandEntry pid oid held else pure Nothing
@@ -3520,7 +3538,7 @@ installLandEntry :: PlayerId -> ObjectId -> GameState -> Game (Maybe Timestamp.T
 installLandEntry pid oid gs = case Game.lookupObject oid gs of
   Just obj
     | Object.zone obj `elem` [Zone.Exile, Zone.Graveyard],
-      permission : _ <- filter ((== PermissionVerb.Play) . ExilePlayPermission.verb) (Expiry.openPermissions pid oid gs),
+      permission : _ <- filter (verbPlaysLand . ExilePlayPermission.verb) (Expiry.openPermissions pid oid gs),
       ExilePlayPermission.landEnters permission == TapState.Tapped -> do
         let src = ExilePlayPermission.source permission
         live <- State.get

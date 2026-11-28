@@ -4,7 +4,8 @@ module Parun.Types.PermissionVerb where
 -- covers. Garruk's Horde's "you may CAST creature spells" is Cast; Serra
 -- Paragon's "you may PLAY a land ... or CAST a permanent spell", which is the
 -- glossary's "play" (a land played or a spell cast), is Play; Mosswood
--- Dreadknight's "you may cast it ... AS AN ADVENTURE" is CastAsAdventure.
+-- Dreadknight's "you may cast it ... AS AN ADVENTURE" is CastAsAdventure; The
+-- Omenkeel's "you may play LANDS from among those cards" is PlayLand.
 --
 -- A field of the permission rather than a second arm beside
 -- Parun.Types.PlayerEffect's PlayLandsFrom, because a Play permission is ONE
@@ -17,4 +18,6 @@ data PermissionVerb
     Play
   | -- | CR 601.3 / 716.3: the covered card may be cast as an Adventure only.
     CastAsAdventure
+  | -- | CR 305.1 / 712.9: the covered card may be played as a land, by any land face, and never cast.
+    PlayLand
   deriving (Bounded, Enum, Eq, Ord, Show)

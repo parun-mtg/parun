@@ -385,4 +385,10 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
       s
       (Either.isLeft (Codec.decode CastFromZone.codec =<< Common.parse (Text.pack "{\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"verb\":\"CastAsAdventure\"}")))
       "expected a decode failure"
+  -- PlayerEffect.PlayLandsFrom is the land-only permission over a zone.
+  Spec.it s "rejects a land-only verb" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode CastFromZone.codec =<< Common.parse (Text.pack "{\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"verb\":\"PlayLand\"}")))
+      "expected a decode failure"
   Spec.it s "has a schema" $ Common.assertHasSchema s CastFromZone.codec

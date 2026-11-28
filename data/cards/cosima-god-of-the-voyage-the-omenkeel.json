@@ -1,0 +1,388 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Cosima, God of the Voyage",
+      "oracleText": "At the beginning of your upkeep, you may exile Cosima. If you do, it gains \"Whenever a land you control enters, if Cosima is exiled, you may put a voyage counter on it. If you don't, return Cosima to the battlefield with X +1/+1 counters on it and draw X cards, where X is the number of voyage counters on it.\"",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Beginning",
+                "value": "Upkeep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          },
+                          "slot": "exiled",
+                          "zone": "Exile"
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "GainAbility",
+                            "value": {
+                              "type": "Triggered",
+                              "value": {
+                                "condition": {
+                                  "type": "Enters",
+                                  "value": {
+                                    "permanent": {
+                                      "type": "Matching",
+                                      "value": {
+                                        "type": "And",
+                                        "value": [
+                                          {
+                                            "type": "HasCardType",
+                                            "value": "Land"
+                                          },
+                                          {
+                                            "type": "HeldBy",
+                                            "value": {
+                                              "holder": "Controller",
+                                              "relation": "You"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                },
+                                "functionsFrom": [
+                                  "Exile"
+                                ],
+                                "intervening": {
+                                  "type": "Compares",
+                                  "value": {
+                                    "comparison": "AtLeast",
+                                    "measured": {
+                                      "type": "Count",
+                                      "value": {
+                                        "aggregation": {
+                                          "type": "Members"
+                                        },
+                                        "filter": {
+                                          "type": "IsSource"
+                                        },
+                                        "scope": {
+                                          "type": "InZone",
+                                          "value": {
+                                            "player": {
+                                              "type": "Relative",
+                                              "value": "AnyPlayer"
+                                            },
+                                            "zone": "Exile"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "threshold": {
+                                      "type": "Literal",
+                                      "value": 1
+                                    }
+                                  }
+                                },
+                                "modal": {
+                                  "modes": [
+                                    {
+                                      "clauses": [
+                                        {
+                                          "effects": [
+                                            {
+                                              "type": "PutCounters",
+                                              "value": {
+                                                "kind": {
+                                                  "type": "Named",
+                                                  "value": "voyage"
+                                                },
+                                                "quantity": {
+                                                  "type": "Literal",
+                                                  "value": 1
+                                                },
+                                                "ref": {
+                                                  "type": "InSlot",
+                                                  "value": "self"
+                                                }
+                                              }
+                                            }
+                                          ],
+                                          "optionality": {
+                                            "type": "Optional"
+                                          }
+                                        },
+                                        {
+                                          "effects": [
+                                            {
+                                              "type": "MoveToZone",
+                                              "value": {
+                                                "ref": {
+                                                  "type": "InSlot",
+                                                  "value": "self"
+                                                },
+                                                "riders": {
+                                                  "counters": [
+                                                    {
+                                                      "count": {
+                                                        "type": "ObjectCounters",
+                                                        "value": {
+                                                          "type": "Named",
+                                                          "value": "voyage"
+                                                        }
+                                                      },
+                                                      "kind": {
+                                                        "type": "PlusOnePlusOne"
+                                                      }
+                                                    }
+                                                  ]
+                                                },
+                                                "zone": "Battlefield"
+                                              }
+                                            },
+                                            {
+                                              "type": "Draw",
+                                              "value": {
+                                                "player": {
+                                                  "type": "Relative",
+                                                  "value": "You"
+                                                },
+                                                "quantity": {
+                                                  "type": "ObjectCounters",
+                                                  "value": {
+                                                    "type": "Named",
+                                                    "value": "voyage"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ],
+                                          "ifTaken": {
+                                            "type": "NoneTaken",
+                                            "value": [
+                                              0
+                                            ]
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "exiled"
+                          }
+                        }
+                      }
+                    ],
+                    "ifTaken": {
+                      "type": "AnyTaken",
+                      "value": [
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "God"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    },
+    {
+      "keywords": [
+        {
+          "type": "Crew",
+          "value": {
+            "power": 1
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "The Omenkeel",
+      "oracleText": "Whenever a Vehicle you control deals combat damage to a player, that player exiles that many cards from the top of their library. You may play lands from among those cards for as long as they remain exiled.\nCrew 1",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "DealsDamage",
+            "value": {
+              "actor": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasSubtype",
+                      "value": "Vehicle"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              },
+              "kind": "Combat",
+              "recipients": [
+                {
+                  "type": "Player",
+                  "value": {
+                    "type": "Relative",
+                    "value": "AnyPlayer"
+                  }
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "InSlot",
+                                "value": "thatMuch"
+                              },
+                              "player": {
+                                "type": "InSlot",
+                                "value": "thatPlayer"
+                              }
+                            }
+                          },
+                          "slot": "exiled",
+                          "zone": "Exile"
+                        }
+                      },
+                      {
+                        "type": "GrantPlayFromExile",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "exiled"
+                          },
+                          "verb": "PlayLand"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Vehicle"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "ModalDoubleFaced"
+  }
+}
