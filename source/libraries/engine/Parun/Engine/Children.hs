@@ -137,6 +137,7 @@ import qualified Parun.Types.ControlSides as ControlSides
 import qualified Parun.Types.ControlSlots as ControlSlots
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyClause as CopyClause
+import qualified Parun.Types.CopyDomain as CopyDomain
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CopyOriginal as CopyOriginal
 import qualified Parun.Types.CopyPowerToughness as CopyPowerToughness
@@ -4144,9 +4145,9 @@ copyLeaves =
       copyListedKeyword = pure
     }
 
--- | A copy rewrite's children (CR 707.5). Whether it enters tapped, what it
--- copies among, who receives it and whether it is optional are left as they
--- are.
+-- | A copy rewrite's children (CR 707.5), the slot its domain reads among
+-- them. Whether it enters tapped, the zone or pile it copies among, who
+-- receives it and whether it is optional are left as they are.
 asCopyChildren :: (Applicative f) => CopyChildren ability effect f -> AsCopy.AsCopy ability effect -> f (AsCopy.AsCopy ability effect)
 asCopyChildren c (AsCopy.MkAsCopy eligible amount clauses tapped whenYouDo among duration recipient optional) =
   AsCopy.MkAsCopy
@@ -4155,10 +4156,15 @@ asCopyChildren c (AsCopy.MkAsCopy eligible amount clauses tapped whenYouDo among
     <*> traverse (copyClauseChildren c) clauses
     <*> pure tapped
     <*> traverse (copyEffect c) whenYouDo
-    <*> pure among
+    <*> copyDomainChildren among
     <*> traverse (copyDuration c) duration
     <*> pure recipient
     <*> pure optional
+  where
+    copyDomainChildren domain = case domain of
+      CopyDomain.InZone _ -> pure domain
+      CopyDomain.InPile _ -> pure domain
+      CopyDomain.InSlot name -> CopyDomain.InSlot <$> copySlot c name
 
 -- | One clause of a copy's exceptions: its condition (CR 707.9f), its
 -- exceptions and its counters (CR 707.9e).

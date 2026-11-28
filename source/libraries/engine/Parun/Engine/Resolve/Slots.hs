@@ -97,6 +97,7 @@ import qualified Parun.Types.ControlSides as ControlSides
 import qualified Parun.Types.ControlSlots as ControlSlots
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyClause as CopyClause
+import qualified Parun.Types.CopyDomain as CopyDomain
 import qualified Parun.Types.CopyOriginal as CopyOriginal
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CostBasis as CostBasis
@@ -1907,13 +1908,18 @@ turnUpRewriteReads rewrite = case rewrite of
   TurnUpRewrite.AsCopy asCopy -> asCopyReads asCopy
 
 -- What a copy rewrite reads, on either event class: the eligible filter, its
--- amount, and each clause's CR 707.9f condition and CR 707.9e counters. The
+-- amount, each clause's CR 707.9f condition and CR 707.9e counters, and a
+-- domain's slot (CR 608.2h), as the IsBound atom reading the same slot. The
 -- duration names no slot -- every arm an AsCopy states is one durationSlots
 -- answers empty for.
 asCopyReads :: AsCopy.AsCopy ability effect -> ([Filter.Type.Filter Keyword.Type.Keyword], [Quantity.Type.Quantity])
 asCopyReads asCopy =
   let clause part = foldMap conditionQuantities (CopyClause.condition part) <> foldMap (Map.elems . WithCounters.counters) (CopyClause.counters part)
-   in ([AsCopy.eligible asCopy], Maybe.maybeToList (AsCopy.amount asCopy) <> foldMap clause (AsCopy.clauses asCopy))
+      domain = case AsCopy.among asCopy of
+        CopyDomain.InSlot slot -> [Filter.Type.IsBound slot]
+        CopyDomain.InZone _ -> []
+        CopyDomain.InPile _ -> []
+   in (AsCopy.eligible asCopy : domain, Maybe.maybeToList (AsCopy.amount asCopy) <> foldMap clause (AsCopy.clauses asCopy))
 
 -- Every Quantity a Condition holds: both sides of a comparison, plus whatever a
 -- disjunction or a conjunction nests (Parun.Types.Condition).

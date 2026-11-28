@@ -3961,11 +3961,14 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.AgainstLastCardExiledWith (AgainstLastCardExiledWith.MkAgainstLastCardExiledWith criterion inner) -> (Unframed, criterion) : quantityKindFilters inner
 
 -- CR 707.5's domain as the atom selecting the same cards: a linked pile
--- (CR 607.2a) is one, a whole zone none.
+-- (CR 607.2a) is one, a whole zone none, and a slot's object (CR 608.2h) none
+-- either: it is a slot read, which Parun.Engine.Children's copySlot reaches, and
+-- an IsBound here would be an atom the encoded card does not hold.
 domainFilters :: CopyDomain.CopyDomain -> [Filter.Type.Filter Keyword.Keyword]
 domainFilters domain = case domain of
   CopyDomain.InZone _ -> []
   CopyDomain.InPile pile -> [Filter.Type.IsExiledWithSource pile]
+  CopyDomain.InSlot _ -> []
 
 -- CR 601.3's pool as the atom selecting the same cards: none for the whole zone,
 -- nor for ExiledByYou, which no Filter atom states.

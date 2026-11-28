@@ -3687,9 +3687,12 @@ applyCopyExceptions this own exceptions snapshot =
 -- "any enchantment", and this function must not know which. The domain is the
 -- card's too (Parun.Types.AsCopy's `among`): the battlefield for Clone, for
 -- Superior Spider-Man's "any creature card in a graveyard" every player's
--- graveyard, and for Dinosaur Headdress's "an exiled creature card used to craft
--- this Equipment" its craft materials (Game.linkedPile). Any other zone
--- answers nothing.
+-- graveyard, for Dinosaur Headdress's "an exiled creature card used to craft
+-- this Equipment" its craft materials (Game.linkedPile), and for Mystic
+-- Reflection's "the chosen creature" what the installing resolution's slot
+-- named, live or gone (CR 608.2h). Any other zone answers nothing. A gone
+-- object's view is blank, so of the Filter only its slot atom (Filter.IsBound)
+-- still matches it, which is all Mystic Reflection writes.
 --
 -- Matched through each candidate's own CR 613 projection, revealableFromHand's
 -- reading, so a continuous effect that made a permanent an enchantment reaches
@@ -3717,6 +3720,7 @@ legalCopyTargets context batch filter_ among self gs =
         CopyDomain.InPile pile ->
           let src = Maybe.fromMaybe self (Filter.source context)
            in Game.linkedPile (Filter.perspective context) Nothing (Quantity.readerAcquisition context src gs) pile src gs
+        CopyDomain.InSlot slot -> Set.toAscList (Map.findWithDefault Set.empty slot (Filter.slotObjects context))
    in filter eligible domain
 
 -- CR 603.11 / 707.9g: the triggered ability linked to a replacement ("When

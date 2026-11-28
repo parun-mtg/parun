@@ -49,6 +49,7 @@ import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.Aggregation as Aggregation
+import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.BeginningStep as BeginningStep
@@ -69,6 +70,8 @@ import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.ControlPlayerNext as ControlPlayerNext
 import qualified Parun.Types.ControlSpan as ControlSpan
 import qualified Parun.Types.ControllerRelation as ControllerRelation
+import qualified Parun.Types.CopyDomain as CopyDomain
+import qualified Parun.Types.CopyRecipient as CopyRecipient
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
@@ -85,6 +88,8 @@ import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntryBlock as EntryBlock
+import qualified Parun.Types.EntryR as EntryR
+import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
@@ -131,6 +136,9 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Replace as Replace
+import qualified Parun.Types.ReplacementEffect as ReplacementEffect
+import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.Response as Response
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Scope as Scope
@@ -155,6 +163,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.WordFamily as WordFamily
 import qualified Parun.Types.Zone as Zone
 
@@ -572,6 +581,14 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
     Spec.assertEqWith s "the rider is a read, beside the ref's own" (Resolve.slotsOf (move EntryRiders.defaultValue {EntryRiders.blocking = Just (EntryBlock.Specified slot)})) (Map.fromList [(moved, SlotArity.Many), (slot, SlotArity.One)])
     Spec.assertEqWith s "and a move stating no attacker names only what it moves" (Resolve.slotsOf (move EntryRiders.defaultValue)) (Map.singleton moved SlotArity.Many)
     Spec.assertEqWith s "as does one whose controller chooses the attacker" (Resolve.slotsOf (move EntryRiders.defaultValue {EntryRiders.blocking = Just EntryBlock.Chosen})) (Map.singleton moved SlotArity.Many)
+  -- The same fence for CR 608.2h's copy domain (Mystic Reflection), whose card
+  -- also names the slot in its eligible filter, so the pool cannot observe the
+  -- domain's read alone.
+  Spec.it s "CR 608.2h slotsOf finds the slot a copy rewrite's domain reads" $ do
+    let slot = SlotName.MkSlotName (Text.pack "target")
+        copying among = Resolve.slotsOf (Effect.Replace (Replace.MkReplace Duration.UntilEndOfTurn Uses.Once ReplacementOrigin.Other Nothing (ReplacementEffect.EntryR (EntryR.MkEntryR (Filter.Type.HasCardType CardType.Creature) (EntryRewrite.AsCopy (AsCopy.MkAsCopy (Filter.Type.HasCardType CardType.Creature) Nothing [] False Seq.empty among Nothing CopyRecipient.ThisObject False))))))
+    Spec.assertEqWith s "the domain's slot is a read" (copying (CopyDomain.InSlot slot)) (Map.singleton slot SlotArity.Many)
+    Spec.assertEqWith s "and the battlefield reads none" (copying (CopyDomain.InZone Zone.Battlefield)) Map.empty
   Spec.it s "CR 605 manaProduced reads AddMana whole, and nothing else" $ do
     let plain = ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.OfType (ManaType.Colored Color.Green)) (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False
         anyColor = ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.AnyColor ColorSpread.OneColor) (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False

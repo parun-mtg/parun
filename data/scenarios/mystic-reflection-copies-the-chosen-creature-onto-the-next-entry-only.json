@@ -1,0 +1,41 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {"card": "Island", "label": "i1", "ready": true},
+          {"card": "Island", "label": "i2", "ready": true}
+        ],
+        "hand": [
+          {"card": "Mystic Reflection", "label": "reflection"},
+          {"card": "Memnite", "label": "m1"},
+          {"card": "Memnite", "label": "m2"}
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {"card": "Grizzly Bears", "label": "bears", "ready": true}
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Mystic Reflection makes the next creature to enter a copy of the chosen creature, and only that one",
+  "note": "CR 614.1c / 707.5 / 614.3: the first Memnite enters as a 2/2 Grizzly Bears; the row is spent by that event, so the second enters as a 1/1 Memnite. Printed names count live objects in creation order, so the first cast Memnite is #1 once both are on the battlefield.",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$reflection", "mana": ["$i1", "$i2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$m1", "mana": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$m2", "mana": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "Memnite#1", "names": ["Grizzly Bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Memnite#1", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "Memnite#2", "names": ["Memnite"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Memnite#2", "power": 1, "toughness": 1}}}
+  ]
+}
