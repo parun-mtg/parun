@@ -1,0 +1,66 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Giant Ox",
+      "oracleText": "This creature crews Vehicles using its toughness rather than its power.",
+      "power": {
+        "type": "Literal",
+        "value": 0
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "modifications": [
+            {
+              "type": "TapsCounting",
+              "value": {
+                "count": {
+                  "type": "UsingToughness"
+                },
+                "keywords": [
+                  {
+                    "keyword": "Crew",
+                    "permanent": {
+                      "type": "HasSubtype",
+                      "value": "Vehicle"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 6
+      },
+      "typeLine": {
+        "subtypes": [
+          "Ox"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
