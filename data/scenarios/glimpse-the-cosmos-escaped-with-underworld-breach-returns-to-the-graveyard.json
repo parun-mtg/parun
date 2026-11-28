@@ -123,21 +123,6 @@
       "turn": 1
     },
     {
-      "do": {
-        "Answer": {
-          "prompt": "ChooseExilesFromGraveyard",
-          "with": [
-            "$s1",
-            "$s2",
-            "$s3"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
