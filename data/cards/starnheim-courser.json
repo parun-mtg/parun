@@ -1,0 +1,81 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Starnheim Courser",
+      "oracleText": "Flying\nArtifact and enchantment spells you cast cost {1} less to cast.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "ModifyCost",
+            "value": {
+              "change": {
+                "type": "Reduce",
+                "value": {
+                  "amount": [
+                    {
+                      "type": "Generic",
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              "matching": {
+                "type": "Or",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Artifact"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Enchantment"
+                  }
+                ]
+              },
+              "subject": {
+                "type": "Spells"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Pegasus"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

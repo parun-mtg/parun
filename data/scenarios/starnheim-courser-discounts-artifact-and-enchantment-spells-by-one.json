@@ -1,0 +1,204 @@
+{
+  "description": "CR 601.2f: Starnheim Courser makes artifact and enchantment spells its controller casts cost {1} less",
+  "note": "Grizzly Bears, a creature spell, keeps its full cost; Bonesplitter costs nothing and Pacifism only {W}.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p0"
+          },
+          {
+            "card": "Forest",
+            "label": "f0"
+          },
+          {
+            "card": "Starnheim Courser",
+            "label": "courser"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grizzly Bears",
+            "label": "hbears"
+          },
+          {
+            "card": "Bonesplitter",
+            "label": "bone"
+          },
+          {
+            "card": "Pacifism",
+            "label": "pac"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "bgiant"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$hbears",
+          "mana": [
+            "$f0",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseOptional": "Exercises"
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$bone",
+          "mana": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$pac",
+          "targets": [
+            "$bgiant"
+          ],
+          "mana": [
+            "$p0",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Bonesplitter",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Pacifism",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    }
+  ]
+}
