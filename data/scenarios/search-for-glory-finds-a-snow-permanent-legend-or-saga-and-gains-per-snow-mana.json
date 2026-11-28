@@ -1,0 +1,225 @@
+{
+  "description": "CR 701.23a / 205.4a / 107.4h: Search for Glory finds a snow permanent card, a legendary card or a Saga card, and its caster gains 1 life for each snow mana spent to cast it",
+  "note": "Two Snow-Covered Plains and one Plains pay {2}{W}, so alice gains 2. The search offers Snow-Covered Forest (snow permanent), Sarulf (legendary), All Good Things... (Saga); Graven Lore is snow but no permanent and Grizzly Bears is neither, so both are left out.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "life": 17,
+        "battlefield": [
+          {
+            "card": "Snow-Covered Plains",
+            "label": "s1"
+          },
+          {
+            "card": "Snow-Covered Plains",
+            "label": "s2"
+          },
+          {
+            "card": "Plains",
+            "label": "p"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Search for Glory",
+            "label": "glory"
+          }
+        ],
+        "library": [
+          {
+            "card": "Grizzly Bears",
+            "label": "gb"
+          },
+          {
+            "card": "Graven Lore",
+            "label": "lore"
+          },
+          {
+            "card": "Snow-Covered Forest",
+            "label": "scf"
+          },
+          {
+            "card": "Sarulf, Realm Eater",
+            "label": "sarulf"
+          },
+          {
+            "card": "All Good Things...",
+            "label": "agt"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$glory",
+          "mana": [
+            "$s1",
+            "$s2",
+            "$p"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "Search",
+            "offer": {
+              "from": [
+                "$scf",
+                "$sarulf",
+                "$agt"
+              ],
+              "names": [
+                "Snow-Covered Forest",
+                "Sarulf, Realm Eater",
+                "All Good Things..."
+              ],
+              "count": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$agt"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$i1",
+            "$gb",
+            "$lore",
+            "$i2",
+            "$scf",
+            "$sarulf",
+            "$i3"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library",
+          "is": [
+            "Island#9",
+            "Grizzly Bears",
+            "Graven Lore",
+            "Island#10",
+            "Snow-Covered Forest",
+            "Sarulf, Realm Eater",
+            "Island#11"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 19
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand",
+          "is": [
+            "All Good Things..."
+          ]
+        }
+      }
+    }
+  ]
+}
