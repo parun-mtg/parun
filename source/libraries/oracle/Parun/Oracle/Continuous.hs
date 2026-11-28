@@ -455,9 +455,10 @@ affected context attached enchants a = case a of
           ([], []) -> [word <> Text.pack " creature"]
           -- An Aura that may enchant a noncreature permanent affects its
           -- host only while that is a creature, by a static ability or a
-          -- restriction alike (Gift of Wrath, Clawing Torment).
+          -- restriction alike (Gift of Wrath, Clawing Torment), or so named
+          -- outright (Mists of Littjara's "enchanted creature").
           ([Filter.Type.HasCardType CardType.Creature], [Pool.Permanents]) ->
-            [Text.pack "as long as " <> word <> Text.pack " permanent is a creature, it"]
+            [Text.pack "as long as " <> word <> Text.pack " permanent is a creature, it", word <> Text.pack " creature"]
           (rest, _) -> do
             p <- Filter.phrase (Filter.Type.And rest) (Target.keyword context)
             one <- Filter.describe Filter.Singular Target.permanent p
