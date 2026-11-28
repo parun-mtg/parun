@@ -1,0 +1,30 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "WW",
+        "battlefield": [{ "card": "Llanowar Elves", "label": "elves" }, { "card": "Grizzly Bears", "label": "bears" }],
+        "hand": [{ "card": "Rally the Ranks", "label": "rally" }],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }, { "card": "Plains" }, { "card": "Plains" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Elvish Mystic", "label": "theirs" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.1c, 613.4c: Rally the Ranks gives its controller's creatures of the type chosen as it entered +1/+1",
+  "note": "Alice names Elf. Her Llanowar Elves becomes 2/2; her Grizzly Bears (not an Elf) and bob's Elvish Mystic (an Elf she does not control) stay as printed.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$rally" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCreatureType", "with": "Elf" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$elves", "power": 2, "toughness": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$bears", "power": 2, "toughness": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$theirs", "power": 1, "toughness": 1 } } }
+  ]
+}

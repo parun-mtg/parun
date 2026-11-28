@@ -1,0 +1,40 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Forest", "label": "f1" }, { "card": "Forest", "label": "f2" }, { "card": "Forest", "label": "f3" }, { "card": "Forest", "label": "f4" }, { "card": "Forest", "label": "f5" }, { "card": "Forest", "label": "f6" }, { "card": "Forest", "label": "f7" }, { "card": "Swamp", "label": "s1" }, { "card": "Swamp", "label": "s2" }],
+        "hand": [{ "card": "Realmwalker", "label": "walker" }],
+        "library": [{ "card": "Llanowar Elves", "label": "elves" }, { "card": "Realmwalker", "label": "second" }, { "card": "Nameless Inversion", "label": "inversion" }, { "card": "Grizzly Bears", "label": "bears" }, { "card": "Forest" }, { "card": "Forest" }, { "card": "Forest" }]
+      },
+      {
+        "name": "bob",
+
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.1c, 601.3, 702.73a: Realmwalker lets its controller look at the top card of their library and cast creature spells of the chosen type from there; its changeling makes it every creature type, in the library too",
+  "note": "Before Realmwalker enters nobody sees the top card. Alice names Elf: the top Llanowar Elves is then hers to see and cast, and so is the second Realmwalker under it (a Shapeshifter, an Elf only by changeling). Nameless Inversion, an Elf by changeling but not a creature spell, is refused with its mana and a target available; on turn 3 she draws it, and Grizzly Bears, a creature but not an Elf, is refused likewise.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Seers", "object": "$elves", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$walker", "mana": ["$f1", "$f2", "$f3", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCreatureType", "with": "Elf" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Seers", "object": "$elves", "is": ["alice"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$elves", "mana": ["$f4", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Llanowar Elves", "count": 1, "player": "alice", "zone": "Battlefield" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$second", "mana": ["$f5", "$f6", "$f7", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCreatureType", "with": "Elf" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Realmwalker", "count": 2, "player": "alice", "zone": "Battlefield" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$inversion", "targets": ["Llanowar Elves"], "mana": ["$s1", "$s2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Nameless Inversion", "count": 1, "player": "alice", "zone": "Library" } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Nameless Inversion", "count": 1, "player": "alice", "zone": "Hand" } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$bears", "mana": ["$f1", "$f2", null] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Grizzly Bears", "count": 1, "player": "alice", "zone": "Library" } } }
+  ]
+}

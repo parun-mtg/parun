@@ -1,0 +1,47 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Swamp", "label": "s1" }, { "card": "Swamp", "label": "s2" }, { "card": "Swamp", "label": "s3" },
+          { "card": "Swamp", "label": "s4" }, { "card": "Swamp", "label": "s5" }, { "card": "Swamp", "label": "s6" }
+        ],
+        "hand": [
+          { "card": "Renegade Reaper", "label": "r1" },
+          { "card": "Renegade Reaper", "label": "r2" }
+        ],
+        "library": [
+          { "card": "Island" }, { "card": "Serra Angel" }, { "card": "Island" }, { "card": "Island" },
+          { "card": "Forest" }, { "card": "Forest" }, { "card": "Forest" }, { "card": "Forest" },
+          { "card": "Angel of Mercy" }, { "card": "Island" }, { "card": "Island" }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [ { "card": "Mountain" }, { "card": "Mountain" }, { "card": "Mountain" } ]
+      }
+    ]
+  },
+  "description": "CR 701.17a, 701.17c: Renegade Reaper's enters trigger mills four cards and gains 4 life only if at least one Angel card was milled this way",
+  "note": "The first Reaper mills Island, Serra Angel, Island, Island: alice gains 4. The second mills four Forests: no life, and the Angel of Mercy fifth from the top stays in the library.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "mana": ["$s1", "$s2", "$s3", null], "object": "$r1" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "is": ["trigger of Renegade Reaper"], "of": "Stack" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 24 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Serra Angel", "count": 1, "player": "alice", "zone": "Graveyard" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Island", "count": 3, "player": "alice", "zone": "Graveyard" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "mana": ["$s4", "$s5", "$s6"], "object": "$r2" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "is": ["trigger of Renegade Reaper"], "of": "Stack" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "card": "Forest", "count": 4, "player": "alice", "zone": "Graveyard" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 24 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "is": ["Angel of Mercy", "Island", "Island#2"], "of": "Zone", "player": "alice", "zone": "Library" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "Renegade Reaper", "keyword": { "type": "Flying" }, "count": 1 } } }
+  ]
+}
