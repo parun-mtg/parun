@@ -2120,8 +2120,8 @@ admitsUnder subject pid gs =
         _ -> False
       -- CR 601.2a before CR 601.2h: a cast's gate asks of the card the payment
       -- will ask of the spell, so a grant confined to the hand (Dream
-      -- Devourer's foretell, CR 702.143a) admits no mana there that the stack
-      -- would refuse. Parun.ScenarioSpec's "Niko Defies Destiny's mana casts
+      -- Devourer's "in your hand") admits no mana there that the stack
+      -- would refuse. data/scenarios' "Niko Defies Destiny's mana casts
       -- no spell foretell only in hand" proves it.
       board = case subject of
         PaymentSubject.Casting oid _ -> Game.asSpell pid oid gs

@@ -25,22 +25,22 @@
         ],
         "library": [
           {
-            "card": "Cancel"
+            "card": "Island"
           },
           {
-            "card": "Cancel"
+            "card": "Island"
           },
           {
-            "card": "Cancel"
+            "card": "Island"
           },
           {
-            "card": "Cancel"
+            "card": "Island"
           },
           {
-            "card": "Cancel"
+            "card": "Island"
           },
           {
-            "card": "Cancel"
+            "card": "Island"
           }
         ],
         "name": "alice"
@@ -73,7 +73,7 @@
     "step": "Upkeep"
   },
   "description": "CR 601.2a / 106.6 Niko Defies Destiny's mana casts no spell foretell only in hand",
-  "note": "No lands: chapter II's {W}{U} is alice's only mana. Dream Devourer gives Think Twice foretell in her hand, so the mana may foretell it, but the spell on the stack has no foretell, so casting it is not offered. Depart the Realm's printed foretell survives the move: the mana casts it, returning the Devourer.",
+  "note": "No lands in play, Islands in the library so no drawn card takes foretell: chapter II's {W}{U} is alice's only mana. Dream Devourer gives Think Twice foretell in her hand, so the mana may foretell it, but the spell on the stack has no foretell, so casting it is not offered. Depart the Realm's printed foretell survives the move: the mana casts it, returning the Devourer.",
   "timeline": [
     {
       "do": "Pass",
@@ -92,6 +92,7 @@
         "View": {
           "is": [
             "Pass",
+            "PlayLand Island#6",
             "Cast $depart",
             "Foretell $depart",
             "Foretell $think"
