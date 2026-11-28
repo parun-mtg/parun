@@ -62,10 +62,11 @@ every decision at priority. Each game weighs 1 however many positions it
 holds. A ridge, chosen by five-fold cross-validation over games, holds the
 weights toward `Weights.neutral`'s shape, every feature alike. Each loss it
 reports is on games held out of the fit scoring them. A coefficient `b`
-becomes the weight `500 b`: a cut-off playout's score stands for its expected
-result, 1000 (2p - 1), which rises 500 per unit of the logit where p is a
-half. With two seats every position is counted from both sides, so `ours` and
-`theirs` come out alike.
+becomes the weight `500 b`, so a fitted file works as it is written:
+`Parun.Play.Search.cut` scores a cut-off playout by its expected result, 1000
+(2p - 1) = 1000 tanh (evaluation / 1000), short of a win's 1000 however large
+the evaluation (#10117). With two seats every position is counted from both
+sides, so `ours` and `theirs` come out alike.
 
 A full collection, on a quiet machine:
 
@@ -75,10 +76,11 @@ for m in "mono-red-madness rakdos-madness" "mono-red-madness jeskai-ephemerate" 
   $PARUN match --games 200 --search 1 --search 2 --positions _scratch/positions/$1--$2.tsv \
     data/decks/pauper/$1.txt data/decks/pauper/$2.txt &
 done; wait
-$PARUN fit --out data/calibration/weights.json _scratch/positions/*.tsv
+$PARUN fit --out _scratch/weights.json _scratch/positions/*.tsv
 ```
 
-Then measure playing strength with `--weights=1=data/calibration/weights.json`.
+Then measure playing strength with `--weights=1=_scratch/weights.json`
+against the default.
 
 ### Smoke run, 2026-11-26
 
@@ -92,8 +94,7 @@ Eight games of each matchup, both seats searching at the default budget:
 | Fitted, held out | 0.5894 |
 | Fitted with a damage clock, held out | 0.5549 |
 
-Cross-validation chose the largest ridge, so `data/calibration/weights.json`
-is `Weights.neutral`'s shape at 68 a unit. All of the gain is scale.
-`Weights.neutral`'s 1 a unit scores a cut-off playout near 0 beside a win's
-1000. 24 games cannot tell one feature from another, and on them the damage
-clock does not beat the six features weighted alike.
+Cross-validation chose the largest ridge, so the fit was `Weights.neutral`'s
+shape at 68 a unit. All of the gain is scale. 24 games cannot tell one feature
+from another, and on them the damage clock does not beat the six features
+weighted alike.
