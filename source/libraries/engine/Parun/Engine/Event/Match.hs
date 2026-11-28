@@ -1873,7 +1873,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
               -- the gather. data/scenarios's
               -- volo-guide-to-monsters-skips-a-spell-sharing-a-type-with-a-creature-its-cast-killed
               -- proves it.
-              ActingPermanent.Matching f -> Filter.matches (leftPile bearer link spell (contextOn atEvent)) (Projection.viewOfSpell controller spell atEvent) f
+              ActingPermanent.Matching f -> Filter.matches (leftPile atEvent bearer link spell (contextOn atEvent)) (Projection.viewOfSpell controller spell atEvent) f
             -- Social Snub's "while you control a creature", asked of the
             -- game the cast left (CR 601.2i) and never re-checked, as
             -- AttackerTrigger.while is (CR 603.4 is for an "if").
@@ -2541,7 +2541,7 @@ armMatches bindings frozen board atEvent beforeEvent groupEvents gs bearer you c
         -- The land as it arrived (CR 400.7i), read the way a Matching Enters
         -- reads an entrant, so Fires of Mount Doom's Filter.IsBound names the
         -- permanent Cast.playLand's follow moved the binding onto.
-        && maybe False (\view -> Filter.matches (leftPile bearer (LandPlayed.exiledWith played) (LandPlayed.land played) bearerContext) view (PlaysLand.filter p)) (postEventView board gs (LandPlayed.land played))
+        && maybe False (\view -> Filter.matches (leftPile gs bearer (LandPlayed.exiledWith played) (LandPlayed.land played) bearerContext) view (PlaysLand.filter p)) (postEventView board gs (LandPlayed.land played))
     _ -> False
   -- CR 701.62b: Paranormal Analyst's "whenever you manifest dread", which an
   -- empty library still fires -- why it watches the keyword action's own event
@@ -2869,7 +2869,7 @@ causeAdmitted gs bearer you narrowed cause =
 -- IsExiledWithSource reads the card as it was in exile (Voltaic Visionary's
 -- "a card exiled with this creature"). The scenarios named for Voltaic
 -- Visionary prove it.
-leftPile :: ObjectId -> Maybe ExileLink.ExileLink -> ObjectId -> Filter.Context -> Filter.Context
-leftPile bearer link arrived context = case Binding.linkAsSeenBy bearer =<< link of
+leftPile :: GameState -> ObjectId -> Maybe ExileLink.ExileLink -> ObjectId -> Filter.Context -> Filter.Context
+leftPile gs bearer link arrived context = case Game.linkSeenBy bearer gs =<< link of
   Just l -> context {Filter.sourceExiled = Map.insert arrived l (Filter.sourceExiled context)}
   Nothing -> context

@@ -581,6 +581,7 @@ objectWith before entry between closed = do
   foretellCostReduction <- field Object.foretellCostReduction
   warped <- field Object.warped
   preparedCopyOf <- field Object.preparedCopyOf
+  creator <- field Object.creator
   ringBearerFor <- field Object.ringBearerFor
   planarMarker <- field Object.planarMarker
   protector <- field Object.protector
@@ -660,6 +661,7 @@ objectWith before entry between closed = do
         Object.foretellCostReduction = foretellCostReduction,
         Object.warped = warped,
         Object.preparedCopyOf = preparedCopyOf,
+        Object.creator = creator,
         Object.ringBearerFor = ringBearerFor,
         Object.planarMarker = planarMarker,
         Object.protector = protector,

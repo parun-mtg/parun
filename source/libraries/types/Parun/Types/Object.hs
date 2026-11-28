@@ -482,6 +482,12 @@ data Object = MkObject
     -- 601.2i's other half -- the copy stops being a prepared copy the moment it
     -- is cast -- so nothing has to unset it.
     preparedCopyOf :: Maybe ObjectId.ObjectId,
+    -- | CR 607.1d: the object whose ability created this emblem, whose exiled
+    -- cards the emblem's ExiledPile.OfCreator pile is
+    -- (Parun.Engine.Binding.linkAsSeenBy); Nothing for every other object.
+    -- data/scenarios/tibalt-cosmic-impostor-s-emblem-plays-what-tibalt-exiled.json
+    -- is the proof.
+    creator :: Maybe ObjectId.ObjectId,
     -- | CR 701.54b: the Ring-bearer designation, as the player it was made for.
     -- On the object, that rule making it "a designation a permanent can have",
     -- where GameState.monarch is one designation naming a player.
@@ -1099,6 +1105,7 @@ new o s z t =
       foretellCostReduction = Nothing,
       warped = Nothing,
       preparedCopyOf = Nothing,
+      creator = Nothing,
       ringBearerFor = Nothing,
       planarMarker = Nothing,
       protector = Nothing,

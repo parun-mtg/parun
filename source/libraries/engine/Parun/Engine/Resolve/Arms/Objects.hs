@@ -1938,10 +1938,13 @@ createEmblem resolving source controller legal (CreateEmblem.MkCreateEmblem card
   -- choices as its own and keeps them whatever the source later becomes or
   -- chooses (CR 608.2d). data/scenarios' oko-shadowmoor-scion-s-emblem pair
   -- proves it.
+  --
+  -- CR 607.1d: the source is the emblem's creator, whose exiled cards its
+  -- OfCreator pile reads (Object.creator).
   Monad.forM_ (Common.apnapPlayersOf player legal resolving source controller gs) $ \getter -> do
     minted <- Event.createEmblem getter card
     Foldable.for_ minted $ \emblem ->
-      State.modify' (\g -> Game.handChoices (Game.readingAcquisition resolving source g source) source emblem g)
+      State.modify' (\g -> Game.handChoices (Game.readingAcquisition resolving source g source) source emblem g {GameState.objects = Map.adjust (\o -> o {Object.creator = Just source}) emblem (GameState.objects g)})
 
 becomeMonarch :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> MonarchTarget.MonarchTarget -> Game ()
 becomeMonarch resolving source controller legal target = do

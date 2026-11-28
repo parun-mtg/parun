@@ -25,7 +25,7 @@ data ExileLink = MkExileLink
     -- | CR 113.8: the exiling spell or ability's controller as it exiled the
     -- card; Nothing where none can be read (a replacement whose source left).
     controller :: Maybe PlayerId.PlayerId,
-    -- | CR 607.1d: the tokens the exiling ability created whose ForToken pile
+    -- | CR 607.1d: the tokens the exiling ability created whose OfCreator pile
     -- holds this card (Hofri Ghostforge's Spirits).
     tokens :: Set.Set ObjectId.ObjectId
   }

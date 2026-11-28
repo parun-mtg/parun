@@ -211,8 +211,13 @@ linkedPile :: Maybe PlayerId -> Maybe AbilityName.AbilityName -> Acquisition.Acq
 linkedPile you reader acquisition pile src gs =
   let linked o = case pile of
         ExiledPile.WithCardsNamed name -> Maybe.isJust you && Map.lookup o (GameState.exiledBeforeGame gs) == Just name && fmap Object.owner (lookupObject o gs) == you
-        _ -> maybe False (Binding.isLinkedExile reader acquisition pile src) (Map.lookup o (GameState.exiledWith gs))
+        _ -> maybe False (Binding.isLinkedExile reader acquisition pile src) (Map.lookup o (GameState.exiledWith gs) >>= linkSeenBy src gs)
    in filter linked (Set.toAscList (GameState.exile gs))
+
+-- | CR 607.1d: Binding.linkAsSeenBy, with the creator an emblem `src` records
+-- (Object.creator).
+linkSeenBy :: ObjectId -> GameState -> ExileLink.ExileLink -> Maybe ExileLink.ExileLink
+linkSeenBy src gs = Binding.linkAsSeenBy src (lookupObject src gs >>= Object.creator)
 
 -- | CR 607.2d: `card` becomes the one chosen card among `pile`, cards in
 -- exile linked to one source, whose earlier choice ends; Nothing leaves none

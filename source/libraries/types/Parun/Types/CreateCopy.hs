@@ -59,7 +59,7 @@ data CreateCopy card ability = MkCreateCopy
     -- prove it.
     linked :: Bool,
     -- | CR 607.1d / 607.2a: the slot holding the cards this ability exiled that
-    -- the token's granted ability calls "the exiled card" (ExiledPile.ForToken);
+    -- the token's granted ability calls "the exiled card" (ExiledPile.OfCreator);
     -- their links join the token. Hofri Ghostforge's scenarios prove it.
     linkExiled :: Maybe SlotName.SlotName
   }

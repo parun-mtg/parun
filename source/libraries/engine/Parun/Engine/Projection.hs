@@ -539,7 +539,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- (Filter.reader is Nothing), so the craft pile is the cards linked
         -- under Binding.craftLink (CR 702.167c), nothing `src`'s other abilities
         -- exile, and OwnAbilities is every card linked to `src` but those an
-        -- ability it acquired this way exiled and a token's ForToken pile
+        -- ability it acquired this way exiled and its OfCreator pile
         -- (Binding.isLinkedExile): CR 607.2a
         -- links this ability only to exiling abilities printed beside it, and CR
         -- 607.5 an acquired one only to its own pair.
