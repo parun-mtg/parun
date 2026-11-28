@@ -11,6 +11,7 @@ codec =
     tagOf
     [ Arm.nullary "Unlock" CostedSpecialAction.Unlock,
       Arm.nullary "Plot" CostedSpecialAction.Plot,
+      Arm.nullary "Foretell" CostedSpecialAction.Foretell,
       Arm.payload "TurnFaceUp" TurnUpProcedure.codec CostedSpecialAction.TurnFaceUp (\x -> case x of CostedSpecialAction.TurnFaceUp y -> Just y; _ -> Nothing)
     ]
 
@@ -18,4 +19,5 @@ tagOf :: CostedSpecialAction.CostedSpecialAction -> String
 tagOf x = case x of
   CostedSpecialAction.Unlock -> "Unlock"
   CostedSpecialAction.Plot -> "Plot"
+  CostedSpecialAction.Foretell -> "Foretell"
   CostedSpecialAction.TurnFaceUp {} -> "TurnFaceUp"

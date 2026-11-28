@@ -237,6 +237,9 @@ data PlayerEffect
     -- moment CR 307.5 defines -- a main phase of their own turn with an empty
     -- stack, priority in hand.
     CastOnlyAtSorcerySpeed
+  | -- | CR 116.2h / 702.143a / Cosmos Charger: this player may foretell on any
+    -- player's turn.
+    MayForetellDuringAnyTurn
   | -- | CR 305.1 / Damping Engine, City in a Bottle: this player can't play a land
     -- matching the Filter, which Damping Engine's unrestricted sentence writes as
     -- @And []@.

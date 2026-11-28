@@ -809,6 +809,7 @@ prohibitsCasting pid oid variable gs =
         -- after the move, the spell itself would make the window False and the
         -- clause would prohibit every cast.
         PlayerEffect.CastOnlyAtSorcerySpeed -> not (Turn.sorcerySpeedWindow pid gs)
+        PlayerEffect.MayForetellDuringAnyTurn -> False
         -- CR 305.1: a land is played and never cast, so the play-side
         -- prohibition stops nothing here, however its Filter reads.
         -- Parun.Engine.Action.playableLands is the gate that reads it.
@@ -889,6 +890,7 @@ prohibitsPlayingLand pid oid gs =
         -- but Action.legalActions is what asks that of a land play, and an
         -- effect that moved it would have to say so.
         PlayerEffect.CastOnlyAtSorcerySpeed -> False
+        PlayerEffect.MayForetellDuringAnyTurn -> False
         -- CR 101.2's quality-bearing prohibition, the play-side twin of
         -- CantCastMatching below: City in a Bottle's list of names, and Damping
         -- Engine's `And []`, which every land matches.
@@ -1043,6 +1045,7 @@ searchPortion pid gs =
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands _ -> Nothing
         PlayerEffect.PlayAsCopy _ -> Nothing
         PlayerEffect.CastFrom _ -> Nothing
@@ -1140,6 +1143,7 @@ prohibitsSearching pid owner causeController gs =
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
         PlayerEffect.CastOnlyAtSorcerySpeed -> False
+        PlayerEffect.MayForetellDuringAnyTurn -> False
         PlayerEffect.CantPlayLands _ -> False
         PlayerEffect.PlayAsCopy _ -> False
         PlayerEffect.CastFrom _ -> False
@@ -1263,6 +1267,7 @@ prohibitsCounters pid kind gs =
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
         PlayerEffect.CastOnlyAtSorcerySpeed -> False
+        PlayerEffect.MayForetellDuringAnyTurn -> False
         PlayerEffect.CantPlayLands _ -> False
         PlayerEffect.PlayAsCopy _ -> False
         PlayerEffect.CastFrom _ -> False
@@ -1346,6 +1351,7 @@ stateBasedActionDoesntApplyTo action pid oid gs =
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
         PlayerEffect.CastOnlyAtSorcerySpeed -> False
+        PlayerEffect.MayForetellDuringAnyTurn -> False
         PlayerEffect.CantPlayLands _ -> False
         PlayerEffect.PlayAsCopy _ -> False
         PlayerEffect.CastFrom _ -> False
@@ -1458,6 +1464,7 @@ schemesCantBeSetInMotion gs =
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
         PlayerEffect.CastOnlyAtSorcerySpeed -> False
+        PlayerEffect.MayForetellDuringAnyTurn -> False
         PlayerEffect.CantPlayLands _ -> False
         PlayerEffect.PlayAsCopy _ -> False
         PlayerEffect.CastFrom _ -> False
@@ -1545,6 +1552,7 @@ moveTriggerings move pid subjects (bearer, atBearer) effects board =
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands _ -> Nothing
         PlayerEffect.PlayAsCopy _ -> Nothing
         PlayerEffect.CastFrom _ -> Nothing
@@ -1658,6 +1666,7 @@ bearerTriggerings pid bearer ability gs =
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands _ -> Nothing
         PlayerEffect.PlayAsCopy _ -> Nothing
         PlayerEffect.CastFrom _ -> Nothing
@@ -1741,6 +1750,7 @@ prohibitsAttackingWithCreatures pid gs =
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
         PlayerEffect.CastOnlyAtSorcerySpeed -> False
+        PlayerEffect.MayForetellDuringAnyTurn -> False
         PlayerEffect.CantPlayLands _ -> False
         PlayerEffect.PlayAsCopy _ -> False
         PlayerEffect.CastFrom _ -> False
@@ -2444,6 +2454,11 @@ mayCastAsThoughItHadFlash pid oid gs = any (grantReaches castFlashGrant pid oid 
 mayPlayAsThoughItHadFlash :: PlayerId -> ObjectId -> GameState -> Bool
 mayPlayAsThoughItHadFlash pid oid gs = any (grantReaches landPlayFlashGrant pid oid gs) (applying pid gs)
 
+-- CR 116.2h / 702.143a: may `pid` foretell on any player's turn (Cosmos
+-- Charger), past the rule's "during their turn"?
+mayForetellDuringAnyTurn :: PlayerId -> GameState -> Bool
+mayForetellDuringAnyTurn pid gs = any ((== PlayerEffect.MayForetellDuringAnyTurn) . snd) (applying pid gs)
+
 -- CR 305.1 / 707.2: the play-as-copy permissions (Dakkon Blackblade Avatar)
 -- under which `pid` may play `oid` from their own hand, the card matched as
 -- the hand shows it from each permission's source, which is named with it.
@@ -2585,6 +2600,7 @@ landPlayFlashGrant effect = case effect of
   PlayerEffect.CantCastMatching _ -> Nothing
   PlayerEffect.PutTappedAsYouCascade _ -> Nothing
   PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+  PlayerEffect.MayForetellDuringAnyTurn -> Nothing
   PlayerEffect.CantPlayLands _ -> Nothing
   PlayerEffect.PlayAsCopy _ -> Nothing
   PlayerEffect.CastFrom _ -> Nothing
@@ -2867,6 +2883,7 @@ castFromGrantOf effect = case effect of
   PlayerEffect.CantCastMatching _ -> Nothing
   PlayerEffect.PutTappedAsYouCascade _ -> Nothing
   PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+  PlayerEffect.MayForetellDuringAnyTurn -> Nothing
   PlayerEffect.CantPlayLands _ -> Nothing
   PlayerEffect.PlayAsCopy _ -> Nothing
   -- The play-side twin can name the same ZONE and still answers nothing
@@ -3314,6 +3331,7 @@ ratherThanManaCost pid oid gs =
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands _ -> Nothing
         PlayerEffect.PlayAsCopy _ -> Nothing
    in ListUtils.nubOrd (Maybe.mapMaybe allows (applying pid gs))
@@ -3403,6 +3421,7 @@ playLandPiles pid gs =
         PlayerEffect.CantCastMatching _ -> []
         PlayerEffect.PutTappedAsYouCascade _ -> []
         PlayerEffect.CastOnlyAtSorcerySpeed -> []
+        PlayerEffect.MayForetellDuringAnyTurn -> []
         PlayerEffect.CantPlayLands _ -> []
         PlayerEffect.PlayAsCopy _ -> []
         -- A cost, not a zone: CR 118.9's grant says what a spell PAYS and
@@ -3528,6 +3547,7 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
         PlayerEffect.CastOnlyAtSorcerySpeed -> False
+        PlayerEffect.MayForetellDuringAnyTurn -> False
         PlayerEffect.CantPlayLands _ -> False
         PlayerEffect.PlayAsCopy _ -> False
         PlayerEffect.CastFrom _ -> False
@@ -3647,6 +3667,7 @@ protectedFromGiven rows aimer view gs =
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
         PlayerEffect.CastOnlyAtSorcerySpeed -> False
+        PlayerEffect.MayForetellDuringAnyTurn -> False
         PlayerEffect.CantPlayLands _ -> False
         PlayerEffect.PlayAsCopy _ -> False
         PlayerEffect.CastFrom _ -> False
@@ -3750,6 +3771,7 @@ protectionCarriers gs =
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands _ -> Nothing
         PlayerEffect.PlayAsCopy _ -> Nothing
         PlayerEffect.CastFrom _ -> Nothing
@@ -3846,6 +3868,7 @@ landPlaysAllowed pid gs =
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands _ -> Nothing
         PlayerEffect.PlayAsCopy _ -> Nothing
         PlayerEffect.CastFrom _ -> Nothing
@@ -3934,6 +3957,7 @@ votesAllowed pid gs =
         PlayerEffect.CantCastMatching {} -> Nothing
         PlayerEffect.PutTappedAsYouCascade {} -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands {} -> Nothing
         PlayerEffect.PlayAsCopy {} -> Nothing
         PlayerEffect.CastFrom {} -> Nothing
@@ -4008,6 +4032,7 @@ offeredExtras pid gs =
         PlayerEffect.CantCastMatching {} -> False
         PlayerEffect.PutTappedAsYouCascade {} -> False
         PlayerEffect.CastOnlyAtSorcerySpeed -> False
+        PlayerEffect.MayForetellDuringAnyTurn -> False
         PlayerEffect.CantPlayLands {} -> False
         PlayerEffect.PlayAsCopy {} -> False
         PlayerEffect.CastFrom {} -> False
@@ -4083,6 +4108,7 @@ cascadeActions pid gs =
         PlayerEffect.CantCastMatching {} -> Nothing
         PlayerEffect.PutTappedAsYouCascade criterion -> Just criterion
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands {} -> Nothing
         PlayerEffect.PlayAsCopy {} -> Nothing
         PlayerEffect.CastFrom {} -> Nothing
@@ -4157,6 +4183,7 @@ drawReveals pid nth gs =
         PlayerEffect.CantCastMatching {} -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands {} -> Nothing
         PlayerEffect.PlayAsCopy {} -> Nothing
         PlayerEffect.CastFrom {} -> Nothing
@@ -4231,6 +4258,7 @@ shownGrants pid gs =
         PlayerEffect.CantCastMatching {} -> Nothing
         PlayerEffect.PutTappedAsYouCascade {} -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands {} -> Nothing
         PlayerEffect.PlayAsCopy {} -> Nothing
         PlayerEffect.CastFrom {} -> Nothing
@@ -4352,6 +4380,7 @@ maximumHandSize pid gs =
         PlayerEffect.CantCastMatching _ -> current
         PlayerEffect.PutTappedAsYouCascade _ -> current
         PlayerEffect.CastOnlyAtSorcerySpeed -> current
+        PlayerEffect.MayForetellDuringAnyTurn -> current
         PlayerEffect.CantPlayLands _ -> current
         PlayerEffect.PlayAsCopy _ -> current
         PlayerEffect.CastFrom _ -> current
@@ -4468,6 +4497,7 @@ unspentManaRows pid gs =
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands _ -> Nothing
         PlayerEffect.PlayAsCopy _ -> Nothing
         PlayerEffect.CastFrom _ -> Nothing
@@ -4552,6 +4582,7 @@ losesLifeForUnspentMana pid gs =
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
         PlayerEffect.CastOnlyAtSorcerySpeed -> False
+        PlayerEffect.MayForetellDuringAnyTurn -> False
         PlayerEffect.CantPlayLands _ -> False
         PlayerEffect.PlayAsCopy _ -> False
         PlayerEffect.CastFrom _ -> False
@@ -4647,6 +4678,7 @@ forbids reaches pid gs =
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
         PlayerEffect.CastOnlyAtSorcerySpeed -> False
+        PlayerEffect.MayForetellDuringAnyTurn -> False
         PlayerEffect.CantPlayLands _ -> False
         PlayerEffect.PlayAsCopy _ -> False
         PlayerEffect.CastFrom _ -> False
@@ -4797,6 +4829,7 @@ precludes outcome pid gs =
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
         PlayerEffect.CastOnlyAtSorcerySpeed -> False
+        PlayerEffect.MayForetellDuringAnyTurn -> False
         PlayerEffect.CantPlayLands _ -> False
         PlayerEffect.PlayAsCopy _ -> False
         PlayerEffect.CastFrom _ -> False
@@ -4880,6 +4913,7 @@ spendManaAsThoughRows pid gs =
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands _ -> Nothing
         PlayerEffect.PlayAsCopy _ -> Nothing
         PlayerEffect.CastFrom _ -> Nothing
@@ -5060,6 +5094,7 @@ cantBeCountered pid counterer oid gs =
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
         PlayerEffect.CastOnlyAtSorcerySpeed -> False
+        PlayerEffect.MayForetellDuringAnyTurn -> False
         PlayerEffect.CantPlayLands _ -> False
         PlayerEffect.PlayAsCopy _ -> False
         PlayerEffect.CastFrom _ -> False
@@ -5130,6 +5165,7 @@ targetingRestrictions =
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands _ -> Nothing
         PlayerEffect.PlayAsCopy _ -> Nothing
         PlayerEffect.CastFrom _ -> Nothing
@@ -5219,6 +5255,7 @@ hexproofExemptions =
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands _ -> Nothing
         PlayerEffect.PlayAsCopy _ -> Nothing
         PlayerEffect.CastFrom _ -> Nothing
@@ -5322,6 +5359,7 @@ unpreventable gs =
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands _ -> Nothing
         PlayerEffect.PlayAsCopy _ -> Nothing
         PlayerEffect.CastFrom _ -> Nothing
@@ -5413,6 +5451,7 @@ unredirectable gs =
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands _ -> Nothing
         PlayerEffect.PlayAsCopy _ -> Nothing
         PlayerEffect.CastFrom _ -> Nothing
@@ -5488,6 +5527,7 @@ damageAsThough gs =
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands _ -> Nothing
         PlayerEffect.PlayAsCopy _ -> Nothing
         PlayerEffect.CastFrom _ -> Nothing
@@ -5609,6 +5649,7 @@ statedFlips pid gs =
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands _ -> Nothing
         PlayerEffect.PlayAsCopy _ -> Nothing
         PlayerEffect.CastFrom _ -> Nothing
@@ -5696,6 +5737,7 @@ rollModifiers pid gs =
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
         PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.MayForetellDuringAnyTurn -> Nothing
         PlayerEffect.CantPlayLands _ -> Nothing
         PlayerEffect.PlayAsCopy _ -> Nothing
         PlayerEffect.CastFrom _ -> Nothing
@@ -5837,6 +5879,7 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.CantCastMatching _ -> pure effect
   PlayerEffect.PutTappedAsYouCascade _ -> pure effect
   PlayerEffect.CastOnlyAtSorcerySpeed -> pure effect
+  PlayerEffect.MayForetellDuringAnyTurn -> pure effect
   PlayerEffect.CantPlayLands _ -> pure effect
   PlayerEffect.PlayAsCopy _ -> pure effect
   PlayerEffect.CastFrom grant ->
@@ -5942,6 +5985,7 @@ overDamagePatterns f effect = case effect of
   PlayerEffect.CantCastMatching _ -> pure effect
   PlayerEffect.PutTappedAsYouCascade _ -> pure effect
   PlayerEffect.CastOnlyAtSorcerySpeed -> pure effect
+  PlayerEffect.MayForetellDuringAnyTurn -> pure effect
   PlayerEffect.CantPlayLands _ -> pure effect
   PlayerEffect.PlayAsCopy _ -> pure effect
   PlayerEffect.CastFrom _ -> pure effect

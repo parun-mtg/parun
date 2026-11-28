@@ -559,6 +559,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       PlayerEffect.codec
       PlayerEffect.CastOnlyAtSorcerySpeed
       " {\"type\":\"CastOnlyAtSorcerySpeed\"} "
+  Spec.it s "MayForetellDuringAnyTurn" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      PlayerEffect.MayForetellDuringAnyTurn
+      " {\"type\":\"MayForetellDuringAnyTurn\"} "
   -- CR 602.5 / Sen Triplets' second clause, which names every ability.
   Spec.it s "CantActivateAbilities" $
     Common.assertCodec
