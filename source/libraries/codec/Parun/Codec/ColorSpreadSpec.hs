@@ -14,5 +14,25 @@ spec s = Spec.describe s "Parun.Codec.ColorSpread" $ do
       ColorSpread.AnyCombination
       " \"AnyCombination\" "
 
-  Spec.it s "round trips every constructor" $ Common.assertEnumCodec s ColorSpread.codec
+  Spec.it s "OneColor" $
+    Common.assertCodec
+      s
+      ColorSpread.codec
+      ColorSpread.OneColor
+      " \"OneColor\" "
+
+  Spec.it s "DifferentColors, runs of one" $
+    Common.assertCodec
+      s
+      ColorSpread.codec
+      (ColorSpread.DifferentColors 1)
+      " \"DifferentColors\" "
+
+  Spec.it s "DifferentColors, longer runs" $
+    Common.assertCodec
+      s
+      ColorSpread.codec
+      (ColorSpread.DifferentColors 2)
+      " { \"DifferentColors\": 2 } "
+
   Spec.it s "has a schema" $ Common.assertHasSchema s ColorSpread.codec

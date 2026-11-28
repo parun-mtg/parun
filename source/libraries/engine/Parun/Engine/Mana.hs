@@ -437,14 +437,22 @@ symbolRuns howMany symbols =
 -- CR 105.4: every way `howMany` units of an offer can be chosen. One
 -- colour repeats a single pick; any combination is each multiset of picks, the
 -- order a pool never keeps (Parun.Types.Mana) left out, so Wizard's Rockets'
--- X of 3 is 35 choices and not 125. Different colours is each subset, so
--- Firemind Vessel's two are ten choices (Parun.ManaSpec's Firemind Vessel case).
+-- X of 3 is 35 choices and not 125. Different colours is each subset of a
+-- type per run (colorRuns), so Firemind Vessel's two are ten choices
+-- (Parun.ManaSpec's Firemind Vessel case); a shorter last run is each
+-- assignment instead, the order a pool never keeps again left out.
 choicesOf :: Int -> ColorSpread.ColorSpread -> NonEmpty.NonEmpty ManaType -> [[ManaType]]
 choicesOf howMany spread offered = case spread of
   ColorSpread.OneColor -> [replicate howMany manaType | manaType <- NonEmpty.toList offered]
   ColorSpread.AnyCombination -> multisets howMany (NonEmpty.toList offered)
-  ColorSpread.DifferentColors -> subsets howMany (NonEmpty.toList offered)
+  ColorSpread.DifferentColors perColor -> case colorRuns perColor howMany of
+    runs@(run : rest) | all (== run) rest -> fmap (concatMap (replicate run)) (subsets (length runs) (NonEmpty.toList offered))
+    runs -> ListUtils.nubOrd (fmap List.sort (assigned runs (NonEmpty.toList offered)))
   where
+    assigned runs types = case runs of
+      [] -> [[]]
+      run : rest -> [replicate run picked <> others | (picked, left) <- picks types, others <- assigned rest left]
+    picks types = [(picked, before <> after) | (before, picked : after) <- zip (List.inits types) (List.tails types)]
     subsets n types
       | n <= 0 = [[]]
       | otherwise = case types of
@@ -455,6 +463,15 @@ choicesOf howMany spread offered = case spread of
       | otherwise = case types of
           [] -> []
           first : rest -> fmap (first :) (multisets (n - 1) types) <> multisets n rest
+
+-- CR 105.4: the runs of one colour each "of different colors" splits
+-- `howMany` units into, `perColor` long but the last, which takes what is left.
+--
+-- Implementation-defined: a run length of zero reads as one.
+colorRuns :: Natural -> Int -> [Int]
+colorRuns perColor howMany
+  | howMany <= 0 = []
+  | otherwise = let run = max 1 (Natural.toIntSaturating perColor) in min run howMany : colorRuns perColor (howMany - run)
 
 -- Every ROUTE by which this object could be activated for mana, as the mana ONE
 -- activation of it adds: its intrinsic subtype mana (CR 305.6), one route per
