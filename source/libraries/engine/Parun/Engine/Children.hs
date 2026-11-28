@@ -4361,7 +4361,7 @@ targetSlotChildren c (TargetSlot.MkTargetSlot pool filter_ count amount chooser 
 castingPermissionChildren :: (Applicative f) => PermissionChildren f -> CastingPermission.CastingPermission -> f CastingPermission.CastingPermission
 castingPermissionChildren c permission = case permission of
   CastingPermission.CastFromLibraryWhileSearching -> pure permission
-  CastingPermission.CastFrom zone condition family additional entersWith alternative -> CastingPermission.CastFrom zone <$> traverse (permissionCondition c) condition <*> pure family <*> traverse (permissionCost c) additional <*> traverse (\(WithCounters.MkWithCounters counters) -> WithCounters.MkWithCounters <$> traverse (permissionQuantity c) counters) entersWith <*> pure alternative
+  CastingPermission.CastFrom zone condition family additional entersWith alternative exiled -> CastingPermission.CastFrom zone <$> traverse (permissionCondition c) condition <*> pure family <*> traverse (permissionCost c) additional <*> traverse (\(WithCounters.MkWithCounters counters) -> WithCounters.MkWithCounters <$> traverse (permissionQuantity c) counters) entersWith <*> pure alternative <*> pure exiled
   CastingPermission.PlayFromGraveyard -> pure permission
   CastingPermission.CastAsThoughItHadFlash condition additional components arms -> CastingPermission.CastAsThoughItHadFlash <$> traverse (permissionCondition c) condition <*> pure additional <*> traverse (permissionCost c) components <*> pure arms
 

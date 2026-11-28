@@ -433,7 +433,7 @@ permissionsOf projected oid face gs =
 -- the cast, and offers nothing where the permission admits nothing.
 permitsFromZone :: Zone.Zone -> CastingPermission.CastingPermission -> Bool
 permitsFromZone zone permission = case permission of
-  CastingPermission.CastFrom from _ _ _ _ _ -> from == zone
+  CastingPermission.CastFrom from _ _ _ _ _ _ -> from == zone
   CastingPermission.PlayFromGraveyard -> zone == Zone.Graveyard
   CastingPermission.CastFromLibraryWhileSearching -> False
   CastingPermission.CastAsThoughItHadFlash {} -> False
@@ -447,12 +447,13 @@ ownPermissionOpens zone pid oid face gs =
 
 -- CR 118.8 / 118.9 / 614.1d: a graveyard permission the card carries for itself
 -- that prices or adds to a cast made under it -- an additional cost (Demonic
--- Embrace), an alternative cost (Squee, Dubious Monarch) or entry counters
--- (Hundred-Battle Veteran) -- and so is a way of its own
+-- Embrace), an alternative cost (Squee, Dubious Monarch), entry counters
+-- (Hundred-Battle Veteran) or an exile rider (Glimpse the Cosmos) -- and so is
+-- a way of its own
 -- (Parun.Engine.Cast.ownPayingWays).
 addsToItsCast :: CastingPermission.CastingPermission -> Bool
 addsToItsCast permission = case permission of
-  CastingPermission.CastFrom _ _ _ additional entersWith alternative -> not (null additional) || Maybe.isJust entersWith || Maybe.isJust alternative
+  CastingPermission.CastFrom _ _ _ additional entersWith alternative exiled -> not (null additional) || Maybe.isJust entersWith || Maybe.isJust alternative || exiled
   CastingPermission.PlayFromGraveyard -> False
   CastingPermission.CastFromLibraryWhileSearching -> False
   CastingPermission.CastAsThoughItHadFlash {} -> False
@@ -1217,7 +1218,7 @@ candidateCostsGiven permitted pid name oid gs =
                       -- keyword of that family offers, never the printed cost.
                       -- Parun.CastSpec's "Blitz from a graveyard" group proves
                       -- both halves.
-                      usingFamilies = [family | CastingPermission.CastFrom Zone.Graveyard _ (Just family) _ _ _ <- permissionsOf projected oid face gs]
+                      usingFamilies = [family | CastingPermission.CastFrom Zone.Graveyard _ (Just family) _ _ _ _ <- permissionsOf projected oid face gs]
                       usingPermitted candidate = any (\family -> (CandidateCost.keyword candidate >>= Keyword.familyOf) == Just family) usingFamilies
                       -- CR 118.8 / 614.1d: a permission stating an additional
                       -- cost or entry counters admits the printed cost and its
@@ -1228,7 +1229,7 @@ candidateCostsGiven permitted pid name oid gs =
                       -- (CR 118.9a, Parun.Engine.Cast.underAlternative).
                       payingPermitted = any (\permission -> addsToItsCast permission && namesNoFamily permission) (permissionsOf projected oid face gs)
                       namesNoFamily permission = case permission of
-                        CastingPermission.CastFrom Zone.Graveyard _ Nothing _ _ _ -> True
+                        CastingPermission.CastFrom Zone.Graveyard _ Nothing _ _ _ _ -> True
                         _ -> False
                       (heldStatesNoCost, heldCost) = case Expiry.openPermissions pid oid gs of
                         [] -> (False, [])
