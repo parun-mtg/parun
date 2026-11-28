@@ -1,0 +1,307 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Svella, Ice Shaper",
+            "label": "svella",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m0"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          },
+          {
+            "card": "Mountain",
+            "label": "m5"
+          },
+          {
+            "card": "Mountain",
+            "label": "m6"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp",
+            "label": "draw"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          },
+          {
+            "card": "Forest",
+            "label": "forest"
+          },
+          {
+            "card": "Plains",
+            "label": "plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 111.4 / 601.2: Svella, Ice Shaper makes a snow Icy Manalith that taps for any colour, and its eight-mana ability casts a spell from the top four free, the rest going to the bottom",
+  "note": "Turn 1 the three-mana ability makes a snow artifact token named Icy Manalith. Turn 3 the token pays the {G} of the second ability; of the top four (Hill Giant, Island, Lightning Bolt, Forest) the land is refused and the Giant is cast free; the other three go under the Plains.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$m0",
+            "$m1",
+            "$m2",
+            null
+          ],
+          "object": "$svella"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Icy Manalith",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Snow"
+          ],
+          "object": "Icy Manalith",
+          "of": "Supertypes"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "Icy Manalith",
+          "types": [
+            "Artifact"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$m0",
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4",
+            "$m5",
+            "$m6",
+            "Icy Manalith"
+          ],
+          "object": "$svella",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": [
+                  "Snow",
+                  {
+                    "CardType": "Artifact"
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseOfferedCastSpell",
+          "with": [
+            "$island",
+            "Island"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOfferedCastSpell",
+          "with": [
+            "$giant",
+            "Hill Giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OfferedCast",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$island",
+            "$bolt",
+            "$forest"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Hill Giant"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$plains",
+            "Forest",
+            "Lightning Bolt",
+            "Island"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}

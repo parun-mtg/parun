@@ -1,0 +1,432 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f"
+          },
+          {
+            "card": "Island",
+            "label": "i"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Blizzard Brawl",
+            "label": "brawl"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "gbears"
+          },
+          {
+            "card": "Raging Goblin",
+            "label": "goblin"
+          }
+        ],
+        "hand": [
+          {
+            "card": "The Three Seasons",
+            "label": "saga"
+          }
+        ],
+        "library": [
+          {
+            "card": "Icebind Pillar"
+          },
+          {
+            "card": "Snow-Covered Forest"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Shock",
+            "label": "bshock"
+          },
+          {
+            "card": "Mind Stone",
+            "label": "bstone"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "borni"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "bwurm"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep",
+    "turn": 1
+  },
+  "description": "CR 715.2b, 701.17a, 115.1, 608.2c, 701.24a: The Three Seasons mills three, II returns only snow permanent cards from alice's graveyard, III has alice choose three cards in each graveyard and their owners shuffle them in",
+  "final": [
+    {
+      "View": {
+        "is": [
+          "$goblin",
+          "The Three Seasons"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "$borni"
+        ],
+        "of": "Zone",
+        "player": "bob",
+        "zone": "Graveyard"
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f",
+            "$i"
+          ],
+          "object": "$saga"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Icebind Pillar",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "Icebind Pillar",
+            "Hill Giant"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "Icebind Pillar",
+            "Blizzard Brawl"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "Icebind Pillar",
+            "Snow-Covered Forest"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Icebind Pillar",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Snow-Covered Forest",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseCardInGraveyard",
+          "with": "Icebind Pillar"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardInGraveyard",
+          "with": "$brawl"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardInGraveyard",
+          "with": "$gbears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardInGraveyard",
+          "with": "Hill Giant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardInGraveyard",
+          "with": "$bshock"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardInGraveyard",
+          "with": "$bstone"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardInGraveyard",
+          "with": "$bwurm"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Hill Giant",
+            "Blizzard Brawl",
+            "Grizzly Bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Craw Wurm",
+            "Shock",
+            "Mind Stone"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Hill Giant",
+            "Blizzard Brawl",
+            "Grizzly Bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Craw Wurm",
+            "Shock",
+            "Mind Stone"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Blizzard Brawl",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Craw Wurm",
+          "count": 1,
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Shock",
+          "count": 1,
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    }
+  ]
+}

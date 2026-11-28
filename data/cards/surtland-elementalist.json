@@ -1,0 +1,130 @@
+{
+  "faces": [
+    {
+      "additionalCostChoices": [
+        [
+          {
+            "components": [
+              {
+                "type": "RevealCardsFromHand",
+                "value": {
+                  "count": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "whichCards": {
+                    "type": "HasSubtype",
+                    "value": "Giant"
+                  }
+                }
+              }
+            ],
+            "mana": []
+          },
+          {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Surtland Elementalist",
+      "oracleText": "As an additional cost to cast this spell, reveal a Giant card from your hand or pay {2}.\nWhenever this creature attacks, you may cast an instant or sorcery spell from your hand without paying its mana cost.",
+      "power": {
+        "type": "Literal",
+        "value": 8
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 8
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "OfferCast",
+                        "value": {
+                          "offer": {
+                            "withoutPayingManaCost": true
+                          },
+                          "ref": {
+                            "type": "EachCardInHand",
+                            "value": {
+                              "filter": {
+                                "type": "Or",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Instant"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Sorcery"
+                                  }
+                                ]
+                              },
+                              "hands": {
+                                "type": "Scoped",
+                                "value": {
+                                  "type": "You"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Giant",
+          "Wizard"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

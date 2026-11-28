@@ -2319,6 +2319,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Light-Paws, Emperor's Voice", 1), -- its search's filter, negated, at AnyPermanent
         ("Volo, Guide to Monsters", 2), -- its cast trigger's spell filter, negated, at AnyPermanent and AnyGraveyardCard
         ("Frostpyre Arcanist", 1), -- its search's filter, at AnyGraveyardCard
+        ("Tibalt's Trickery", 2), -- its exile-until filter and its cast offer's filter, against its countered target
         ("Mondassian Colony Ship", 2) -- its pump's power and toughness Count filters, Controller at AnyPermanent
       ]
     -- The cast trigger admits the pooled atoms alone: the same trigger asking a

@@ -1,0 +1,269 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "The Trickster-God's Heist",
+      "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — You may exchange control of two target creatures.\nII — You may exchange control of two target nonbasic, noncreature permanents that share a card type.\nIII — Target player loses 3 life and you gain 3 life.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 1
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ExchangeControl",
+                        "value": {
+                          "type": "WithinSlot",
+                          "value": "creatures"
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  }
+                ],
+                "targetSlots": {
+                  "creatures": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 2,
+                        "most": 2
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 2
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ExchangeControl",
+                        "value": {
+                          "type": "BetweenSlots",
+                          "value": {
+                            "first": "first",
+                            "second": "second"
+                          }
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  }
+                ],
+                "targetSlots": {
+                  "first": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "HasSupertype",
+                            "value": "Basic"
+                          }
+                        },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "HasCardType",
+                            "value": "Creature"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  },
+                  "second": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "HasSupertype",
+                            "value": "Basic"
+                          }
+                        },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "HasCardType",
+                            "value": "Creature"
+                          }
+                        },
+                        {
+                          "type": "Shares",
+                          "value": {
+                            "anchor": {
+                              "type": "Bound",
+                              "value": {
+                                "slot": "first"
+                              }
+                            },
+                            "trait": {
+                              "type": "CardType"
+                            }
+                          }
+                        },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsBound",
+                            "value": "first"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 3
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 3
+                          }
+                        }
+                      },
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 3
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "Players"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Saga"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

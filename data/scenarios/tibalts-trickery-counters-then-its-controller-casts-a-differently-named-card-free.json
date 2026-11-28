@@ -1,0 +1,215 @@
+{
+  "description": "CR 701.13a / 701.6a: Tibalt's Trickery counters a spell; its controller mills one to three at random, exiles to a nonland card with another name, may cast it free, and puts the exiled cards on the bottom",
+  "note": "The random number 1 means two milled (Island, Swamp). The exile passes over a Hill Giant (the countered spell's name) and a Forest to stop at Grizzly Bears, which bob casts free; the Giant and Forest go under his Plains.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "stack": [
+      {
+        "owner": "bob",
+        "card": "Hill Giant",
+        "label": "gspell"
+      }
+    ],
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m0"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Tibalt's Trickery",
+            "label": "trick"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "libgiant"
+          },
+          {
+            "card": "Forest",
+            "label": "libforest"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$trick",
+          "mana": [
+            "$m0",
+            "$m1"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "RandomNumber",
+            "offer": {
+              "least": 0,
+              "greatest": 2
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RandomNumber",
+          "with": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "OfferedCast",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Forest",
+            "Hill Giant#2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "Grizzly Bears"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Graveyard",
+          "is": [
+            "Hill Giant",
+            "Island",
+            "Swamp"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library",
+          "is": [
+            "Plains",
+            "Plains#2",
+            "Hill Giant#2",
+            "Forest"
+          ]
+        }
+      }
+    }
+  ]
+}

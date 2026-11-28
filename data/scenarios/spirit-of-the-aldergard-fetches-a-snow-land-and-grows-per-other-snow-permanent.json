@@ -1,0 +1,212 @@
+{
+  "description": "CR 701.23a / 205.4g / 613.4c: Spirit of the Aldergard searches for a snow land card on entering and gets +1/+0 for each other snow permanent its controller controls",
+  "note": "The search refuses a nonsnow Forest. Alice's nonsnow Forest and bob's snow land do not count; playing the fetched snow land adds one.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [
+          {
+            "card": "Forest",
+            "label": "libforest"
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "libsnow"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "libbears"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Snow-Covered Forest",
+            "label": "sf0"
+          },
+          {
+            "card": "Snow-Covered Forest",
+            "label": "sf1"
+          },
+          {
+            "card": "Snow-Covered Forest",
+            "label": "sf2"
+          },
+          {
+            "card": "Snow-Covered Forest",
+            "label": "sf3"
+          },
+          {
+            "card": "Forest",
+            "label": "plainf"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Spirit of the Aldergard",
+            "label": "spirit"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Snow-Covered Forest",
+            "label": "bobsnow"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$spirit",
+          "mana": [
+            "$sf0",
+            "$sf1",
+            "$sf2",
+            "$sf3",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$libforest"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$libsnow"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$libforest",
+            "$libbears"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Snow-Covered Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "Spirit of the Aldergard",
+          "power": 4,
+          "toughness": 4
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "PlayLand": "Snow-Covered Island"
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "Spirit of the Aldergard",
+          "power": 5,
+          "toughness": 4
+        }
+      }
+    }
+  ]
+}

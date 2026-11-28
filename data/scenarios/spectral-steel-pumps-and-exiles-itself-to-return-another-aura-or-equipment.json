@@ -1,0 +1,273 @@
+{
+  "description": "CR 303.4a / 613.4c / 602.2b / 406.2: Spectral Steel gives the enchanted creature +2/+2, and exiles itself from the graveyard to return another Aura or Equipment card to hand",
+  "note": "The graveyard copy cannot target itself or a creature card; Pacifism and Holy Strength stay behind when Bonesplitter is chosen, so an Aura-only filter still offers a choice.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p0"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Spectral Steel",
+            "label": "hsteel"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Spectral Steel",
+            "label": "gsteel"
+          },
+          {
+            "card": "Pacifism",
+            "label": "pac"
+          },
+          {
+            "card": "Holy Strength",
+            "label": "holy"
+          },
+          {
+            "card": "Bonesplitter",
+            "label": "bone"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "bgiant"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$hsteel",
+          "targets": [
+            "$bears"
+          ],
+          "mana": [
+            "$p0",
+            "$p1",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 4,
+          "toughness": 4
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 0,
+          "object": "$gsteel",
+          "targets": [
+            "$gsteel"
+          ],
+          "mana": [
+            "$p2",
+            "$p3"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 0,
+          "object": "$gsteel",
+          "targets": [
+            "$giant"
+          ],
+          "mana": [
+            "$p2",
+            "$p3"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$gsteel",
+          "targets": [
+            "$bone"
+          ],
+          "mana": [
+            "$p2",
+            "$p3"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Bonesplitter",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Pacifism",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Spectral Steel",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      }
+    }
+  ]
+}

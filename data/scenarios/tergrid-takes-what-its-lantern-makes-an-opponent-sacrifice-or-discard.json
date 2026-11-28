@@ -1,0 +1,612 @@
+{
+  "description": "CR 118.12 / 701.21a / 701.9a: Tergrid's Lantern makes target player lose 3 unless they sacrifice a nonland permanent or discard, untaps for {3}{B}, and Tergrid takes the sacrificed nontoken permanent and the discarded permanent card",
+  "note": "One Tergrid card shows each face. Bob discarding Lightning Bolt triggers nothing (not a permanent card); his sacrificed Hill Giant and discarded Grizzly Bears each come to alice. His Swamp is refused as the sacrifice. Paying each time he keeps 20 life; declining the fourth, keeping his Gray Ogre, he loses 3.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Tergrid, God of Fright",
+            "label": "tergrid"
+          },
+          {
+            "card": "Tergrid, God of Fright",
+            "face": "Tergrid's Lantern",
+            "label": "lantern",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "s0"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          },
+          {
+            "card": "Swamp",
+            "label": "s4"
+          },
+          {
+            "card": "Swamp",
+            "label": "s5"
+          },
+          {
+            "card": "Swamp",
+            "label": "s6"
+          },
+          {
+            "card": "Swamp",
+            "label": "s7"
+          },
+          {
+            "card": "Swamp",
+            "label": "s8"
+          },
+          {
+            "card": "Swamp",
+            "label": "s9"
+          },
+          {
+            "card": "Swamp",
+            "label": "s10"
+          },
+          {
+            "card": "Swamp",
+            "label": "s11"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Swamp",
+            "label": "bswamp"
+          },
+          {
+            "card": "Gray Ogre",
+            "label": "ogre"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$lantern",
+          "ability": 0,
+          "targets": [
+            "$bob"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCost",
+          "with": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "ChooseToPay": {
+          "decision": "Pays"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$bolt"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Lightning Bolt",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$lantern",
+          "tapped": true
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$lantern",
+          "ability": 1,
+          "mana": [
+            "$s0",
+            "$s1",
+            "$s2",
+            "$s3",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$lantern",
+          "tapped": false
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$lantern",
+          "ability": 0,
+          "targets": [
+            "$bob"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseCost",
+            "offer": {
+              "source": "ability of $lantern",
+              "costs": [
+                {
+                  "mana": [],
+                  "components": [
+                    {
+                      "type": "Sacrifice",
+                      "value": {
+                        "count": {
+                          "type": "Fixed",
+                          "value": 1
+                        },
+                        "whichPermanents": {
+                          "type": "Not",
+                          "value": {
+                            "type": "HasCardType",
+                            "value": "Land"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "mana": [],
+                  "components": [
+                    {
+                      "type": "DiscardCards",
+                      "value": {
+                        "count": {
+                          "type": "Fixed",
+                          "value": 1
+                        },
+                        "whichCards": {
+                          "type": "And",
+                          "value": []
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "keywords": [
+                null,
+                null
+              ],
+              "earlier": []
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCost",
+          "with": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "ChooseToPay": {
+          "decision": "Pays"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseSacrifices",
+          "with": [
+            "$bswamp"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseSacrifices",
+          "with": [
+            "$giant"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "source": "$tergrid"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$lantern",
+          "ability": 1,
+          "mana": [
+            "$s4",
+            "$s5",
+            "$s6",
+            "$s7",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$lantern",
+          "ability": 0,
+          "targets": [
+            "$bob"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCost",
+          "with": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "ChooseToPay": {
+          "decision": "Pays"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "source": "$tergrid"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 0,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 20
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Gray Ogre",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$lantern",
+          "ability": 1,
+          "mana": [
+            "$s8",
+            "$s9",
+            "$s10",
+            "$s11"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$lantern",
+          "ability": 0,
+          "targets": [
+            "$bob"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "ChooseToPay": {
+          "decision": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 17
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Gray Ogre",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      }
+    }
+  ]
+}
