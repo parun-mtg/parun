@@ -1,0 +1,385 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Cosima, God of the Voyage",
+            "label": "cosima"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Forest",
+            "label": "fh1"
+          },
+          {
+            "card": "Forest",
+            "label": "fh2"
+          },
+          {
+            "card": "Explosive Vegetation",
+            "label": "ev"
+          }
+        ],
+        "library": [
+          {
+            "card": "Memnite",
+            "label": "m1"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "m2"
+          },
+          {
+            "card": "Plains",
+            "label": "pl"
+          },
+          {
+            "card": "Swamp",
+            "label": "sw"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "hg"
+          },
+          {
+            "card": "Centaur Courser",
+            "label": "cc"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Untap"
+  },
+  "description": "CR 113.6, 603.4: Cosima, God of the Voyage exiles itself at your upkeep and banks a voyage counter per land you control entering; declining one returns it with that many +1/+1 counters and draws that many, and a land trigger still waiting finds Cosima gone from exile and does nothing",
+  "note": "One Forest on turn 1 and one on turn 3 bank two voyage counters. Explosive Vegetation's two basics trigger twice: declining the first returns Cosima with two +1/+1 counters and draws Hill Giant and Centaur Courser, and the second asks nothing and leaves Ornithopter in the library.",
+  "timeline": [
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Cosima, God of the Voyage",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "PlayLand": "$fh1"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "Named",
+            "value": "voyage"
+          },
+          "object": "Cosima, God of the Voyage"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "PlayLand": "$fh2"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "Named",
+            "value": "voyage"
+          },
+          "object": "Cosima, God of the Voyage"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3",
+            "$f4",
+            null
+          ],
+          "object": "$ev"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$pl",
+            "$sw"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$hg",
+            "$cc",
+            "$m2",
+            "$i1",
+            "$i2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "Cosima, God of the Voyage",
+          "Cosima, God of the Voyage"
+        ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseOptional": "Declines"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Cosima, God of the Voyage",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Cosima, God of the Voyage"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Centaur Courser",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ornithopter",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Cosima, God of the Voyage",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Cosima, God of the Voyage"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ornithopter",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}

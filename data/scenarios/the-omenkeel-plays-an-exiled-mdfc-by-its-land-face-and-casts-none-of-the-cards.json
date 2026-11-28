@@ -1,0 +1,274 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Cosima, God of the Voyage",
+            "face": "The Omenkeel",
+            "label": "keel",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "gb",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Tangled Florahedron"
+          },
+          {
+            "card": "Memnite"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Divination"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 305.1, 712.9: The Omenkeel exiles as many of the damaged player's top cards as its combat damage and lets its controller play lands from among them, a modal double-faced card by its land face, and cast none of them",
+  "note": "The crewed Omenkeel hits bob for 3, so bob's top three are exiled and carol's library is untouched. Alice can't cast Memnite (free) or Tangled Florahedron's creature face with the mana for it, but plays Tangled Florahedron as Tangled Vale; her land drop spent, bob's exiled Island stays put.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "object": "$keel"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTapsForTotalPower",
+          "with": [
+            "$gb"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$keel"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Tangled Florahedron",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Memnite",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 1,
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Divination",
+          "count": 1,
+          "player": "carol",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [],
+          "object": "Memnite"
+        }
+      },
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$f2"
+          ],
+          "object": "Tangled Florahedron"
+        }
+      },
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "PlayLand": "Tangled Florahedron"
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Tangled Vale",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "Tangled Vale",
+          "types": [
+            "Land"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "PlayLand": "Island"
+      },
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}

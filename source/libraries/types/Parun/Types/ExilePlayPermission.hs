@@ -100,8 +100,9 @@ data ExilePlayPermission = MkExilePlayPermission
     condition :: Maybe Condition.Condition,
     origin :: PlayPermissionOrigin.PlayPermissionOrigin,
     -- | CR 601.3 / 305.9: whether the permission also lets the land it lies
-    -- on be played (Play), only lets a spell be cast (Cast), or only lets its
-    -- Adventure half be cast (CastAsAdventure). Read by
+    -- on be played (Play), only lets a spell be cast (Cast), only lets its
+    -- Adventure half be cast (CastAsAdventure), or only lets it be played as
+    -- a land (PlayLand). Read by
     -- Parun.Engine.Cast.permitsLandPlayUnderPermission and
     -- Parun.Engine.Cast.verbAdmits.
     verb :: PermissionVerb.PermissionVerb,

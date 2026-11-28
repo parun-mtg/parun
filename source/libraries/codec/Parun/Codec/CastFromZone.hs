@@ -64,5 +64,6 @@ codec = Fields.objectWith verbIsPrinted $ do
 verbIsPrinted :: CastFromZone.CastFromZone -> Either Text.Text CastFromZone.CastFromZone
 verbIsPrinted grant
   | CastFromZone.verb grant == PermissionVerb.CastAsAdventure = Left (Text.pack "CastFromZone: casting as an Adventure is unprinted and not supported")
+  | CastFromZone.verb grant == PermissionVerb.PlayLand = Left (Text.pack "CastFromZone: a permission to play lands alone from a zone is PlayerEffect.PlayLandsFrom")
   | Maybe.isNothing (CastFromZone.from grant) && not (CastFromZone.outsideTheGame grant) = Left (Text.pack "CastFromZone: a permission opening no zone must open outside the game")
   | otherwise = Right grant

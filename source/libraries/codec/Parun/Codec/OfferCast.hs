@@ -61,4 +61,5 @@ codec = Fields.objectWith verbIsPrinted $ do
 verbIsPrinted :: OfferCast.OfferCast -> Either Text.Text OfferCast.OfferCast
 verbIsPrinted offer
   | OfferCast.verb offer == PermissionVerb.Type.CastAsAdventure = Left (Text.pack "OfferCast: casting as an Adventure is unprinted and not supported")
+  | OfferCast.verb offer == PermissionVerb.Type.PlayLand = Left (Text.pack "OfferCast: an offer to play a land alone is unprinted and not supported")
   | otherwise = Right offer

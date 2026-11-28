@@ -159,4 +159,10 @@ spec s = Spec.describe s "Parun.Codec.OfferCast" $ do
       s
       (Either.isLeft (Codec.decode OfferCast.codec =<< Common.parse (Text.pack "{\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"},\"verb\":\"CastAsAdventure\"}")))
       "expected a decode failure"
+  -- Unprinted: an offer to play a land alone, so refused.
+  Spec.it s "rejects a land-only verb" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode OfferCast.codec =<< Common.parse (Text.pack "{\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"},\"verb\":\"PlayLand\"}")))
+      "expected a decode failure"
   Spec.it s "has a schema" $ Common.assertHasSchema s OfferCast.codec
