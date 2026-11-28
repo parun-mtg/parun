@@ -1,0 +1,113 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Foretell",
+          "value": {
+            "type": "Stated",
+            "value": {
+              "mana": [
+                {
+                  "type": "OfType",
+                  "value": {
+                    "type": "Colored",
+                    "value": "Blue"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Mystic Reflection",
+      "oracleText": "Choose target nonlegendary creature. The next time one or more creatures or planeswalkers enter this turn, they enter as copies of the chosen creature.\nForetell {U} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Replace",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "effect": {
+                        "type": "EntryR",
+                        "value": {
+                          "matching": {
+                            "type": "Or",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Planeswalker"
+                              }
+                            ]
+                          },
+                          "rewrite": {
+                            "type": "AsCopy",
+                            "value": {
+                              "among": {
+                                "type": "InSlot",
+                                "value": "target"
+                              },
+                              "eligible": {
+                                "type": "IsBound",
+                                "value": "target"
+                              },
+                              "optional": false
+                            }
+                          }
+                        }
+                      },
+                      "origin": "Other",
+                      "uses": "Once"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "Not",
+                  "value": {
+                    "type": "HasSupertype",
+                    "value": "Legendary"
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

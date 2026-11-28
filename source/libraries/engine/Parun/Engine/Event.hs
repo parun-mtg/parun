@@ -6700,6 +6700,15 @@ becomeCopyAs batch candidate asCopy oid = do
             CopyDomain.InZone Zone.Battlefield -> \chooser who source pool -> Prompt.ChoosePermanent chooser who source pool Seq.empty Nothing
             CopyDomain.InZone _ -> Prompt.ChooseCardFromAmong
             CopyDomain.InPile _ -> Prompt.ChooseCardFromAmong
+            CopyDomain.InSlot _ -> Prompt.ChooseCardFromAmong
+          -- CR 608.2h: a slot's object may have left since the resolution
+          -- named it, and is copied as it last existed (Mystic Reflection's
+          -- 2021-02-05 ruling). Every other domain's object is there by
+          -- construction.
+          copiedOf = case AsCopy.among asCopy of
+            CopyDomain.InSlot _ -> copiedSnapshotWithLastKnown
+            CopyDomain.InZone _ -> copiedSnapshot
+            CopyDomain.InPile _ -> copiedSnapshot
       answer <-
         if not (AsCopy.optional asCopy)
           then -- A printed "choose" (Metamorphic Alteration) offers no
@@ -6752,7 +6761,7 @@ becomeCopyAs batch candidate asCopy oid = do
           let copier = case AsCopy.recipient asCopy of
                 CopyRecipient.ThisObject -> oid
                 CopyRecipient.ItsHost -> Maybe.fromMaybe oid (Game.hostOf oid g0)
-              stampWith excepted = Replacement.applyCopyExceptions Nothing (Just (copiedSnapshot copier g0)) excepted (copiedSnapshot src2 g0)
+              stampWith excepted = Replacement.applyCopyExceptions Nothing (Just (copiedSnapshot copier g0)) excepted (copiedOf src2 g0)
               -- CR 707.3: no stated ending, so the copiable values go onto
               -- the object itself, over any stored row (CR 613.7).
               stampOnto pc g = Game.supersedeStoredCopies (Set.singleton copier) g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setCopy pc (Object.bindings o)}) copier (GameState.objects g)}
@@ -6931,8 +6940,9 @@ copiedReading src gs =
 --
 -- A separate name rather than widening `copiedSnapshot`, for
 -- Game.cardOfWithLastKnown's reason: the live reader is asked by the CR 614.1c
--- entry rewrite, whose subject is on the battlefield by construction, and
--- answering there for an object that is not would resurrect it.
+-- entry rewrite, whose copier and zone-domain original are present by
+-- construction, and answering there for an object that is not would resurrect
+-- it. Only a slot's original may be gone (becomeCopyAs's CopyDomain.InSlot).
 copiedSnapshotWithLastKnown :: ObjectId -> GameState -> PC.ProjectedCharacteristics
 copiedSnapshotWithLastKnown oid gs = case Game.lastKnownOf oid gs of
   Just lk -> LastKnown.copiable lk
