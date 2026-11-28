@@ -1,0 +1,150 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Niko Defies Destiny",
+            "label": "niko"
+          },
+          {
+            "card": "Dream Devourer",
+            "label": "devourer"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Depart the Realm",
+            "label": "depart"
+          },
+          {
+            "card": "Think Twice",
+            "label": "think"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "library": [
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 601.2a / 106.6 Niko Defies Destiny's mana casts no spell foretell only in hand",
+  "note": "No lands in play, Islands in the library so no drawn card takes foretell: chapter II's {W}{U} is alice's only mana. Dream Devourer gives Think Twice foretell in her hand, so the mana may foretell it, but the spell on the stack has no foretell, so casting it is not offered. Depart the Realm's printed foretell survives the move: the mana casts it, returning the Devourer.",
+  "timeline": [
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "PlayLand Island#6",
+            "Cast $depart",
+            "Foretell $depart",
+            "Foretell $think"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "Cast $depart"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$devourer"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Dream Devourer",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}
