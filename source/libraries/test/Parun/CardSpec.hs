@@ -4525,6 +4525,7 @@ playerEffectFilters playerEffect = case playerEffect of
   -- CR 307.5 narrows a MOMENT rather than a class of spell, so there is no
   -- quality here either (Teferi, Mage of Zhalfir).
   PlayerEffect.CastOnlyAtSorcerySpeed -> []
+  PlayerEffect.MayForetellDuringAnyTurn -> []
   -- CR 305.1's play-side prohibition, narrowed by the land's own qualities
   -- exactly as the cast-side one above is (City in a Bottle's is an Or of
   -- HasName, Damping Engine's is `And []`).

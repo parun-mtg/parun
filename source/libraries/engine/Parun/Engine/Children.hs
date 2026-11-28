@@ -2398,6 +2398,7 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.CantAttackWithCreatures -> pure effect
   PlayerEffect.CantCastMatching filter_ -> PlayerEffect.CantCastMatching <$> playerFilter c filter_
   PlayerEffect.CastOnlyAtSorcerySpeed -> pure effect
+  PlayerEffect.MayForetellDuringAnyTurn -> pure effect
   PlayerEffect.CantPlayLands filter_ -> PlayerEffect.CantPlayLands <$> playerFilter c filter_
   PlayerEffect.PlayAsCopy (PlayAsCopy.MkPlayAsCopy cards original) -> fmap PlayerEffect.PlayAsCopy (PlayAsCopy.MkPlayAsCopy <$> playerFilter c cards <*> playerFilter c original)
   PlayerEffect.CastFrom (CastFromZone.MkCastFromZone from matching limit verb pool additionalCosts reduction spending alternativeCost entersWith exiledInstead amount creatureTypes outsideTheGame) ->

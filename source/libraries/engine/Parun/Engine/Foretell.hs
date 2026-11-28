@@ -29,10 +29,13 @@ import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
+import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Turn as Turn
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost.Type
+import qualified Parun.Types.CostAdjustments as CostAdjustments
+import qualified Parun.Types.CostedSpecialAction as CostedSpecialAction
 import qualified Parun.Types.EntryRiders as EntryRiders
 import Parun.Types.ForetellCost (ForetellCost)
 import qualified Parun.Types.ForetellCost as ForetellCost
@@ -97,13 +100,14 @@ foretellCostsOf offBoard oid gs = case Game.cardOfHandMember oid gs of
 --     foretell from their hand"), which foretellCostsOf and the zone test settle
 --     together;
 --   * the window is THIS PLAYER'S OWN TURN -- "any time a player has priority
---     during their turn". Nothing more: rule 702.143a asks for neither a main
---     phase nor an empty stack, so this is deliberately NOT
---     Parun.Engine.Turn.sorcerySpeedWindow, which CR 702.170a's plot and CR
---     116.2m's unlock both are. Parun.SpecialActionSpec pairs the two boards that
---     prove the difference.
---   * the {2} is payable. An action the player cannot take is not offered, which
---     is Parun.Engine.Action.legalActions' posture throughout. It is paid FOR the
+--     during their turn" -- or any player's under a grant (Cosmos Charger).
+--     Nothing more: rule 702.143a asks for neither a main phase nor an empty
+--     stack, so this is deliberately NOT Parun.Engine.Turn.sorcerySpeedWindow,
+--     which CR 702.170a's plot and CR 116.2m's unlock both are.
+--     Parun.SpecialActionSpec pairs the two boards that prove the difference.
+--   * the {2}, as an effect changes it, is payable. An action the player
+--     cannot take is not offered, which is Parun.Engine.Action.legalActions'
+--     posture throughout. It is paid FOR the
 --     card (PaymentSubject.Foretelling), which Karfell Harbinger's "only to
 --     foretell a card" asks about; the scenario "CR 106.6 / 116.2h Karfell
 --     Harbinger's mana foretells a card ..." proves it.
@@ -111,7 +115,10 @@ foretellCostsOf offBoard oid gs = case Game.cardOfHandMember oid gs of
 -- The payability check is Cost.canPay and NOT Cost.total's CR 601.2f
 -- adjustments, for the reason Plot.canPlot gives: that rule totals the cost of a
 -- spell being cast or an ability being activated, and a special action is
--- neither (#90).
+-- neither (#90). What an effect changes about foretelling (CR 118.7) is asked
+-- instead, `foretellCost`'s adjustments, any total they reach sufficing.
+-- data/scenarios/cosmos-charger-foretells-on-an-opponents-turn-for-one-less
+-- proves both grants.
 --
 -- The PRIORITY clause has no conjunct, for the reason CR 116.2a's land play has
 -- none: legalActions is asked only of the priority holder.
@@ -119,8 +126,22 @@ canForetell :: Map.Map ObjectId ProjectedCharacteristics -> PlayerId -> ObjectId
 canForetell offBoard pid oid gs =
   not (null (foretellCostsOf offBoard oid gs))
     && elem oid (Game.zoneMembers Zone.Hand pid gs)
-    && Turn.hasTurnRunning gs pid
-    && Cost.canPay (PaymentSubject.Foretelling oid) pid oid actionCost gs
+    && (Turn.hasTurnRunning gs pid || PlayerEffect.mayForetellDuringAnyTurn pid gs)
+    && let (adjustments, cost) = foretellCost pid oid gs
+           payableWith manaCost = Cost.canPay (PaymentSubject.Foretelling oid) pid oid cost {Cost.Type.mana = manaCost} gs
+        in case Cost.Type.mana cost of
+             Nothing -> payableWith Nothing
+             Just manaCost -> any (payableWith . Just) (Cost.totalManas adjustments manaCost)
+
+-- CR 118.7 / 116.2h: what an effect changes about foretelling this card (Cosmos
+-- Charger's "Foretelling cards from your hand costs {1} less"), gathered over
+-- the rows whose subject is CostSubject.SpecialActions Foretell, and the cost
+-- with their added components -- Plot.plotCost's shape, asked of the card in
+-- hand before the exile.
+foretellCost :: PlayerId -> ObjectId -> GameState -> (CostAdjustments.CostAdjustments, Cost Keyword)
+foretellCost pid oid gs =
+  let adjustments = PlayerEffect.specialActionCostAdjustments CostedSpecialAction.Foretell pid oid gs
+   in (adjustments, Cost.plusComponents adjustments actionCost)
 
 -- Every card this player may foretell right now -- what Action.Foretell is built
 -- from, and the shape Plot.plottable has.
@@ -161,7 +182,9 @@ foretell :: ManaAbilityPerformer.ManaAbilityPerformer -> PlayerId -> ObjectId ->
 foretell perform pid oid = do
   before <- State.get
   Monad.when (canForetell Map.empty pid oid before) $ do
-    paid <- Cost.payAction perform before (PaymentSubject.Foretelling oid) 0 pid oid actionCost
+    let (adjustments, cost) = foretellCost pid oid before
+    announced <- Cost.announceReductions pid oid before cost adjustments
+    paid <- Cost.payAction perform before (PaymentSubject.Foretelling oid) 0 pid oid (Cost.totalWith announced cost)
     Monad.forM_ paid $ \_ -> do
       -- One stamp per arrival, Parun.Engine.Plot's reason: the funnel answers
       -- with more than one only for a melded permanent leaving the battlefield

@@ -152,6 +152,7 @@ codec =
           Arm.nullary "CantAttackWithCreatures" PlayerEffect.CantAttackWithCreatures,
           Arm.payload "CantCastMatching" filterCodec PlayerEffect.CantCastMatching (\x -> case x of PlayerEffect.CantCastMatching y -> Just y; _ -> Nothing),
           Arm.nullary "CastOnlyAtSorcerySpeed" PlayerEffect.CastOnlyAtSorcerySpeed,
+          Arm.nullary "MayForetellDuringAnyTurn" PlayerEffect.MayForetellDuringAnyTurn,
           Arm.payload "CantPlayLands" filterCodec PlayerEffect.CantPlayLands (\x -> case x of PlayerEffect.CantPlayLands y -> Just y; _ -> Nothing),
           Arm.payload "CastFrom" CastFromZone.codec PlayerEffect.CastFrom (\x -> case x of PlayerEffect.CastFrom y -> Just y; _ -> Nothing),
           Arm.payload "PlayLandsFrom" InZone.codec PlayerEffect.PlayLandsFrom (\x -> case x of PlayerEffect.PlayLandsFrom y -> Just y; _ -> Nothing),
@@ -219,6 +220,7 @@ tagOf x = case x of
   PlayerEffect.CantCastMatching {} -> "CantCastMatching"
   PlayerEffect.PutTappedAsYouCascade {} -> "PutTappedAsYouCascade"
   PlayerEffect.CastOnlyAtSorcerySpeed {} -> "CastOnlyAtSorcerySpeed"
+  PlayerEffect.MayForetellDuringAnyTurn {} -> "MayForetellDuringAnyTurn"
   PlayerEffect.CantPlayLands {} -> "CantPlayLands"
   PlayerEffect.PlayAsCopy {} -> "PlayAsCopy"
   PlayerEffect.CastFrom {} -> "CastFrom"

@@ -20,6 +20,12 @@ spec s = Spec.describe s "Parun.Codec.CostedSpecialAction" $ do
       CostedSpecialAction.codec
       CostedSpecialAction.Type.Plot
       " {\"type\":\"Plot\"} "
+  Spec.it s "Foretell" $
+    Common.assertCodec
+      s
+      CostedSpecialAction.codec
+      CostedSpecialAction.Type.Foretell
+      " {\"type\":\"Foretell\"} "
   Spec.it s "TurnFaceUp" $
     Common.assertCodec
       s
