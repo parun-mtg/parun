@@ -1,0 +1,97 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Foretell",
+          "value": {
+            "type": "Stated",
+            "value": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 1
+                },
+                {
+                  "type": "OfType",
+                  "value": {
+                    "type": "Colored",
+                    "value": "Red"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Dwarven Reinforcements",
+      "oracleText": "Create two 2/1 red Dwarf Berserker creature tokens.\nForetell {1}{R} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "colorIndicator": [
+                              "Red"
+                            ],
+                            "name": "Dwarf Berserker Token",
+                            "power": {
+                              "type": "Literal",
+                              "value": 2
+                            },
+                            "toughness": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "typeLine": {
+                              "subtypes": [
+                                "Dwarf",
+                                "Berserker"
+                              ],
+                              "types": [
+                                "Creature"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 2
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
