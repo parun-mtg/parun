@@ -124,7 +124,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 601.3, 118.9, 614.1a, 608.2n: Glimpse the Cosmos is cast from alice's graveyard for {U} only while she controls a Giant, and is then exiled instead of returning to her graveyard; cast from her hand it goes to the graveyard",
-  "note": "Cast from hand for {1}{U}, it resolves into the graveyard. Bob's Hill Giant leaves the graveyard permission closed; once alice's own Hill Giant resolves, one Island alone pays for the graveyard cast, and that cast ends in exile with nothing left in the graveyard. Not implemented: exiling only a cast made this way; any graveyard cast exiles it (#10144).",
+  "note": "Cast from hand for {1}{U}, it resolves into the graveyard. Bob's Hill Giant leaves the graveyard permission closed; once alice's own Hill Giant resolves, one Island alone pays for the graveyard cast, and that cast ends in exile with nothing left in the graveyard. glimpse-the-cosmos-escaped-with-underworld-breach-returns-to-the-graveyard proves a graveyard cast under another permission is not exiled.",
   "timeline": [
     {
       "do": {

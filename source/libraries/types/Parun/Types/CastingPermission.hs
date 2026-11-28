@@ -46,7 +46,9 @@ data CastingPermission
     -- Dubious Monarch's {3}{R}, its list exiling four other cards.
     -- The condition, asked of its owner (CR 109.5), is what the permission holds
     -- under (Undead Sprinter's "if a non-Zombie creature died this turn");
-    -- Parun.Engine.PlayerEffect.permissionHolds asks it.
+    -- Parun.Engine.PlayerEffect.permissionHolds asks it. The Bool is the
+    -- cast's exile rider (CR 614.1a): Glimpse the Cosmos's "If you cast this
+    -- card this way and it would be put into your graveyard, exile it instead".
     --
     -- Those keywords' permissions come from Parun.Engine.Keyword.castingPermissionsOf,
     -- a constructor here rather than a keyword read at the gate, so
@@ -54,8 +56,9 @@ data CastingPermission
     -- never "does this have flashback?".
     --
     -- Unprinted: another zone, or exile beside a condition, a family, a cost, an
-    -- alternative cost or counters. Parun.Codec.CastingPermission refuses each.
-    CastFrom Zone.Zone (Maybe Condition.Condition) (Maybe KeywordFamily.KeywordFamily) [CostComponent.CostComponent Keyword.Keyword] (Maybe WithCounters.WithCounters) (Maybe PermissionCost.PermissionCost)
+    -- alternative cost, counters or an exile rider. Parun.Codec.CastingPermission
+    -- refuses each.
+    CastFrom Zone.Zone (Maybe Condition.Condition) (Maybe KeywordFamily.KeywordFamily) [CostComponent.CostComponent Keyword.Keyword] (Maybe WithCounters.WithCounters) (Maybe PermissionCost.PermissionCost) Bool
   | -- | CR 601.3 / 305.1: play this card from its owner's graveyard, casting
     -- it for its printed or an alternative cost (CR 118.9) or playing it as a land.
     PlayFromGraveyard

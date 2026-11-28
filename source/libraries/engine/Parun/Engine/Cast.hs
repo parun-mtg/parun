@@ -3612,7 +3612,7 @@ entryRewriting slot rewrite = ReplacementEffect.EntryR (EntryR.MkEntryR (Filter.
 -- blitz ability") opens the zone for that cost alone.
 castWays :: (ObjectId -> Bool) -> PlayerId -> ObjectId -> CastOrigin.CastOrigin -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> [Maybe (ObjectId, CastFromZone.CastFromZone)]
 castWays rides pid oid origin face gs castFor =
-  let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFrom Zone.Graveyard _ (Just family) [] Nothing Nothing <- Cost.permissionsOf (Projection.project oid gs) oid face gs]
+  let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFrom Zone.Graveyard _ (Just family) [] Nothing Nothing False <- Cost.permissionsOf (Projection.project oid gs) oid face gs]
       ownOpen = case origin of
         -- CR 702.143a / 118.9a: a foretold card's own permission is to cast it
         -- for its foretell cost, and for no other cost
@@ -3633,8 +3633,8 @@ castWays rides pid oid origin face gs castFor =
    in PlayerEffect.castPermissionOptions rides ownOpen own pid origin oid gs
 
 -- CR 118.8 / 118.9 / 601.3: each graveyard permission the card carries for
--- itself that states an additional cost, an alternative cost or entry counters
--- (Cost.addsToItsCast), as the
+-- itself that states an additional cost, an alternative cost, entry counters or
+-- an exile rider (Cost.addsToItsCast), as the
 -- unlimited CastFrom row a way is: the choice among ways is what lets a cast
 -- under another permission skip that cost and those counters.
 ownPayingWays :: ObjectId -> Face.Face Card.Type.Card -> GameState -> [(Maybe ObjectId, CastFromZone.CastFromZone)]
@@ -3651,13 +3651,13 @@ ownPayingWays oid face gs =
           CastFromZone.spending = ManaSpending.AsProduced,
           CastFromZone.alternativeCost = alternative,
           CastFromZone.entersWith = entersWith,
-          CastFromZone.exiledInstead = False,
+          CastFromZone.exiledInstead = exiled,
           CastFromZone.amount = Nothing,
           CastFromZone.creatureTypes = Set.empty,
           CastFromZone.outsideTheGame = False
         }
     )
-  | permission@(CastingPermission.CastFrom Zone.Graveyard _ _ additional entersWith alternative) <- Cost.permissionsOf (Projection.project oid gs) oid face gs,
+  | permission@(CastingPermission.CastFrom Zone.Graveyard _ _ additional entersWith alternative exiled) <- Cost.permissionsOf (Projection.project oid gs) oid face gs,
     Cost.addsToItsCast permission
   ]
 
@@ -3875,7 +3875,8 @@ installPermissionEntry caster permission spell gs = case permission of
   _ -> gs
 
 -- CR 614.1a / 608.2n / 701.6a: "If a spell cast this way would be put into a
--- graveyard, exile it instead" (The Great Work), the exile rider of the
+-- graveyard, exile it instead" (The Great Work; Glimpse the Cosmos's own,
+-- through ownPayingWays), the exile rider of the
 -- permission the cast of `spell` was made under: one floating ZoneChangeR row
 -- naming the spell by slot, stored as the spell is cast for
 -- installPermissionEntry's reason. Event.reenter re-keys no such row, so a

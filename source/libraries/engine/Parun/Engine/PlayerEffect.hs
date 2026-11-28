@@ -3183,7 +3183,7 @@ mayPlayFromOwnGraveyard offBoard verb pid oid gs = case Game.lookupObject oid gs
   where
     admits permission = case permission of
       CastingPermission.PlayFromGraveyard -> True
-      CastingPermission.CastFrom Zone.Graveyard _ Nothing [] Nothing Nothing -> verb == PermissionVerb.Cast && permissionHolds oid gs permission
+      CastingPermission.CastFrom Zone.Graveyard _ Nothing [] Nothing Nothing False -> verb == PermissionVerb.Cast && permissionHolds oid gs permission
       CastingPermission.CastFrom {} -> False
       CastingPermission.CastFromLibraryWhileSearching -> False
       CastingPermission.CastAsThoughItHadFlash {} -> False
@@ -3195,10 +3195,10 @@ mayPlayFromOwnGraveyard offBoard verb pid oid gs = case Game.lookupObject oid gs
 -- undead-sprinter-* and gravecrawler-* prove it.
 permissionHolds :: ObjectId -> GameState -> CastingPermission.CastingPermission -> Bool
 permissionHolds oid gs permission = case permission of
-  CastingPermission.CastFrom _ (Just condition) _ _ _ _ -> case Game.lookupObject oid gs of
+  CastingPermission.CastFrom _ (Just condition) _ _ _ _ _ -> case Game.lookupObject oid gs of
     Nothing -> False
     Just obj -> Condition.holds (Projection.fullView gs) (Projection.sourceContext gs (Just (Object.owner obj)) oid) gs oid condition
-  CastingPermission.CastFrom _ Nothing _ _ _ _ -> True
+  CastingPermission.CastFrom _ Nothing _ _ _ _ _ -> True
   CastingPermission.PlayFromGraveyard -> True
   CastingPermission.CastFromLibraryWhileSearching -> True
   CastingPermission.CastAsThoughItHadFlash {} -> True

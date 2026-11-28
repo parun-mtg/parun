@@ -1169,7 +1169,7 @@ expansionOf keyword = case keyword of
         -- rule 702.127a's own first sentence already confining aftermath to split cards.
         -- Its SECOND ability, "can't be cast from any zone other than a graveyard", is a
         -- PROHIBITION and so Parun.Engine.Cast's, at its Zone.Hand arm.
-        KeywordExpansion.permissions = const [CastingPermission.CastFrom Zone.Graveyard Nothing Nothing [] Nothing Nothing]
+        KeywordExpansion.permissions = const [CastingPermission.CastFrom Zone.Graveyard Nothing Nothing [] Nothing Nothing False]
       }
   Keyword.Embalm cost ->
     mempty
@@ -1222,7 +1222,7 @@ expansionOf keyword = case keyword of
         -- permitted (Parun.CastSpec's "Escape" group). The cost half is
         -- Parun.Engine.Cost.candidateCostsFor's, and rule 702.138a grants no exile
         -- replacement, so castFromGraveyardReplacementsOf stays flashback's.
-        KeywordExpansion.permissions = const [CastingPermission.CastFrom Zone.Graveyard Nothing Nothing [] Nothing Nothing],
+        KeywordExpansion.permissions = const [CastingPermission.CastFrom Zone.Graveyard Nothing Nothing [] Nothing Nothing False],
         -- CR 702.138a mints nothing: the exile-as-it-leaves-the-stack replacement is
         -- rule 702.34a's SECOND ability, and rule 702.138a prints no such sentence, so an
         -- escaped permanent spell becomes a permanent under CR 608.3a like any other, and
@@ -1550,7 +1550,7 @@ expansionOf keyword = case keyword of
         -- 702.34a's kind, so a card of any type with retrace may be cast from its
         -- owner's graveyard. What the rule ADDS is the land discard, and that half is
         -- Parun.Engine.Cost.candidateCostsGiven's.
-        KeywordExpansion.permissions = const [CastingPermission.CastFrom Zone.Graveyard Nothing Nothing [] Nothing Nothing],
+        KeywordExpansion.permissions = const [CastingPermission.CastFrom Zone.Graveyard Nothing Nothing [] Nothing Nothing False],
         -- Neither rule 702.81a nor rule 702.187b prints CR 702.34a's second sentence:
         -- a spell cast with retrace or with mayhem goes wherever it would go, which is
         -- its owner's graveyard, and may be cast again on a later turn.
@@ -1573,7 +1573,7 @@ expansionOf keyword = case keyword of
         -- ordinary costs where the same discard gates them (candidateCostsGiven's
         -- graveyard arm); its land half is a play, not a cast
         -- (Parun.Engine.PlayerEffect.mayPlayByMayhem).
-        KeywordExpansion.permissions = const [CastingPermission.CastFrom Zone.Graveyard Nothing Nothing [] Nothing Nothing],
+        KeywordExpansion.permissions = const [CastingPermission.CastFrom Zone.Graveyard Nothing Nothing [] Nothing Nothing False],
         -- Neither rule 702.81a nor rule 702.187b prints CR 702.34a's second sentence:
         -- a spell cast with retrace or with mayhem goes wherever it would go, which is
         -- its owner's graveyard, and may be cast again on a later turn.
@@ -1719,7 +1719,7 @@ expansionOf keyword = case keyword of
         -- names no card type. The cost half, tapped creature and reduction included,
         -- is Parun.Engine.Cost.candidateCostsGiven's; the third ability's exile is
         -- castFromGraveyardReplacementsOf's.
-        KeywordExpansion.permissions = const [CastingPermission.CastFrom Zone.Graveyard Nothing Nothing [] Nothing Nothing],
+        KeywordExpansion.permissions = const [CastingPermission.CastFrom Zone.Graveyard Nothing Nothing [] Nothing Nothing False],
         -- CR 702.146a states no replacement. CR 702.180a's third static ability IS one
         -- -- "exile this card instead of putting it anywhere else any time it would
         -- leave the stack" -- but it is conditioned on the harmonize cost having been
@@ -1743,7 +1743,7 @@ perInstance minted = concat . perPayment (const minted)
 -- cast from a graveyard, granted only when the face is an instant or sorcery.
 castFromGraveyardIfInstantOrSorcery :: Set CardType.CardType -> [CastingPermission]
 castFromGraveyardIfInstantOrSorcery cardTypes =
-  [ CastingPermission.CastFrom Zone.Graveyard Nothing Nothing [] Nothing Nothing
+  [ CastingPermission.CastFrom Zone.Graveyard Nothing Nothing [] Nothing Nothing False
   | Set.member CardType.Instant cardTypes || Set.member CardType.Sorcery cardTypes
   ]
 
