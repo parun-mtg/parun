@@ -12,6 +12,7 @@ import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.InterveningCheck as InterveningCheck
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeMemory as ModeMemory
@@ -37,6 +38,7 @@ ability =
           ModeMemory.NoMemory
           Seq.empty,
       TriggeredAbility.intervening = Nothing,
+      TriggeredAbility.checked = InterveningCheck.OnTriggerAndResolution,
       TriggeredAbility.name = Nothing,
       TriggeredAbility.limit = TriggerLimit.Unlimited,
       TriggeredAbility.functionsFrom = Set.empty,

@@ -29,6 +29,7 @@ import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DamageTrigger as DamageTrigger
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.InterveningCheck as InterveningCheck
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaSymbol as ManaSymbol
@@ -102,6 +103,7 @@ spec s = Spec.describe s "Parun.Codec.GrantedAbility" $ do
               (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.singleton (DamageRecipient.Player (PlayerRef.Relative PlayerRelation.AnyPlayer))) 0 TriggerFrequency.EveryTime))
               emptyModal
               Nothing
+              InterveningCheck.OnTriggerAndResolution
               Nothing
               TriggerLimit.Unlimited
               Set.empty

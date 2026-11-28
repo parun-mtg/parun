@@ -317,6 +317,7 @@ import qualified Parun.Types.Impending as Impending
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.InstructionR as InstructionR
 import qualified Parun.Types.InstructionRewrite as InstructionRewrite
+import qualified Parun.Types.InterveningCheck as InterveningCheck
 import qualified Parun.Types.JoinAttack as JoinAttack
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
@@ -6965,6 +6966,20 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cardLimitDangles (renamed 0))) "as is one naming its first"
     Spec.assertBool s (cardLimitDangles (renamed 2)) "one naming a third clause is rejected"
     Spec.assertEqWith s "no dangling limit" (fmap (S.nameOf . Printing.card) offenders) []
+  -- TriggeredAbility.checked qualifies a condition; with none it is a key that
+  -- says nothing. The doctored Quakebringer proves the lint is not vacuous.
+  Spec.it s "no card writes a condition check without a condition" $ do
+    ps <- S.allPrintings s corpus
+    quakebringer <- S.printingOf s registry "Quakebringer"
+    let face = S.combinedFace quakebringer
+        triggers f = Face.triggeredAbilities f <> delayedDeclarations f <> grantedTriggeredAbilities f
+        offends ability = Maybe.isNothing (TriggeredAbility.intervening ability) && TriggeredAbility.checked ability /= InterveningCheck.OnTriggerAndResolution
+        offending f = any offends (triggers f)
+        doctored = face {Face.triggeredAbilities = [a {TriggeredAbility.intervening = Nothing} | a <- Face.triggeredAbilities face]}
+        offenders = filter (anyFace offending . Printing.card) ps
+    Spec.assertBool s (any (\a -> TriggeredAbility.checked a == InterveningCheck.OnTriggerOnly) (triggers face) && not (offending face)) "Quakebringer's checked condition is accepted"
+    Spec.assertBool s (offending doctored) "the lint itself catches a check with no condition"
+    Spec.assertEqWith s "no offenders" (fmap (S.nameOf . Printing.card) offenders) []
   -- CR 605.4a leaves a triggered mana ability no stack object, so nothing spends
   -- its "triggers only once" rider (Event.withinTriggerLimit) or raises its CR
   -- 700.2b mode choice (Engine.placeBorne). No printing carries either, so none

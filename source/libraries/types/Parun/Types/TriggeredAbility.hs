@@ -3,6 +3,7 @@ module Parun.Types.TriggeredAbility where
 import qualified Data.Set as Set
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.InterveningCheck as InterveningCheck
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -19,8 +20,13 @@ data TriggeredAbility card ability = MkTriggeredAbility
     -- 603.8 state trigger uses, with two customers: checked when the trigger event
     -- occurs (the ability does not trigger AT ALL if it is false) and checked
     -- AGAIN on resolution (CR 608.2a removes the ability from the stack if it has
-    -- become false). Nothing for every ability without one.
+    -- become false), unless `checked` says otherwise. Nothing for every ability
+    -- without one.
     intervening :: Maybe Condition.Condition,
+    -- | Whether `intervening` is checked again on resolution: CR 603.4's
+    -- OnTriggerAndResolution for every ability but one printing "This ability
+    -- triggers only if" (Quakebringer).
+    checked :: InterveningCheck.InterveningCheck,
     -- | The name another clause of the same card uses to refer to this ability,
     -- or Nothing; the same reference Parun.Types.ActivatedAbility.name is, read
     -- by CR 613.1f's Modification.LoseNamedAbility.

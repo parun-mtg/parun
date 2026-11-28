@@ -59,6 +59,7 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.HandAction as HandAction
+import qualified Parun.Types.InterveningCheck as InterveningCheck
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
@@ -139,7 +140,7 @@ minimalModal =
 -- is a well-typed TriggeredAbility Card.
 minimalTriggeredAbility :: TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)
 minimalTriggeredAbility =
-  TriggeredAbility.MkTriggeredAbility (TriggerCondition.Enters EntersTrigger.defaultValue) minimalModal Nothing Nothing TriggerLimit.Unlimited Set.empty Nothing
+  TriggeredAbility.MkTriggeredAbility (TriggerCondition.Enters EntersTrigger.defaultValue) minimalModal Nothing InterveningCheck.OnTriggerAndResolution Nothing TriggerLimit.Unlimited Set.empty Nothing
 
 -- | Every required field set to a simple value, 'manaCost', 'power' and
 -- 'toughness' set to non-default values, and every other defaulted field left at

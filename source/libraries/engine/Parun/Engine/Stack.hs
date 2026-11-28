@@ -52,6 +52,7 @@ import Parun.Types.Game (Game)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
+import qualified Parun.Types.InterveningCheck as InterveningCheck
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.LibraryPosition as LibraryPosition
@@ -227,9 +228,14 @@ resolveOneWith runSubgame = do
           -- supplies it at the gather-time half for the reason the view above must
           -- match: Ray of Frost's "if enchanted creature is red" would otherwise
           -- pass one check and fail the other.
+          --
+          -- A condition checked on trigger only (InterveningCheck.OnTriggerOnly,
+          -- CR 603.2) is not re-checked:
+          -- data/scenarios/quakebringer-deals-2-after-its-giant-leaves.json proves it.
           case TriggeredAbility.intervening ability of
             Just cond
-              | not (interveningStillHolds gs obj srcId (TriggeredAbility.condition ability) cond) ->
+              | TriggeredAbility.checked ability == InterveningCheck.OnTriggerAndResolution,
+                not (interveningStillHolds gs obj srcId (TriggeredAbility.condition ability) cond) ->
                   State.modify' (Game.cease oid)
             _ ->
               let chosen = Binding.modesOf (Object.bindings obj)
@@ -287,7 +293,8 @@ resolveOneWith runSubgame = do
           -- field would be Nothing however it was filled.
           case TriggeredAbility.intervening ability of
             Just cond
-              | not (interveningStillHolds gs obj oid (TriggeredAbility.condition ability) cond) ->
+              | TriggeredAbility.checked ability == InterveningCheck.OnTriggerAndResolution,
+                not (interveningStillHolds gs obj oid (TriggeredAbility.condition ability) cond) ->
                   State.modify' (Game.cease oid)
             _ ->
               let chosen = Binding.modesOf (Object.bindings obj)

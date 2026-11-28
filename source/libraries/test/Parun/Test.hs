@@ -505,6 +505,7 @@ import qualified Parun.Codec.InitiativeTargetSpec
 import qualified Parun.Codec.InstanceOrdinalSpec
 import qualified Parun.Codec.InstructionRSpec
 import qualified Parun.Codec.InstructionRewriteSpec
+import qualified Parun.Codec.InterveningCheckSpec
 import qualified Parun.Codec.JoinAttackSpec
 import qualified Parun.Codec.KeywordCostPartSpec
 import qualified Parun.Codec.KeywordCostRestrictionSpec
@@ -1735,6 +1736,7 @@ spec s reference corpus = do
   Parun.Codec.InstanceOrdinalSpec.spec s
   Parun.Codec.InZoneSpec.spec s
   Parun.Codec.InstructionRSpec.spec s
+  Parun.Codec.InterveningCheckSpec.spec s
   Parun.Codec.InstructionRewriteSpec.spec s
   Parun.Codec.KeywordCountSpec.spec s
   Parun.Codec.KeywordDesignatorSpec.spec s

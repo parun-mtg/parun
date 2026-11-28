@@ -28,6 +28,7 @@ import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.InZone as InZone
+import qualified Parun.Types.InterveningCheck as InterveningCheck
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
@@ -89,6 +90,7 @@ spec s = Spec.describe s "Parun.Codec.TriggeredAbility" $ do
                 ModeMemory.NoMemory
                 Seq.empty,
             TriggeredAbility.intervening = Nothing,
+            TriggeredAbility.checked = InterveningCheck.OnTriggerAndResolution,
             TriggeredAbility.name = Nothing,
             TriggeredAbility.limit = TriggerLimit.Unlimited,
             TriggeredAbility.functionsFrom = Set.empty,
@@ -120,6 +122,7 @@ spec s = Spec.describe s "Parun.Codec.TriggeredAbility" $ do
                         (Quantity.Literal 0)
                     )
                 ),
+            TriggeredAbility.checked = InterveningCheck.OnTriggerAndResolution,
             TriggeredAbility.name = Nothing,
             TriggeredAbility.limit = TriggerLimit.Unlimited,
             TriggeredAbility.functionsFrom = Set.empty,
@@ -147,6 +150,7 @@ spec s = Spec.describe s "Parun.Codec.TriggeredAbility" $ do
                       ModeMemory.NoMemory
                       Seq.empty,
                   TriggeredAbility.intervening = Nothing,
+                  TriggeredAbility.checked = InterveningCheck.OnTriggerAndResolution,
                   TriggeredAbility.name = Nothing,
                   TriggeredAbility.limit = TriggerLimit.Unlimited,
                   TriggeredAbility.functionsFrom = Set.empty,
@@ -163,6 +167,7 @@ spec s = Spec.describe s "Parun.Codec.TriggeredAbility" $ do
                       ModeMemory.NoMemory
                       Seq.empty,
                   TriggeredAbility.intervening = Nothing,
+                  TriggeredAbility.checked = InterveningCheck.OnTriggerAndResolution,
                   TriggeredAbility.name = Nothing,
                   TriggeredAbility.limit = TriggerLimit.Unlimited,
                   TriggeredAbility.functionsFrom = Set.empty,
@@ -188,6 +193,7 @@ spec s = Spec.describe s "Parun.Codec.TriggeredAbility" $ do
               ModeMemory.NoMemory
               Seq.empty,
           TriggeredAbility.intervening = Nothing,
+          TriggeredAbility.checked = InterveningCheck.OnTriggerAndResolution,
           TriggeredAbility.name = Nothing,
           TriggeredAbility.limit = TriggerLimit.Unlimited,
           TriggeredAbility.functionsFrom = Set.empty,
@@ -209,6 +215,7 @@ spec s = Spec.describe s "Parun.Codec.TriggeredAbility" $ do
               ModeMemory.NoMemory
               Seq.empty,
           TriggeredAbility.intervening = Nothing,
+          TriggeredAbility.checked = InterveningCheck.OnTriggerAndResolution,
           TriggeredAbility.name = Just (AbilityName.MkAbilityName (Text.pack "vigil")),
           TriggeredAbility.limit = TriggerLimit.Unlimited,
           TriggeredAbility.functionsFrom = Set.empty,
@@ -230,12 +237,36 @@ spec s = Spec.describe s "Parun.Codec.TriggeredAbility" $ do
               ModeMemory.NoMemory
               Seq.empty,
           TriggeredAbility.intervening = Nothing,
+          TriggeredAbility.checked = InterveningCheck.OnTriggerAndResolution,
           TriggeredAbility.name = Nothing,
           TriggeredAbility.limit = TriggerLimit.Unlimited,
           TriggeredAbility.functionsFrom = Set.fromList [Zone.Library, Zone.Hand],
           TriggeredAbility.keyword = Nothing
         }
       " {\"condition\":{\"type\":\"Enters\",\"value\":{}},\"functionsFrom\":[\"Library\",\"Hand\"],\"modal\":{\"modes\":[{}]}} "
+  -- CR 603.2: "This ability triggers only if", checked when the event occurs
+  -- and never again (Quakebringer).
+  Spec.it s "a trigger-time-only condition carries its check" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      TriggeredAbility.MkTriggeredAbility
+        { TriggeredAbility.condition = TriggerCondition.Enters EntersTrigger.defaultValue,
+          TriggeredAbility.modal =
+            Modal.MkModal
+              (Seq.singleton (Mode.MkMode Seq.empty Map.empty))
+              (ModeSelection.ChooseExactly 1)
+              ModeMemory.NoMemory
+              Seq.empty,
+          TriggeredAbility.intervening = Just (Condition.All []),
+          TriggeredAbility.checked = InterveningCheck.OnTriggerOnly,
+          TriggeredAbility.name = Nothing,
+          TriggeredAbility.limit = TriggerLimit.Unlimited,
+          TriggeredAbility.functionsFrom = Set.empty,
+          TriggeredAbility.keyword = Nothing
+        }
+      " {\"checked\":\"OnTriggerOnly\",\"condition\":{\"type\":\"Enters\",\"value\":{}},\"intervening\":{\"type\":\"All\",\"value\":[]},\"modal\":{\"modes\":[{}]}} "
   -- CR 702: the keyword whose rules minted the ability, round-tripped for an
   -- ability on the stack.
   Spec.it s "a minted ability carries its keyword" $
@@ -252,6 +283,7 @@ spec s = Spec.describe s "Parun.Codec.TriggeredAbility" $ do
               ModeMemory.NoMemory
               Seq.empty,
           TriggeredAbility.intervening = Nothing,
+          TriggeredAbility.checked = InterveningCheck.OnTriggerAndResolution,
           TriggeredAbility.name = Nothing,
           TriggeredAbility.limit = TriggerLimit.Unlimited,
           TriggeredAbility.functionsFrom = Set.empty,

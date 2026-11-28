@@ -45,6 +45,7 @@ import qualified Parun.Types.DeckLimit as DeckLimit
 import qualified Parun.Types.DuringPhase as DuringPhase
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GraveyardCostDestination as GraveyardCostDestination
+import qualified Parun.Types.InterveningCheck as InterveningCheck
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.ManaCost as ManaCost
@@ -269,11 +270,13 @@ contextOf self host = Target.MkContext self Map.empty (Keyword.keywordWord self)
 -- | A triggered ability: "[When/Whenever/At] [trigger event], [effect]" (CR
 -- 603.1), the effect calling the source "it" once the event has named it
 -- (Fire Imp), and with an intervening "if" clause between them (CR 603.4).
--- A limit, a name, or a trigger from another zone is not spelled out here.
+-- A limit, a name, a trigger from another zone, or a condition checked on
+-- trigger only ("This ability triggers only if") is not spelled out here.
 triggered :: Target.Context -> Bool -> TriggeredAbility.TriggeredAbility Card.Card Continuous.Ability -> [Text.Text]
 triggered context creature t
   | Maybe.isNothing (TriggeredAbility.name t),
     TriggeredAbility.limit t == TriggerLimit.Unlimited,
+    TriggeredAbility.checked t == InterveningCheck.OnTriggerAndResolution,
     Set.null (TriggeredAbility.functionsFrom t) = ListUtils.nubOrd $ do
       e <- Trigger.event context creature (TriggeredAbility.condition t)
       -- Free once the event has named the source: "it" (Fire Imp) or the

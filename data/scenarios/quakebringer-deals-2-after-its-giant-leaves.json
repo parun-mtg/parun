@@ -1,0 +1,10 @@
+{
+  "description": "CR 603.2 / 603.4: Quakebringer's \"This ability triggers only if\" is checked when its upkeep trigger event occurs and never again",
+  "note": "Quakebringer is in Alice's graveyard and she controls Hill Giant, so it triggers in her upkeep; Bob's Lightning Bolt kills the Giant with the trigger on the stack, and it still deals 2 to Bob.",
+  "board": {"active": "alice", "step": "Untap", "seats": [{"name": "alice", "battlefield": [{"card": "Hill Giant", "label": "giant"}], "graveyard": [{"card": "Quakebringer", "label": "quakebringer"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "battlefield": [{"card": "Mountain", "label": "mountain"}], "hand": [{"card": "Lightning Bolt", "label": "bolt"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "Upkeep", "player": "bob", "do": {"Cast": {"object": "$bolt", "targets": ["$giant"], "mana": ["$mountain"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}}
+  ]
+}
