@@ -1550,8 +1550,8 @@ throwSettled runSubgame roll perDie = do
         where
           -- A reroll of the planar die is a roll of the planar die too, with no
           -- result of its own: it modifies the roll's, which
-          -- Parun.Engine.Planechase.roll records (docs/decisions.md, "Whether a
-          -- reroll of the planar die is a roll of the planar die").
+          -- Parun.Engine.Planechase.roll records (docs/decisions.md, "Which
+          -- face of a rerolled planar die a trigger reads").
           rolled by number =
             if numbered
               then [GameEvent.CountedAct (CountedAct.MkCountedAct PlayerAction.RollDice by number)]

@@ -589,8 +589,8 @@ endsAt gs moment source expiry = case expiry of
   -- CR 901.11: ended by any player's planeswalk, or by one away from a plane
   -- (Chaotic Aether's ruling: walking away from a phenomenon does not end it),
   -- which Parun.Engine.Planechase.encounterTop sweeps. Not by its source
-  -- leaving: the effect is a resolved one, and its plane is walked away from by
-  -- the very planeswalk that ends it.
+  -- leaving: the effect is a resolved one, which outlives it (Chaotic Aether
+  -- leaves by a planeswalk that does not end its effect).
   Expiry.OnEvent (EventExpiry.MkEventExpiry _ (DurationEvent.Planeswalked wanted)) -> case moment of
     Planeswalked walked -> case wanted of
       PlaneswalkedFrom.AnyCard -> True

@@ -171,9 +171,21 @@
     "name": "Archenemy: Nicol Bolas Schemes",
     "releaseDate": "2017-06-16"
   },
+  "OHOP": {
+    "name": "Planechase Planes",
+    "releaseDate": "2009-09-04"
+  },
   "ONE": {
     "name": "Phyrexia: All Will Be One",
     "releaseDate": "2023-02-10"
+  },
+  "OPC2": {
+    "name": "Planechase 2012 Planes",
+    "releaseDate": "2012-06-01"
+  },
+  "OPCA": {
+    "name": "Planechase Anthology Planes",
+    "releaseDate": "2016-11-25"
   },
   "ORI": {
     "name": "Magic Origins",

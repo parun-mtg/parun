@@ -468,13 +468,14 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       PlayerEffect.codec
       PlayerEffect.CantSetSchemesInMotion
       " {\"type\":\"CantSetSchemesInMotion\"} "
-  -- CR 500.1 / Topsy Turvy.
+  -- CR 901.9b / Chaotic Aether.
   Spec.it s "BlankPlanarDieRollsAreChaos" $
     Common.assertCodec
       s
       PlayerEffect.codec
       PlayerEffect.BlankPlanarDieRollsAreChaos
       " {\"type\":\"BlankPlanarDieRollsAreChaos\"} "
+  -- CR 500.1 / Topsy Turvy.
   Spec.it s "PhasesReversed" $
     Common.assertCodec
       s
