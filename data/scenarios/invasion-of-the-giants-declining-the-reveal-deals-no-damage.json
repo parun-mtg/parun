@@ -1,0 +1,47 @@
+{
+  "description": "Invasion of the Giants' chapter II: alice draws, holds a Giant card but declines to reveal it, so the 'when you do' trigger never happens and bob takes nothing",
+  "note": "CR 703.4f, 603.12. The Saga starts with one lore counter and gets its second after alice's draw step; she holds Hill Giant, so the reveal is offered and she declines it. The pair of the exercising scenario: the stack is empty at her next priority and bob and carol stay at 20, while she still drew the chapter's card.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Invasion of the Giants", "label": "saga", "counters": [{ "key": { "type": "Lore" }, "value": 1 }] }
+        ],
+        "hand": [
+          { "card": "Hill Giant", "label": "hill" }
+        ],
+        "library": [
+          { "card": "Swamp", "label": "ls" },
+          { "card": "Forest", "label": "lf" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      },
+      {
+        "name": "carol",
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseOptional": "Declines" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 20 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "carol", "life": 20 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Hand", "is": ["$hill", "Swamp", "Forest"] } } }
+  ]
+}

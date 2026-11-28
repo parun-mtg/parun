@@ -1,0 +1,64 @@
+{
+  "description": "Halvar, God of Battle: creatures alice controls that are enchanted or equipped have double strike; at each combat, alice's turn or bob's, she may move an Aura or Equipment on her creature to another of hers",
+  "note": "CR 702.4a, 303.4b, 301.5a, 701.3a, 701.3b, 303.4j, 702.16c. Holy Strength (a white Aura) on the bears, Firebreathing (a red Aura) on the lions and Bonesplitter on the Paladin give each double strike while the bare Elves and Halvar have none. At alice's combat Halvar's trigger refuses bob's Rancor (attached to bob's creature), alice's unattached Short Sword and bob's bears as the new host, then moves Holy Strength from the bears to the Elves, the double strike following it. At bob's combat it fires again ('each combat') and alice aims Firebreathing at the Paladin, which has protection from red: the Aura cannot legally enchant it and stays on the lions (CR 701.3b).",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Halvar, God of Battle", "label": "halvar" },
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Holy Strength", "label": "hs", "attached": "bears" },
+          { "card": "Savannah Lions", "label": "lions" },
+          { "card": "Firebreathing", "label": "fb", "attached": "lions" },
+          { "card": "Paladin en-Vec", "label": "paladin" },
+          { "card": "Bonesplitter", "label": "bs", "attached": "paladin" },
+          { "card": "Llanowar Elves", "label": "elf" },
+          { "card": "Short Sword", "label": "ss" }
+        ],
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "bbears" },
+          { "card": "Rancor", "label": "rancor", "attached": "bbears" }
+        ],
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$bears", "keyword": { "type": "DoubleStrike" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$lions", "keyword": { "type": "DoubleStrike" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$paladin", "keyword": { "type": "DoubleStrike" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$elf", "keyword": { "type": "DoubleStrike" }, "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$halvar", "keyword": { "type": "DoubleStrike" }, "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$bbears", "keyword": { "type": "DoubleStrike" }, "count": 0 } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "refuse": { "ChooseTargets": { "attachment": ["$rancor"], "creature": ["$elf"] } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "refuse": { "ChooseTargets": { "attachment": ["$ss"], "creature": ["$elf"] } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "refuse": { "ChooseTargets": { "attachment": ["$hs"], "creature": ["$bbears"] } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": { "ChooseTargets": { "attachment": ["$hs"], "creature": ["$elf"] } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "View": { "of": "AttachedTo", "object": "$hs", "is": "$elf" } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "Keywords": { "object": "$elf", "keyword": { "type": "DoubleStrike" }, "count": 1 } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "Keywords": { "object": "$bears", "keyword": { "type": "DoubleStrike" }, "count": 0 } } },
+    { "turn": 2, "step": "BeginningOfCombat", "player": "alice", "do": { "ChooseTargets": { "attachment": ["$fb"], "creature": ["$paladin"] } } },
+    { "turn": 2, "step": "BeginningOfCombat", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "BeginningOfCombat", "player": "alice", "do": "Pass" },
+    { "turn": 2, "step": "BeginningOfCombat", "player": "alice", "check": { "View": { "of": "AttachedTo", "object": "$fb", "is": "$lions" } } },
+    { "turn": 2, "step": "BeginningOfCombat", "player": "alice", "check": { "Keywords": { "object": "$lions", "keyword": { "type": "DoubleStrike" }, "count": 1 } } },
+    { "turn": 2, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": [] } }
+  ]
+}

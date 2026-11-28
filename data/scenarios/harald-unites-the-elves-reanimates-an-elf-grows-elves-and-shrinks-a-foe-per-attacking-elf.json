@@ -1,0 +1,105 @@
+{
+  "description": "Harald Unites the Elves: I mills three and puts the milled Elf onto the battlefield (an Elf or a Tyvar offered, the bears not); II puts a +1/+1 counter on each Elf alice controls; III makes each Elf alice attacks with that turn give target creature an opponent controls -1/-1 until end of turn",
+  "note": "CR 715.2b, 703.4f, 704.5s, 701.17a, 603.7a, 603.7b, 508.1. Chapter I mills Elvish Mystic, Grizzly Bears and Tyvar, Jubilant Brawler: the choice offers the Elf and the Tyvar card but not the bears, and the Mystic enters. Chapter II (turn 4) puts a counter on alice's Llanowar Elves and Mystic only, not on her bears nor on bob's Elf. Chapter III (turn 7) arms the attack trigger: alice attacks with both Elves and her bears, and the two Elf triggers (none for the bears) refuse alice's own bears and shrink bob's Elf, which dies, and carol's Hill Giant, which is 3/3 again on bob's turn. On turn 10 the same attack triggers nothing: the trigger lasted only that turn.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Swamp", "label": "sw" },
+          { "card": "Forest", "label": "f1" },
+          { "card": "Forest", "label": "f2" },
+          { "card": "Forest", "label": "f3" },
+          { "card": "Llanowar Elves", "label": "elf", "ready": true },
+          { "card": "Grizzly Bears", "label": "bears", "ready": true }
+        ],
+        "hand": [
+          { "card": "Harald Unites the Elves", "label": "saga" }
+        ],
+        "library": [
+          { "card": "Elvish Mystic" },
+          { "card": "Grizzly Bears" },
+          { "card": "Tyvar, Jubilant Brawler" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Llanowar Elves", "label": "belf" }
+        ],
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      },
+      {
+        "name": "carol",
+        "battlefield": [
+          { "card": "Hill Giant", "label": "giant" }
+        ],
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$saga", "mana": ["$sw", "$f1", "$f2", "$f3", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": {"kind":"ChooseCardInGraveyard","offer":{"source":"Harald Unites the Elves","earlier":[],"options":["Elvish Mystic","Tyvar, Jubilant Brawler"]}} } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardInGraveyard", "with": "Elvish Mystic" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "card": "Elvish Mystic", "zone": "Battlefield", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "card": "Grizzly Bears", "zone": "Graveyard", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "card": "Tyvar, Jubilant Brawler", "zone": "Graveyard", "count": 1 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
+    { "turn": 2, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": [] } },
+    { "turn": 3, "step": "DeclareAttackers", "player": "carol", "do": { "Attack": [] } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "$elf", "kind": { "type": "PlusOnePlusOne" }, "count": 1 } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Elvish Mystic", "kind": { "type": "PlusOnePlusOne" }, "count": 1 } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "$bears", "kind": { "type": "PlusOnePlusOne" }, "count": 0 } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "$belf", "kind": { "type": "PlusOnePlusOne" }, "count": 0 } } },
+    { "turn": 4, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
+    { "turn": 5, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": [] } },
+    { "turn": 6, "step": "DeclareAttackers", "player": "carol", "do": { "Attack": [] } },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 7, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$elf", "Elvish Mystic", "$bears"] } },
+    { "turn": 7, "step": "DeclareAttackers", "player": "alice", "source": "$elf", "do": { "ChooseAttackTarget": "$bob" } },
+    { "turn": 7, "step": "DeclareAttackers", "player": "alice", "source": "Elvish Mystic", "do": { "ChooseAttackTarget": "$carol" } },
+    { "turn": 7, "step": "DeclareAttackers", "player": "alice", "source": "$bears", "do": { "ChooseAttackTarget": "$bob" } },
+    { "turn": 7, "step": "DeclareAttackers", "player": "alice", "do": { "OrderTriggers": ["departed Harald Unites the Elves#3", "departed Harald Unites the Elves#3"] } },
+    { "turn": 7, "step": "DeclareAttackers", "player": "alice", "refuse": { "ChooseTargets": { "target": ["$bears"] } } },
+    { "turn": 7, "step": "DeclareAttackers", "player": "alice", "do": { "ChooseTargets": { "target": ["$belf"] } } },
+    { "turn": 7, "step": "DeclareAttackers", "player": "alice", "do": { "ChooseTargets": { "target": ["$giant"] } } },
+    { "turn": 7, "step": "DeclareAttackers", "player": "alice", "do": "Pass" },
+    { "turn": 7, "step": "DeclareAttackers", "player": "alice", "do": "Pass" },
+    { "turn": 7, "step": "DeclareBlockers", "player": "carol", "do": { "Block": {} } },
+    { "turn": 7, "step": "DeclareAttackers", "player": "alice", "check": { "PowerToughness": { "object": "$giant", "power": 2, "toughness": 2 } } },
+    { "turn": 7, "step": "DeclareAttackers", "player": "alice", "check": { "Count": { "player": "bob", "card": "Llanowar Elves", "zone": "Graveyard", "count": 1 } } },
+    { "turn": 7, "step": "DeclareAttackers", "player": "alice", "check": { "PowerToughness": { "object": "$bears", "power": 2, "toughness": 2 } } },
+    { "turn": 8, "step": "Upkeep", "player": "bob", "check": { "PowerToughness": { "object": "$giant", "power": 3, "toughness": 3 } } },
+    { "turn": 9, "step": "DeclareAttackers", "player": "carol", "do": { "Attack": [] } },
+    { "turn": 10, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$elf", "Elvish Mystic"] } },
+    { "turn": 10, "step": "DeclareAttackers", "player": "alice", "source": "$elf", "do": { "ChooseAttackTarget": "$bob" } },
+    { "turn": 10, "step": "DeclareAttackers", "player": "alice", "source": "Elvish Mystic", "do": { "ChooseAttackTarget": "$carol" } },
+    { "turn": 10, "step": "DeclareAttackers", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 10, "step": "DeclareBlockers", "player": "carol", "do": { "Block": {} } },
+    { "turn": 10, "step": "DeclareAttackers", "player": "alice", "check": { "PowerToughness": { "object": "$giant", "power": 3, "toughness": 3 } } }
+  ]
+}

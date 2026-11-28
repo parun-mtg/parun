@@ -1,0 +1,64 @@
+{
+  "description": "Sword of the Realms, equipped for {1}{W}, gives the bears +2/+0 and vigilance; when the equipped bears die they return to alice's hand, while the unequipped lions stay in the graveyard",
+  "note": "CR 702.6a, 301.5a, 702.20b, 603.6c, 603.10a. Halvar's back face is placed showing Sword of the Realms and equipped to the bears with alice's Mountain and Plains; the lions beside them stay 2/1 without vigilance. Both attack: only the lions tap, and bob takes 4 + 2. Bob's two Shocks kill both creatures; the Sword's leaves-the-battlefield trigger returns only the creature it equipped, so the lions stay in the graveyard and the Sword stays on the battlefield unattached.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Halvar, God of Battle", "face": "Sword of the Realms", "label": "sword" },
+          { "card": "Grizzly Bears", "label": "bears", "ready": true },
+          { "card": "Savannah Lions", "label": "lions", "ready": true },
+          { "card": "Mountain", "label": "m1" },
+          { "card": "Plains", "label": "p1" }
+        ],
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Mountain", "label": "bm1" },
+          { "card": "Mountain", "label": "bm2" }
+        ],
+        "hand": [
+          { "card": "Shock", "label": "shock1" },
+          { "card": "Shock", "label": "shock2" }
+        ],
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$sword", "targets": ["$bears"], "mana": ["$m1", "$p1"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "AttachedTo", "object": "$sword", "is": "$bears" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$bears", "power": 4, "toughness": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$lions", "power": 2, "toughness": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$bears", "keyword": { "type": "Vigilance" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$lions", "keyword": { "type": "Vigilance" }, "count": 0 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$bears", "$lions"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Tapped": { "object": "$bears", "tapped": false } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Tapped": { "object": "$lions", "tapped": true } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 14 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "bob", "do": { "Cast": { "object": "$shock1", "targets": ["$lions"], "mana": ["$bm1", null] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "PostcombatMain", "player": "bob", "do": { "Cast": { "object": "$shock2", "targets": ["$bears"], "mana": ["$bm2"] } } }
+  ],
+  "final": [
+    { "Count": { "player": "alice", "card": "Grizzly Bears", "zone": "Hand", "count": 1 } },
+    { "Count": { "player": "alice", "card": "Grizzly Bears", "zone": "Graveyard", "count": 0 } },
+    { "Count": { "player": "alice", "card": "Savannah Lions", "zone": "Graveyard", "count": 1 } },
+    { "Count": { "player": "alice", "card": "Sword of the Realms", "zone": "Battlefield", "count": 1 } },
+    { "View": { "of": "AttachedTo", "object": "$sword", "is": null } }
+  ]
+}

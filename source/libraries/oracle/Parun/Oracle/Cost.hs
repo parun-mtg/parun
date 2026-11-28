@@ -98,6 +98,14 @@ cost self named c = do
           namesSelf before,
           (front, [previous, _]) <- [splitAt (length components - 2) components]
         ]
+        -- Free: sacrificing the source and another permanent joins the two,
+        -- "Sacrifice this land and a creature you control" (Great Hall of
+        -- Starnheim).
+        <> [ front <> [Text.pack "Sacrifice " <> self <> Text.pack " and " <> rest] <> back
+           | (i, (CostComponent.SacrificeThis, CostComponent.Sacrifice _)) <- zip [0 :: Int ..] (zip (Cost.components c) (drop 1 (Cost.components c))),
+             (front, _ : other : back) <- [splitAt i components],
+             Just rest <- [Text.stripPrefix (Text.pack "Sacrifice ") other]
+           ]
   pure (Text.intercalate (Text.pack ", ") (mana <> joined))
 
 -- | Whether a cost component names the object the cost is on, so that the
