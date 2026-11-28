@@ -1,0 +1,58 @@
+{
+  "description": "CR 105.4 / 106.6: Open the Omenpaths adds two mana of one colour and two of another, spendable only on creature or enchantment spells, or pumps alice's creatures",
+  "note": "The first copy asks for green, then offers every colour but green, and alice takes white: two green and two white, each restricted. Giant Growth can't be paid with it; a second Grizzly Bears and Pacifism can, emptying the pool. The second copy gives the first Bears +1/+0.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Mountain", "label": "m1" },
+          { "card": "Mountain", "label": "m2" },
+          { "card": "Mountain", "label": "m3" },
+          { "card": "Mountain", "label": "m4" },
+          { "card": "Mountain", "label": "m5" },
+          { "card": "Mountain", "label": "m6" },
+          { "card": "Grizzly Bears", "label": "bear" }
+        ],
+        "hand": [
+          { "card": "Open the Omenpaths", "label": "ramp" },
+          { "card": "Open the Omenpaths", "label": "pump" },
+          { "card": "Giant Growth", "label": "growth" },
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Pacifism", "label": "pacifism" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Hill Giant", "label": "giant" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$ramp", "modes": [0], "mana": ["$m1", "$m2", "$m3", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseManaType", "with": { "type": "Colored", "value": "Green" } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Answer": { "prompt": "ChooseManaType", "with": { "type": "Colored", "value": "Green" } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseManaType", "with": { "type": "Colored", "value": "White" } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [
+      { "manaType": { "type": "Colored", "value": "Green" }, "tags": [], "retention": "Ordinary", "restriction": { "casts": { "type": "Or", "value": [{ "type": "HasCardType", "value": "Creature" }, { "type": "HasCardType", "value": "Enchantment" }] } }, "rider": null, "sourceChoices": null },
+      { "manaType": { "type": "Colored", "value": "Green" }, "tags": [], "retention": "Ordinary", "restriction": { "casts": { "type": "Or", "value": [{ "type": "HasCardType", "value": "Creature" }, { "type": "HasCardType", "value": "Enchantment" }] } }, "rider": null, "sourceChoices": null },
+      { "manaType": { "type": "Colored", "value": "White" }, "tags": [], "retention": "Ordinary", "restriction": { "casts": { "type": "Or", "value": [{ "type": "HasCardType", "value": "Creature" }, { "type": "HasCardType", "value": "Enchantment" }] } }, "rider": null, "sourceChoices": null },
+      { "manaType": { "type": "Colored", "value": "White" }, "tags": [], "retention": "Ordinary", "restriction": { "casts": { "type": "Or", "value": [{ "type": "HasCardType", "value": "Creature" }, { "type": "HasCardType", "value": "Enchantment" }] } }, "rider": null, "sourceChoices": null }
+    ] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$growth", "targets": ["$giant"], "mana": [null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bears", "mana": [null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseManaToSpend", "with": { "manaType": { "type": "Colored", "value": "Green" }, "tags": [], "retention": "Ordinary", "restriction": { "casts": { "type": "Or", "value": [{ "type": "HasCardType", "value": "Creature" }, { "type": "HasCardType", "value": "Enchantment" }] } }, "rider": null, "sourceChoices": null } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$pacifism", "targets": ["$giant"], "mana": [null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Pacifism", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$pump", "modes": [1], "mana": ["$m4", "$m5", "$m6"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$bear", "power": 3, "toughness": 2 } } }
+  ]
+}

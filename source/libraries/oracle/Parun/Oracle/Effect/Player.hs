@@ -176,8 +176,8 @@ discarded context d = case d of
   _ -> []
 
 -- | The mana an instruction adds: "{G}", "{C}{C}", "one mana of any color",
--- "two mana in any combination of colors", "two mana of different colors"
--- (CR 106.1).
+-- "two mana in any combination of colors", "two mana of different colors",
+-- "two mana of any one color and two mana of any other color" (CR 106.1).
 added :: ManaProduction.ManaProduction -> Quantity.Quantity -> [(Predicate.Mana, Text.Text)]
 added production count = case (production, count) of
   (ManaProduction.OfType t, Quantity.Literal n)
@@ -188,8 +188,12 @@ added production count = case (production, count) of
   (ManaProduction.InCommanderIdentity, Quantity.Literal 1) -> [(Predicate.Described, Text.pack "one mana of any color in your commander's color identity")]
   (ManaProduction.AnyColor ColorSpread.AnyCombination, Quantity.Literal n)
     | n >= 2 -> [(Predicate.Described, Prose.cardinal n <> Text.pack " mana in any combination of colors")]
-  (ManaProduction.AnyColor ColorSpread.DifferentColors, Quantity.Literal n)
+  (ManaProduction.AnyColor (ColorSpread.DifferentColors 1), Quantity.Literal n)
     | n >= 2 -> [(Predicate.Described, Prose.cardinal n <> Text.pack " mana of different colors")]
+  (ManaProduction.AnyColor (ColorSpread.DifferentColors perColor), Quantity.Literal n)
+    | perColor >= 2 && n == 2 * toInteger perColor ->
+        let run = Prose.cardinal (toInteger perColor)
+         in [(Predicate.Described, run <> Text.pack " mana of any one color and " <> run <> Text.pack " mana of any other color")]
   _ -> []
 
 -- | "[Source] deals [amount] damage to [recipient]", one part after another
