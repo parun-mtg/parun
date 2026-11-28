@@ -13,20 +13,8 @@
                     "value": 2
                   },
                   "whichPermanents": {
-                    "type": "And",
-                    "value": [
-                      {
-                        "type": "HasSubtype",
-                        "value": "Treasure"
-                      },
-                      {
-                        "type": "HeldBy",
-                        "value": {
-                          "holder": "Controller",
-                          "relation": "You"
-                        }
-                      }
-                    ]
+                    "type": "HasSubtype",
+                    "value": "Treasure"
                   }
                 }
               }
