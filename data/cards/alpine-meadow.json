@@ -1,0 +1,35 @@
+{
+  "faces": [
+    {
+      "name": "Alpine Meadow",
+      "oracleText": "({T}: Add {R} or {W}.)\nThis land enters tapped.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Mountain",
+          "Plains"
+        ],
+        "supertypes": [
+          "Snow"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}

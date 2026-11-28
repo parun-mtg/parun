@@ -1,0 +1,35 @@
+{
+  "faces": [
+    {
+      "name": "Rimewood Falls",
+      "oracleText": "({T}: Add {G} or {U}.)\nThis land enters tapped.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Forest",
+          "Island"
+        ],
+        "supertypes": [
+          "Snow"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flash"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Undersea Invader",
+      "oracleText": "Flash (You may cast this spell any time you could cast an instant.)\nThis creature enters tapped.",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 6
+      },
+      "typeLine": {
+        "subtypes": [
+          "Giant",
+          "Rogue"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

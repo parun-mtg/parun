@@ -1,0 +1,35 @@
+{
+  "faces": [
+    {
+      "name": "Woodland Chasm",
+      "oracleText": "({T}: Add {B} or {G}.)\nThis land enters tapped.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Swamp",
+          "Forest"
+        ],
+        "supertypes": [
+          "Snow"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}

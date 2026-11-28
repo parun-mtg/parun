@@ -1,0 +1,35 @@
+{
+  "faces": [
+    {
+      "name": "Sulfurous Mire",
+      "oracleText": "({T}: Add {B} or {R}.)\nThis land enters tapped.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Swamp",
+          "Mountain"
+        ],
+        "supertypes": [
+          "Snow"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}
