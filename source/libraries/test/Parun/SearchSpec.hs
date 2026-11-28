@@ -241,7 +241,7 @@ spec s registry = Spec.describe s "Search" $ do
       got <- scored (only False feature)
       Spec.assertEqWith s ("their " <> name) got (negate count)
 
-  Spec.it s "cut-off playouts past the old clamp are ranked by their positions, each short of a win" $ do
+  Spec.it s "cut-off playouts evaluated past a win's score are ranked by their positions, each short of a win" $ do
     (gs, attacker) <- capturing s registry 3 "a declaration of attackers" $ \asked -> case Asked.prompt asked of
       Prompt.DeclareAttackers decider pid candidates | Search.searchable asked decider pid (Search.attacks candidates) -> Just (Asked.game asked, pid)
       _ -> Nothing
