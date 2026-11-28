@@ -134,6 +134,7 @@ import qualified Parun.Types.InstanceOrdinal as InstanceOrdinal
 import qualified Parun.Types.InstructionR as InstructionR
 import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.Keyword as Keyword.Type
+import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LifeGainCause as LifeGainCause
 import qualified Parun.Types.LifeGainR as LifeGainR
@@ -3703,16 +3704,29 @@ applyCopyExceptions this own exceptions snapshot =
 -- enchanted creature", Filter.IsHostOfSource) it is that permanent. The linked
 -- pile is the source's too (CR 607.2a). The entering object's controller
 -- chooses, and only within their range (CR 801.5a).
+--
+-- A slot's object was chosen by the resolution that named it, its target
+-- range-checked then (CR 801.4); nobody chooses at the entry, so the cut is
+-- CR 801.10's from the replacement's controller instead, and a gone object is
+-- judged by the controller and protector it last had (CR 608.2h, 801.11),
+-- with the seats as this turn began (CR 801.2c). Proved by the
+-- mystic-reflection-range-* scenarios.
 legalCopyTargets :: Filter.Context -> Set ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> CopyDomain.CopyDomain -> ObjectId -> GameState -> [ObjectId]
 legalCopyTargets context batch filter_ among self gs =
-  let chooser = Projection.controllerOf self gs
-      viewOf = Projection.viewsOf gs
+  let viewOf = Projection.viewsOf gs
       grants = Projection.controlGrants gs
+      inRangeOf you oid = case Game.lastKnownOf oid gs of
+        Just lk -> any (\pid -> Game.wasInRangeOf you pid gs) (LastKnown.controller lk : Maybe.maybeToList (LastKnown.protector lk))
+        Nothing -> Projection.objectInRangeGiven grants you oid gs
+      judge = case among of
+        CopyDomain.InSlot _ -> Filter.perspective context
+        CopyDomain.InZone _ -> Projection.controllerOf self gs
+        CopyDomain.InPile _ -> Projection.controllerOf self gs
       eligible oid =
         oid /= self
           && not (Set.member oid batch)
           && Filter.matches context (viewOf oid) filter_
-          && all (\you -> Projection.objectInRangeGiven grants you oid gs) chooser
+          && all (\you -> inRangeOf you oid) judge
       domain = case among of
         CopyDomain.InZone Zone.Battlefield -> Set.toAscList (GameState.battlefield gs)
         CopyDomain.InZone Zone.Graveyard -> concatMap (\pid -> Game.cardsIn Zone.Graveyard pid gs) (GameState.seating gs)

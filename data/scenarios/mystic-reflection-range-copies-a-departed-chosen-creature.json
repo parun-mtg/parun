@@ -1,0 +1,39 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {"card": "Island", "label": "i1", "ready": true},
+          {"card": "Island", "label": "i2", "ready": true},
+          {"card": "Mountain", "label": "mtn", "ready": true},
+          {"card": "Grizzly Bears", "label": "bears", "ready": true}
+        ],
+        "hand": [
+          {"card": "Mystic Reflection", "label": "reflection"},
+          {"card": "Lightning Bolt", "label": "bolt"},
+          {"card": "Memnite", "label": "m1"}
+        ],
+        "name": "alice",
+        "range": 1
+      },
+      {"name": "bob", "range": 1},
+      {"name": "carol", "range": 1},
+      {"name": "dan", "range": 1}
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 608.2h / 801.10: under a limited range, Mystic Reflection's chosen creature, destroyed before the next entry, is still copied as it last existed",
+  "note": "Every seat has range 1. Alice's own Bears die to Lightning Bolt after Reflection resolves; Memnite enters as a 2/2 Grizzly Bears (a 1/1 Memnite if a gone creature counted as out of range).",
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$reflection", "mana": ["$i1", "$i2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bolt", "mana": ["$mtn"], "targets": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Grizzly Bears", "count": 1, "player": "alice", "zone": "Graveyard"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$m1", "mana": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "Memnite", "names": ["Grizzly Bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Memnite", "power": 2, "toughness": 2}}}
+  ]
+}
