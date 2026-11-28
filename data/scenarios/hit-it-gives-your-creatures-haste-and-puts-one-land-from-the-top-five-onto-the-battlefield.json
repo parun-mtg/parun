@@ -136,7 +136,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 702.10 / 608.2c: Hit It! gives creatures you control haste, and its entry looks at the top five cards, puts a land card from among them onto the battlefield tapped and the rest into your graveyard",
+  "description": "CR 702.10 / 608.2c: Hit It! gives creatures you control haste, and its entry reveals the top five cards, puts a land card from among them onto the battlefield tapped and the rest into your graveyard",
   "timeline": [
     {
       "do": {
@@ -171,6 +171,24 @@
         "Answer": {
           "prompt": "ChooseCardFromAmong",
           "with": "$land"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Hill Giant",
+            "Plains",
+            "Forest",
+            "Hill Giant",
+            "Mountain"
+          ],
+          "of": "Witnessed",
+          "player": "bob"
         }
       },
       "player": "alice",
