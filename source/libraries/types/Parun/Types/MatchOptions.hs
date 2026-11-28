@@ -44,7 +44,7 @@ data MatchOptions = MkMatchOptions
 none :: MatchOptions
 none = MkMatchOptions {seed = Nothing, games = 100, save = Nothing, positions = Nothing, searching = Set.empty, budgets = Map.fromList [(1, budget), (2, budget)], weighing = Map.empty, meta = Nothing, pool = Nothing}
 
--- | The search bot's budget unless told otherwise, played out by the random
--- bot.
+-- | The search bot's budget unless told otherwise, played out by the polar
+-- policy.
 budget :: SearchBudget.SearchBudget
-budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 300, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = SearchMethod.Flat}
+budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 300, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Polar, SearchBudget.mistakes = 0, SearchBudget.method = SearchMethod.Flat}

@@ -49,8 +49,8 @@ spec s = Spec.describe s "Parun.Play.Match.Config" $ do
     Spec.it s "sets each budget flag in every seat" $
       Spec.assertEq
         s
-        (fmap (Map.lookup 1 . MatchOptions.budgets) $ options [Flag.Samples "3", Flag.Turns "1", Flag.Cutoff "9", Flag.Playout "polar", Flag.Method "tree", Flag.Candidates "5", Flag.Mistakes "10"])
-        (Right (Just MatchOptions.budget {SearchBudget.samples = 3, SearchBudget.turns = 1, SearchBudget.prompts = 9, SearchBudget.playout = Playout.Polar, SearchBudget.method = SearchMethod.InformationSet, SearchBudget.candidates = 5, SearchBudget.mistakes = 10}))
+        (fmap (Map.lookup 1 . MatchOptions.budgets) $ options [Flag.Samples "3", Flag.Turns "1", Flag.Cutoff "9", Flag.Playout "random", Flag.Method "tree", Flag.Candidates "5", Flag.Mistakes "10"])
+        (Right (Just MatchOptions.budget {SearchBudget.samples = 3, SearchBudget.turns = 1, SearchBudget.prompts = 9, SearchBudget.playout = Playout.Random, SearchBudget.method = SearchMethod.InformationSet, SearchBudget.candidates = 5, SearchBudget.mistakes = 10}))
     Spec.it s "sets a budget flag with a seat in that seat alone" $
       Spec.assertEq
         s

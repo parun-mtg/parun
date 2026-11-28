@@ -9,6 +9,7 @@ import qualified Parun.Types.Difficulty as Difficulty
 import qualified Parun.Types.MatchOptions as MatchOptions
 import qualified Parun.Types.Persona as Persona
 import qualified Parun.Types.PlayOptions as PlayOptions
+import qualified Parun.Types.Playout as Playout
 import qualified Parun.Types.SearchBudget as SearchBudget
 import qualified Parun.Types.Weights as Weights
 
@@ -34,6 +35,11 @@ spec s = Spec.describe s "Parun.Play.Opponent" $ do
     Spec.it s "plays the hardest as parun play's bot and parun match's search bot play unless told otherwise" $ do
       Spec.assertEq s (Opponent.budgetAt Difficulty.MkHard PlayOptions.budget) PlayOptions.budget
       Spec.assertEq s (Opponent.budgetAt Difficulty.MkHard MatchOptions.budget) MatchOptions.budget
+
+    Spec.it s "plays out every level by the polar policy unless told otherwise" $ do
+      let levels = [minBound .. maxBound] :: [Difficulty.Difficulty]
+      Spec.assertEq s (fmap (SearchBudget.playout . (`Opponent.budgetAt` PlayOptions.budget)) levels) (Playout.Polar <$ levels)
+      Spec.assertEq s (fmap (SearchBudget.playout . (`Opponent.budgetAt` MatchOptions.budget)) levels) (Playout.Polar <$ levels)
 
     Spec.it s "sets every mistake rate a percent" $ do
       Spec.assertBool s (all ((<= (100 :: Natural.Natural)) . SearchBudget.mistakes . (`Opponent.budgetAt` MatchOptions.budget)) [minBound .. maxBound :: Difficulty.Difficulty]) "every rate a percent"

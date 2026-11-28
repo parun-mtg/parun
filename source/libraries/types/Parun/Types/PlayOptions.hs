@@ -60,6 +60,6 @@ bot = (budget, Weights.neutral)
 
 -- | The search bot's budget unless told otherwise: 2 samples cut off as the
 -- next turn begins or after 40 prompts, a budget a browser turn stays
--- responsive at, making no mistakes, played out by the random bot.
+-- responsive at, making no mistakes, played out by the polar policy.
 budget :: SearchBudget.SearchBudget
-budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = SearchMethod.Flat}
+budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 2, SearchBudget.turns = 0, SearchBudget.prompts = 40, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Polar, SearchBudget.mistakes = 0, SearchBudget.method = SearchMethod.Flat}
