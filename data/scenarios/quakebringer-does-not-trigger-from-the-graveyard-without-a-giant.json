@@ -1,0 +1,8 @@
+{
+  "description": "CR 603.2: Quakebringer in its owner's graveyard does not trigger in their upkeep while they control no Giant",
+  "note": "Alice controls only a Grizzly Bears, so Quakebringer in her graveyard never triggers and Bob stays at 20.",
+  "board": {"active": "alice", "step": "Untap", "seats": [{"name": "alice", "battlefield": [{"card": "Grizzly Bears"}], "graveyard": [{"card": "Quakebringer"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 20}}}
+  ]
+}

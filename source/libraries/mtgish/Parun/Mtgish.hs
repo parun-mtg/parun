@@ -114,6 +114,7 @@ import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.IfTaken as IfTaken
 import qualified Parun.Types.InZone as InZone
+import qualified Parun.Types.InterveningCheck as InterveningCheck
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
@@ -487,6 +488,7 @@ triggeredAbility condition m =
     { TriggeredAbility.condition = condition,
       TriggeredAbility.modal = m,
       TriggeredAbility.intervening = Nothing,
+      TriggeredAbility.checked = InterveningCheck.OnTriggerAndResolution,
       TriggeredAbility.name = Nothing,
       TriggeredAbility.limit = TriggerLimit.Unlimited,
       TriggeredAbility.functionsFrom = Set.empty,

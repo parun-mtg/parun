@@ -2966,11 +2966,12 @@ activatedAbilityChildren c (ActivatedAbility.MkActivatedAbility cost costChoices
 
 -- | A triggered ability's children.
 triggeredAbilityChildren :: (Applicative f) => AbilityChildren card ability effect f -> TriggeredAbility.TriggeredAbility card ability -> f (TriggeredAbility.TriggeredAbility card ability)
-triggeredAbilityChildren c (TriggeredAbility.MkTriggeredAbility condition modal intervening name limit functionsFrom stamp) =
+triggeredAbilityChildren c (TriggeredAbility.MkTriggeredAbility condition modal intervening checked name limit functionsFrom stamp) =
   TriggeredAbility.MkTriggeredAbility
     <$> abilityTrigger c condition
     <*> abilityModal c modal
     <*> traverse (abilityCondition c) intervening
+    <*> pure checked
     <*> pure name
     <*> abilityLimit c limit
     <*> pure functionsFrom

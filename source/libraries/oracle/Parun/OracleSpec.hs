@@ -106,6 +106,7 @@ import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.IfTaken as IfTaken
 import qualified Parun.Types.InZone as InZone
+import qualified Parun.Types.InterveningCheck as InterveningCheck
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordFamily as KeywordFamily
@@ -1368,7 +1369,7 @@ typed types subtypes f = f {Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.f
 
 -- A triggered ability on this event, of one mode.
 triggered :: TriggerCondition.TriggerCondition -> [Clause.Clause Card.Card (GrantedAbility.GrantedAbility Card.Card)] -> [(SlotName.SlotName, TargetSlot.TargetSlot)] -> TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)
-triggered event clauses slots = TriggeredAbility.MkTriggeredAbility event (payload clauses slots) Nothing Nothing TriggerLimit.Unlimited Set.empty Nothing
+triggered event clauses slots = TriggeredAbility.MkTriggeredAbility event (payload clauses slots) Nothing InterveningCheck.OnTriggerAndResolution Nothing TriggerLimit.Unlimited Set.empty Nothing
 
 -- A clause that always happens, of these instructions.
 clause :: [Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)] -> Clause.Clause Card.Card (GrantedAbility.GrantedAbility Card.Card)

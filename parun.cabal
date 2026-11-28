@@ -1104,6 +1104,8 @@ library codec
     Parun.Codec.InstructionRewrite
     Parun.Codec.InstructionRewriteSpec
     Parun.Codec.InstructionRSpec
+    Parun.Codec.InterveningCheck
+    Parun.Codec.InterveningCheckSpec
     Parun.Codec.InZone
     Parun.Codec.InZoneSpec
     Parun.Codec.JoinAttack
@@ -3593,6 +3595,7 @@ library types
     Parun.Types.InstanceOrdinal
     Parun.Types.InstructionR
     Parun.Types.InstructionRewrite
+    Parun.Types.InterveningCheck
     Parun.Types.InZone
     Parun.Types.JoinAttack
     Parun.Types.Key

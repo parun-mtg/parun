@@ -22,6 +22,7 @@ import qualified Parun.Types.DamageTrigger as DamageTrigger
 import Parun.Types.Effect (Effect)
 import qualified Parun.Types.Effect as Effect
 import Parun.Types.Filter (Filter)
+import qualified Parun.Types.InterveningCheck as InterveningCheck
 import Parun.Types.Keyword (Keyword)
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCost as ManaCost
@@ -109,6 +110,7 @@ triggerOf condition intervening modal =
     { TriggeredAbility.condition = condition,
       TriggeredAbility.modal = modal,
       TriggeredAbility.intervening = intervening,
+      TriggeredAbility.checked = InterveningCheck.OnTriggerAndResolution,
       TriggeredAbility.name = Nothing,
       TriggeredAbility.limit = TriggerLimit.Unlimited,
       TriggeredAbility.functionsFrom = Set.empty,

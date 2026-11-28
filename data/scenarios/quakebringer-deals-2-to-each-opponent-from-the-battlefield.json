@@ -1,0 +1,8 @@
+{
+  "description": "CR 603.2: Quakebringer on the battlefield triggers in its controller's upkeep and deals 2 damage to each opponent",
+  "note": "Alice's Quakebringer deals 2 to Bob in her upkeep.",
+  "board": {"active": "alice", "step": "Untap", "seats": [{"name": "alice", "battlefield": [{"card": "Quakebringer"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}}
+  ]
+}
