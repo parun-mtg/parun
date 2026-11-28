@@ -153,6 +153,7 @@
         }
       ],
       "name": "Priest of the Haunted Edge",
+      "oracleText": "{T}, Sacrifice this creature: Target creature gets -X/-X until end of turn, where X is the number of snow lands you control. Activate only as a sorcery.",
       "power": {
         "type": "Literal",
         "value": 0

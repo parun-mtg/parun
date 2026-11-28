@@ -15,6 +15,7 @@
         }
       ],
       "name": "Rally the Ranks",
+      "oracleText": "As this enchantment enters, choose a creature type.\nCreatures you control of the chosen type get +1/+1.",
       "replacementEffects": [
         {
           "effect": {

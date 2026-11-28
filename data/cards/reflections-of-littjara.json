@@ -15,6 +15,7 @@
         }
       ],
       "name": "Reflections of Littjara",
+      "oracleText": "As this enchantment enters, choose a creature type.\nWhenever you cast a spell of the chosen type, copy that spell. (A copy of a permanent spell becomes a token.)",
       "replacementEffects": [
         {
           "effect": {
