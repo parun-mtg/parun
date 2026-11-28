@@ -4423,7 +4423,7 @@ designationGathered gs =
 -- THE STACK only, which is rule 400.7g's own scope -- "the new object that card
 -- became after it MOVED TO THE STACK" -- and Object.newIncarnation clears the
 -- field at the next move either way. Read off each object's zone rather than
--- the stack's register, so the board Parun.Engine.Cost.asSpell prices a
+-- the stack's register, so the board Parun.Engine.Game.asSpell prices a
 -- proposed cast on, which moves the card to the stack without stacking it,
 -- sees CR 611.2f's convoke too: data/scenarios' "Wand of the Worldsoul's
 -- convoke is spent by the next spell" proves the castability gate reads it.

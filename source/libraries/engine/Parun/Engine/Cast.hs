@@ -663,8 +663,9 @@ readsAnnouncedX spell pid oid cost gs =
 -- CAST, so it is the only one that hands Cost.canPaySomeCompletion a
 -- PaymentSubject.Casting. At
 -- the gate `oid` is the card in a hand and at CR 601.2f it is the stack
--- incarnation, and the restrictions in the vocabulary read characteristics both
--- share.
+-- incarnation, so Mana.admitsUnder reads the card as the spell it will be
+-- (Game.asSpell): Niko Defies Destiny's mana pays for no card whose foretell
+-- Dream Devourer grants only in hand.
 --
 -- BOTH halves of CR 601.2f's totalling, exactly as Activatable.payableCostAt asks
 -- them: the mana arithmetic rides in as a function, and the additional non-mana
@@ -1169,7 +1170,7 @@ announceOptionalCosts held modes spending pid sid candidates offers gs =
         -- entry keyed by it, which Cost.nextPromise reads back for a gift; the
         -- limit is the instance's own.
         (Just paid, Just (cost, limit))
-          | Keyword.paidPerInstance keyword -> Monad.foldM (\acc which -> maybe (pure Nothing) (perInstance keyword which limit cost) acc) (Just paid) (Projection.keywordInstances keyword sid (Cost.asSpell pid sid gs))
+          | Keyword.paidPerInstance keyword -> Monad.foldM (\acc which -> maybe (pure Nothing) (perInstance keyword which limit cost) acc) (Just paid) (Projection.keywordInstances keyword sid (Game.asSpell pid sid gs))
         (Just paid, Just (cost, limit))
           | payable keyword Nothing paid cost -> do
               decision <- choose keyword Nothing (Keyword.paymentLimit instances keyword)
@@ -2170,7 +2171,7 @@ restrictionMet pid oid gs restriction = case restriction of
 -- and Stack at the payment. The CR 601.3 prohibitions (Grafdigger's Cage,
 -- Drannith Magistrate, Synthetic Entry Interdiction) are asked before the move
 -- and want the old zone; the abilities that reduce the spell's own cost are
--- projected off Cost.asSpell's board, where the move has happened, so an effect
+-- projected off Game.asSpell's board, where the move has happened, so an effect
 -- confined to the old zone (Yixlid Jailer) does not reach them.
 -- Projection.viewOfObject applies no zone gate either way -- projectGiven falls
 -- through to the full layer fold off the battlefield (see Parun.Types.Affected's

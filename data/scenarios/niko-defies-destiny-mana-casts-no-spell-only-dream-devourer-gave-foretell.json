@@ -1,0 +1,34 @@
+{
+  "description": "CR 106.6 / 601.2h Niko Defies Destiny's mana offers no cast of a card whose foretell Dream Devourer grants only in hand, and still casts a printed foretell card",
+  "note": "Chapter II's {W}{U} is alice's only mana. Devourer gives Think Twice foretell in hand alone (CR 702.143a), so the spell on the stack has none and the mana could not pay for it: no Cast is offered. Foretelling Think Twice and casting Depart the Realm, whose foretell is printed, are.",
+  "board": {
+    "active": "alice",
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Niko Defies Destiny", "label": "niko", "counters": [{"key": {"type": "Lore"}, "value": 1}]},
+          {"card": "Dream Devourer", "label": "devourer"}
+        ],
+        "hand": [
+          {"card": "Think Twice", "label": "think"},
+          {"card": "Depart the Realm", "label": "depart"}
+        ],
+        "library": [{"card": "Cancel"}, {"card": "Cancel"}, {"card": "Cancel"}, {"card": "Cancel"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Grizzly Bears", "label": "bears"}],
+        "library": [{"card": "Cancel"}, {"card": "Cancel"}, {"card": "Cancel"}, {"card": "Cancel"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "Cast $depart", "Foretell $think", "Foretell $depart"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$depart", "targets": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Grizzly Bears", "count": 1}}}
+  ]
+}

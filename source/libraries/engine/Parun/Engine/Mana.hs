@@ -2108,17 +2108,19 @@ admitsUnder :: PaymentSubject.PaymentSubject -> PlayerId -> GameState -> ManaUni
 admitsUnder subject pid gs =
   let paidFor = case subject of
         PaymentSubject.ForNeither -> Nothing
-        PaymentSubject.Casting oid _ -> Just (ManaRestriction.casts, oid)
-        PaymentSubject.Activating oid _ _ _ _ -> Just (ManaRestriction.activations, oid)
-        PaymentSubject.Unlocking oid -> Just (ManaRestriction.unlocks, oid)
-        PaymentSubject.TurningFaceUp oid -> Just (ManaRestriction.turnsFaceUp, oid)
-        PaymentSubject.Foretelling oid -> Just (ManaRestriction.foretells, oid)
+        -- CR 601.2h: a spell is asked about as it is on the stack, which a gate
+        -- proposing the cast has not moved it to yet (Game.asSpell).
+        PaymentSubject.Casting oid _ -> Just (ManaRestriction.casts, oid, Game.asSpell pid oid gs)
+        PaymentSubject.Activating oid _ _ _ _ -> Just (ManaRestriction.activations, oid, gs)
+        PaymentSubject.Unlocking oid -> Just (ManaRestriction.unlocks, oid, gs)
+        PaymentSubject.TurningFaceUp oid -> Just (ManaRestriction.turnsFaceUp, oid, gs)
+        PaymentSubject.Foretelling oid -> Just (ManaRestriction.foretells, oid, gs)
       -- CR 717.2c: the one half asked of the ABILITY rather than of an object --
       -- its keyword stamp against the designator, no view needed.
       byKeyword restriction = case subject of
         PaymentSubject.Activating _ _ _ stamp _ -> any (\designator -> any (Keyword.Engine.designates designator) stamp) (ManaRestriction.keywordActivations restriction)
         _ -> False
-      asked = fmap (\(half, oid) -> (half, Filter.contextIn gs (Just pid) Nothing, Projection.viewOfObject oid gs)) paidFor
+      asked = fmap (\(half, oid, board) -> (half, Filter.contextIn gs (Just pid) Nothing, Projection.viewOfObject oid board)) paidFor
    in \unit ->
         subjectAllows subject unit && case ManaUnit.restriction unit of
           Nothing -> True

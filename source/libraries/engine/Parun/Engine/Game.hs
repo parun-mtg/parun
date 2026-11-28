@@ -317,6 +317,22 @@ withoutBeingCast gs =
     gs
     (GameState.objects gs)
 
+-- CR 601.2a / 601.2f: a card whose cast is being proposed (`beingCast`) is
+-- still in its old zone on a gate's board, but its total is determined, and CR
+-- 601.2h's restricted mana asked about it, with it on the stack under its
+-- caster, so its abilities are projected there: an effect confined to the old
+-- zone no longer reaches it. Parun.CostSpec's "CR 601.2f undaunted the
+-- graveyard card lost applies to the spell" (Yixlid Jailer) proves it, and
+-- data/scenarios' "Niko Defies Destiny's mana offers no cast of a card whose
+-- foretell Dream Devourer grants only in hand" the mana. Every other board, the
+-- payment's among them, is returned unchanged.
+asSpell :: PlayerId -> ObjectId -> GameState -> GameState
+asSpell pid oid gs
+  | beingCast gs oid =
+      let moved = withoutBeingCast gs
+       in moved {GameState.objects = Map.adjust (\o -> o {Object.zone = Zone.Stack, Object.enteredUnder = Just pid}) oid (GameState.objects moved)}
+  | otherwise = gs
+
 objectCount :: GameState -> Int
 objectCount gs = Map.size (GameState.objects gs)
 
