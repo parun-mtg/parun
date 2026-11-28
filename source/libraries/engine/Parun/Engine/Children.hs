@@ -4011,13 +4011,14 @@ manaProductionChildren c production = case production of
 -- | A spending restriction's children (CR 106.6). Whether it prohibits and
 -- whether it pays generic costs are left as they are.
 manaRestrictionChildren :: (Applicative f) => ManaChildren f -> ManaRestriction.ManaRestriction -> f ManaRestriction.ManaRestriction
-manaRestrictionChildren c (ManaRestriction.MkManaRestriction casts activations keywordActivations unlocks turnsFaceUp prohibits paysGeneric) =
+manaRestrictionChildren c (ManaRestriction.MkManaRestriction casts activations keywordActivations unlocks turnsFaceUp foretells prohibits paysGeneric) =
   ManaRestriction.MkManaRestriction
     <$> traverse (manaCriterion c) casts
     <*> traverse (manaCriterion c) activations
     <*> traverse (manaDesignator c) keywordActivations
     <*> traverse (manaCriterion c) unlocks
     <*> traverse (manaCriterion c) turnsFaceUp
+    <*> traverse (manaCriterion c) foretells
     <*> pure prohibits
     <*> pure paysGeneric
 

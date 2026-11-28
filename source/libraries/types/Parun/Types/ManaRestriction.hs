@@ -20,10 +20,11 @@ import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 -- predicate could carry: the payments are about different objects, a spell being
 -- cast, an ability's source, and the permanent a special action is taken on.
 --
--- FIVE payment fields and not one per payment the engine can make: CR 116.2
+-- SIX payment fields and not one per payment the engine can make: CR 116.2
 -- alone lists twelve special actions, and what earns a field is a PRINTED rider
--- naming that payment. Foretelling (CR 116.2h), plotting (CR 116.2k), CR
--- 508.1j \/ 509.1f's combat toll and CR 118.12's resolution-time payment share
+-- naming that payment. Karfell Harbinger's "only to foretell a card from your
+-- hand" earned CR 116.2h's. Plotting (CR 116.2k), CR 508.1j \/ 509.1f's combat
+-- toll and CR 118.12's resolution-time payment share
 -- Parun.Types.PaymentSubject's ForNeither arm with nothing here, none of them
 -- being named on a card.
 --
@@ -67,6 +68,9 @@ data ManaRestriction = MkManaRestriction
     -- up, which is the object Tin Street Gossip's "turn creatures face up" is
     -- about.
     turnsFaceUp :: Maybe (Filter.Filter Keyword.Keyword),
+    -- | CR 116.2h \/ 702.143a: the {2} paid to foretell a card, as a special
+    -- action. The filter is evaluated against the CARD being foretold.
+    foretells :: Maybe (Filter.Filter Keyword.Keyword),
     -- | CR 106.6: the fields name the payments this mana can't be spent on,
     -- rather than the only ones it can (Hydraulic Helper).
     prohibits :: Bool,
@@ -89,6 +93,7 @@ none =
       keywordActivations = Nothing,
       unlocks = Nothing,
       turnsFaceUp = Nothing,
+      foretells = Nothing,
       prohibits = False,
       paysGeneric = True
     }

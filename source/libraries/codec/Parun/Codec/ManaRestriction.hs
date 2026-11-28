@@ -29,6 +29,7 @@ codec = Fields.object $ do
   keywordActivations <- Fields.defaulted "keywordActivations" Nothing (Common.maybe (KeywordDesignator.codec Keyword.codec)) ManaRestriction.keywordActivations
   unlocks <- Fields.defaulted "unlocks" Nothing (Common.maybe (Filter.codec Keyword.codec)) ManaRestriction.unlocks
   turnsFaceUp <- Fields.defaulted "turnsFaceUp" Nothing (Common.maybe (Filter.codec Keyword.codec)) ManaRestriction.turnsFaceUp
+  foretells <- Fields.defaulted "foretells" Nothing (Common.maybe (Filter.codec Keyword.codec)) ManaRestriction.foretells
   prohibits <- Fields.defaulted "prohibits" False Common.boolean ManaRestriction.prohibits
   paysGeneric <- Fields.defaulted "paysGeneric" True Common.boolean ManaRestriction.paysGeneric
   pure
@@ -38,6 +39,7 @@ codec = Fields.object $ do
         ManaRestriction.keywordActivations = keywordActivations,
         ManaRestriction.unlocks = unlocks,
         ManaRestriction.turnsFaceUp = turnsFaceUp,
+        ManaRestriction.foretells = foretells,
         ManaRestriction.prohibits = prohibits,
         ManaRestriction.paysGeneric = paysGeneric
       }

@@ -5520,6 +5520,7 @@ restrictionFilters restriction =
     <> Maybe.maybeToList (ManaRestriction.activations restriction)
     <> Maybe.maybeToList (ManaRestriction.unlocks restriction)
     <> Maybe.maybeToList (ManaRestriction.turnsFaceUp restriction)
+    <> Maybe.maybeToList (ManaRestriction.foretells restriction)
 
 -- The predicate a CR 106.6 rider carries. A function beside restrictionFilters
 -- for the same reason: the two clauses ride Parun.Types.ManaAddition
@@ -7249,11 +7250,11 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
           Effect.AffectPlayers affect | PlayerEffect.MayTapForMana grant <- AffectPlayers.effect affect -> Effect.AffectPlayers affect {AffectPlayers.effect = PlayerEffect.MayTapForMana grant {TapForMana.restriction = Just r}}
           other -> other
         doctor r = face {Face.spell = (Face.spell face) {Modal.modes = fmap (\mode -> mode {Mode.clauses = fmap (\clause -> clause {Clause.effects = fmap (restricted r) (Clause.effects clause)}) (Mode.clauses mode)}) (Modal.modes (Face.spell face))}}
-        harbor = doctor (ManaRestriction.MkManaRestriction Nothing (Just (Filter.Type.And [])) Nothing Nothing Nothing False True)
+        harbor = doctor (ManaRestriction.MkManaRestriction Nothing (Just (Filter.Type.And [])) Nothing Nothing Nothing Nothing False True)
         names = any (maybe False tapForManaNamesActivations) . cardTapForManaRestrictions
     Spec.assertBool s (not (names face) && not (tapForManaRestrictionsDiffer [face, face])) "Piracy, its restriction naming casts alone, is accepted, twice over"
     Spec.assertBool s (names harbor) "a grant whose mana only activates abilities is rejected"
-    Spec.assertBool s (tapForManaRestrictionsDiffer [face, doctor (ManaRestriction.MkManaRestriction (Just (Filter.Type.HasCardType CardType.Artifact)) Nothing Nothing Nothing Nothing False True)]) "Piracy beside a grant whose mana only casts artifact spells is rejected"
+    Spec.assertBool s (tapForManaRestrictionsDiffer [face, doctor (ManaRestriction.MkManaRestriction (Just (Filter.Type.HasCardType CardType.Artifact)) Nothing Nothing Nothing Nothing Nothing False True)]) "Piracy beside a grant whose mana only casts artifact spells is rejected"
   -- Parun.Engine.Cost.tapForManaWith adds a clause's shares as one, so an
   -- addition whose colour is chosen is its clause's only one: the corpus half.
   Spec.it s "CR 608.2c an addition choosing its source's colour is its clause's only addition" $ do

@@ -1,0 +1,201 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Niko Defies Destiny",
+            "label": "niko"
+          }
+        ],
+        "manaPool": "UU",
+        "hand": [
+          {
+            "card": "Augury Raven",
+            "label": "raven"
+          },
+          {
+            "card": "Depart the Realm",
+            "label": "depart"
+          },
+          {
+            "card": "Think Twice",
+            "label": "think"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Poison the Cup",
+            "label": "cup"
+          },
+          {
+            "card": "Opt",
+            "label": "opt"
+          }
+        ],
+        "exile": [
+          {
+            "card": "Saw It Coming",
+            "label": "saw"
+          }
+        ],
+        "library": [
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "library": [
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          },
+          {
+            "card": "Cancel"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 106.6 / 116.2h Niko Defies Destiny counts foretold cards, its mana foretells or casts a foretell spell, and it returns a foretell card",
+  "note": "No lands: the upkeep's UU foretells Augury Raven, so chapter I counts it and not the face-up Saw It Coming alice owns in exile (20 + 2 = 22, not 24). Chapter II's {W}{U} is then alice's only mana: it may foretell Depart the Realm, cast it, or cast the foretold Raven for {1}{U}, but not cast Think Twice, which has no foretell. Chapter III's only legal target is Poison the Cup, Opt having no foretell.",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "Foretell $raven"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 22,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $depart",
+            "Cast Augury Raven",
+            "Foretell $depart"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "Foretell $depart"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Depart the Realm",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Poison the Cup",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Niko Defies Destiny",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    }
+  ]
+}

@@ -1922,6 +1922,7 @@ meetRestriction one = maybe one (\other -> if ManaRestriction.prohibits one then
               ManaRestriction.keywordActivations = keywords,
               ManaRestriction.unlocks = both <$> ManaRestriction.unlocks a <*> ManaRestriction.unlocks b,
               ManaRestriction.turnsFaceUp = both <$> ManaRestriction.turnsFaceUp a <*> ManaRestriction.turnsFaceUp b,
+              ManaRestriction.foretells = both <$> ManaRestriction.foretells a <*> ManaRestriction.foretells b,
               ManaRestriction.prohibits = False,
               ManaRestriction.paysGeneric = generic a b
             }
@@ -1936,6 +1937,7 @@ meetRestriction one = maybe one (\other -> if ManaRestriction.prohibits one then
               ManaRestriction.keywordActivations = if keywordFree && Maybe.isNothing (ManaRestriction.activations prohibit) then ManaRestriction.keywordActivations permit else Nothing,
               ManaRestriction.unlocks = less ManaRestriction.unlocks,
               ManaRestriction.turnsFaceUp = less ManaRestriction.turnsFaceUp,
+              ManaRestriction.foretells = less ManaRestriction.foretells,
               ManaRestriction.prohibits = False,
               ManaRestriction.paysGeneric = generic permit prohibit
             }
@@ -1956,6 +1958,7 @@ meetRestriction one = maybe one (\other -> if ManaRestriction.prohibits one then
               ManaRestriction.keywordActivations = Either.fromRight Nothing keywords,
               ManaRestriction.unlocks = named ManaRestriction.unlocks,
               ManaRestriction.turnsFaceUp = named ManaRestriction.turnsFaceUp,
+              ManaRestriction.foretells = named ManaRestriction.foretells,
               ManaRestriction.prohibits = True,
               ManaRestriction.paysGeneric = generic a b
             }
@@ -2109,6 +2112,7 @@ admitsUnder subject pid gs =
         PaymentSubject.Activating oid _ _ _ _ -> Just (ManaRestriction.activations, oid)
         PaymentSubject.Unlocking oid -> Just (ManaRestriction.unlocks, oid)
         PaymentSubject.TurningFaceUp oid -> Just (ManaRestriction.turnsFaceUp, oid)
+        PaymentSubject.Foretelling oid -> Just (ManaRestriction.foretells, oid)
       -- CR 717.2c: the one half asked of the ABILITY rather than of an object --
       -- its keyword stamp against the designator, no view needed.
       byKeyword restriction = case subject of
@@ -2150,6 +2154,7 @@ narrowingOf subject = case subject of
   PaymentSubject.ForNeither -> ManaNarrowing.none
   PaymentSubject.Unlocking _ -> ManaNarrowing.none
   PaymentSubject.TurningFaceUp _ -> ManaNarrowing.none
+  PaymentSubject.Foretelling _ -> ManaNarrowing.none
 
 -- CR 601.2a before CR 601.2g: a source activated DURING this payment makes its
 -- mana once the card being cast has already left exile, so the card it last

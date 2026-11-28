@@ -8,17 +8,18 @@ import qualified Parun.Types.ObjectId as ObjectId
 
 -- | WHAT a cost is being paid for, at the one grain CR 106.6's restrictions ask
 -- about: a spell being cast, an ability being activated, a permanent being
--- unlocked or turned face up, or none of those.
+-- unlocked or turned face up, a card being foretold, or none of those.
 --
 -- CR 601.2h's payment is a cast's, CR 602.2b's is an activation's, and CR 116.2m
--- \/ 709.5e's and CR 116.2b's are two special actions' -- a restricted mana may
--- admit any of them, under a predicate each (Parun.Types.ManaRestriction).
+-- \/ 709.5e's, CR 116.2b's and CR 116.2h's are three special actions' -- a
+-- restricted mana may admit any of them, under a predicate each
+-- (Parun.Types.ManaRestriction).
 --
--- FOUR named payments and not one per special action: CR 116.2 lists twelve, and
+-- FIVE named payments and not one per special action: CR 116.2 lists twelve, and
 -- what earns an arm is a PRINTED rider naming that payment. No mana rider names
--- foretelling or plotting, so those share ForNeither with CR 508.1j \/ 509.1f's
--- combat toll and CR 118.12's resolution-time payment, which are no special
--- action at all -- an arm of their own rather than an absent one.
+-- plotting, so it shares ForNeither with CR 508.1j \/ 509.1f's combat toll and
+-- CR 118.12's resolution-time payment, which are no special action at all -- an
+-- arm of their own rather than an absent one.
 --
 -- Carried into Parun.Engine.Cost.pay from the caller rather than derived there,
 -- on Parun.Types.PaymentMoment's precedent and for its reason: the cost itself
@@ -29,9 +30,9 @@ import qualified Parun.Types.ObjectId as ObjectId
 -- runtime argument, as PaymentMoment is, and not a field of any type
 -- Parun.Codec covers.
 data PaymentSubject
-  = -- | None of the four arms below: a special action no printed rider names
-    -- (CR 116.2h's foretell), a combat toll, or CR 118.12's payment as a spell
-    -- or ability resolves.
+  = -- | None of the five arms below: a special action no printed rider names
+    -- (CR 116.2k's plot), a combat toll, or CR 118.12's payment as a spell or
+    -- ability resolves.
     ForNeither
   | -- | CR 601.2h: the object being CAST, and the mana the cost cast for
     -- admits (Parun.Types.AlternativeCost.spendOnly).
@@ -63,4 +64,6 @@ data PaymentSubject
     Unlocking ObjectId.ObjectId
   | -- | CR 116.2b: the PERMANENT being turned face up.
     TurningFaceUp ObjectId.ObjectId
+  | -- | CR 116.2h \/ 702.143a: the CARD being foretold from its owner's hand.
+    Foretelling ObjectId.ObjectId
   deriving (Eq, Ord, Show)
