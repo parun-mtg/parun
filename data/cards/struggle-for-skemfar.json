@@ -1,0 +1,116 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Foretell",
+          "value": {
+            "type": "Stated",
+            "value": {
+              "mana": [
+                {
+                  "type": "OfType",
+                  "value": {
+                    "type": "Colored",
+                    "value": "Green"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Struggle for Skemfar",
+      "oracleText": "Put a +1/+1 counter on target creature you control. Then that creature fights up to one target creature you don't control. (Each deals damage equal to its power to the other.)\nForetell {G} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "PutCounters",
+                    "value": {
+                      "kind": {
+                        "type": "PlusOnePlusOne"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "mine"
+                      }
+                    }
+                  },
+                  {
+                    "type": "Fight",
+                    "value": {
+                      "first": "mine",
+                      "second": "theirs"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "mine": {
+                "filter": {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              },
+              "theirs": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 0,
+                    "most": 1
+                  }
+                },
+                "filter": {
+                  "type": "Not",
+                  "value": {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

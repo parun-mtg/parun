@@ -1,0 +1,242 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i4",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i5",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i6",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i7",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i8",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i9",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Surtland Elementalist",
+            "label": "se"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "hg"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "gb"
+          },
+          {
+            "card": "Stone Giant",
+            "label": "sg"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2b / 701.20a: Surtland Elementalist's additional cost is paid by revealing a Giant card from hand, which stays in hand",
+  "note": "Nine Islands could pay the {2} branch too; alice picks the reveal, so two Islands stay untapped. The Bears are not a Giant.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "cost": [
+            {
+              "type": "Generic",
+              "value": 5
+            },
+            {
+              "type": "OfType",
+              "value": {
+                "type": "Colored",
+                "value": "Blue"
+              }
+            },
+            {
+              "type": "OfType",
+              "value": {
+                "type": "Colored",
+                "value": "Blue"
+              }
+            }
+          ],
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
+            "$i5",
+            "$i6",
+            "$i7",
+            null
+          ],
+          "object": "$se"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardInHand",
+          "with": "$hg"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Surtland Elementalist",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$i8",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$i9",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Hill Giant"
+          ],
+          "of": "Witnessed",
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
