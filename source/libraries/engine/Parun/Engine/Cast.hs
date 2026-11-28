@@ -116,6 +116,7 @@ import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaAbilityPerformer as ManaAbilityPerformer
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaNarrowing as ManaNarrowing
 import Parun.Types.ManaSpending (ManaSpending)
 import qualified Parun.Types.ManaSpending as ManaSpending
@@ -1893,8 +1894,14 @@ widerSpending one other = case (one, other) of
   (_, ManaSpending.AnyType) -> ManaSpending.AnyType
   -- CR 609.4b's "any color" is narrower than CR 118.14's "any type": a {C}
   -- demand keeps wanting colorless mana, so it is never widened to AnyType.
-  (ManaSpending.AnyColor, _) -> ManaSpending.AnyColor
-  (_, ManaSpending.AnyColor) -> ManaSpending.AnyColor
+  -- Over every mana it is wider than over some.
+  --
+  -- Unprinted: two riders over different filters on one cast, whose union no
+  -- ManaFilter writes; the first is kept, the stricter reading.
+  (ManaSpending.AnyColor ManaFilter.Any, _) -> one
+  (_, ManaSpending.AnyColor ManaFilter.Any) -> other
+  (ManaSpending.AnyColor _, _) -> one
+  (_, ManaSpending.AnyColor _) -> other
   (ManaSpending.AsProduced, ManaSpending.AsProduced) -> ManaSpending.AsProduced
 
 -- CR 702.185a: may this player cast this WARPED card? Cost.permitsCastForetold's three

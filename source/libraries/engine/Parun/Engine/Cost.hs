@@ -7084,7 +7084,7 @@ payManaWindowThen perform inFlight record subject spending pid substituting with
         case Mana.plan (PlayerEffect.spendManaAsThoughFor pid subject gs) spending (Maybe.fromMaybe 0 (Mana.lifeNeeded subject (midPayment (manaActivationsGiven (PlayerEffect.applying pid gs))) spending pid residual gs)) residual (Mana.Type.MkMana available) of
           Nothing -> pure (False, extra, shutWindow)
           Just (steps, life) -> do
-            (Mana.Type.MkMana left, spent) <- Mana.spendChosen pid (PlayerEffect.spendManaAsThoughFor pid subject gs) steps (Mana.Type.MkMana available)
+            (Mana.Type.MkMana left, spent) <- Mana.spendChosen pid (Mana.withSpending spending (PlayerEffect.spendManaAsThoughFor pid subject gs)) steps (Mana.Type.MkMana available)
             -- Three writes in the order the one composed `State.modify'` they
             -- replace applied them in: the pool goes back, then the life is paid,
             -- then CR 400.7d's record of what was spent. Event.payLife is monadic

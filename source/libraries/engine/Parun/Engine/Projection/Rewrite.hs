@@ -316,6 +316,8 @@ rewriteManaFilter pairs f = case f of
   ManaFilter.Any -> f
   ManaFilter.OfType t -> ManaFilter.OfType (rewriteWrittenManaType pairs t)
   ManaFilter.NotOfType t -> ManaFilter.NotOfType (rewriteWrittenManaType pairs t)
+  -- A production tag is no colour word.
+  ManaFilter.Produced _ -> f
 
 rewriteWrittenManaType :: [(TextWord.TextWord, TextWord.TextWord)] -> ManaType.ManaType -> ManaType.ManaType
 rewriteWrittenManaType pairs t = case t of

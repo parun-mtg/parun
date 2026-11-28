@@ -44,6 +44,7 @@ import qualified Parun.Types.HybridPayment as HybridPayment
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
@@ -198,8 +199,8 @@ ruinousPowersSpec s = Spec.describe s "The Ruinous Powers" $ do
         costOf t = ManaCost.MkManaCost [ManaSymbol.OfType t]
         pool t = Mana.Type.MkMana [unitOf t]
         spentUnder spending demand supply = fmap fst (Mana.spend [] spending 0 (costOf demand) (pool supply))
-    Spec.assertEqWith s "{C} pays {U} under any color" (spentUnder ManaSpending.AnyColor (ManaType.Colored Color.Blue) ManaType.Colorless) (Just (Mana.Type.MkMana []))
-    Spec.assertEqWith s "{R} does not pay {C} under any color" (spentUnder ManaSpending.AnyColor ManaType.Colorless (ManaType.Colored Color.Red)) Nothing
+    Spec.assertEqWith s "{C} pays {U} under any color" (spentUnder (ManaSpending.AnyColor ManaFilter.Any) (ManaType.Colored Color.Blue) ManaType.Colorless) (Just (Mana.Type.MkMana []))
+    Spec.assertEqWith s "{R} does not pay {C} under any color" (spentUnder (ManaSpending.AnyColor ManaFilter.Any) ManaType.Colorless (ManaType.Colored Color.Red)) Nothing
     Spec.assertEqWith s "{R} pays {C} under any type" (spentUnder ManaSpending.AnyType ManaType.Colorless (ManaType.Colored Color.Red)) (Just (Mana.Type.MkMana []))
     Spec.assertEqWith s "{C} does not pay {U} as produced" (spentUnder ManaSpending.AsProduced (ManaType.Colored Color.Blue) ManaType.Colorless) Nothing
 

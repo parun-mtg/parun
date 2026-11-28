@@ -182,6 +182,7 @@ import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.MatchScope as MatchScope
@@ -2376,7 +2377,7 @@ exileFoundFor agent exiled =
   State.modify' $ \gs ->
     let link = ExileLink.MkExileLink {ExileLink.source = agent, ExileLink.ability = Nothing, ExileLink.acquisition = Game.acquisitionOf agent gs, ExileLink.chosen = False, ExileLink.controller = Projection.controllerWithLastKnown agent gs, ExileLink.tokens = Set.empty}
         file oid = Map.insert oid link
-        permission you = (ExilePlayPermission.defaultValue you agent) {ExilePlayPermission.spending = ManaSpending.AnyColor}
+        permission you = (ExilePlayPermission.defaultValue you agent) {ExilePlayPermission.spending = ManaSpending.AnyColor ManaFilter.Any}
         grant you o = o {Object.playPermissions = Object.playPermissions o <> [permission you]}
         granted = case Projection.controllerOf agent gs of
           Just you -> foldr (Map.adjust (grant you)) (GameState.objects gs) exiled
