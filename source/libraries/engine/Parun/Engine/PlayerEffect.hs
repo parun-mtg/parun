@@ -4725,6 +4725,7 @@ prohibitsPayingLife subject pid gs =
         PaymentSubject.Activating _ kind _ _ _ -> kind == AbilityKind.NonManaAbility
         PaymentSubject.Unlocking _ -> False
         PaymentSubject.TurningFaceUp _ -> False
+        PaymentSubject.Foretelling _ -> False
         PaymentSubject.ForNeither -> False
    in toward && forbids (== ForbiddenAct.PayLifeToCastOrActivate) pid gs
 
@@ -4938,6 +4939,7 @@ spendManaAsThoughForGiven general pid subject gs = case subject of
   PaymentSubject.Activating oid _ named _ _ -> general <> spendManaAsThoughActivating (spendManaAsThoughRows pid gs) pid oid (Binding.acquiredSource =<< named) gs
   PaymentSubject.Unlocking {} -> general
   PaymentSubject.TurningFaceUp {} -> general
+  PaymentSubject.Foretelling {} -> general
   PaymentSubject.ForNeither -> general
 
 -- CR 609.4b / 602.2b: the clauses among `rows` (spendManaAsThoughRows' own

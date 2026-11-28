@@ -103,7 +103,10 @@ foretellCostsOf offBoard oid gs = case Game.cardOfHandMember oid gs of
 --     116.2m's unlock both are. Parun.SpecialActionSpec pairs the two boards that
 --     prove the difference.
 --   * the {2} is payable. An action the player cannot take is not offered, which
---     is Parun.Engine.Action.legalActions' posture throughout.
+--     is Parun.Engine.Action.legalActions' posture throughout. It is paid FOR the
+--     card (PaymentSubject.Foretelling), which Karfell Harbinger's "only to
+--     foretell a card" asks about; the scenario "CR 106.6 / 116.2h Karfell
+--     Harbinger's mana foretells a card ..." proves it.
 --
 -- The payability check is Cost.canPay and NOT Cost.total's CR 601.2f
 -- adjustments, for the reason Plot.canPlot gives: that rule totals the cost of a
@@ -117,7 +120,7 @@ canForetell offBoard pid oid gs =
   not (null (foretellCostsOf offBoard oid gs))
     && elem oid (Game.zoneMembers Zone.Hand pid gs)
     && Turn.hasTurnRunning gs pid
-    && Cost.canPay PaymentSubject.ForNeither pid oid actionCost gs
+    && Cost.canPay (PaymentSubject.Foretelling oid) pid oid actionCost gs
 
 -- Every card this player may foretell right now -- what Action.Foretell is built
 -- from, and the shape Plot.plottable has.
@@ -158,7 +161,7 @@ foretell :: ManaAbilityPerformer.ManaAbilityPerformer -> PlayerId -> ObjectId ->
 foretell perform pid oid = do
   before <- State.get
   Monad.when (canForetell Map.empty pid oid before) $ do
-    paid <- Cost.payAction perform before PaymentSubject.ForNeither 0 pid oid actionCost
+    paid <- Cost.payAction perform before (PaymentSubject.Foretelling oid) 0 pid oid actionCost
     Monad.forM_ paid $ \_ -> do
       -- One stamp per arrival, Parun.Engine.Plot's reason: the funnel answers
       -- with more than one only for a melded permanent leaving the battlefield

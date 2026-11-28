@@ -70,6 +70,17 @@ spec s = Spec.describe s "Parun.Codec.ManaRestriction" $ do
           ManaRestriction.turnsFaceUp = Just (Filter.And [])
         }
       " {\"casts\":{\"type\":\"HasCardType\",\"value\":\"Enchantment\"},\"unlocks\":{\"type\":\"And\",\"value\":[]},\"turnsFaceUp\":{\"type\":\"And\",\"value\":[]}} "
+  -- Karfell Harbinger's "only to foretell a card from your hand or cast an
+  -- instant or sorcery spell": CR 116.2h's key beside a cast key.
+  Spec.it s "a foretell and a cast" $
+    Common.assertCodec
+      s
+      ManaRestriction.codec
+      ManaRestriction.none
+        { ManaRestriction.casts = Just (Filter.Or [Filter.HasCardType CardType.Instant, Filter.HasCardType CardType.Sorcery]),
+          ManaRestriction.foretells = Just (Filter.And [])
+        }
+      " {\"casts\":{\"type\":\"Or\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Instant\"},{\"type\":\"HasCardType\",\"value\":\"Sorcery\"}]},\"foretells\":{\"type\":\"And\",\"value\":[]}} "
   -- Hydraulic Helper's "can't be spent to cast a nonartifact spell": the cast
   -- key under a prohibition, leaving every other payment open.
   Spec.it s "a prohibition" $
