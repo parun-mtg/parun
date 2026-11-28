@@ -2731,6 +2731,9 @@ namedTokens =
       -- Ginger, Queen of Sweets' "a Gingerbrute token", its reminder text the
       -- card Gingerbrute's.
       CardName.MkCardName (Text.pack "Gingerbrute"),
+      -- Svella, Ice Shaper's "a colorless snow artifact token named Icy
+      -- Manalith".
+      CardName.MkCardName (Text.pack "Icy Manalith"),
       -- Kher Keep's "a 0/1 red Kobold creature token named Kobolds of Kher
       -- Keep".
       CardName.MkCardName (Text.pack "Kobolds of Kher Keep"),
