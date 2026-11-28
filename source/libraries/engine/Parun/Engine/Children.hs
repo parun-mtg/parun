@@ -927,7 +927,7 @@ quantityChildren children quantity = case quantity of
   Quantity.EnteredThisTurn -> pure quantity
   Quantity.PlaneswalkedTo ref -> fmap Quantity.PlaneswalkedTo (player children ref)
   Quantity.EnteredFrom from -> fmap Quantity.EnteredFrom (inZoneChildren children from)
-  Quantity.WasCastFrom (CastFrom.MkCastFrom caster from) -> fmap Quantity.WasCastFrom (CastFrom.MkCastFrom <$> player children caster <*> traverse (inZoneChildren children) from)
+  Quantity.WasCastFrom (CastFrom.MkCastFrom caster from ordinal) -> fmap Quantity.WasCastFrom (CastFrom.MkCastFrom <$> player children caster <*> traverse (inZoneChildren children) from <*> pure ordinal)
   Quantity.BlockersBeyond _ -> pure quantity
   -- ONE: the payload is read against the one object the slot names, through
   -- Filter.slotOneObject, which declines a slot naming several.

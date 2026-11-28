@@ -25,6 +25,7 @@ import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.NameWords as NameWords
 import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Engine.Turn as Turn
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityAct as AbilityAct
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
@@ -1401,6 +1402,14 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
                 elem (SpellWasCast.spell cast) spells
                   && all (\inZone -> SpellWasCast.zone cast == Just (InZone.zone inZone)) (CastFrom.from castFrom)
                   && elem (SpellWasCast.player cast) casters
+                  && all (\n -> ordinalOf cast == Just n) (CastFrom.ordinal castFrom)
+              -- CR 601.2i: the caster's own casts this turn up to and
+              -- including this one, which castsBefore's position fixes, so a
+              -- spell cast later in the turn does not move it.
+              ordinalOf cast =
+                fmap
+                  ((1 +) . Natural.length . filter ((== SpellWasCast.player cast) . SpellWasCast.player))
+                  (Game.castsBefore (SpellWasCast.spell cast) gs)
               wasCast = any (maybe False castFromZone . Game.castOf . LoggedEvent.event) (Turn.eventsThisTurn gs)
           pure (if all (elem owner) zoneOwners && wasCast then 1 else 0)
         -- CR 509.1g: how many creatures are blocking the object this

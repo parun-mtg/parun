@@ -28,7 +28,8 @@ spec s = Spec.describe s "Parun.Codec.CastFrom" $ do
       CastFrom.codec
       ( CastFrom.MkCastFrom
           { CastFrom.caster = PlayerRef.Relative PlayerRelation.You,
-            CastFrom.from = Just $ InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.You)
+            CastFrom.from = Just $ InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.You),
+            CastFrom.ordinal = Nothing
           }
       )
       " {\"from\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"zone\":\"Graveyard\"}} "
@@ -41,7 +42,8 @@ spec s = Spec.describe s "Parun.Codec.CastFrom" $ do
       CastFrom.codec
       ( CastFrom.MkCastFrom
           { CastFrom.caster = PlayerRef.Relative PlayerRelation.You,
-            CastFrom.from = Just $ InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.AnyPlayer)
+            CastFrom.from = Just $ InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.AnyPlayer),
+            CastFrom.ordinal = Nothing
           }
       )
       " {\"from\":{\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"},\"zone\":\"Graveyard\"}} "
@@ -54,7 +56,8 @@ spec s = Spec.describe s "Parun.Codec.CastFrom" $ do
       CastFrom.codec
       ( CastFrom.MkCastFrom
           { CastFrom.caster = PlayerRef.Relative PlayerRelation.AnyPlayer,
-            CastFrom.from = Just $ InZone.MkInZone Zone.Library (PlayerRef.Relative PlayerRelation.You)
+            CastFrom.from = Just $ InZone.MkInZone Zone.Library (PlayerRef.Relative PlayerRelation.You),
+            CastFrom.ordinal = Nothing
           }
       )
       " {\"caster\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"},\"from\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"zone\":\"Library\"}} "
@@ -66,10 +69,23 @@ spec s = Spec.describe s "Parun.Codec.CastFrom" $ do
       CastFrom.codec
       ( CastFrom.MkCastFrom
           { CastFrom.caster = PlayerRef.Relative PlayerRelation.You,
-            CastFrom.from = Nothing
+            CastFrom.from = Nothing,
+            CastFrom.ordinal = Nothing
           }
       )
       " {} "
+  -- Codespell Cleric's "if it was the second spell you cast this turn".
+  Spec.it s "states an ordinal" $
+    Common.assertCodec
+      s
+      CastFrom.codec
+      ( CastFrom.MkCastFrom
+          { CastFrom.caster = PlayerRef.Relative PlayerRelation.You,
+            CastFrom.from = Nothing,
+            CastFrom.ordinal = Just 2
+          }
+      )
+      " {\"ordinal\":2} "
   -- CR 400.1's invariant is inherited rather than restated: `from` is
   -- Parun.Codec.InZone's codec, so the pairing it rejects is rejected here. The
   -- accepted payload above and this one differ in the ZONE alone.

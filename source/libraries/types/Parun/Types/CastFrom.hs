@@ -1,5 +1,6 @@
 module Parun.Types.CastFrom where
 
+import qualified Numeric.Natural as Natural
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.PlayerRef as PlayerRef
 
@@ -18,6 +19,11 @@ data CastFrom = MkCastFrom
   { caster :: PlayerRef.PlayerRef,
     -- | Nothing is CR 603.4's bare "if you cast it": cast from anywhere, outside
     -- the game included (CR 400.11), which no Or over zones can enumerate.
-    from :: Maybe InZone.InZone
+    from :: Maybe InZone.InZone,
+    -- | Codespell Cleric's "if it was the SECOND spell you cast this turn": the
+    -- cast's place among every spell its caster cast this turn, itself included
+    -- (CR 601.2i), whatever zone each came from. Nothing for every clause
+    -- printing no ordinal.
+    ordinal :: Maybe Natural.Natural
   }
   deriving (Eq, Ord, Show)
