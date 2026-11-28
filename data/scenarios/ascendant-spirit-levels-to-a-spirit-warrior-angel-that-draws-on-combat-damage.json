@@ -1,0 +1,286 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Ascendant Spirit",
+            "label": "spirit",
+            "ready": true
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "s1",
+            "ready": true
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "s2",
+            "ready": true
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "s3",
+            "ready": true
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "s4",
+            "ready": true
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "s5",
+            "ready": true
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "s6",
+            "ready": true
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "s7",
+            "ready": true
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "s8",
+            "ready": true
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "s9",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Divination",
+            "label": "div"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 602.2, 608.2c, 613.1d, 122.1b: Ascendant Spirit's three snow abilities make it a 2/3 Spirit Warrior, a 4/4 flying Spirit Warrior Angel, then a 6/6 that draws on combat damage",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3",
+            null
+          ],
+          "object": "$spirit"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$spirit",
+          "power": 1,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "Keyword",
+            "value": {
+              "type": "Flying"
+            }
+          },
+          "object": "$spirit"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$s4",
+            "$s5",
+            null
+          ],
+          "object": "$spirit"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$spirit",
+          "power": 2,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$spirit",
+          "subtypes": [
+            "Spirit",
+            "Warrior"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$s6",
+            "$s7",
+            "$s8",
+            null
+          ],
+          "object": "$spirit"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$spirit",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$spirit",
+          "subtypes": [
+            "Spirit",
+            "Warrior",
+            "Angel"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Flying"
+          },
+          "object": "$spirit"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
