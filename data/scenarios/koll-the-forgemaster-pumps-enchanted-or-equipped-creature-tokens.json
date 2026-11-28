@@ -1,0 +1,197 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Koll, the Forgemaster",
+            "label": "koll"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "eqtok",
+            "token": true
+          },
+          {
+            "attached": "eqtok",
+            "card": "Bonesplitter",
+            "label": "b1"
+          },
+          {
+            "card": "Savannah Lions",
+            "label": "entok",
+            "token": true
+          },
+          {
+            "attached": "entok",
+            "card": "Holy Strength",
+            "label": "hs"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "baretok",
+            "token": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "eqcard"
+          },
+          {
+            "attached": "eqcard",
+            "card": "Bonesplitter",
+            "label": "b2"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bobaura",
+            "token": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Craw Wurm",
+            "label": "bobtok",
+            "token": true
+          },
+          {
+            "attached": "bobtok",
+            "card": "Bonesplitter",
+            "label": "b3"
+          },
+          {
+            "attached": "bobaura",
+            "card": "Holy Strength",
+            "label": "bhs"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 613.4c: Koll, the Forgemaster gives alice's equipped and enchanted creature tokens +1/+1, one enchanted by bob's Aura among them, not her bare token, her equipped nontoken Piker or bob's equipped token.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$eqtok",
+          "power": 5,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$entok",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$baretok",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$eqcard",
+          "power": 4,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bobtok",
+          "power": 8,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$koll",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bobaura",
+          "power": 4,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
