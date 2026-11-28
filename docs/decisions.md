@@ -3447,24 +3447,26 @@ Entries are ordered by the first rule each cites.
   `critical-hit-triggers-twice-for-a-20-rerolled-to-20`.
 - **Issue**: none.
 
-## Whether a reroll of the planar die is a roll of the planar die
+## Which face of a rerolled planar die a trigger reads
 
 - **Question**: Monitor Monitor rerolls a blank on the planar die to a blank.
-  Does Stairs to Infinity ("Whenever you roll the planar die") draw once or
-  twice? Does Pompeii ("Whenever you roll a blank on the planar die") scry
-  once or twice?
-- **Rules**: CR 706.2, 706.2b, 706.7, 901.9, 901.9a-c; Pippa, Duchess of
-  Dice's and Wall of Fortune's rulings; CR of 2026-11-06.
-- **Decision**: Stairs draws twice, Pompeii scries once. Each reroll is a roll
-  of the planar die, as it is a die roll ("Whether a natural 20 rerolled away
-  was rolled"). The planar die has no natural result to read (CR 706.7), so a
-  face is read once, off the roll's result after its rerolls (CR 706.2, 901.9c),
-  which is also what keeps a Planeswalker symbol rerolled away from
-  planeswalking. CR 901.9's cost counts the special action, not the rerolls.
-- **Rejected**: Each roll read at the face it came up, as numbered dice are: it
-  planeswalks for a Planeswalker symbol rerolled away, against CR 901.9c's "If
-  the die roll is the Planeswalker symbol". And one roll in all: it parts the
-  planar die from every other die a reroll reaches.
+  Does Pompeii ("Whenever you roll a blank on the planar die") scry once or
+  twice?
+- **Rules**: CR 706.2, 706.2b, 901.3a, 901.8, 901.9a-c; Pippa, Duchess of
+  Dice's and Monitor Monitor's rulings; CR of 2026-11-06.
+- **Decision**: Once. That a reroll of the planar die is a roll of it is
+  forced: Pippa's ruling has a reroll trigger "whenever you roll a die", and
+  Monitor Monitor's reaches the planar die, so Stairs to Infinity ("Whenever
+  you roll the planar die") draws twice. The face is not: the planar die has
+  symbols and blanks, not numbers (CR 901.3a), so CR 706.2's natural result
+  names nothing, and a face is read once, off the roll's result after its
+  rerolls (CR 706.2, 901.9a-c). CR 901.9's cost counts the special action, not
+  the rerolls.
+- **Rejected**: Each roll's face read for triggers, as "Which result a
+  reroll's trigger reads" reads each reroll's own number for Night Shift of
+  the Living Dead. CR 901.8's planeswalking ability is such a trigger, so it
+  planeswalks for a Planeswalker symbol rerolled away, against CR 901.9c's
+  "If the die roll is the Planeswalker symbol".
 - **Site**: `Parun.Engine.Resolve.Effect.throwSettled`'s `recordRerolls`,
   `Parun.Engine.Planechase.roll` and `rollsThisTurn`; the scenarios
   `cr-706-2b-stairs-to-infinity-draws-for-a-reroll-of-the-planar-die` and

@@ -12,7 +12,7 @@ data DurationEvent
     SourceTurnedFaceDown
   | -- | CR 601.2i: a player casts a spell this matches (Soul Sculptor).
     SpellCast (Filter.Filter Keyword.Keyword)
-  | -- | CR 901.11: a player planeswalks away from this (Agyrem, Chaotic Aether).
+  | -- | CR 901.11: a player planeswalks, away from what the payload names (Agyrem, Chaotic Aether).
     Planeswalked PlaneswalkedFrom.PlaneswalkedFrom
   | -- | CR 607.2a: an instruction of the effect's source exiled a card (Furious Rise).
     SourceExiledCard
