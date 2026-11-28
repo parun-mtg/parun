@@ -1613,23 +1613,9 @@ selfSentences spell pid oid gs = case (Game.lookupLayerOne oid gs, Game.cardOf o
 spellKeywords :: PlayerId -> ObjectId -> GameState -> Map.Map Keyword.Type.Keyword Natural
 spellKeywords pid oid gs = PC.keywords (asSpellProjected pid oid gs)
 
--- The spell's projection off `asSpell`'s board.
+-- The spell's projection off Game.asSpell's board.
 asSpellProjected :: PlayerId -> ObjectId -> GameState -> PC.ProjectedCharacteristics
-asSpellProjected pid oid gs = Projection.project oid (asSpell pid oid gs)
-
--- CR 601.2a / 601.2f: a card whose cast is being proposed (Game.beingCast) is
--- still in its old zone on a gate's board, but its total is determined with it
--- on the stack under its caster, so its abilities are projected there: an
--- effect confined to the old zone no longer reaches it. Parun.CostSpec's "CR
--- 601.2f undaunted the graveyard card lost applies to the spell" (Yixlid
--- Jailer) proves it. Every other board, the payment's among them, is returned
--- unchanged.
-asSpell :: PlayerId -> ObjectId -> GameState -> GameState
-asSpell pid oid gs
-  | Game.beingCast gs oid =
-      let moved = Game.withoutBeingCast gs
-       in moved {GameState.objects = Map.adjust (\o -> o {Object.zone = Zone.Stack, Object.enteredUnder = Just pid}) oid (GameState.objects moved)}
-  | otherwise = gs
+asSpellProjected pid oid gs = Projection.project oid (Game.asSpell pid oid gs)
 
 -- Whether the spell's CR 601.2f adjustments read CR 601.2c's targets -- one of
 -- its own cost sentences, by a match (Bury in Books) or a count naming a slot

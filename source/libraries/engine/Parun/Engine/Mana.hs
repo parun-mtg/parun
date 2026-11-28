@@ -2118,7 +2118,15 @@ admitsUnder subject pid gs =
       byKeyword restriction = case subject of
         PaymentSubject.Activating _ _ _ stamp _ -> any (\designator -> any (Keyword.Engine.designates designator) stamp) (ManaRestriction.keywordActivations restriction)
         _ -> False
-      asked = fmap (\(half, oid) -> (half, Filter.contextIn gs (Just pid) Nothing, Projection.viewOfObject oid gs)) paidFor
+      -- CR 601.2a before CR 601.2h: a cast's gate asks of the card the payment
+      -- will ask of the spell, so a grant confined to the hand (Dream
+      -- Devourer's foretell, CR 702.143a) admits no mana there that the stack
+      -- would refuse. Parun.ScenarioSpec's "Niko Defies Destiny's mana casts
+      -- no spell foretell only in hand" proves it.
+      board = case subject of
+        PaymentSubject.Casting oid _ -> Game.asSpell pid oid gs
+        _ -> gs
+      asked = fmap (\(half, oid) -> (half, Filter.contextIn board (Just pid) Nothing, Projection.viewOfObject oid board)) paidFor
    in \unit ->
         subjectAllows subject unit && case ManaUnit.restriction unit of
           Nothing -> True
