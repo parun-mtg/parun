@@ -3309,7 +3309,8 @@ Entries are ordered by the first rule each cites.
   the mana Selesnya's ability adds is its controller's. "The top card of
   your library" names the planar controller's library, the team having no
   one top card, and a card the planar controller moves "from your hand" is
-  one of their own (CR 810.5).
+  one of their own (CR 810.5): Pools of Becoming bottoms the planar
+  controller's hand alone and they draw that many.
 - **Rejected**: Each member's own instance, each with that member's "you"
   (this entry's earlier decision, #9165): CR 901.12c and 311.7 have one
   player control the plane and its chaos ability. "You" as the team for an
@@ -3324,13 +3325,15 @@ Entries are ordered by the first rule each cites.
   `Parun.Engine.Plane.teamScope` (the scope a stored effect bakes); and through
   `Parun.Engine.Plane.planarYous` by `Parun.Engine.Event.Trigger`'s
   `eventTriggers` and delayed matching,
-  `Parun.Engine.Resolve.Slots.objectRefObjects`' `EachCardInYourHand`,
+  `Parun.Engine.Resolve.Slots.objectRefObjects`' `EachCardInYourHand` (but
+  `Parun.Engine.Resolve.Arms.Zones.moveToZone`'s, the controller's own),
   `Parun.Engine.Action.sorcerySpeedGrants` and
   `Parun.Engine.PlayerDesignation.gaining`; through `Count.zoneHolder` by
   `Parun.Engine.Quantity`'s `yoursOf`; and through `Filter.readRelation` by
   `Parun.Engine.Event.Binding.teamDeclaration`. Proved by the
-  `data/scenarios/planechase/cr-901-12c-*` and `cr-805-10b-*` scenarios.
-- **Issue**: #9165, #9178, #10054, #10085, #10093, #10108.
+  `data/scenarios/planechase/cr-901-12c-*`, `cr-805-10b-*` and `cr-810-5-*`
+  scenarios.
+- **Issue**: #9165, #9178, #10054, #10085, #10093, #10108, #10109.
 
 ## Which planar controller controls a Grand Melee plane
 

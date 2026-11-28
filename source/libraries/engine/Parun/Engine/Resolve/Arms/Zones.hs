@@ -413,6 +413,13 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
                   members <- Common.fromAmongMembers legal resolving chosen slot
                   gs <- State.get
                   pure (matchingFromAmong legal resolving controller source gs filter_ members)
+                -- The resolving controller's own hand, not objectRefObjects'
+                -- planar team's: the controller performs the move (CR 608.2c)
+                -- and cannot move a teammate's cards (CR 810.5;
+                -- docs/decisions.md, "A plane's you is the planar team").
+                -- Pools of Becoming in Two-Headed Giant --
+                -- data/scenarios/planechase/cr-810-5-pools-of-becoming-bottoms-only-the-planar-controller-s-hand.json.
+                ObjectRef.EachCardInYourHand -> State.gets (Game.cardsIn Zone.Hand controller)
                 -- Each ref gathered in the order written, before anything
                 -- moves, so the members move as ONE batch (CR 608.2f); an
                 -- object two refs name moves once.

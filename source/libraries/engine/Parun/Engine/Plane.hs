@@ -202,7 +202,8 @@ readsYouAsTeam source gs = GameSettings.twoHeadedGiant (MatchScope.settings (Gam
 -- under 'readsYouAsTeam' every still-playing member of that controller's
 -- team, the controller first. A trigger condition matches the act of any of
 -- them, once (Event.Trigger's eventTriggers); "your hand" is each member's
--- (Resolve.Slots.objectRefObjects); ascend counts and blesses the team
+-- (Resolve.Slots.objectRefObjects), but for a move (CR 810.5,
+-- Resolve.Arms.Zones.moveToZone); ascend counts and blesses the team
 -- (PlayerDesignation.gaining).
 planarYous :: ObjectId -> PlayerId -> GameState -> [PlayerId]
 planarYous source controller gs
