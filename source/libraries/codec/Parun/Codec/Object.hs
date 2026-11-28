@@ -136,6 +136,7 @@ codec = Fields.object $ do
   foretellCostReduction <- Fields.defaulted "foretellCostReduction" (Object.foretellCostReduction defaults) (Common.maybe ManaCost.codec) Object.foretellCostReduction
   warped <- Fields.defaulted "warped" (Object.warped defaults) (Common.maybe Common.natural) Object.warped
   preparedCopyOf <- Fields.defaulted "preparedCopyOf" (Object.preparedCopyOf defaults) (Common.maybe ObjectId.codec) Object.preparedCopyOf
+  creator <- Fields.defaulted "creator" (Object.creator defaults) (Common.maybe ObjectId.codec) Object.creator
   ringBearerFor <- Fields.defaulted "ringBearerFor" (Object.ringBearerFor defaults) (Common.maybe PlayerId.codec) Object.ringBearerFor
   planarMarker <- Fields.defaulted "planarMarker" (Object.planarMarker defaults) (Common.maybe Common.natural) Object.planarMarker
   paired <- Fields.defaulted "paired" (Object.paired defaults) (Common.maybe Pairing.codec) Object.paired
@@ -217,6 +218,7 @@ codec = Fields.object $ do
         Object.foretellCostReduction = foretellCostReduction,
         Object.warped = warped,
         Object.preparedCopyOf = preparedCopyOf,
+        Object.creator = creator,
         Object.ringBearerFor = ringBearerFor,
         Object.planarMarker = planarMarker,
         Object.duplicate = duplicate,

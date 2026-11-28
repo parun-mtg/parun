@@ -21,9 +21,11 @@ data ExiledPile
   | -- | CR 702.167c: the cards exiled to craft the source (Locus of
     -- Enlightenment).
     CraftMaterials
-  | -- | CR 607.1d: the card the ability that created the source, a token, exiled
-    -- (Hofri Ghostforge's Spirits).
-    ForToken
+  | -- | CR 607.1d: the cards exiled by the linked ability of the object that
+    -- created the source: a token's, the card its creating ability exiled
+    -- (Hofri Ghostforge's Spirits); an emblem's, every card exiled with its
+    -- creator (Tibalt, Cosmic Impostor).
+    OfCreator
   | -- | CR 607.2n: every card the reading player exiled before the game with
     -- cards of that name (Arcane Savant), whatever the source.
     WithCardsNamed CardName.CardName

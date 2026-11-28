@@ -203,7 +203,7 @@
                                                     "type": "EachCardInExiledPile",
                                                     "value": {
                                                       "pile": {
-                                                        "type": "ForToken"
+                                                        "type": "OfCreator"
                                                       }
                                                     }
                                                   },

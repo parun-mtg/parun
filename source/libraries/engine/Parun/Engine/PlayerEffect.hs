@@ -2937,7 +2937,7 @@ castPermissionsFrom pid origin oid gs =
       inPool source pool = case pool of
         PermissionPool.EveryCard -> True
         PermissionPool.InExiledPile pile -> case (RowSource.object source, Map.lookup oid (GameState.exiledWith gs)) of
-          (Just sid, Just link) -> Binding.isLinkedExile (RowSource.ability source) (maybe (Game.acquisitionFor (RowSource.ability source) sid gs) SourceChoices.acquisition (RowSource.choices source)) pile sid link
+          (Just sid, Just filed) | Just link <- Game.linkSeenBy sid gs filed -> Binding.isLinkedExile (RowSource.ability source) (maybe (Game.acquisitionFor (RowSource.ability source) sid gs) SourceChoices.acquisition (RowSource.choices source)) pile sid link
           _ -> False
         -- CR 113.8 / 109.5: what a spell or ability the row's "you"
         -- controlled exiled, any source's, as ExileLink.controller recorded it.

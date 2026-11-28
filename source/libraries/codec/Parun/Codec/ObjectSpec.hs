@@ -179,6 +179,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           Object.foretellCostReduction = Just (ManaCost.MkManaCost [ManaSymbol.Generic 29]),
           Object.warped = Just 28,
           Object.preparedCopyOf = Just (ObjectId.MkObjectId 26),
+          Object.creator = Just (ObjectId.MkObjectId 33),
           Object.ringBearerFor = Just (PlayerId.MkPlayerId 16),
           Object.planarMarker = Just 2,
           Object.duplicate = Just ProjectedCharacteristicsSpec.minimalCharacteristics,
@@ -257,7 +258,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           <> ",\"spending\":\"AnyType\",\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]},\"condition\":null,\"origin\":\"Granted\",\"verb\":\"Cast\",\"increase\":1,\"increaseUnless\":null,\"landEnters\":\"Tapped\",\"spellEnters\":\"Tapped\",\"budget\":{\"remaining\":{\"type\":\"Plays\",\"value\":2},\"covers\":[30,31],\"granted\":32},\"keywords\":[{\"type\":\"Undaunted\"}]}]"
           <> ",\"plotted\":0,\"foretold\":15"
           <> ",\"foretellCostReduction\":[{\"type\":\"Generic\",\"value\":29}]"
-          <> ",\"warped\":28,\"preparedCopyOf\":26"
+          <> ",\"warped\":28,\"preparedCopyOf\":26,\"creator\":33"
           <> ",\"ringBearerFor\":16,\"planarMarker\":2"
           <> ",\"duplicate\":{\"names\":[\"Mountain\"],\"cardTypes\":[\"Land\"]}"
           <> ",\"stickers\":[{\"sticker\":{\"owner\":1,\"sheet\":0,\"kind\":\"Art\",\"index\":2},\"timestamp\":5}]"

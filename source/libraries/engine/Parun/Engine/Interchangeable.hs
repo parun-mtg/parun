@@ -828,16 +828,18 @@ attackedLastTurnNames oid entry = case entry of
     attacker == oid || attackTargetNames oid target
 
 -- Whether any OTHER object names this one: an Aura or Equipment attached to it,
--- which Object.attachedTo stores on the rider rather than on the host, a spell or
--- ability on the stack that took it as a target (CR 601.2c) or that named it as
--- something an instruction produced, and a spell whose gift promise is for the
--- instance it grants (CR 702.174a, Parun.Types.KeywordInstance). Binding's other
--- three fields carry no object -- an amount, a Seq of mode indices, and a
--- copiable-values snapshot.
+-- which Object.attachedTo stores on the rider rather than on the host, an emblem
+-- it created (CR 607.1d, Object.creator), a spell or ability on the stack that
+-- took it as a target (CR 601.2c) or that named it as something an instruction
+-- produced, and a spell whose gift promise is for the instance it grants (CR
+-- 702.174a, Parun.Types.KeywordInstance). Binding's other three fields carry no
+-- object -- an amount, a Seq of mode indices, and a copiable-values snapshot.
 --
 -- The promise arm is a REGRESSION FENCE: the one elision asking this is a mana
 -- source's (Cost.chooseSource), and no board in the suite taps one of two
 -- granters of a promised gift for mana, so dropping it leaves the suite green.
+-- So is the creator arm: no board in the suite chooses between two mana
+-- sources one of which created an emblem.
 --
 -- A spell's targets reach Object.bindings at CR 601.2c (Cast.castProposed), so
 -- the window CR 601.2g opens for that same cast sees them, as it does every
@@ -865,6 +867,7 @@ namedByAnother oid gs =
                  || any (bindingNames oid) (Map.elems (Object.bindings obj))
                  || any (Monoid.getAny . Mentions.playerChoiceNames (unread oid)) (foldMap Map.keys (Object.chosenPlayers obj))
                  || any (Set.member oid) (Object.chosenObjects obj)
+                 || Object.creator obj == Just oid
              )
    in any names (Map.toList (GameState.objects gs))
         || any (\lk -> (LastKnown.host lk >>= Recipient.objectOf) == Just oid) (Snapshots.lastKnown (GameState.snapshots gs))
