@@ -105,8 +105,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 601.3, 702.138a, 614.1a: Glimpse the Cosmos cast from alice's graveyard with the escape Underworld Breach gives it, while she controls no Giant, resolves into her graveyard: only a cast made by its own {U} permission is exiled",
-  "note": "No Giant, so Glimpse's own permission is closed and the escape cost ({1}{U} plus three other cards) is the only way out of the graveyard. Its exile rider rides only its own permission, so it returns to the graveyard rather than exile; the companion scenario glimpse-the-cosmos-is-cast-from-the-graveyard-for-blue-with-a-giant-then-exiled proves the {U} cast is exiled.",
+  "description": "CR 601.3, 702.138a, 614.1a: Glimpse the Cosmos cast from alice's graveyard with the escape Underworld Breach gives it, while she controls no Giant, resolves into her graveyard: only a cast made by its own {U} permission is exiled; Breach is sacrificed at the end step",
+  "note": "No Giant, so Glimpse's own permission is closed and the escape cost ({1}{U} plus three other cards) is the only way out of the graveyard. Its exile rider rides only its own permission, so it returns to the graveyard rather than exile; the companion scenario glimpse-the-cosmos-is-cast-from-the-graveyard-for-blue-with-a-giant-then-exiled proves the {U} cast is exiled. At the end step, Breach's trigger sacrifices it.",
   "timeline": [
     {
       "do": {
@@ -203,6 +203,38 @@
       },
       "player": "alice",
       "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Underworld Breach",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Underworld Breach",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
       "turn": 1
     }
   ]
