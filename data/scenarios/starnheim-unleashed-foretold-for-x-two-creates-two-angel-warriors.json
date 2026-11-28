@@ -88,39 +88,21 @@
   "note": "X 2 makes the foretell cost {2}{2}{W}, all five Plains; one Angel would be the unforetold clause.",
   "timeline": [
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "do": {
         "Take": {
           "action": "Foretell $unleashed",
           "mana": [
             "$p1",
-            "$p2"
+            "$p2",
+            null
           ]
         }
-      }
-    },
-    {
-      "player": "alice",
-      "step": "DeclareAttackers",
-      "turn": 1,
-      "do": {
-        "Attack": []
-      }
-    },
-    {
-      "player": "bob",
-      "step": "DeclareAttackers",
-      "turn": 2,
-      "do": {
-        "Attack": []
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 3,
+      "turn": 1
+    },
+    {
       "do": {
         "Cast": {
           "mana": [
@@ -133,18 +115,18 @@
           "object": "Starnheim Unleashed",
           "x": 2
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 3,
-      "do": "Pass"
+      "turn": 3
     },
     {
+      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 3,
+      "turn": 3
+    },
+    {
       "check": {
         "Count": {
           "card": "Angel Warrior Token",
@@ -152,12 +134,12 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 3,
+      "turn": 3
+    },
+    {
       "check": {
         "Count": {
           "card": "Starnheim Unleashed",
@@ -165,7 +147,10 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     }
   ]
 }

@@ -83,9 +83,6 @@
   "note": "Not foretold, so the X clause does not apply and the token is the 4/4 white flier with vigilance.",
   "timeline": [
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "do": {
         "Cast": {
           "mana": [
@@ -96,18 +93,18 @@
           ],
           "object": "$unleashed"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
-      "do": "Pass"
+      "turn": 1
     },
     {
+      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Angel Warrior Token",
@@ -115,7 +112,10 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }
