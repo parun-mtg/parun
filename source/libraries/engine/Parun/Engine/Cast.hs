@@ -5107,7 +5107,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                               -- CR 107.3 / 601.2h: which of the spent mana paid X
                               -- (Object.manaSpentOnX), split off the total as
                               -- confineX split it.
-                              Cost.recordXShares (PaymentSubject.Casting sid chosenNarrowing) pid sid (Slots.hasRead StaticRead.ReadsManaSpentOnX (Card.allEffects face)) (Cost.splitX confinement <$> mAmount <*> pure adjustments <*> Cost.Type.mana announcedCost <*> Cost.Type.mana totalledPaid)
+                              Cost.recordXShares (PaymentSubject.Casting sid chosenNarrowing) chosenSpending pid sid (Slots.hasRead StaticRead.ReadsManaSpentOnX (Card.allEffects face)) (Cost.splitX confinement <$> mAmount <*> pure adjustments <*> Cost.Type.mana announcedCost <*> Cost.Type.mana totalledPaid)
                               -- CR 702.51c: the creatures tapped to pay for mana in
                               -- this spell's total cost convoked it, so the relation
                               -- is recorded at the payment and a spell that is

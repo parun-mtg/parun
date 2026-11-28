@@ -1812,8 +1812,9 @@ splitX confinement x adjustments untotalled totalled =
 -- CR 107.3 / 601.2h: Object.manaSpentOnX for `oid`, once its payment has
 -- settled -- the share of what it records as spent that paid the `onX` half of
 -- a total split by `splitX`. Under the clauses that payment was made under (CR
--- 609.4b), read off the board it settled on. Nothing to write for a cost with
--- no X.
+-- 609.4b), read off the board it settled on, and the cast's own `spending`
+-- (data/scenarios/soul-burn's "Soul Burn cast through Kotose" proves it).
+-- Nothing to write for a cost with no X.
 --
 -- No rule assigns mana to symbols, so where the payment leaves several shares
 -- the split is the payer's, asked here and stored once (Illusionary Mask's
@@ -1822,11 +1823,11 @@ splitX confinement x adjustments untotalled totalled =
 -- (Resolve.Slots.hasRead): otherwise no share is distinguishable from another,
 -- and the first is stored. data/scenarios/soul-burn's "Soul Burn under an
 -- opponent's Tainted Remedy" proves the answer is the payer's.
-recordXShares :: PaymentSubject.PaymentSubject -> PlayerId -> ObjectId -> Bool -> Maybe (ManaCost.ManaCost, ManaCost.ManaCost) -> Game ()
-recordXShares subject pid oid readsIt split = Monad.forM_ split $ \(rest, onX) -> do
+recordXShares :: PaymentSubject.PaymentSubject -> ManaSpending.ManaSpending -> PlayerId -> ObjectId -> Bool -> Maybe (ManaCost.ManaCost, ManaCost.ManaCost) -> Game ()
+recordXShares subject spending pid oid readsIt split = Monad.forM_ split $ \(rest, onX) -> do
   gs <- State.get
   let clauses = PlayerEffect.spendManaAsThoughFor pid subject gs
-      shares = foldMap (Mana.xShares clauses rest onX . Object.manaSpent) (Game.lookupObject oid gs)
+      shares = foldMap (Mana.xShares clauses spending rest onX . Object.manaSpent) (Game.lookupObject oid gs)
   chosen <-
     if readsIt
       then Game.chooseAmong (\decider who -> Prompt.ChooseManaSpentOnX decider who oid) pid shares
