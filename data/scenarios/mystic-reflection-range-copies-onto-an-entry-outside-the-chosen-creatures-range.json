@@ -37,7 +37,7 @@
   "description": "CR 801.10: Mystic Reflection's copy is limited by its controller's range, not the entering creature's controller's",
   "note": "Every seat has range 1. Alice targets Bob's Bears, in her range; Dan, beside Alice but two seats from Bob, flashes in Spectral Sailor, which enters as a 2/2 Grizzly Bears (a 1/1 Sailor if Dan's range cut the copy).",
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$reflection", "mana": ["$i1", "$i2"], "targets": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$reflection", "mana": ["$i1", "$i2"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "BeginningOfCombat", "player": "dan", "do": {"Cast": {"object": "$sailor", "mana": ["$di"]}}},
     {"turn": 1, "step": "BeginningOfCombat", "player": "dan", "do": "Pass"},
