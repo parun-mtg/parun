@@ -2678,22 +2678,24 @@ couldPayFrom mana cost = case cost of
 -- mana paid against a total split into `rest` and `onX` (CR 601.2f, X as
 -- announced, and CR 601.2h's confinement of it, Cost.splitX): whatever is
 -- left once `rest` is paid out of `spent`, provided it pays `onX` exactly. Both
--- payments under the payer's CR 609.4b clauses, so green mana Chromatic Orrery
--- let pay Soul Burn's X is a share of it. Several when the payment does not
+-- payments under the payer's CR 609.4b clauses and the cast's own `spending`,
+-- so green mana Chromatic Orrery or Kotose, the Silent Spider let pay Soul
+-- Burn's X is a share of it. Several when the payment does not
 -- say which unit went where, as a cost increase's generic mana does not
 -- (Illusionary Mask's ruling: "you must keep track of the amount and types of
 -- mana you spent on {X}").
-xShares :: [SpendManaAsThough.SpendManaAsThough] -> ManaCost -> ManaCost -> Mana -> [Mana]
-xShares clauses rest onX (Mana.MkMana units) =
-  let paysExactly cost pool = or $ do
-        (demands, owed, _) <- resolutions ManaSpending.AsProduced cost
+xShares :: [SpendManaAsThough.SpendManaAsThough] -> ManaSpending -> ManaCost -> ManaCost -> Mana -> [Mana]
+xShares payerClauses spending rest onX (Mana.MkMana units) =
+  let clauses = withSpending spending payerClauses
+      paysExactly cost pool = or $ do
+        (demands, owed, _) <- resolutions spending cost
         pure (Set.member [] (leftovers clauses (paymentSteps demands owed) pool))
       size = sum (fmap symbolSize (ManaCost.unwrap onX))
       symbolSize symbol = case symbol of
         ManaSymbol.Generic n -> n
         _ -> 1
    in fmap Mana.MkMana . Set.toList . Set.filter (paysExactly onX) . Set.unions $ do
-        (demands, owed, _) <- resolutions ManaSpending.AsProduced rest
+        (demands, owed, _) <- resolutions spending rest
         pure (Set.filter ((== Natural.toIntSaturating size) . length) (leftovers clauses (paymentSteps demands owed) units))
 
 -- CR 107.4f's 2 life. The one place that number is written.
