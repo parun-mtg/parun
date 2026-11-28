@@ -21,4 +21,5 @@ codec :: Codec.Codec CastFrom.CastFrom
 codec = Fields.object $ do
   caster <- Fields.defaulted "caster" (PlayerRef.Type.Relative PlayerRelation.You) PlayerRef.codec CastFrom.caster
   from <- Fields.defaulted "from" Nothing (Common.maybe InZone.codec) CastFrom.from
-  pure CastFrom.MkCastFrom {CastFrom.caster = caster, CastFrom.from = from}
+  ordinal <- Fields.defaulted "ordinal" Nothing (Common.maybe Common.natural) CastFrom.ordinal
+  pure CastFrom.MkCastFrom {CastFrom.caster = caster, CastFrom.from = from, CastFrom.ordinal = ordinal}

@@ -408,7 +408,7 @@ data Quantity
     EnteredFrom InZone.InZone
   | -- | CR 601.2a / 400.3: did the object this quantity is evaluated against enter
     -- the battlefield as a spell the payload's caster cast, out of the payload's
-    -- zone if it names one? The two references are independent; see Parun.Types.CastFrom.
+    -- zone and at its ordinal if it names them? See Parun.Types.CastFrom.
     WasCastFrom CastFrom.CastFrom
   | -- | CR 509.1g: how many creatures block the object this quantity is
     -- evaluated against, beyond the first N (CR 702.23a's rampage skips one, Gang
