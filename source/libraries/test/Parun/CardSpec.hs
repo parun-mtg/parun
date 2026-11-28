@@ -3518,6 +3518,7 @@ costComponentFilters component = case component of
   CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents _ f) -> [f]
   -- CR 406.2 as a cost: Food Chain's "a creature you control".
   CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents _ f) -> [f]
+  CostComponent.Unattach f -> [f]
   -- CR 406.2 as a cost: Headless Skaab's "a creature card from your graveyard".
   CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard _ f _ _) -> [f]
   -- CR 406.2 with a threshold: Baron Helmut Zemo's "black cards".

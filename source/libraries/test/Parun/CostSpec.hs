@@ -2923,6 +2923,7 @@ spec s registry = Spec.describe s "Parun.Engine.Cost" $ do
   animarSpec s registry
   magnusSpec s registry
   melokuSpec s registry
+  unattachSpec s registry
   barkhideTrollSpec s registry
   zameckGuildmageCostSpec s registry
   novijenSagesSpec s registry
@@ -4034,6 +4035,21 @@ melokuSpec s registry = Spec.describe s "Meloku the Clouded Mirror" $ do
     Spec.assertBool s (not (Activatable.activatable S.alice payableId (theAbility meloku) unpayable)) "the same land under bob: not"
     Spec.assertBool s (Cost.canPayComponent Map.empty S.alice payableId component payable) "and the component itself is payable on the one board"
     Spec.assertBool s (not (Cost.canPayComponent Map.empty S.alice payableId component unpayable)) "and not on the other"
+
+-- CostComponent.Unattach's payability, asked directly: the granted ability of
+-- Toralf's Hammer, its one printing, exists only while the Hammer is attached,
+-- so no activation can reach the narrowing to attached permanents. A PAIR of
+-- boards differing in exactly one thing, whether the Bonesplitter is attached.
+unattachSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+unattachSpec s registry = Spec.describe s "Unattach" . Spec.it s "CR 701.3d / 118.3 only an attached Equipment pays an unattach cost" $ do
+  bears <- S.printingOf s registry "Grizzly Bears"
+  bonesplitter <- S.printingOf s registry "Bonesplitter"
+  let (bearsId, gs0) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+      (splitterId, unattached) = S.addPermanent bonesplitter S.alice gs0
+      attached = S.attach splitterId bearsId unattached
+      component = CostComponent.Unattach (Filter.Type.HasSubtype Subtype.Equipment)
+  Spec.assertBool s (Cost.canPayComponent Map.empty S.alice bearsId component attached) "the attached Bonesplitter pays it"
+  Spec.assertBool s (not (Cost.canPayComponent Map.empty S.alice bearsId component unattached)) "the same Bonesplitter unattached does not"
 
 -- alice with Everbark Shaman settled on the battlefield, `buried` in her own
 -- graveyard, and Maskwood Nexus beside the Shaman when `withNexus`. Priority in

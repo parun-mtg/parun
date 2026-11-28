@@ -64,6 +64,7 @@ loyaltyAmountOf component = case component of
   CostComponent.TapPermanents {} -> Nothing
   CostComponent.ReturnPermanents {} -> Nothing
   CostComponent.ExilePermanents {} -> Nothing
+  CostComponent.Unattach _ -> Nothing
   CostComponent.DiscardCards {} -> Nothing
   CostComponent.DiscardThis _ -> Nothing
   CostComponent.PutCardFromHandOntoBattlefield _ -> Nothing
