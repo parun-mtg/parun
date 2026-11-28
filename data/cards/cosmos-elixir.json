@@ -1,0 +1,121 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        }
+      ],
+      "name": "Cosmos Elixir",
+      "oracleText": "At the beginning of your end step, draw a card if your life total is greater than your starting life total. Otherwise, you gain 2 life.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Ending",
+                "value": "EndStep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "GreaterThan",
+                        "measured": {
+                          "type": "LifeTotal",
+                          "value": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        },
+                        "threshold": {
+                          "type": "StartingLifeTotal",
+                          "value": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        }
+                      }
+                    },
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtMost",
+                        "measured": {
+                          "type": "LifeTotal",
+                          "value": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        },
+                        "threshold": {
+                          "type": "StartingLifeTotal",
+                          "value": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        }
+                      }
+                    },
+                    "effects": [
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

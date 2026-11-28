@@ -1,0 +1,150 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Blood on the Snow",
+      "oracleText": "Choose one —\n• Destroy all creatures.\n• Destroy all planeswalkers.\nThen return a creature or planeswalker card with mana value X or less from your graveyard to the battlefield, where X is the amount of {S} spent to cast this spell. ({S} is mana from a snow source.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        }
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "HasCardType",
+                          "value": "Planeswalker"
+                        }
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "shared": [
+          {
+            "effects": [
+              {
+                "type": "BindAmount",
+                "value": {
+                  "quantity": {
+                    "type": "ManaSpent",
+                    "value": {
+                      "type": "Tagged",
+                      "value": "Snow"
+                    }
+                  },
+                  "slot": "snow"
+                }
+              },
+              {
+                "type": "MoveToZone",
+                "value": {
+                  "ref": {
+                    "type": "ChosenCardInGraveyard",
+                    "value": {
+                      "chooser": {
+                        "type": "TheController"
+                      },
+                      "filter": {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "Or",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Planeswalker"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "Measures",
+                            "value": {
+                              "comparison": "AtMost",
+                              "measure": "ManaValue",
+                              "operand": {
+                                "type": "AmountInSlot",
+                                "value": "snow"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      "players": {
+                        "type": "Scoped",
+                        "value": {
+                          "type": "You"
+                        }
+                      }
+                    }
+                  },
+                  "zone": "Battlefield"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "supertypes": [
+          "Snow"
+        ],
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

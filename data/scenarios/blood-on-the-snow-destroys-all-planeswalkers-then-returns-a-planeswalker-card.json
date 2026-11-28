@@ -1,0 +1,271 @@
+{
+  "description": "CR 700.2, 608.2c: Blood on the Snow's second mode destroys every planeswalker and no creature, then returns a planeswalker card with mana value at most the snow mana spent",
+  "note": "Three snow mana of six make X 3: Basri Ket (3) returns from alice's graveyard, Gideon Jura (5) dying to the mode is not offered, and the creatures on both sides stay. Gray Ogre (3) in the graveyard shows a creature card is offered beside a planeswalker card.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Snow-Covered Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Snow-Covered Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Snow-Covered Swamp",
+            "label": "s3"
+          },
+          {
+            "card": "Swamp",
+            "label": "w1"
+          },
+          {
+            "card": "Swamp",
+            "label": "w2"
+          },
+          {
+            "card": "Swamp",
+            "label": "w3"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Gideon Jura",
+            "label": "gideon",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 6
+              }
+            ]
+          }
+        ],
+        "hand": [
+          {
+            "card": "Blood on the Snow",
+            "label": "bots"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Basri Ket",
+            "label": "basri"
+          },
+          {
+            "card": "Gray Ogre",
+            "label": "ogre"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Savannah Lions",
+            "label": "lions"
+          },
+          {
+            "card": "Ajani Goldmane",
+            "label": "ajani",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 4
+              }
+            ]
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Cast": {
+          "object": "$bots",
+          "modes": [
+            1
+          ],
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3",
+            "$w1",
+            "$w2",
+            "$w3"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseCardInGraveyard",
+            "offer": {
+              "source": "Blood on the Snow",
+              "earlier": [],
+              "options": [
+                "$basri",
+                "$ogre"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardInGraveyard",
+          "with": "$basri"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Basri Ket",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Gideon Jura",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Ajani Goldmane",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Savannah Lions",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Gray Ogre",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      }
+    }
+  ]
+}

@@ -3010,7 +3010,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Crackling Emergence", 1), -- Pariah's replacement row, on a destruction
         ("Harmonious Emergence", 1), -- Crackling Emergence's wording
         ("Cradle of Safety", 1), -- Aquitect's Defenses' entering hexproof
-        ("Candletrap", 1) -- Path to Redemption's wording, an exile behind coven
+        ("Candletrap", 1), -- Path to Redemption's wording, an exile behind coven
+        ("Bind the Monster", 2) -- Claustrophobia's entering tap, and its host as the damage's dealer
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the same atom planted in a SPELL's target slot -- the position a
