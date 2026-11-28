@@ -1,5 +1,7 @@
 module Parun.Types.ManaSpending where
 
+import qualified Parun.Types.ManaFilter as ManaFilter
+
 -- | CR 118.14: how one player may spend mana toward ONE cost -- ordinarily as
 -- the mana is, and under an effect that says so, as though it were mana of any
 -- type.
@@ -7,8 +9,9 @@ module Parun.Types.ManaSpending where
 -- WHAT IT IS NOT is the whole of CR 609.4b: "this affects only how the player
 -- may pay a cost. It doesn't change that cost, and it doesn't change what mana
 -- was actually spent to pay that cost." So this never reaches a ManaCost, and it
--- never reaches a Parun.Types.ManaUnit either -- Parun.Engine.Mana applies it to
--- the DEMANDS a cost resolves into, leaving the cost and the pool alone. A model
+-- never reaches a Parun.Types.ManaUnit either -- Parun.Engine.Mana applies AnyType
+-- to the DEMANDS a cost resolves into and AnyColor to the SUPPLY each unit
+-- offers, leaving the cost and the pool alone. A model
 -- that rewrote either would answer CR 202.3's mana value, CR 500.5's leftover
 -- pool or a "spend only black mana" restriction wrongly.
 --
@@ -25,11 +28,12 @@ module Parun.Types.ManaSpending where
 -- one-cast-now offer -- rather than sitting on the player.
 --
 -- The per-player half of CR 609.4b is Parun.Types.SpendManaAsThough, and the two
--- cannot be one type. This one is applied to a COST's demands, so no constructor
--- of it can depend on which unit is being spent; Celestial Dawn's sentence says
--- different things about two manas of one pool and so is applied to the SUPPLY
--- each unit offers. A static "mana of any type" with no cast permission of its own
+-- cannot be one type. This one rides ONE cast's permission; that one is a
+-- player's, and Celestial Dawn's sentence says different things about two manas
+-- of one pool. A static "mana of any type" with no cast permission of its own
 -- (Vizier of the Menagerie) is that type's `scope`, re-read live (CR 611.3a).
+-- AnyColor speaks about the units its filter names, so
+-- Parun.Engine.Mana.withSpending turns it into that type's clause for the cast.
 data ManaSpending
   = -- | The default, and every cost in the game that no effect has spoken about:
     -- a demand for red mana is served by red mana.
@@ -43,8 +47,8 @@ data ManaSpending
     -- rule 118.14 says nothing about provenance -- so a snow demand still wants a
     -- snow supply under this permission (Parun.Engine.Mana.relax).
     AnyType
-  | -- | CR 609.4b's "as though it were mana of any color" (The Ruinous Powers):
-    -- a demand naming a color is served by any mana, colorless included; a
-    -- demand for colorless mana is not relaxed.
-    AnyColor
-  deriving (Bounded, Enum, Eq, Ord, Show)
+  | -- | CR 609.4b's "as though it were mana of any color" (The Ruinous Powers),
+    -- said of the mana the filter names: Any for every mana, Draugr
+    -- Necromancer's "mana from snow sources" a Produced one.
+    AnyColor ManaFilter.ManaFilter
+  deriving (Eq, Ord, Show)

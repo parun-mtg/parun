@@ -4,22 +4,30 @@
 -- which effect or card asked.
 module Parun.Engine.ManaFilter where
 
+import qualified Data.Set as Set
 import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaType as ManaType
 import Parun.Types.ManaUnit (ManaUnit)
 import qualified Parun.Types.ManaUnit as ManaUnit
+import qualified Parun.Types.ProductionTag as ProductionTag
 
--- | CR 106.1b: a unit's type is the whole of what a filter can ask today, so
--- this is a comparison and not a fold -- see Parun.Types.ManaFilter for why the
--- production tags are not reachable from here.
-matchesType :: ManaFilter.ManaFilter -> ManaType.ManaType -> Bool
-matchesType filter_ manaType = case filter_ of
+-- | CR 106.1b / 106.3: mana of this type whose production carried these tags.
+-- Kept apart from a pool unit because a SUPPLY (Parun.Engine.Mana.Supply) may
+-- not have settled on a type yet, so the filter has to be askable of a bare
+-- type and its tags as well.
+matchesMade :: ManaFilter.ManaFilter -> Set.Set ProductionTag.ProductionTag -> ManaType.ManaType -> Bool
+matchesMade filter_ tags manaType = case filter_ of
   ManaFilter.Any -> True
   ManaFilter.OfType wanted -> manaType == wanted
   ManaFilter.NotOfType unwanted -> manaType /= unwanted
+  ManaFilter.Produced tag -> Set.member tag tags
 
--- | The same question about a unit in a pool. Kept beside the type-level one
--- because a SUPPLY (Parun.Engine.Mana.Supply) may not have settled on a type
--- yet, so the filter has to be askable of a bare type as well.
+-- | The same question about a bare type, which carries no tag: CR 106.7's
+-- "could produce" and a reduction's confinement, whose codecs refuse a Produced
+-- filter (Parun.Codec.CouldProduce, Parun.Codec.AppliedReduction).
+matchesType :: ManaFilter.ManaFilter -> ManaType.ManaType -> Bool
+matchesType filter_ = matchesMade filter_ Set.empty
+
+-- | The same question about a unit in a pool.
 matches :: ManaFilter.ManaFilter -> ManaUnit -> Bool
-matches filter_ unit = matchesType filter_ (ManaUnit.manaType unit)
+matches filter_ unit = matchesMade filter_ (ManaUnit.tags unit) (ManaUnit.manaType unit)

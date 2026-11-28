@@ -1,0 +1,138 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Draugr Necromancer",
+      "oracleText": "If a nontoken creature an opponent controls would die, exile that card with an ice counter on it instead.\nYou may cast spells from among cards in exile your opponents own with ice counters on them, and you may spend mana from snow sources as though it were mana of any color to cast those spells.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "CastFrom",
+            "value": {
+              "from": {
+                "player": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                },
+                "zone": "Exile"
+              },
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Owner",
+                      "relation": "Opponent"
+                    }
+                  },
+                  {
+                    "type": "HasCounters",
+                    "value": {
+                      "kind": {
+                        "type": "Named",
+                        "value": "ice"
+                      }
+                    }
+                  }
+                ]
+              },
+              "spending": {
+                "AnyColor": {
+                  "type": "Produced",
+                  "value": "Snow"
+                }
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "ZoneChangeR",
+            "value": {
+              "counters": [
+                {
+                  "count": {
+                    "type": "Literal",
+                    "value": 1
+                  },
+                  "kind": {
+                    "type": "Named",
+                    "value": "ice"
+                  }
+                }
+              ],
+              "destination": "Exile",
+              "matching": {
+                "whatObject": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "IsInZone",
+                      "value": "Battlefield"
+                    },
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "IsToken"
+                      }
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "Opponent"
+                      }
+                    }
+                  ]
+                },
+                "whenDestination": "Graveyard"
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Zombie",
+          "Cleric"
+        ],
+        "supertypes": [
+          "Snow"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

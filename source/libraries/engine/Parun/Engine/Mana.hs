@@ -146,6 +146,7 @@ import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
+import qualified Parun.Types.SpendScope as SpendScope
 import qualified Parun.Types.SpendTrigger as SpendTrigger
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
@@ -2224,9 +2225,9 @@ supplyOf admitting unit =
 -- docs/synthetic-readings.md, "How two only-clauses about spending one mana combine".
 -- The scenario "CR 609.4b two only-clauses about one red mana each permit their
 -- own type" proves it on Celestial Dawn and Synthetic Verdant Prism.
-spendableAs :: [SpendManaAsThough.SpendManaAsThough] -> ManaType -> Set.Set ManaType
-spendableAs clauses manaType =
-  case filter (\clause -> ManaFilter.matchesType (SpendManaAsThough.which clause) manaType) clauses of
+spendableAs :: [SpendManaAsThough.SpendManaAsThough] -> Set.Set ProductionTag.ProductionTag -> ManaType -> Set.Set ManaType
+spendableAs clauses tags manaType =
+  case filter (\clause -> ManaFilter.matchesMade (SpendManaAsThough.which clause) tags manaType) clauses of
     [] -> Set.singleton manaType
     applicable ->
       Set.unions
@@ -2250,7 +2251,7 @@ spendableAs clauses manaType =
 rewriteSupply :: [SpendManaAsThough.SpendManaAsThough] -> Supply -> Supply
 rewriteSupply clauses supply = case clauses of
   [] -> supply
-  _ -> supply {supplyTypes = Set.unions (fmap (spendableAs clauses) (Set.toList (supplyMade supply)))}
+  _ -> supply {supplyTypes = Set.unions (fmap (spendableAs clauses (supplyTags supply)) (Set.toList (supplyMade supply)))}
 
 -- A demand for one mana of one of these types, however it was produced -- every
 -- TYPED symbol but CR 107.4h's {S}. A symbol demanding no particular mana
@@ -2290,16 +2291,41 @@ anyTypeDemand = (ofTypes everyManaType) {demandGeneric = True}
 --
 -- A rider beside Celestial Dawn's only-clause: docs/decisions.md, "How a mana of
 -- any type rider combines with an only-clause".
+--
+-- CR 609.4b's "as though it were mana of any color" is not relaxed here: it
+-- speaks about the mana its filter names (Draugr Necromancer's "mana from snow
+-- sources"), so it is the supply side's (`withSpending`).
 relax :: ManaSpending -> Demand -> Demand
 relax spending demand = case spending of
   ManaSpending.AsProduced -> demand
   ManaSpending.AnyType -> demand {demandTypes = everyManaType}
-  -- CR 609.4b: mana spent as though it were of any color pays a colored demand
-  -- whatever it is, colorless included (Mycosynth Lattice's ruling), but is
-  -- never spent as though it were colorless, so {C} keeps its demand.
-  ManaSpending.AnyColor
-    | any (/= ManaType.Colorless) (Set.toList (demandTypes demand)) -> demand {demandTypes = everyManaType}
-    | otherwise -> demand
+  ManaSpending.AnyColor _ -> demand
+
+-- CR 609.4b, a cast's own "spend [this] mana as though it were mana of any
+-- color" joined to the clauses speaking about its payment: the mana the filter
+-- names may also be spent as any of CR 105.1's five colours, and never as
+-- colorless, so {C} keeps wanting colorless mana (Mycosynth Lattice's ruling).
+-- A clause and not a demand rewrite because the filter asks about each unit,
+-- which no demand can; `spendableAs` reads it with every other clause.
+withSpending :: ManaSpending -> [SpendManaAsThough.SpendManaAsThough] -> [SpendManaAsThough.SpendManaAsThough]
+withSpending spending clauses = case spending of
+  ManaSpending.AnyColor which ->
+    clauses
+      <> [ SpendManaAsThough.MkSpendManaAsThough
+             { SpendManaAsThough.which = which,
+               SpendManaAsThough.asThough = Set.delete ManaType.Colorless everyManaType,
+               SpendManaAsThough.only = False,
+               SpendManaAsThough.scope = SpendScope.EveryPayment
+             }
+         ]
+  ManaSpending.AsProduced -> clauses
+  ManaSpending.AnyType -> clauses
+
+-- The clauses speaking about the cost `subject` pays (Vizier of the Menagerie's
+-- creature spells, Tome of the Infinite's own) and the cast's own rider, out of
+-- the player's `clauses`.
+costClausesFor :: ManaSpending -> [SpendManaAsThough.SpendManaAsThough] -> PlayerId -> PaymentSubject.PaymentSubject -> GameState -> [SpendManaAsThough.SpendManaAsThough]
+costClausesFor spending clauses pid subject gs = withSpending spending (PlayerEffect.spendManaAsThoughForGiven clauses pid subject gs)
 
 -- CR 106.1b: the six types of mana. Written out rather than derived, for the
 -- reason produced writes out CR 105.1's five: the enumeration IS the rule.
@@ -2541,7 +2567,7 @@ plan clauses spending budget cost (Mana.MkMana units) =
         (demands, generic, life) <- resolutions spending cost
         Monad.guard (life <= budget)
         let steps = paymentSteps demands generic
-        Monad.guard (not (Set.null (leftovers clauses steps units)))
+        Monad.guard (not (Set.null (leftovers (withSpending spending clauses) steps units)))
         pure (steps, life)
     )
 
@@ -2612,7 +2638,7 @@ spend clauses spending budget cost (Mana.MkMana units) =
         Monad.guard (life <= budget)
         -- Where every unit pays generic mana, the units one assignment leaves
         -- pay it exactly when any other's do, so the first is asked alone.
-        let assignments = spendDemands clauses units demands
+        let assignments = spendDemands (withSpending spending clauses) units demands
             asked = if all paysGeneric units then take 1 assignments else assignments
         left <- Maybe.listToMaybe (Maybe.mapMaybe (takeGeneric generic) asked)
         pure (Mana.MkMana left, life)
@@ -3121,7 +3147,7 @@ plainPayable subject spending swept pid committed committedEnergy claimed cost g
     && any payable (resolutions spending cost)
   where
     clauses = sourceClauses swept
-    costClauses = PlayerEffect.spendManaAsThoughForGiven clauses pid subject gs
+    costClauses = costClausesFor spending clauses pid subject gs
     servesCost
       | costClauses == clauses = serves
       | otherwise = serves . rewriteSupply costClauses
@@ -3213,7 +3239,7 @@ ceilingAdmits subject spending swept pid cost gs = case sourceCeiling swept of
   Just ceiling_ -> any (reachable ceiling_) (resolutions spending cost)
   where
     clauses = sourceClauses swept
-    costClauses = PlayerEffect.spendManaAsThoughForGiven clauses pid subject gs
+    costClauses = costClausesFor spending clauses pid subject gs
     servesCost
       | costClauses == clauses = serves
       | otherwise = serves . rewriteSupply costClauses
@@ -3928,7 +3954,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       -- own (`Parun.Engine.Cost.pay`'s subject there), so they serve the cost's
       -- position alone. data/scenarios'
       -- vizier-of-the-menagerie-does-not-pay-a-mana-ability-s-own-cost is the proof.
-      costClauses = PlayerEffect.spendManaAsThoughForGiven clauses pid subject gs
+      costClauses = costClausesFor spending clauses pid subject gs
       servesCost
         | costClauses == clauses = serves
         | otherwise = serves . rewriteSupply costClauses
@@ -4231,9 +4257,9 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
                   admitsAt k supply = maybe False ((`Set.member` supplyAdmits supply) . fst) (Map.lookup k subjectAt)
                   serve k pools demand = Set.fromList [List.delete supply pool | pool <- Set.toList pools, supply <- ListUtils.nubOrd pool, admitsAt k supply, servesAt subjectAt k supply demand]
                   settle doubling supply =
-                    let (naming, unnamed) = List.partition (not . Set.disjoint named . spendableAs clauses) (Set.toList (supplyMade supply))
+                    let (naming, unnamed) = List.partition (not . Set.disjoint named . spendableAs clauses (supplyTags supply)) (Set.toList (supplyMade supply))
                         other = take 1 (List.sortOn (`Map.notMember` doubling) unnamed)
-                     in if Set.size (supplyMade supply) <= 1 then [supply] else [supply {supplyTypes = spendableAs clauses manaType, supplyMade = Set.singleton manaType} | manaType <- naming <> other]
+                     in if Set.size (supplyMade supply) <= 1 then [supply] else [supply {supplyTypes = spendableAs clauses (supplyTags supply) manaType, supplyMade = Set.singleton manaType} | manaType <- naming <> other]
                   double pool doubling = do
                     settled <- traverse (settle doubling) pool
                     pure (settled <> concatMap (concatMap (\manaType -> Map.findWithDefault [] manaType doubling) . Set.toList . supplyMade) settled)

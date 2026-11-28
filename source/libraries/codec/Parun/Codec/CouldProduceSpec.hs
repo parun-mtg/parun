@@ -1,6 +1,9 @@
 module Parun.Codec.CouldProduceSpec where
 
+import qualified Data.Either as Either
+import qualified Data.Text as Text
 import qualified Parun.Codec.CouldProduce as CouldProduce
+import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
@@ -21,4 +24,9 @@ spec s = Spec.describe s "Parun.Codec.CouldProduce" $ do
           }
       )
       " {\"among\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"types\":{\"type\":\"NotOfType\",\"value\":{\"type\":\"Colorless\"}}} "
+  Spec.it s "rejects a Produced filter" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode CouldProduce.codec =<< Common.parse (Text.pack "{\"among\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"types\":{\"type\":\"Produced\",\"value\":\"Snow\"}}")))
+      "expected a decode failure"
   Spec.it s "has a schema" $ Common.assertHasSchema s CouldProduce.codec

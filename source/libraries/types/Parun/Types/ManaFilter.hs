@@ -1,6 +1,7 @@
 module Parun.Types.ManaFilter where
 
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.ProductionTag as ProductionTag
 
 -- | Which of the mana in a pool a card's text is about -- Upwelling's "unspent
 -- mana" against Omnath, Locus of Mana's "unspent green mana". Also which
@@ -15,9 +16,7 @@ import qualified Parun.Types.ManaType as ManaType
 -- mana" with no type named, and spelling that as an enumeration would put the
 -- closed half's list of mana types into open-half card data.
 --
--- Not yet a predicate over a unit's Parun.Types.ProductionTag -- {S}'s "mana
--- produced by a snow source" (CR 107.4h) is that shape, and no card in the pool
--- names it here. Nor over CR 106.6's spending restriction, which lands on
+-- Not a predicate over CR 106.6's spending restriction, which lands on
 -- Parun.Types.ManaUnit and is a Parun.Types.Filter over the SPELL rather than
 -- anything this type could ask about a unit.
 data ManaFilter
@@ -37,4 +36,9 @@ data ManaFilter
     -- type in one comparison -- could use, and CR 106.1b's closed list means a
     -- wider complement is always writable the long way.
     NotOfType ManaType.ManaType
+  | -- | CR 106.3: the units whose production carried this tag -- Draugr
+    -- Necromancer's "mana from snow sources". A bare type carries none, so a
+    -- position asking about one (Parun.Types.CouldProduce, a reduction's
+    -- confinement) refuses it at decode.
+    Produced ProductionTag.ProductionTag
   deriving (Eq, Ord, Show)

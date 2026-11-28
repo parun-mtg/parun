@@ -1,7 +1,10 @@
 module Parun.Codec.CostChangeSpec where
 
+import qualified Data.Either as Either
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import qualified Parun.Codec.CostChange as CostChange
+import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AppliedReduction as AppliedReduction
@@ -72,4 +75,9 @@ spec s = Spec.describe s "Parun.Codec.CostChange" $ do
       CostChange.codec
       (CostChange.Type.Add (CostAddition.MkCostAddition [CostComponent.PayLife (CostAmount.Fixed 2)] CostScale.Once (Just (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.Blue)]) 0 (Just (ManaFilter.OfType (ManaType.Colored Color.Blue)))))))
       " {\"type\":\"Add\",\"value\":{\"components\":[{\"type\":\"PayLife\",\"value\":{\"type\":\"Fixed\",\"value\":2}}],\"optional\":{\"amount\":[{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Blue\"}}],\"reducesOnly\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Blue\"}}}}} "
+  Spec.it s "rejects a Produced confinement" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode CostChange.codec =<< Common.parse (Text.pack "{\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"Generic\",\"value\":1}],\"reducesOnly\":{\"type\":\"Produced\",\"value\":\"Snow\"}}}")))
+      "expected a decode failure"
   Spec.it s "has a schema" $ Common.assertHasSchema s CostChange.codec
