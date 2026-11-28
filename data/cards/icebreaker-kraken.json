@@ -1,0 +1,200 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "ReturnPermanents",
+                "value": {
+                  "count": 3,
+                  "whichPermanents": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Land"
+                      },
+                      {
+                        "type": "HasSupertype",
+                        "value": "Snow"
+                      },
+                      {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "You"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          },
+                          "zone": "Hand"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Affinity",
+          "value": {
+            "type": "And",
+            "value": [
+              {
+                "type": "HasCardType",
+                "value": "Land"
+              },
+              {
+                "type": "HasSupertype",
+                "value": "Snow"
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 10
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Icebreaker Kraken",
+      "oracleText": "Affinity for snow lands (This spell costs {1} less to cast for each snow land you control.)\nWhen this creature enters, artifacts and creatures target opponent controls don't untap during that player's next untap step.\nReturn three snow lands you control to their owner's hand: Return this creature to its owner's hand.",
+      "power": {
+        "type": "Literal",
+        "value": 8
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 8
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Prohibit",
+                        "value": {
+                          "affected": {
+                            "type": "Matching",
+                            "value": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "Or",
+                                  "value": [
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Artifact"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Creature"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "HeldByBound",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "slot": "target"
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "duration": {
+                            "type": "DuringNextOf",
+                            "value": {
+                              "player": {
+                                "type": "InSlot",
+                                "value": "target"
+                              },
+                              "window": "UntapStep"
+                            }
+                          },
+                          "what": {
+                            "type": "Untap",
+                            "value": "UntapStep"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "IsPlayer",
+                      "value": "Opponent"
+                    },
+                    "pool": {
+                      "type": "Players"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Kraken"
+        ],
+        "supertypes": [
+          "Snow"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,295 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Snow-Covered Island",
+            "label": "s1",
+            "tapped": true
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "s2",
+            "tapped": true
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "s3",
+            "tapped": true
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "s4",
+            "tapped": true
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "s5",
+            "tapped": true
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "s6",
+            "tapped": true
+          },
+          {
+            "card": "Snow-Covered Island",
+            "label": "s7",
+            "tapped": true
+          },
+          {
+            "card": "Island",
+            "label": "island",
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Icebreaker Kraken",
+            "label": "kraken"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "UUUUU",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "tapped": true
+          },
+          {
+            "card": "Mind Stone",
+            "label": "stone",
+            "tapped": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain",
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.41a / 502.3 whole card: Icebreaker Kraken costs {1} less per snow land, and its enters trigger keeps the target opponent's artifacts and creatures tapped through that player's next untap step only",
+  "note": "Three seats. Alice controls seven tapped Snow-Covered Islands and one tapped Island and has exactly {U}{U}{U}{U}{U} floating: affinity counts tapped snow lands but not the nonsnow Island, so the {10}{U}{U} Kraken costs exactly five and the pool empties. The trigger targets bob: his tapped Grizzly Bears and Mind Stone stay tapped through his turn-2 untap step while his tapped Mountain untaps, carol's tapped Hill Giant untaps on turn 3, and bob's Bears untap at his turn-5 untap step.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$kraken"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "ManaPool",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Icebreaker Kraken",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$bears",
+          "tapped": true
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$stone",
+          "tapped": true
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$mountain",
+          "tapped": false
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$giant",
+          "tapped": false
+        }
+      },
+      "player": "carol",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$bears",
+          "tapped": false
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$stone",
+          "tapped": false
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 5
+    }
+  ]
+}
