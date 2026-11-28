@@ -241,6 +241,23 @@ spec s registry = Spec.describe s "Search" $ do
       got <- scored (only False feature)
       Spec.assertEqWith s ("their " <> name) got (negate count)
 
+  Spec.it s "cut-off playouts evaluated past a win's score are ranked by their positions, each short of a win" $ do
+    (gs, attacker) <- capturing s registry 3 "a declaration of attackers" $ \asked -> case Asked.prompt asked of
+      Prompt.DeclareAttackers decider pid candidates | Search.searchable asked decider pid (Search.attacks candidates) -> Just (Asked.game asked, pid)
+      _ -> Nothing
+    let budget = SearchBudget.MkSearchBudget {SearchBudget.samples = 1, SearchBudget.turns = 1000, SearchBudget.prompts = 0, SearchBudget.candidates = 0, SearchBudget.playout = Playout.Random, SearchBudget.mistakes = 0, SearchBudget.method = SearchMethod.Flat}
+        living weight = Weights.MkWeights {Weights.ours = zero {Features.life = weight}, Weights.theirs = zero}
+        atLife n = gs {GameState.players = Map.adjust (\p -> p {Player.life = n}) attacker (GameState.players gs)}
+        scored weights world = either (Spec.assertFailure s . Text.unpack) pure =<< Except.runExceptT (State.evalStateT (Search.rollout (S.fixtureRegistry []) budget weights (pure ()) Engine.resumeTurnBasedAction attacker [Search.attacking attacker []] world) (S.seeded 1))
+    lower <- scored (living 100) (atLife 20)
+    higher <- scored (living 100) (atLife 30)
+    Spec.assertEqWith s "life 20 at 100 a point, 1000 tanh 2" lower 964
+    Spec.assertEqWith s "life 30 at 100 a point, 1000 tanh 3" higher 995
+    vast <- scored (living 1000000) (atLife 20)
+    Spec.assertEqWith s "a position a million times a win's score, still short of one" vast (Search.won - 1)
+    deficit <- scored (living (-1000000)) (atLife 20)
+    Spec.assertEqWith s "a position a million times a loss's score, still short of one" deficit (1 - Search.won)
+
   Spec.it s "CR 508.1 a restarted declaration of attackers asks its declarer again, offering the same creatures" $ do
     (gs, offered) <- capturing s registry 3 "a declaration of attackers" $ \asked -> case Asked.prompt asked of
       Prompt.DeclareAttackers decider pid candidates | Search.searchable asked decider pid (Search.attacks candidates) -> Just (Asked.game asked, (pid, candidates))

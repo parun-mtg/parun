@@ -34,6 +34,7 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
 import qualified Parun.Engine.Target as Target
 import qualified Parun.Engine.Visibility as Visibility
+import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Generator as Generator
@@ -1111,7 +1112,7 @@ restartable asked decider pid =
 -- seat answered by the budget's 'Playout.Playout' otherwise, scored 'won' a
 -- win, minus it a loss, 0 a draw; a playout cut off once it begins `SearchBudget.turns` turns after the
 -- decision's, or after `SearchBudget.prompts` prompts, is scored by
--- 'evaluate' at the prompt it stopped at, short of a win or a loss.
+-- 'cut' at the prompt it stopped at.
 rollout :: forall m. (Monad m) => Registry.Registry m -> SearchBudget.SearchBudget -> Weights.Weights -> Game.Play m () -> Game.Type.Game Result.Result -> PlayerId.PlayerId -> [Pick] -> GameState.GameState -> Game.Play m Integer
 rollout registry budget weights breathe restart pid picked world =
   let seats = Game.consulting registry (Map.fromList [(seat, policyOf registry budget) | seat <- Map.keys (GameState.players world)])
@@ -1133,10 +1134,14 @@ policyOf registry budget = case SearchBudget.playout budget of
   Playout.Polar -> polar registry
   Playout.Classified -> classified registry
 
--- | A cut-off playout's position for `pid`: 'evaluate', short of a win or a
--- loss.
+-- | A cut-off playout's position for `pid`: 'evaluate' squashed to its
+-- expected result, 'won' times tanh (evaluate / 'won'), the logistic win
+-- probability `parun fit` assumes ('Parun.Play.Fit.weighted'), held strictly
+-- short of a win or a loss.
 cut :: Weights.Weights -> PlayerId.PlayerId -> GameState.GameState -> Integer
-cut weights pid gs = max (1 - won) (min (won - 1) (evaluate weights pid gs))
+cut weights pid gs =
+  let squashed = round (Integer.toDouble won * tanh (Integer.toDouble (evaluate weights pid gs) / Integer.toDouble won))
+   in max (1 - won) (min (won - 1) squashed)
 
 -- | A result for `pid`.
 score :: PlayerId.PlayerId -> Result.Result -> Integer
